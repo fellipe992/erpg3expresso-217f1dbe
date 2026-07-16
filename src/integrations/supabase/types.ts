@@ -163,6 +163,95 @@ export type Database = {
         }
         Relationships: []
       }
+      financeiro_lancamentos: {
+        Row: {
+          categoria: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          data_emissao: string
+          data_pagamento: string | null
+          data_vencimento: string
+          descricao: string
+          forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
+          fornecedor_id: string | null
+          id: string
+          numero_documento: string | null
+          observacoes: string | null
+          status: Database["public"]["Enums"]["financeiro_status"]
+          tipo: Database["public"]["Enums"]["financeiro_tipo"]
+          updated_at: string
+          valor: number
+          viagem_id: string | null
+        }
+        Insert: {
+          categoria?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          data_pagamento?: string | null
+          data_vencimento: string
+          descricao: string
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
+          fornecedor_id?: string | null
+          id?: string
+          numero_documento?: string | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["financeiro_status"]
+          tipo: Database["public"]["Enums"]["financeiro_tipo"]
+          updated_at?: string
+          valor: number
+          viagem_id?: string | null
+        }
+        Update: {
+          categoria?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          data_pagamento?: string | null
+          data_vencimento?: string
+          descricao?: string
+          forma_pagamento?:
+            | Database["public"]["Enums"]["forma_pagamento"]
+            | null
+          fornecedor_id?: string | null
+          id?: string
+          numero_documento?: string | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["financeiro_status"]
+          tipo?: Database["public"]["Enums"]["financeiro_tipo"]
+          updated_at?: string
+          valor?: number
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_lancamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedores: {
         Row: {
           ativo: boolean
@@ -491,10 +580,22 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      marcar_atrasados: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "administrador" | "financeiro" | "gestor" | "motorista"
       checklist_tipo: "saida" | "chegada"
+      financeiro_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      financeiro_tipo: "receber" | "pagar"
+      forma_pagamento:
+        | "dinheiro"
+        | "pix"
+        | "boleto"
+        | "ted"
+        | "cartao_credito"
+        | "cartao_debito"
+        | "cheque"
+        | "outro"
       fornecedor_categoria:
         | "combustivel"
         | "manutencao"
@@ -642,6 +743,18 @@ export const Constants = {
     Enums: {
       app_role: ["administrador", "financeiro", "gestor", "motorista"],
       checklist_tipo: ["saida", "chegada"],
+      financeiro_status: ["pendente", "pago", "atrasado", "cancelado"],
+      financeiro_tipo: ["receber", "pagar"],
+      forma_pagamento: [
+        "dinheiro",
+        "pix",
+        "boleto",
+        "ted",
+        "cartao_credito",
+        "cartao_debito",
+        "cheque",
+        "outro",
+      ],
       fornecedor_categoria: [
         "combustivel",
         "manutencao",
