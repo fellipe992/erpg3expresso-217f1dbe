@@ -44,9 +44,9 @@ const overview: NavItem[] = [
 ];
 
 const financeiro: NavItem[] = [
-  { label: "Fluxo de caixa", to: "/app/financeiro", icon: Wallet, soon: true },
-  { label: "Contas a receber", to: "/app/receber", icon: Receipt, soon: true },
-  { label: "Contas a pagar", to: "/app/pagar", icon: Receipt, soon: true },
+  { label: "Fluxo de caixa", to: "/app/financeiro", icon: Wallet },
+  { label: "Contas a receber", to: "/app/receber", icon: Receipt },
+  { label: "Contas a pagar", to: "/app/pagar", icon: Receipt },
 ];
 
 const operacional: NavItem[] = [
@@ -99,7 +99,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.3 · Fase 3
+            v0.4 · Fase 4
           </div>
         )}
       </SidebarFooter>
