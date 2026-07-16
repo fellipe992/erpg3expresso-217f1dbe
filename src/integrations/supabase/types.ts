@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      checklists: {
+        Row: {
+          combustivel_pct: number | null
+          created_at: string
+          created_by: string | null
+          foto_url: string | null
+          id: string
+          itens: Json
+          km: number | null
+          observacoes: string | null
+          tipo: Database["public"]["Enums"]["checklist_tipo"]
+          updated_at: string
+          viagem_id: string
+        }
+        Insert: {
+          combustivel_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          foto_url?: string | null
+          id?: string
+          itens?: Json
+          km?: number | null
+          observacoes?: string | null
+          tipo: Database["public"]["Enums"]["checklist_tipo"]
+          updated_at?: string
+          viagem_id: string
+        }
+        Update: {
+          combustivel_pct?: number | null
+          created_at?: string
+          created_by?: string | null
+          foto_url?: string | null
+          id?: string
+          itens?: Json
+          km?: number | null
+          observacoes?: string | null
+          tipo?: Database["public"]["Enums"]["checklist_tipo"]
+          updated_at?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklists_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -329,11 +379,106 @@ export type Database = {
         }
         Relationships: []
       }
+      viagens: {
+        Row: {
+          cliente_id: string | null
+          codigo: string | null
+          created_at: string
+          created_by: string | null
+          data_chegada: string | null
+          data_prevista_chegada: string | null
+          data_prevista_saida: string | null
+          data_saida: string | null
+          destino_cidade: string | null
+          destino_uf: string | null
+          id: string
+          km_final: number | null
+          km_inicial: number | null
+          motorista_id: string | null
+          observacoes: string | null
+          origem_cidade: string | null
+          origem_uf: string | null
+          status: Database["public"]["Enums"]["viagem_status"]
+          updated_at: string
+          valor_frete: number | null
+          veiculo_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_chegada?: string | null
+          data_prevista_chegada?: string | null
+          data_prevista_saida?: string | null
+          data_saida?: string | null
+          destino_cidade?: string | null
+          destino_uf?: string | null
+          id?: string
+          km_final?: number | null
+          km_inicial?: number | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          origem_cidade?: string | null
+          origem_uf?: string | null
+          status?: Database["public"]["Enums"]["viagem_status"]
+          updated_at?: string
+          valor_frete?: number | null
+          veiculo_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          codigo?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_chegada?: string | null
+          data_prevista_chegada?: string | null
+          data_prevista_saida?: string | null
+          data_saida?: string | null
+          destino_cidade?: string | null
+          destino_uf?: string | null
+          id?: string
+          km_final?: number | null
+          km_inicial?: number | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          origem_cidade?: string | null
+          origem_uf?: string | null
+          status?: Database["public"]["Enums"]["viagem_status"]
+          updated_at?: string
+          valor_frete?: number | null
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagens_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagens_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagens_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_motorista_id: { Args: never; Returns: string }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -345,9 +490,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "administrador" | "financeiro" | "gestor" | "motorista"
+      checklist_tipo: "saida" | "chegada"
       fornecedor_categoria:
         | "combustivel"
         | "manutencao"
@@ -365,6 +512,7 @@ export type Database = {
         | "van"
         | "utilitario"
         | "outro"
+      viagem_status: "planejada" | "em_andamento" | "concluida" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -493,6 +641,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["administrador", "financeiro", "gestor", "motorista"],
+      checklist_tipo: ["saida", "chegada"],
       fornecedor_categoria: [
         "combustivel",
         "manutencao",
@@ -512,6 +661,7 @@ export const Constants = {
         "utilitario",
         "outro",
       ],
+      viagem_status: ["planejada", "em_andamento", "concluida", "cancelada"],
     },
   },
 } as const
