@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
+import { Route as AuthenticatedAppViagensRouteImport } from './routes/_authenticated/app/viagens'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
 import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppViagensRoute = AuthenticatedAppViagensRouteImport.update({
+  id: '/app/viagens',
+  path: '/app/viagens',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppVeiculosRoute =
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/viagens': typeof AuthenticatedAppViagensRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/viagens': typeof AuthenticatedAppViagensRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/_authenticated/app/viagens': typeof AuthenticatedAppViagensRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/motoristas'
     | '/app/veiculos'
+    | '/app/viagens'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/motoristas'
     | '/app/veiculos'
+    | '/app/viagens'
     | '/app'
   id:
     | '__root__'
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/fornecedores'
     | '/_authenticated/app/motoristas'
     | '/_authenticated/app/veiculos'
+    | '/_authenticated/app/viagens'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -190,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/viagens': {
+      id: '/_authenticated/app/viagens'
+      path: '/app/viagens'
+      fullPath: '/app/viagens'
+      preLoaderRoute: typeof AuthenticatedAppViagensRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/veiculos': {
       id: '/_authenticated/app/veiculos'
       path: '/app/veiculos'
@@ -234,6 +253,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
+  AuthenticatedAppViagensRoute: typeof AuthenticatedAppViagensRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
@@ -243,6 +263,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
+  AuthenticatedAppViagensRoute: AuthenticatedAppViagensRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
