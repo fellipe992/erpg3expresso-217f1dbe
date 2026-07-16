@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppViagensRouteImport } from './routes/_authenticated/app/viagens'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
+import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
 import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
@@ -57,6 +58,11 @@ const AuthenticatedAppVeiculosRoute =
     path: '/app/veiculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppReceberRoute = AuthenticatedAppReceberRouteImport.update({
+  id: '/app/receber',
+  path: '/app/receber',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppMotoristasRoute =
   AuthenticatedAppMotoristasRouteImport.update({
     id: '/app/motoristas',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/_authenticated/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/app/empresa'
     | '/app/fornecedores'
     | '/app/motoristas'
+    | '/app/receber'
     | '/app/veiculos'
     | '/app/viagens'
     | '/app/'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/app/empresa'
     | '/app/fornecedores'
     | '/app/motoristas'
+    | '/app/receber'
     | '/app/veiculos'
     | '/app/viagens'
     | '/app'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/empresa'
     | '/_authenticated/app/fornecedores'
     | '/_authenticated/app/motoristas'
+    | '/_authenticated/app/receber'
     | '/_authenticated/app/veiculos'
     | '/_authenticated/app/viagens'
     | '/_authenticated/app/'
@@ -229,6 +241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppVeiculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/receber': {
+      id: '/_authenticated/app/receber'
+      path: '/app/receber'
+      fullPath: '/app/receber'
+      preLoaderRoute: typeof AuthenticatedAppReceberRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/motoristas': {
       id: '/_authenticated/app/motoristas'
       path: '/app/motoristas'
@@ -286,6 +305,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
   AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
+  AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppViagensRoute: typeof AuthenticatedAppViagensRouteWithChildren
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -296,6 +316,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
   AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
+  AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppViagensRoute: AuthenticatedAppViagensRouteWithChildren,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
