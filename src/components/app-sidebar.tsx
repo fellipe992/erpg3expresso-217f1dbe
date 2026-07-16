@@ -1,0 +1,162 @@
+import { Link, useLocation } from "@tanstack/react-router";
+import {
+  LayoutDashboard,
+  Truck,
+  Users,
+  MapPin,
+  Fuel,
+  Wrench,
+  FileText,
+  Settings,
+  Wallet,
+  Receipt,
+  BarChart3,
+  Building2,
+  ShieldCheck,
+} from "lucide-react";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Logo } from "@/components/logo";
+import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
+
+type NavItem = {
+  label: string;
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  soon?: boolean;
+};
+
+const overview: NavItem[] = [
+  { label: "Dashboard", to: "/app", icon: LayoutDashboard },
+];
+
+const financeiro: NavItem[] = [
+  { label: "Fluxo de caixa", to: "/app/financeiro", icon: Wallet, soon: true },
+  { label: "Contas a receber", to: "/app/receber", icon: Receipt, soon: true },
+  { label: "Contas a pagar", to: "/app/pagar", icon: Receipt, soon: true },
+];
+
+const operacional: NavItem[] = [
+  { label: "Veículos", to: "/app/veiculos", icon: Truck, soon: true },
+  { label: "Motoristas", to: "/app/motoristas", icon: Users, soon: true },
+  { label: "Viagens", to: "/app/viagens", icon: MapPin, soon: true },
+  { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel, soon: true },
+  { label: "Manutenções", to: "/app/manutencoes", icon: Wrench, soon: true },
+];
+
+const gestao: NavItem[] = [
+  { label: "Relatórios", to: "/app/relatorios", icon: BarChart3, soon: true },
+  { label: "Documentos", to: "/app/documentos", icon: FileText, soon: true },
+];
+
+const administracao: NavItem[] = [
+  { label: "Usuários", to: "/app/usuarios", icon: Users, soon: true },
+  { label: "Empresa", to: "/app/empresa", icon: Building2 },
+  { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck, soon: true },
+  { label: "Configurações", to: "/app/configuracoes", icon: Settings, soon: true },
+];
+
+export function AppSidebar() {
+  const location = useLocation();
+  const { state } = useSidebar();
+  const { role } = useAuth();
+  const collapsed = state === "collapsed";
+
+  const isAdmin = role === "administrador";
+  const isFinance = role === "financeiro" || isAdmin;
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex h-12 items-center gap-2 px-2">
+          {collapsed ? <Logo variant="mark" size="sm" /> : <Logo size="sm" />}
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent>
+        <Group items={overview} pathname={location.pathname} collapsed={collapsed} />
+        {isFinance && <Group label="Financeiro" items={financeiro} pathname={location.pathname} collapsed={collapsed} />}
+        <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
+        <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
+        {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
+      </SidebarContent>
+
+      <SidebarFooter>
+        {!collapsed && (
+          <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
+            v0.1 · Fase 1
+          </div>
+        )}
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function Group({
+  label,
+  items,
+  pathname,
+  collapsed,
+}: {
+  label?: string;
+  items: NavItem[];
+  pathname: string;
+  collapsed: boolean;
+}) {
+  return (
+    <SidebarGroup>
+      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const active = pathname === item.to;
+            return (
+              <SidebarMenuItem key={item.to}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={active}
+                  tooltip={item.label}
+                  className={active ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
+                >
+                  {item.soon ? (
+                    <button
+                      type="button"
+                      className="opacity-60 cursor-not-allowed w-full text-left"
+                      title="Em breve"
+                    >
+                      <item.icon className="size-4" />
+                      <span className="flex-1">{item.label}</span>
+                      {!collapsed && (
+                        <Badge variant="outline" className="ml-auto h-4 px-1 text-[9px] font-normal">
+                          em breve
+                        </Badge>
+                      )}
+                    </button>
+                  ) : (
+                    <Link to={item.to as never}>
+                      <item.icon className="size-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
