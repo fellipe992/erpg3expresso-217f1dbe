@@ -99,7 +99,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.1 · Fase 1
+            v0.2 · Fase 2
           </div>
         )}
       </SidebarFooter>
