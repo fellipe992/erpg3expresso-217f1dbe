@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 
 const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
-  { to: "/app/viagens", label: "Viagens", icon: MapPin, soon: true },
+  { to: "/app/viagens", label: "Viagens", icon: MapPin },
   { to: "/app/abastecimentos", label: "Abast.", icon: Fuel, soon: true },
   { to: "/app/alertas", label: "Alertas", icon: Bell, soon: true },
   { to: "/app/perfil", label: "Perfil", icon: User, soon: true },
