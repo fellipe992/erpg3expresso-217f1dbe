@@ -65,7 +65,7 @@ function ClientesPage() {
     mutationFn: async () => {
       if (!form.razao_social?.trim()) throw new Error("Razão social / Nome é obrigatório");
       const payload = {
-        tipo: form.tipo ?? "pj",
+        tipo: (form.tipo ?? "pj") as "pf" | "pj",
         razao_social: form.razao_social.trim(),
         nome_fantasia: form.nome_fantasia || null,
         cnpj_cpf: form.cnpj_cpf || null,

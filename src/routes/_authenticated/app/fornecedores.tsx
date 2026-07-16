@@ -65,8 +65,8 @@ function FornecedoresPage() {
     mutationFn: async () => {
       if (!form.razao_social?.trim()) throw new Error("Razão social é obrigatório");
       const payload = {
-        tipo: form.tipo ?? "pj",
-        categoria: form.categoria ?? "outros",
+        tipo: (form.tipo ?? "pj") as "pf" | "pj",
+        categoria: (form.categoria ?? "outros") as "combustivel" | "manutencao" | "pneu" | "seguro" | "peca" | "servico" | "outros",
         razao_social: form.razao_social.trim(),
         nome_fantasia: form.nome_fantasia || null,
         cnpj_cpf: form.cnpj_cpf || null,

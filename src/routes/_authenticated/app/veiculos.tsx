@@ -61,12 +61,15 @@ function VeiculosPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      const placa = (form.placa ?? "").toUpperCase().trim();
+      const modelo = (form.modelo ?? "").trim();
+      if (!placa || !modelo) throw new Error("Placa e modelo são obrigatórios");
       const payload = {
-        placa: (form.placa ?? "").toUpperCase().trim(),
-        modelo: form.modelo?.trim(),
+        placa,
+        modelo,
         marca: form.marca || null,
         ano: form.ano ? Number(form.ano) : null,
-        tipo: form.tipo ?? "outro",
+        tipo: (form.tipo ?? "outro") as "cavalo" | "carreta" | "truck" | "toco" | "van" | "utilitario" | "outro",
         renavam: form.renavam || null,
         chassi: form.chassi || null,
         capacidade_kg: form.capacidade_kg ? Number(form.capacidade_kg) : null,
@@ -74,7 +77,6 @@ function VeiculosPage() {
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
       };
-      if (!payload.placa || !payload.modelo) throw new Error("Placa e modelo são obrigatórios");
       if (form.id) {
         const { error } = await supabase.from("veiculos").update(payload).eq("id", form.id);
         if (error) throw error;
