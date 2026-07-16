@@ -383,7 +383,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Forma de pagamento">
               <Select
                 value={form.forma_pagamento ?? "__none"}
-                onValueChange={(v) => setForm({ ...form, forma_pagamento: v === "__none" ? null : v })}
+                onValueChange={(v) => setForm({ ...form, forma_pagamento: v === "__none" ? null : (v as FormaPagamento) })}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
