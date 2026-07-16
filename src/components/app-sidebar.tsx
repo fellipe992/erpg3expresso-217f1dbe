@@ -50,8 +50,10 @@ const financeiro: NavItem[] = [
 ];
 
 const operacional: NavItem[] = [
-  { label: "Veículos", to: "/app/veiculos", icon: Truck, soon: true },
-  { label: "Motoristas", to: "/app/motoristas", icon: Users, soon: true },
+  { label: "Veículos", to: "/app/veiculos", icon: Truck },
+  { label: "Motoristas", to: "/app/motoristas", icon: Users },
+  { label: "Clientes", to: "/app/clientes", icon: Building2 },
+  { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
   { label: "Viagens", to: "/app/viagens", icon: MapPin, soon: true },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel, soon: true },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench, soon: true },
