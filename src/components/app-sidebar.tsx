@@ -54,7 +54,7 @@ const operacional: NavItem[] = [
   { label: "Motoristas", to: "/app/motoristas", icon: Users },
   { label: "Clientes", to: "/app/clientes", icon: Building2 },
   { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
-  { label: "Viagens", to: "/app/viagens", icon: MapPin, soon: true },
+  { label: "Viagens", to: "/app/viagens", icon: MapPin },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel, soon: true },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench, soon: true },
 ];
