@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          ativo: boolean
+          cep: string | null
+          cidade: string | null
+          cnpj_cpf: string | null
+          contato_nome: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          inscricao_estadual: string | null
+          nome_fantasia: string | null
+          observacoes: string | null
+          razao_social: string
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["pessoa_tipo"]
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cep?: string | null
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social: string
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["pessoa_tipo"]
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cep?: string | null
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          inscricao_estadual?: string | null
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["pessoa_tipo"]
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           cnpj: string | null
@@ -50,6 +110,120 @@ export type Database = {
           razao_social?: string | null
           telefone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          ativo: boolean
+          categoria: Database["public"]["Enums"]["fornecedor_categoria"]
+          cidade: string | null
+          cnpj_cpf: string | null
+          contato_nome: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome_fantasia: string | null
+          observacoes: string | null
+          razao_social: string
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["pessoa_tipo"]
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["fornecedor_categoria"]
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social: string
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["pessoa_tipo"]
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: Database["public"]["Enums"]["fornecedor_categoria"]
+          cidade?: string | null
+          cnpj_cpf?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome_fantasia?: string | null
+          observacoes?: string | null
+          razao_social?: string
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["pessoa_tipo"]
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      motoristas: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          cnh: string | null
+          cnh_categoria: string | null
+          cnh_validade: string | null
+          cpf: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          uf: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          cnh?: string | null
+          cnh_categoria?: string | null
+          cnh_validade?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          cnh?: string | null
+          cnh_categoria?: string | null
+          cnh_validade?: string | null
+          cpf?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
+          uf?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -104,6 +278,57 @@ export type Database = {
         }
         Relationships: []
       }
+      veiculos: {
+        Row: {
+          ano: number | null
+          ativo: boolean
+          capacidade_kg: number | null
+          chassi: string | null
+          cor: string | null
+          created_at: string
+          id: string
+          marca: string | null
+          modelo: string
+          observacoes: string | null
+          placa: string
+          renavam: string | null
+          tipo: Database["public"]["Enums"]["veiculo_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          ano?: number | null
+          ativo?: boolean
+          capacidade_kg?: number | null
+          chassi?: string | null
+          cor?: string | null
+          created_at?: string
+          id?: string
+          marca?: string | null
+          modelo: string
+          observacoes?: string | null
+          placa: string
+          renavam?: string | null
+          tipo?: Database["public"]["Enums"]["veiculo_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          ano?: number | null
+          ativo?: boolean
+          capacidade_kg?: number | null
+          chassi?: string | null
+          cor?: string | null
+          created_at?: string
+          id?: string
+          marca?: string | null
+          modelo?: string
+          observacoes?: string | null
+          placa?: string
+          renavam?: string | null
+          tipo?: Database["public"]["Enums"]["veiculo_tipo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -123,6 +348,23 @@ export type Database = {
     }
     Enums: {
       app_role: "administrador" | "financeiro" | "gestor" | "motorista"
+      fornecedor_categoria:
+        | "combustivel"
+        | "manutencao"
+        | "pneu"
+        | "seguro"
+        | "peca"
+        | "servico"
+        | "outros"
+      pessoa_tipo: "pf" | "pj"
+      veiculo_tipo:
+        | "cavalo"
+        | "carreta"
+        | "truck"
+        | "toco"
+        | "van"
+        | "utilitario"
+        | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -251,6 +493,25 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["administrador", "financeiro", "gestor", "motorista"],
+      fornecedor_categoria: [
+        "combustivel",
+        "manutencao",
+        "pneu",
+        "seguro",
+        "peca",
+        "servico",
+        "outros",
+      ],
+      pessoa_tipo: ["pf", "pj"],
+      veiculo_tipo: [
+        "cavalo",
+        "carreta",
+        "truck",
+        "toco",
+        "van",
+        "utilitario",
+        "outro",
+      ],
     },
   },
 } as const

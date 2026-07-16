@@ -50,8 +50,10 @@ const financeiro: NavItem[] = [
 ];
 
 const operacional: NavItem[] = [
-  { label: "Veículos", to: "/app/veiculos", icon: Truck, soon: true },
-  { label: "Motoristas", to: "/app/motoristas", icon: Users, soon: true },
+  { label: "Veículos", to: "/app/veiculos", icon: Truck },
+  { label: "Motoristas", to: "/app/motoristas", icon: Users },
+  { label: "Clientes", to: "/app/clientes", icon: Building2 },
+  { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
   { label: "Viagens", to: "/app/viagens", icon: MapPin, soon: true },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel, soon: true },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench, soon: true },
@@ -97,7 +99,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.1 · Fase 1
+            v0.2 · Fase 2
           </div>
         )}
       </SidebarFooter>

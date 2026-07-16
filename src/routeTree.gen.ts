@@ -14,7 +14,11 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
+import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
+import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
+import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
+import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -40,24 +44,56 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppVeiculosRoute =
+  AuthenticatedAppVeiculosRouteImport.update({
+    id: '/app/veiculos',
+    path: '/app/veiculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppMotoristasRoute =
+  AuthenticatedAppMotoristasRouteImport.update({
+    id: '/app/motoristas',
+    path: '/app/motoristas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppFornecedoresRoute =
+  AuthenticatedAppFornecedoresRouteImport.update({
+    id: '/app/fornecedores',
+    path: '/app/fornecedores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppEmpresaRoute = AuthenticatedAppEmpresaRouteImport.update({
   id: '/app/empresa',
   path: '/app/empresa',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppClientesRoute =
+  AuthenticatedAppClientesRouteImport.update({
+    id: '/app/clientes',
+    path: '/app/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRoutesById {
@@ -66,21 +102,47 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/reset-password' | '/app/empresa' | '/app/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/app/clientes'
+    | '/app/empresa'
+    | '/app/fornecedores'
+    | '/app/motoristas'
+    | '/app/veiculos'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/app/empresa' | '/app'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/app/clientes'
+    | '/app/empresa'
+    | '/app/fornecedores'
+    | '/app/motoristas'
+    | '/app/veiculos'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/app/clientes'
     | '/_authenticated/app/empresa'
+    | '/_authenticated/app/fornecedores'
+    | '/_authenticated/app/motoristas'
+    | '/_authenticated/app/veiculos'
     | '/_authenticated/app/'
   fileRoutesById: FileRoutesById
 }
@@ -128,6 +190,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/veiculos': {
+      id: '/_authenticated/app/veiculos'
+      path: '/app/veiculos'
+      fullPath: '/app/veiculos'
+      preLoaderRoute: typeof AuthenticatedAppVeiculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/motoristas': {
+      id: '/_authenticated/app/motoristas'
+      path: '/app/motoristas'
+      fullPath: '/app/motoristas'
+      preLoaderRoute: typeof AuthenticatedAppMotoristasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/fornecedores': {
+      id: '/_authenticated/app/fornecedores'
+      path: '/app/fornecedores'
+      fullPath: '/app/fornecedores'
+      preLoaderRoute: typeof AuthenticatedAppFornecedoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/empresa': {
       id: '/_authenticated/app/empresa'
       path: '/app/empresa'
@@ -135,16 +218,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppEmpresaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/clientes': {
+      id: '/_authenticated/app/clientes'
+      path: '/app/clientes'
+      fullPath: '/app/clientes'
+      preLoaderRoute: typeof AuthenticatedAppClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
+  AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
+  AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
+  AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
+  AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
+  AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
+  AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
 }
 
