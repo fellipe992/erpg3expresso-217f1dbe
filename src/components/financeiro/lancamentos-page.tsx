@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
+
 export type Lancamento = {
   id: string;
   tipo: "receber" | "pagar";
@@ -25,7 +27,7 @@ export type Lancamento = {
   data_emissao: string;
   data_vencimento: string;
   data_pagamento: string | null;
-  forma_pagamento: string | null;
+  forma_pagamento: FormaPagamento | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
   cliente_id: string | null;
   fornecedor_id: string | null;
