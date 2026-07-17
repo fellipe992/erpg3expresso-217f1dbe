@@ -101,8 +101,8 @@ function RelatoriosPage() {
           .gte("created_at", desde),
         supabase.from("motoristas").select("id, nome"),
         supabase.from("veiculos").select("id, placa, modelo"),
-        supabase.from("clientes").select("id, nome"),
-        supabase.from("fornecedores").select("id, nome"),
+        supabase.from("clientes").select("id, razao_social"),
+        supabase.from("fornecedores").select("id, razao_social"),
       ]);
       return {
         lancamentos: (lanc.data ?? []) as Lanc[],
@@ -114,8 +114,8 @@ function RelatoriosPage() {
             `${v.placa}${v.modelo ? ` · ${v.modelo}` : ""}`,
           ]),
         ),
-        clientes: new Map(((cli.data ?? []) as { id: string; nome: string }[]).map((c) => [c.id, c.nome])),
-        fornecedores: new Map(((forn.data ?? []) as { id: string; nome: string }[]).map((f) => [f.id, f.nome])),
+        clientes: new Map(((cli.data ?? []) as { id: string; razao_social: string }[]).map((c) => [c.id, c.razao_social])),
+        fornecedores: new Map(((forn.data ?? []) as { id: string; razao_social: string }[]).map((f) => [f.id, f.razao_social])),
       };
     },
   });
