@@ -97,7 +97,7 @@ function RelatoriosPage() {
           .gte("data_vencimento", desde),
         supabase
           .from("viagens")
-          .select("id, status, data_saida, data_chegada, km_saida, km_chegada, valor_frete, motorista_id, veiculo_id, cliente_id")
+          .select("id, status, data_saida, data_chegada, km_inicial, km_final, valor_frete, motorista_id, veiculo_id, cliente_id")
           .gte("created_at", desde),
         supabase.from("motoristas").select("id, nome"),
         supabase.from("veiculos").select("id, placa, modelo"),
@@ -125,7 +125,7 @@ function RelatoriosPage() {
     const receitas = data.lancamentos.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.valor), 0);
     const despesas = data.lancamentos.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.valor), 0);
     const kmTotal = data.viagens.reduce(
-      (s, v) => s + Math.max(0, (v.km_chegada ?? 0) - (v.km_saida ?? 0)),
+      (s, v) => s + Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
       0,
     );
     const concluidas = data.viagens.filter((v) => v.status === "concluida").length;
@@ -140,7 +140,7 @@ function RelatoriosPage() {
       const nome = data.motoristas.get(v.motorista_id) ?? "—";
       const cur = map.get(v.motorista_id) ?? { nome, viagens: 0, km: 0, frete: 0 };
       cur.viagens++;
-      cur.km += Math.max(0, (v.km_chegada ?? 0) - (v.km_saida ?? 0));
+      cur.km += Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0));
       cur.frete += Number(v.valor_frete ?? 0);
       map.set(v.motorista_id, cur);
     }
@@ -155,7 +155,7 @@ function RelatoriosPage() {
       const nome = data.veiculos.get(v.veiculo_id) ?? "—";
       const cur = map.get(v.veiculo_id) ?? { nome, viagens: 0, km: 0 };
       cur.viagens++;
-      cur.km += Math.max(0, (v.km_chegada ?? 0) - (v.km_saida ?? 0));
+      cur.km += Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0));
       map.set(v.veiculo_id, cur);
     }
     return Array.from(map.values()).sort((a, b) => b.km - a.km);
@@ -217,9 +217,9 @@ function RelatoriosPage() {
         v.status,
         v.data_saida ?? "",
         v.data_chegada ?? "",
-        v.km_saida ?? "",
-        v.km_chegada ?? "",
-        Math.max(0, (v.km_chegada ?? 0) - (v.km_saida ?? 0)),
+        v.km_inicial ?? "",
+        v.km_final ?? "",
+        Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
         Number(v.valor_frete ?? 0).toFixed(2),
         data.motoristas.get(v.motorista_id ?? "") ?? "",
         data.veiculos.get(v.veiculo_id ?? "") ?? "",
