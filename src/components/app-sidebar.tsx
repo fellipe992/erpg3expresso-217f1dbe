@@ -13,6 +13,7 @@ import {
   BarChart3,
   Building2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import {
@@ -60,7 +61,8 @@ const operacional: NavItem[] = [
 ];
 
 const gestao: NavItem[] = [
-  { label: "Relatórios", to: "/app/relatorios", icon: BarChart3, soon: true },
+  { label: "Relatórios", to: "/app/relatorios", icon: BarChart3 },
+  { label: "Assistente IA", to: "/app/assistente", icon: Sparkles },
   { label: "Documentos", to: "/app/documentos", icon: FileText, soon: true },
 ];
 
@@ -99,7 +101,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.4 · Fase 4
+            v0.5 · Fase 5
           </div>
         )}
       </SidebarFooter>
