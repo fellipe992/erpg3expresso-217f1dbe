@@ -55,8 +55,8 @@ type Viagem = {
   status: string;
   data_saida: string | null;
   data_chegada: string | null;
-  km_saida: number | null;
-  km_chegada: number | null;
+  km_inicial: number | null;
+  km_final: number | null;
   valor_frete: number | null;
   motorista_id: string | null;
   veiculo_id: string | null;
