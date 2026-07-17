@@ -17,6 +17,7 @@ import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppViagensRouteImport } from './routes/_authenticated/app/viagens'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
+import { Route as AuthenticatedAppRelatoriosRouteImport } from './routes/_authenticated/app/relatorios'
 import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
 import { Route as AuthenticatedAppPagarRouteImport } from './routes/_authenticated/app/pagar'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
@@ -64,6 +65,12 @@ const AuthenticatedAppVeiculosRoute =
   AuthenticatedAppVeiculosRouteImport.update({
     id: '/app/veiculos',
     path: '/app/veiculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppRelatoriosRoute =
+  AuthenticatedAppRelatoriosRouteImport.update({
+    id: '/app/relatorios',
+    path: '/app/relatorios',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppReceberRoute = AuthenticatedAppReceberRouteImport.update({
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
+  '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -141,6 +149,7 @@ export interface FileRoutesByTo {
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
+  '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/app': typeof AuthenticatedAppIndexRoute
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/_authenticated/app/pagar': typeof AuthenticatedAppPagarRoute
   '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
+  '/_authenticated/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/_authenticated/app/viagens': typeof AuthenticatedAppViagensRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/app/motoristas'
     | '/app/pagar'
     | '/app/receber'
+    | '/app/relatorios'
     | '/app/veiculos'
     | '/app/viagens'
     | '/app/'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/app/motoristas'
     | '/app/pagar'
     | '/app/receber'
+    | '/app/relatorios'
     | '/app/veiculos'
     | '/app/viagens'
     | '/app'
@@ -214,6 +226,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/motoristas'
     | '/_authenticated/app/pagar'
     | '/_authenticated/app/receber'
+    | '/_authenticated/app/relatorios'
     | '/_authenticated/app/veiculos'
     | '/_authenticated/app/viagens'
     | '/_authenticated/app/'
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/app/veiculos'
       fullPath: '/app/veiculos'
       preLoaderRoute: typeof AuthenticatedAppVeiculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/relatorios': {
+      id: '/_authenticated/app/relatorios'
+      path: '/app/relatorios'
+      fullPath: '/app/relatorios'
+      preLoaderRoute: typeof AuthenticatedAppRelatoriosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/receber': {
@@ -367,6 +387,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
   AuthenticatedAppPagarRoute: typeof AuthenticatedAppPagarRoute
   AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
+  AuthenticatedAppRelatoriosRoute: typeof AuthenticatedAppRelatoriosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppViagensRoute: typeof AuthenticatedAppViagensRouteWithChildren
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -380,6 +401,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
   AuthenticatedAppPagarRoute: AuthenticatedAppPagarRoute,
   AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,
+  AuthenticatedAppRelatoriosRoute: AuthenticatedAppRelatoriosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppViagensRoute: AuthenticatedAppViagensRouteWithChildren,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
