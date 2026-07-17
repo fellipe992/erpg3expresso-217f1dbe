@@ -13,6 +13,7 @@ import {
   BarChart3,
   Building2,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 import {
