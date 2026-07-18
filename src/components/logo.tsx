@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useCompany, getSignedLogoUrl } from "@/hooks/use-company";
 import { cn } from "@/lib/utils";
+import g3Logo from "@/assets/g3-expresso-logo.png.asset.json";
+
 
 type Props = {
   variant?: "full" | "mark";
@@ -34,34 +36,13 @@ export function Logo({ variant = "full", className, size = "md" }: Props) {
     );
   }
 
-  // Fallback wordmark tipográfico
-  const textSize = size === "lg" ? "text-2xl" : size === "sm" ? "text-sm" : "text-base";
-  if (variant === "mark") {
-    return (
-      <div
-        className={cn(
-          "grid place-items-center rounded-md bg-brand text-brand-foreground font-display font-bold",
-          size === "lg" ? "size-12 text-xl" : size === "sm" ? "size-7 text-xs" : "size-9 text-sm",
-          className,
-        )}
-      >
-        G3
-      </div>
-    );
-  }
+  // Fallback: usa o logo oficial embutido
   return (
-    <div className={cn("flex items-center gap-2 font-display font-bold tracking-tight", textSize, className)}>
-      <span
-        className={cn(
-          "grid place-items-center rounded-md bg-brand text-brand-foreground",
-          size === "lg" ? "size-10 text-lg" : size === "sm" ? "size-6 text-xs" : "size-8 text-sm",
-        )}
-      >
-        G3
-      </span>
-      <span className="uppercase tracking-[0.14em]">
-        <span className="text-foreground">Expresso</span>
-      </span>
-    </div>
+    <img
+      src={g3Logo.url}
+      alt={company?.nome_fantasia ?? "G3 Expresso"}
+      className={cn(heights[size], "w-auto object-contain", className)}
+    />
   );
+
 }
