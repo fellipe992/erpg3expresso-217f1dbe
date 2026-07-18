@@ -62,6 +62,19 @@ function MotoristasPage() {
     },
   });
 
+  const { data: veiculos = [] } = useQuery({
+    queryKey: ["veiculos-opt"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("veiculos")
+        .select("id, placa, modelo, ativo")
+        .eq("ativo", true)
+        .order("placa");
+      if (error) throw error;
+      return data as (VeiculoOpt & { ativo: boolean })[];
+    },
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       if (!form.nome?.trim()) throw new Error("Nome é obrigatório");
