@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,6 +24,7 @@ export type Lancamento = {
   tipo: "receber" | "pagar";
   descricao: string;
   categoria: string | null;
+  centro_custo: string | null;
   valor: number;
   data_emissao: string;
   data_vencimento: string | null;
@@ -32,10 +34,16 @@ export type Lancamento = {
   cliente_id: string | null;
   fornecedor_id: string | null;
   viagem_id: string | null;
+  veiculo_id: string | null;
+  motorista_id: string | null;
+  origem: string | null;
+  origem_id: string | null;
   numero_documento: string | null;
   observacoes: string | null;
   cliente?: { razao_social: string } | null;
   fornecedor?: { razao_social: string } | null;
+  veiculo?: { placa: string } | null;
+  motorista?: { nome: string } | null;
 };
 
 type DisplayStatus = Lancamento["status"] | "vence_hoje";
@@ -92,7 +100,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       await supabase.rpc("marcar_atrasados");
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
-        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social)")
+        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome)")
         .eq("tipo", tipo)
         .order("data_vencimento");
       if (error) throw error;
@@ -121,6 +129,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     qc.invalidateQueries({ queryKey: ["financeiro"] });
     qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
     qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
   };
 
   const save = useMutation({
@@ -143,6 +152,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
+        centro_custo: form.centro_custo?.trim() || form.categoria?.trim() || null,
+        veiculo_id: form.veiculo_id || null,
+        motorista_id: form.motorista_id || null,
+        origem: form.origem || (form.id ? undefined : "manual"),
+        origem_id: form.origem_id || (form.id ? undefined : null),
       };
 
       if (form.id) {
@@ -275,7 +289,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <TableRow>
                 <TableHead>Descrição</TableHead>
                 <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead>Origem</TableHead>
+                <TableHead>Centro de custo</TableHead>
+                <TableHead>Veículo / Motorista</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -288,13 +304,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <TableCell className="max-w-xs">
                     <div className="font-medium">{l.descricao}</div>
                     {l.numero_documento && (
-                      <div className="text-xs text-muted-foreground">Doc: {l.numero_documento}</div>
+                      <div className="text-xs text-muted-foreground">OS/Doc: {l.numero_documento}</div>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{l.categoria ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {l.origem ? <Badge variant="outline" className="capitalize">{l.origem}</Badge> : <span className="text-muted-foreground">manual</span>}
+                  </TableCell>
+                  <TableCell className="text-xs">{l.centro_custo ?? l.categoria ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {l.veiculo?.placa && <div className="font-mono">{l.veiculo.placa}</div>}
+                    {l.motorista?.nome && <div className="text-muted-foreground">{l.motorista.nome}</div>}
+                    {!l.veiculo?.placa && !l.motorista?.nome && "—"}
+                  </TableCell>
                   <TableCell className="text-sm">{fmtDate(l.data_vencimento)}</TableCell>
                   <TableCell className="text-right font-mono font-semibold">
                     {fmtBRL(Number(l.valor))}
@@ -303,6 +327,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {(() => { const ds = displayStatus(l); return <Badge variant={STATUS_META[ds].variant}>{STATUS_META[ds].label}</Badge>; })()}
                   </TableCell>
                   <TableCell className="text-right">
+                    <OrigemButton l={l} />
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
                       <Button
                         variant="ghost"
@@ -452,5 +477,23 @@ function ResumoCard({ label, value, tone }: { label: string; value: string; tone
       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className={`mt-1 font-display text-lg font-bold ${color}`}>{value}</div>
     </Card>
+  );
+}
+
+function OrigemButton({ l }: { l: Lancamento }) {
+  if (!l.origem || !l.origem_id) return null;
+  let to: string | null = null;
+  const params: Record<string, string> = {};
+  if (l.origem === "viagem") { to = "/app/viagens/$id"; params.id = l.origem_id; }
+  else if (l.origem === "abastecimento") to = "/app/abastecimentos";
+  else if (l.origem === "manutencao") to = "/app/manutencoes";
+  else if (l.viagem_id) { to = "/app/viagens/$id"; params.id = l.viagem_id; }
+  if (!to) return null;
+  return (
+    <Button asChild variant="ghost" size="icon" title="Visualizar origem">
+      <Link to={to} params={params as never}>
+        <ExternalLink className="size-4" />
+      </Link>
+    </Button>
   );
 }

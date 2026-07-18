@@ -23,6 +23,7 @@ export type Database = {
           created_by: string | null
           custo_por_km: number | null
           data: string
+          forma_pagamento_operacional: string | null
           hora: string | null
           id: string
           km_atual: number
@@ -35,6 +36,7 @@ export type Database = {
           valor_litro: number
           valor_total: number
           veiculo_id: string
+          viagem_id: string | null
         }
         Insert: {
           combustivel?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data: string
+          forma_pagamento_operacional?: string | null
           hora?: string | null
           id?: string
           km_atual: number
@@ -56,6 +59,7 @@ export type Database = {
           valor_litro: number
           valor_total: number
           veiculo_id: string
+          viagem_id?: string | null
         }
         Update: {
           combustivel?: string | null
@@ -65,6 +69,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data?: string
+          forma_pagamento_operacional?: string | null
           hora?: string | null
           id?: string
           km_atual?: number
@@ -77,6 +82,7 @@ export type Database = {
           valor_litro?: number
           valor_total?: number
           veiculo_id?: string
+          viagem_id?: string | null
         }
         Relationships: [
           {
@@ -91,6 +97,13 @@ export type Database = {
             columns: ["veiculo_id"]
             isOneToOne: false
             referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abastecimentos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
             referencedColumns: ["id"]
           },
         ]
@@ -247,6 +260,7 @@ export type Database = {
       financeiro_lancamentos: {
         Row: {
           categoria: string | null
+          centro_custo: string | null
           cliente_id: string | null
           created_at: string
           created_by: string | null
@@ -257,16 +271,21 @@ export type Database = {
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
           fornecedor_id: string | null
           id: string
+          motorista_id: string | null
           numero_documento: string | null
           observacoes: string | null
+          origem: string | null
+          origem_id: string | null
           status: Database["public"]["Enums"]["financeiro_status"]
           tipo: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at: string
           valor: number
+          veiculo_id: string | null
           viagem_id: string | null
         }
         Insert: {
           categoria?: string | null
+          centro_custo?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -279,16 +298,21 @@ export type Database = {
             | null
           fornecedor_id?: string | null
           id?: string
+          motorista_id?: string | null
           numero_documento?: string | null
           observacoes?: string | null
+          origem?: string | null
+          origem_id?: string | null
           status?: Database["public"]["Enums"]["financeiro_status"]
           tipo: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at?: string
           valor: number
+          veiculo_id?: string | null
           viagem_id?: string | null
         }
         Update: {
           categoria?: string | null
+          centro_custo?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -301,12 +325,16 @@ export type Database = {
             | null
           fornecedor_id?: string | null
           id?: string
+          motorista_id?: string | null
           numero_documento?: string | null
           observacoes?: string | null
+          origem?: string | null
+          origem_id?: string | null
           status?: Database["public"]["Enums"]["financeiro_status"]
           tipo?: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at?: string
           valor?: number
+          veiculo_id?: string | null
           viagem_id?: string | null
         }
         Relationships: [
@@ -322,6 +350,20 @@ export type Database = {
             columns: ["fornecedor_id"]
             isOneToOne: false
             referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
             referencedColumns: ["id"]
           },
           {
@@ -399,6 +441,7 @@ export type Database = {
           fornecedor_id: string | null
           id: string
           km_atual: number | null
+          motorista_id: string | null
           nota_path: string | null
           observacoes: string | null
           oficina: string | null
@@ -408,6 +451,7 @@ export type Database = {
           updated_at: string
           valor: number
           veiculo_id: string
+          viagem_id: string | null
         }
         Insert: {
           created_at?: string
@@ -417,6 +461,7 @@ export type Database = {
           fornecedor_id?: string | null
           id?: string
           km_atual?: number | null
+          motorista_id?: string | null
           nota_path?: string | null
           observacoes?: string | null
           oficina?: string | null
@@ -426,6 +471,7 @@ export type Database = {
           updated_at?: string
           valor?: number
           veiculo_id: string
+          viagem_id?: string | null
         }
         Update: {
           created_at?: string
@@ -435,6 +481,7 @@ export type Database = {
           fornecedor_id?: string | null
           id?: string
           km_atual?: number | null
+          motorista_id?: string | null
           nota_path?: string | null
           observacoes?: string | null
           oficina?: string | null
@@ -444,6 +491,7 @@ export type Database = {
           updated_at?: string
           valor?: number
           veiculo_id?: string
+          viagem_id?: string | null
         }
         Relationships: [
           {
@@ -454,10 +502,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "manutencoes_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "manutencoes_veiculo_id_fkey"
             columns: ["veiculo_id"]
             isOneToOne: false
             referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
             referencedColumns: ["id"]
           },
         ]

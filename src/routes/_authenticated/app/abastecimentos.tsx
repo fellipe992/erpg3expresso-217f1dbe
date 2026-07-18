@@ -39,9 +39,17 @@ type Abast = {
   custo_por_km: number | null;
   observacoes: string | null;
   comprovante_path: string | null;
+  forma_pagamento_operacional: string | null;
 };
 
 const COMBUSTIVEIS = ["Diesel S10", "Diesel S500", "Arla 32", "Gasolina", "Etanol", "GNV"];
+const FORMAS_PAGTO = [
+  { value: "convenio", label: "Convênio (vence em 30 dias)" },
+  { value: "cartao", label: "Cartão (vencimento na fatura)" },
+  { value: "pix", label: "PIX" },
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "outro", label: "Outro" },
+];
 
 function AbastecimentosPage() {
   const { user, role } = useAuth();
@@ -139,6 +147,7 @@ function AbastecimentosPage() {
         km_atual: Number(form.km_atual),
         observacoes: form.observacoes || null,
         comprovante_path,
+        forma_pagamento_operacional: form.forma_pagamento_operacional || null,
         created_by: user!.id,
       };
       if (form.id) {
@@ -151,7 +160,7 @@ function AbastecimentosPage() {
     },
     onSuccess: () => {
       toast.success(form.id ? "Abastecimento atualizado" : "Abastecimento registrado");
-      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
       setOpen(false);
       setForm(emptyForm);
       setFile(null);
@@ -166,7 +175,7 @@ function AbastecimentosPage() {
     },
     onSuccess: () => {
       toast.success("Removido");
-      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -307,6 +316,16 @@ function AbastecimentosPage() {
             <F label="Total (R$)"><Input type="number" step="0.01" value={String(total)} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} placeholder="Auto" /></F>
             <F label="KM atual *"><Input type="number" step="0.1" value={form.km_atual ?? ""} onChange={(e) => setForm({ ...form, km_atual: Number(e.target.value) })} /></F>
 
+            <div className="md:col-span-2">
+              <F label="Forma de pagamento *">
+                <Select value={form.forma_pagamento_operacional ?? ""} onValueChange={(v) => setForm({ ...form, forma_pagamento_operacional: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {FORMAS_PAGTO.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </F>
+            </div>
             <div className="md:col-span-2">
               <F label="Comprovante (foto ou PDF)">
                 <div className="flex items-center gap-2">

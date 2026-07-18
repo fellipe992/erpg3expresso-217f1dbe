@@ -101,6 +101,19 @@ function ViagemDetalheePage() {
     },
   });
 
+  const { data: movimentacoes = [] } = useQuery({
+    queryKey: ["viagem-financeiro", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_lancamentos")
+        .select("id, tipo, descricao, categoria, centro_custo, valor, data_emissao, data_vencimento, status, origem")
+        .eq("viagem_id", id)
+        .order("data_emissao", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const startTrip = useMutation({
     mutationFn: async (km: number) => {
       const { error } = await supabase
@@ -111,8 +124,8 @@ function ViagemDetalheePage() {
     },
     onSuccess: () => {
       toast.success("Viagem iniciada");
-      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -127,8 +140,8 @@ function ViagemDetalheePage() {
     },
     onSuccess: () => {
       toast.success("Viagem concluída");
-      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -267,6 +280,35 @@ function ViagemDetalheePage() {
               <ChecklistCard key={c.id} c={c} />
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Movimentações financeiras da viagem */}
+      <div className="space-y-3">
+        <h2 className="font-display text-lg font-bold">Movimentações Financeiras da Viagem</h2>
+        {movimentacoes.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada a esta viagem.</Card>
+        ) : (
+          <Card className="divide-y divide-border/60">
+            {movimentacoes.map((m: any) => (
+              <div key={m.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={m.tipo === "receber" ? "default" : "secondary"} className="capitalize">
+                      {m.origem ?? m.tipo}
+                    </Badge>
+                    <span className="truncate font-medium">{m.descricao}</span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {m.centro_custo ?? m.categoria ?? "—"} · {m.data_emissao ? new Date(m.data_emissao + "T00:00:00").toLocaleDateString("pt-BR") : "—"} · {m.status}
+                  </div>
+                </div>
+                <div className={`font-mono font-semibold ${m.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
+                  {m.tipo === "receber" ? "+" : "-"} {Number(m.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </div>
+              </div>
+            ))}
+          </Card>
         )}
       </div>
 
