@@ -198,7 +198,7 @@ function RelatoriosPage() {
         l.tipo,
         Number(l.valor).toFixed(2),
         l.status,
-        l.data_vencimento,
+        l.data_vencimento ?? "",
         l.data_pagamento ?? "",
         l.categoria ?? "",
         l.tipo === "receber"
