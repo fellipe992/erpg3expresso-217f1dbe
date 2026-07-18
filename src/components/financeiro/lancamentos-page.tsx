@@ -394,20 +394,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <Input value={form.descricao ?? ""} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
               </F>
             </div>
+            <div className="md:col-span-2">
+              <PlanoContaSelector
+                value={plano}
+                onChange={setPlano}
+                filterTipo={isReceber ? "receita" : "despesa"}
+                required
+              />
+            </div>
             <F label="Valor (R$) *">
               <Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setForm({ ...form, valor: e.target.value as unknown as number })} />
-            </F>
-            <F label="Categoria">
-              <Select
-                value={form.categoria ?? "__none"}
-                onValueChange={(v) => setForm({ ...form, categoria: v === "__none" ? null : v })}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">Sem categoria</SelectItem>
-                  {categoriasBase.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
             </F>
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
