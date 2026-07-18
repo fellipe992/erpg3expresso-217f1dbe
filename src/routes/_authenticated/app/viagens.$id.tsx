@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -56,9 +57,11 @@ function ViagemDetalheePage() {
   const { id } = Route.useParams();
   const { role } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
   const isStaff = canWrite;
+
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["viagem", id] });
@@ -237,6 +240,7 @@ function ViagemDetalheePage() {
           viagemId={id}
           kmSugerido={viagem.km_inicial ?? null}
           onDone={invalidateAll}
+          autoOpen={location.hash === "iniciar"}
         />
       )}
 
@@ -266,9 +270,11 @@ function ViagemDetalheePage() {
             viagemId={id}
             kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
             onDone={invalidateAll}
+            autoOpen={location.hash === "finalizar"}
           />
         </Card>
       )}
+
 
       {/* Checklists */}
       {checklists.length > 0 && (
@@ -465,14 +471,22 @@ function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }
 }
 
 // ============ Checklist de Saída ============
-function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone }: { viagemId: string; kmSugerido: number | null; onDone: () => void }) {
+function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const openedOnce = useRef(false);
+  useEffect(() => {
+    if (autoOpen && !openedOnce.current) {
+      openedOnce.current = true;
+      setOpen(true);
+    }
+  }, [autoOpen]);
   const [pneus, setPneus] = useState<boolean | null>(null);
   const [pneusFotos, setPneusFotos] = useState<{ path: string; mime: string; name: string }[]>([]);
   const [oleo, setOleo] = useState<"ok" | "verificar" | null>(null);
   const [agua, setAgua] = useState<"ok" | "completar" | null>(null);
   const [freios, setFreios] = useState<"ok" | "manutencao" | null>(null);
   const [tacografo, setTacografo] = useState<"ok" | "problema" | null>(null);
+
   const [obs, setObs] = useState("");
   const [km, setKm] = useState<string>(kmSugerido?.toString() ?? "");
   const [salvando, setSalvando] = useState(false);
@@ -762,8 +776,16 @@ function QuickPhotoUpload({ viagemId, onDone }: { viagemId: string; onDone: () =
 }
 
 // ============ Finalizar Viagem ============
-function FinalizarViagemDialog({ viagemId, kmInicial, onDone }: { viagemId: string; kmInicial: number | null; onDone: () => void }) {
+function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viagemId: string; kmInicial: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const openedOnce = useRef(false);
+  useEffect(() => {
+    if (autoOpen && !openedOnce.current) {
+      openedOnce.current = true;
+      setOpen(true);
+    }
+  }, [autoOpen]);
+
   const [dataEnc, setDataEnc] = useState(() => {
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
