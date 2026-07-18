@@ -72,12 +72,16 @@ function AbastecimentosPage() {
     },
   });
 
-  const emptyForm: Partial<Abast> = useMemo(() => ({
-    data: new Date().toISOString().slice(0, 10),
-    veiculo_id: isMotorista ? meMotorista?.veiculo_id ?? "" : "",
-    motorista_id: isMotorista ? meMotorista?.id ?? null : null,
-    combustivel: "Diesel S10",
-  }), [isMotorista, meMotorista]);
+  const emptyForm: Partial<Abast> = useMemo(() => {
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return {
+      data: localDate,
+      veiculo_id: isMotorista ? meMotorista?.veiculo_id ?? "" : "",
+      motorista_id: isMotorista ? meMotorista?.id ?? null : null,
+      combustivel: "Diesel S10",
+    };
+  }, [isMotorista, meMotorista]);
 
   const [form, setForm] = useState<Partial<Abast>>(emptyForm);
 
