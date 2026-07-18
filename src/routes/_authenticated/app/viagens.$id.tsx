@@ -38,6 +38,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadFotos } from "@/components/viagem/upload-fotos";
 
@@ -473,11 +483,12 @@ function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }
 // ============ Checklist de Saída ============
 function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const openedOnce = useRef(false);
   useEffect(() => {
     if (autoOpen && !openedOnce.current) {
       openedOnce.current = true;
-      setOpen(true);
+      setConfirmOpen(true);
     }
   }, [autoOpen]);
   const [pneus, setPneus] = useState<boolean | null>(null);
@@ -542,9 +553,31 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="w-full bg-brand py-6 text-base hover:bg-brand/90 md:w-auto">
+      <Button onClick={() => setConfirmOpen(true)} className="w-full bg-brand py-6 text-base hover:bg-brand/90 md:w-auto">
         <Play className="mr-2 size-5" /> Iniciar Viagem
       </Button>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Iniciar esta viagem?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você vai abrir o checklist de saída. Confirme apenas se estiver pronto para iniciar a viagem agora.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-brand text-white hover:bg-brand/90"
+              onClick={() => {
+                setConfirmOpen(false);
+                setOpen(true);
+              }}
+            >
+              Sim, iniciar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
