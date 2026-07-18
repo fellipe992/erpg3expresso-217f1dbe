@@ -236,7 +236,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           tipo,
           status: "pendente",
           data_emissao: new Date().toISOString().slice(0, 10),
-          data_vencimento: new Date().toISOString().slice(0, 10),
         });
         setOpen(true);
       }}
