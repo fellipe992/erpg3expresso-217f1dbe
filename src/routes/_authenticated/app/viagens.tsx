@@ -410,7 +410,7 @@ function MotoristaViagensView({
                     className="w-full bg-brand text-white hover:bg-brand/90"
                     size="sm"
                   >
-                    <Link to="/app/viagens/$id" params={{ id: v.id }} search={{ iniciar: 1 } as never}>
+                    <Link to="/app/viagens/$id" params={{ id: v.id }} hash="iniciar">
                       <Play className="mr-2 size-4" /> Iniciar viagem
                     </Link>
                   </Button>
