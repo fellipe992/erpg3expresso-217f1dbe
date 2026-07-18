@@ -24,6 +24,7 @@ export type Lancamento = {
   tipo: "receber" | "pagar";
   descricao: string;
   categoria: string | null;
+  centro_custo: string | null;
   valor: number;
   data_emissao: string;
   data_vencimento: string | null;
@@ -33,10 +34,16 @@ export type Lancamento = {
   cliente_id: string | null;
   fornecedor_id: string | null;
   viagem_id: string | null;
+  veiculo_id: string | null;
+  motorista_id: string | null;
+  origem: string | null;
+  origem_id: string | null;
   numero_documento: string | null;
   observacoes: string | null;
   cliente?: { razao_social: string } | null;
   fornecedor?: { razao_social: string } | null;
+  veiculo?: { placa: string } | null;
+  motorista?: { nome: string } | null;
 };
 
 type DisplayStatus = Lancamento["status"] | "vence_hoje";
