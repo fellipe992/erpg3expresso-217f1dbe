@@ -483,11 +483,12 @@ function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }
 // ============ Checklist de Saída ============
 function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const openedOnce = useRef(false);
   useEffect(() => {
     if (autoOpen && !openedOnce.current) {
       openedOnce.current = true;
-      setOpen(true);
+      setConfirmOpen(true);
     }
   }, [autoOpen]);
   const [pneus, setPneus] = useState<boolean | null>(null);
