@@ -117,11 +117,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
   });
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       if (!form.descricao?.trim()) throw new Error("Descrição obrigatória");
       if (!form.valor || Number(form.valor) <= 0) throw new Error("Valor obrigatório");
-      if (!form.data_vencimento) throw new Error("Vencimento obrigatório");
 
       const payload = {
         tipo,
@@ -129,7 +134,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         categoria: form.categoria?.trim() || null,
         valor: Number(form.valor),
         data_emissao: form.data_emissao || new Date().toISOString().slice(0, 10),
-        data_vencimento: form.data_vencimento,
+        data_vencimento: form.data_vencimento || null,
         data_pagamento: form.data_pagamento || null,
         forma_pagamento: (form.forma_pagamento as Lancamento["forma_pagamento"]) || null,
         status: (form.status ?? "pendente") as Lancamento["status"],
@@ -151,7 +156,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success(form.id ? "Lançamento atualizado" : `Novo ${singular} registrado`);
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
     },
@@ -171,7 +176,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success(isReceber ? "Marcado como recebido" : "Marcado como pago");
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -183,7 +188,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success("Lançamento removido");
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
