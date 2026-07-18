@@ -224,7 +224,7 @@ function FinanceiroPage() {
                         <span className="truncate font-medium">{r.descricao}</span>
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        Vence em {new Date(r.data_vencimento + "T00:00:00").toLocaleDateString("pt-BR")}
+                        Vence em {new Date((r.data_vencimento ?? "") + "T00:00:00").toLocaleDateString("pt-BR")}
                       </div>
                     </div>
                     <div className={`font-mono font-semibold ${r.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
