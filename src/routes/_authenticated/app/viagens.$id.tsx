@@ -111,8 +111,8 @@ function ViagemDetalheePage() {
     },
     onSuccess: () => {
       toast.success("Viagem iniciada");
-      qc.invalidateQueries({ queryKey: ["viagem", id] });
-      qc.invalidateQueries({ queryKey: ["viagens"] });
+      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -127,8 +127,8 @@ function ViagemDetalheePage() {
     },
     onSuccess: () => {
       toast.success("Viagem concluída");
-      qc.invalidateQueries({ queryKey: ["viagem", id] });
-      qc.invalidateQueries({ queryKey: ["viagens"] });
+      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });

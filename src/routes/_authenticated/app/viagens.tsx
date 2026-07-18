@@ -130,7 +130,7 @@ function ViagensPage() {
     },
     onSuccess: () => {
       toast.success(form.id ? "Viagem atualizada" : "Viagem criada");
-      qc.invalidateQueries({ queryKey: ["viagens"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
       setOpen(false);
       setForm(emptyForm);
     },
@@ -144,7 +144,7 @@ function ViagensPage() {
     },
     onSuccess: () => {
       toast.success("Viagem removida");
-      qc.invalidateQueries({ queryKey: ["viagens"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     },
     onError: (e: Error) => toast.error("Erro ao remover", { description: e.message }),
   });

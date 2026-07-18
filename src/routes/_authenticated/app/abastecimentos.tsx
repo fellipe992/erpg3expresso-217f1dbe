@@ -151,7 +151,7 @@ function AbastecimentosPage() {
     },
     onSuccess: () => {
       toast.success(form.id ? "Abastecimento atualizado" : "Abastecimento registrado");
-      qc.invalidateQueries({ queryKey: ["abastecimentos"] });
+      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
       setOpen(false);
       setForm(emptyForm);
       setFile(null);
@@ -166,7 +166,7 @@ function AbastecimentosPage() {
     },
     onSuccess: () => {
       toast.success("Removido");
-      qc.invalidateQueries({ queryKey: ["abastecimentos"] });
+      qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
