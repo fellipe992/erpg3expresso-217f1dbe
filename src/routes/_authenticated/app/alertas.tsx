@@ -11,13 +11,12 @@ export const Route = createFileRoute("/_authenticated/app/alertas")({
   component: AlertasPage,
 });
 
-type Alerta = {
-  id: string;
-  titulo: string;
-  descricao: string;
-  tone: "warn" | "danger" | "info";
-  icon: typeof AlertCircle;
-};
+type Tone = "warn" | "danger" | "info";
+type Alerta = { id: string; titulo: string; descricao: string; tone: Tone; kind: "cnh" | "manut" };
+
+function diasAte(iso: string) {
+  return Math.round((new Date(iso).getTime() - Date.now()) / 86400000);
+}
 
 function AlertasPage() {
   const { user, role } = useAuth();
@@ -26,63 +25,67 @@ function AlertasPage() {
     queryKey: ["alertas", user?.id, role],
     enabled: !!user?.id,
     queryFn: async () => {
-      const hoje = new Date();
-      const em60 = new Date(); em60.setDate(em60.getDate() + 60);
       const alertas: Alerta[] = [];
 
       if (role === "motorista") {
         const { data: mot } = await supabase
           .from("motoristas")
-          .select("id, nome, cnh_validade, veiculo:veiculos(placa, licenciamento_validade, seguro_validade)")
+          .select("id, nome, cnh_validade, veiculo_id")
           .eq("user_id", user!.id)
           .maybeSingle();
         if (mot?.cnh_validade) {
-          const d = new Date(mot.cnh_validade);
-          const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-          if (dias < 0) alertas.push({ id: "cnh", titulo: "CNH vencida", descricao: d.toLocaleDateString("pt-BR"), tone: "danger", icon: AlertCircle });
-          else if (dias < 60) alertas.push({ id: "cnh", titulo: `CNH vence em ${dias} dias`, descricao: d.toLocaleDateString("pt-BR"), tone: "warn", icon: CalendarClock });
+          const dias = diasAte(mot.cnh_validade);
+          if (dias < 60) alertas.push({
+            id: "cnh", kind: "cnh",
+            titulo: dias < 0 ? "CNH vencida" : `CNH vence em ${dias} dias`,
+            descricao: new Date(mot.cnh_validade).toLocaleDateString("pt-BR"),
+            tone: dias < 0 ? "danger" : "warn",
+          });
         }
-        const v = mot?.veiculo as { placa: string; licenciamento_validade: string | null; seguro_validade: string | null } | null;
-        if (v?.licenciamento_validade) {
-          const d = new Date(v.licenciamento_validade);
-          const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-          if (dias < 60) alertas.push({ id: "lic", titulo: `Licenciamento ${v.placa} ${dias < 0 ? "vencido" : `em ${dias}d`}`, descricao: d.toLocaleDateString("pt-BR"), tone: dias < 0 ? "danger" : "warn", icon: CalendarClock });
-        }
-        if (v?.seguro_validade) {
-          const d = new Date(v.seguro_validade);
-          const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-          if (dias < 60) alertas.push({ id: "seg", titulo: `Seguro ${v.placa} ${dias < 0 ? "vencido" : `em ${dias}d`}`, descricao: d.toLocaleDateString("pt-BR"), tone: dias < 0 ? "danger" : "warn", icon: CalendarClock });
+        if (mot?.veiculo_id) {
+          const { data: manut } = await supabase
+            .from("manutencoes")
+            .select("id, tipo, proxima_revisao_data, veiculo:veiculos(placa)")
+            .eq("veiculo_id", mot.veiculo_id)
+            .not("proxima_revisao_data", "is", null);
+          for (const m of manut ?? []) {
+            if (!m.proxima_revisao_data) continue;
+            const dias = diasAte(m.proxima_revisao_data);
+            if (dias < 30) alertas.push({
+              id: `man-${m.id}`, kind: "manut",
+              titulo: `${m.tipo} - ${(m.veiculo as { placa?: string } | null)?.placa ?? ""} ${dias < 0 ? "atrasada" : `em ${dias}d`}`,
+              descricao: new Date(m.proxima_revisao_data).toLocaleDateString("pt-BR"),
+              tone: dias < 0 ? "danger" : "warn",
+            });
+          }
         }
       } else {
-        // staff: CNHs e veículos próximos do vencimento
-        const [{ data: mots }, { data: veic }, { data: manut }] = await Promise.all([
-          supabase.from("motoristas").select("id, nome, cnh_validade").eq("ativo", true),
-          supabase.from("veiculos").select("id, placa, licenciamento_validade, seguro_validade").eq("ativo", true),
-          supabase.from("manutencoes").select("id, tipo, data_proxima, veiculo:veiculos(placa)").not("data_proxima", "is", null),
+        const [{ data: mots }, { data: manut }] = await Promise.all([
+          supabase.from("motoristas").select("id, nome, cnh_validade").eq("ativo", true).not("cnh_validade", "is", null),
+          supabase.from("manutencoes").select("id, tipo, proxima_revisao_data, veiculo:veiculos(placa)").not("proxima_revisao_data", "is", null),
         ]);
         for (const m of mots ?? []) {
           if (!m.cnh_validade) continue;
-          const d = new Date(m.cnh_validade);
-          const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-          if (dias < 60) alertas.push({ id: `cnh-${m.id}`, titulo: `CNH de ${m.nome} ${dias < 0 ? "vencida" : `vence em ${dias}d`}`, descricao: d.toLocaleDateString("pt-BR"), tone: dias < 0 ? "danger" : "warn", icon: AlertCircle });
-        }
-        for (const v of veic ?? []) {
-          for (const [campo, label] of [["licenciamento_validade", "Licenciamento"], ["seguro_validade", "Seguro"]] as const) {
-            const val = (v as unknown as Record<string, string | null>)[campo];
-            if (!val) continue;
-            const d = new Date(val);
-            const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-            if (dias < 60) alertas.push({ id: `${campo}-${v.id}`, titulo: `${label} ${v.placa} ${dias < 0 ? "vencido" : `em ${dias}d`}`, descricao: d.toLocaleDateString("pt-BR"), tone: dias < 0 ? "danger" : "warn", icon: CalendarClock });
-          }
+          const dias = diasAte(m.cnh_validade);
+          if (dias < 60) alertas.push({
+            id: `cnh-${m.id}`, kind: "cnh",
+            titulo: `CNH de ${m.nome} ${dias < 0 ? "vencida" : `vence em ${dias}d`}`,
+            descricao: new Date(m.cnh_validade).toLocaleDateString("pt-BR"),
+            tone: dias < 0 ? "danger" : "warn",
+          });
         }
         for (const m of manut ?? []) {
-          if (!m.data_proxima) continue;
-          const d = new Date(m.data_proxima);
-          const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
-          if (dias < 30) alertas.push({ id: `man-${m.id}`, titulo: `Manutenção ${m.tipo} - ${(m.veiculo as { placa?: string } | null)?.placa ?? ""} ${dias < 0 ? "atrasada" : `em ${dias}d`}`, descricao: d.toLocaleDateString("pt-BR"), tone: dias < 0 ? "danger" : "warn", icon: Wrench });
+          if (!m.proxima_revisao_data) continue;
+          const dias = diasAte(m.proxima_revisao_data);
+          if (dias < 30) alertas.push({
+            id: `man-${m.id}`, kind: "manut",
+            titulo: `${m.tipo} - ${(m.veiculo as { placa?: string } | null)?.placa ?? ""} ${dias < 0 ? "atrasada" : `em ${dias}d`}`,
+            descricao: new Date(m.proxima_revisao_data).toLocaleDateString("pt-BR"),
+            tone: dias < 0 ? "danger" : "warn",
+          });
         }
       }
-      return alertas;
+      return alertas.sort((a, b) => (a.tone === "danger" ? -1 : b.tone === "danger" ? 1 : 0));
     },
   });
 
@@ -104,7 +107,7 @@ function AlertasPage() {
       ) : (
         <div className="space-y-2">
           {data.map((a) => {
-            const Icon = a.icon;
+            const Icon = a.kind === "manut" ? Wrench : a.tone === "danger" ? AlertCircle : CalendarClock;
             const bg = a.tone === "danger" ? "bg-destructive/10 border-destructive/30" : a.tone === "warn" ? "bg-warning/10 border-warning/30" : "bg-muted";
             const iconColor = a.tone === "danger" ? "text-destructive" : a.tone === "warn" ? "text-warning" : "text-muted-foreground";
             return (
@@ -115,7 +118,7 @@ function AlertasPage() {
                     <div className="text-sm font-medium">{a.titulo}</div>
                     <div className="text-xs text-muted-foreground">{a.descricao}</div>
                   </div>
-                  <Badge variant="outline" className="text-[10px]">{a.tone === "danger" ? "Urgente" : a.tone === "warn" ? "Aviso" : "Info"}</Badge>
+                  <Badge variant="outline" className="text-[10px]">{a.tone === "danger" ? "Urgente" : "Aviso"}</Badge>
                 </CardContent>
               </Card>
             );
