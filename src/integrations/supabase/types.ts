@@ -108,6 +108,36 @@ export type Database = {
           },
         ]
       }
+      centros_custo: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checklists: {
         Row: {
           combustivel_pct: number | null
@@ -276,6 +306,7 @@ export type Database = {
           observacoes: string | null
           origem: string | null
           origem_id: string | null
+          plano_conta_id: string | null
           status: Database["public"]["Enums"]["financeiro_status"]
           tipo: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at: string
@@ -303,6 +334,7 @@ export type Database = {
           observacoes?: string | null
           origem?: string | null
           origem_id?: string | null
+          plano_conta_id?: string | null
           status?: Database["public"]["Enums"]["financeiro_status"]
           tipo: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at?: string
@@ -330,6 +362,7 @@ export type Database = {
           observacoes?: string | null
           origem?: string | null
           origem_id?: string | null
+          plano_conta_id?: string | null
           status?: Database["public"]["Enums"]["financeiro_status"]
           tipo?: Database["public"]["Enums"]["financeiro_tipo"]
           updated_at?: string
@@ -357,6 +390,13 @@ export type Database = {
             columns: ["motorista_id"]
             isOneToOne: false
             referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_plano_conta_id_fkey"
+            columns: ["plano_conta_id"]
+            isOneToOne: false
+            referencedRelation: "plano_contas"
             referencedColumns: ["id"]
           },
           {
@@ -640,6 +680,172 @@ export type Database = {
           },
         ]
       }
+      plano_auditoria: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_antes: Json | null
+          dados_depois: Json | null
+          descricao: string | null
+          entidade: string
+          entidade_id: string
+          id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          descricao?: string | null
+          entidade: string
+          entidade_id: string
+          id?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          descricao?: string | null
+          entidade?: string
+          entidade_id?: string
+          id?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      plano_contas: {
+        Row: {
+          ativo: boolean
+          centro_custo: string | null
+          codigo: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          subgrupo_id: string
+          tipo: Database["public"]["Enums"]["plano_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          centro_custo?: string | null
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          subgrupo_id: string
+          tipo: Database["public"]["Enums"]["plano_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          centro_custo?: string | null
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          subgrupo_id?: string
+          tipo?: Database["public"]["Enums"]["plano_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_contas_subgrupo_id_fkey"
+            columns: ["subgrupo_id"]
+            isOneToOne: false
+            referencedRelation: "plano_subgrupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plano_grupos: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          ordem: number
+          tipo: Database["public"]["Enums"]["plano_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          tipo: Database["public"]["Enums"]["plano_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["plano_tipo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plano_subgrupos: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          created_by: string | null
+          grupo_id: string
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          grupo_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          grupo_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plano_subgrupos_grupo_id_fkey"
+            columns: ["grupo_id"]
+            isOneToOne: false
+            referencedRelation: "plano_grupos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ativo: boolean
@@ -912,6 +1118,7 @@ export type Database = {
         | "servico"
         | "outros"
       pessoa_tipo: "pf" | "pj"
+      plano_tipo: "receita" | "despesa" | "outros"
       veiculo_tipo:
         | "cavalo"
         | "carreta"
@@ -1072,6 +1279,7 @@ export const Constants = {
         "outros",
       ],
       pessoa_tipo: ["pf", "pj"],
+      plano_tipo: ["receita", "despesa", "outros"],
       veiculo_tipo: [
         "cavalo",
         "carreta",
