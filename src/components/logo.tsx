@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useCompany, getSignedLogoUrl } from "@/hooks/use-company";
 import { cn } from "@/lib/utils";
+import g3Logo from "@/assets/g3-expresso-logo.png.asset.json";
+
 
 type Props = {
   variant?: "full" | "mark";
