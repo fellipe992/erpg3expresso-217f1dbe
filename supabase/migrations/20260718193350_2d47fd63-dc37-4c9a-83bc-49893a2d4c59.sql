@@ -1,0 +1,1 @@
+UPDATE public.company_settings SET logo_url = 'logo-g3-v2.png';
