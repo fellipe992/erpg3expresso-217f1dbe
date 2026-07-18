@@ -112,8 +112,8 @@ function FinanceiroPage() {
   const proximosVencer = useMemo(() => {
     const hoje = new Date().toISOString().slice(0, 10);
     return rows
-      .filter((r) => r.status !== "pago" && r.data_vencimento >= hoje)
-      .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento))
+      .filter((r) => r.status !== "pago" && r.data_vencimento != null && r.data_vencimento >= hoje)
+      .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
       .slice(0, 6);
   }, [rows]);
 
