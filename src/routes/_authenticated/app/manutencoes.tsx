@@ -121,7 +121,7 @@ function ManutencoesPage() {
     },
     onSuccess: () => {
       toast.success(form.id ? "Manutenção atualizada" : "Manutenção registrada");
-      qc.invalidateQueries({ queryKey: ["manutencoes"] });
+      qc.invalidateQueries({ queryKey: ["manutencoes"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
       setOpen(false);
       setForm(empty);
       setFile(null);
@@ -136,7 +136,7 @@ function ManutencoesPage() {
     },
     onSuccess: () => {
       toast.success("Removido");
-      qc.invalidateQueries({ queryKey: ["manutencoes"] });
+      qc.invalidateQueries({ queryKey: ["manutencoes"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
