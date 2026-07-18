@@ -25,7 +25,7 @@ export type Lancamento = {
   categoria: string | null;
   valor: number;
   data_emissao: string;
-  data_vencimento: string;
+  data_vencimento: string | null;
   data_pagamento: string | null;
   forma_pagamento: FormaPagamento | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
@@ -38,12 +38,23 @@ export type Lancamento = {
   fornecedor?: { razao_social: string } | null;
 };
 
-const STATUS_META: Record<Lancamento["status"], { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+type DisplayStatus = Lancamento["status"] | "vence_hoje";
+
+const STATUS_META: Record<DisplayStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   pendente: { label: "Pendente", variant: "outline" },
+  vence_hoje: { label: "Vence hoje", variant: "default" },
   pago: { label: "Pago", variant: "default" },
   atrasado: { label: "Atrasado", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
 };
+
+function displayStatus(l: Lancamento): DisplayStatus {
+  if (l.status === "pendente" && l.data_vencimento) {
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (l.data_vencimento === hoje) return "vence_hoje";
+  }
+  return l.status;
+}
 
 const FORMAS: { value: string; label: string }[] = [
   { value: "dinheiro", label: "Dinheiro" },
