@@ -248,17 +248,18 @@ function ViagemDetalheePage() {
             <OcorrenciaDialog viagemId={id} motoristaId={viagem.motorista_id} onDone={invalidateAll} />
             <QuickPhotoUpload viagemId={id} onDone={invalidateAll} />
             <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
-              <Link to="/app/financeiro" search={{ viagem: id } as any}>
+              <Link to="/app/financeiro">
                 <DollarSign className="size-4" />
                 <span className="text-xs">Lançar despesa</span>
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
-              <Link to="/app/abastecimentos" search={{ viagem: id } as any}>
+              <Link to="/app/abastecimentos">
                 <Fuel className="size-4" />
                 <span className="text-xs">Abastecimento</span>
               </Link>
             </Button>
+
           </div>
           <Separator className="my-4" />
           <FinalizarViagemDialog
