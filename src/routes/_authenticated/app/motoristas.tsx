@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/app/motoristas")({
   head: () => ({ meta: [{ title: "Motoristas — G3 Expresso" }] }),
@@ -36,7 +37,10 @@ type Motorista = {
   uf: string | null;
   ativo: boolean;
   observacoes: string | null;
+  veiculo_id: string | null;
 };
+
+type VeiculoOpt = { id: string; placa: string; modelo: string };
 
 const empty: Partial<Motorista> = { nome: "", ativo: true };
 
@@ -58,6 +62,19 @@ function MotoristasPage() {
     },
   });
 
+  const { data: veiculos = [] } = useQuery({
+    queryKey: ["veiculos-opt"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("veiculos")
+        .select("id, placa, modelo, ativo")
+        .eq("ativo", true)
+        .order("placa");
+      if (error) throw error;
+      return data as (VeiculoOpt & { ativo: boolean })[];
+    },
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       if (!form.nome?.trim()) throw new Error("Nome é obrigatório");
@@ -74,6 +91,7 @@ function MotoristasPage() {
         uf: form.uf || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
+        veiculo_id: form.veiculo_id || null,
       };
       if (form.id) {
         const { error } = await supabase.from("motoristas").update(payload).eq("id", form.id);
@@ -132,19 +150,21 @@ function MotoristasPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>CNH</TableHead>
-                <TableHead>Validade CNH</TableHead>
+                <TableHead>Veículo</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((m) => (
+              {filtered.map((m) => {
+                const v = veiculos.find((x) => x.id === m.veiculo_id);
+                return (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.nome}</TableCell>
                   <TableCell className="font-mono text-xs">{m.cpf ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{m.cnh ?? "—"}{m.cnh_categoria && ` (${m.cnh_categoria})`}</TableCell>
-                  <TableCell>{m.cnh_validade ? new Date(m.cnh_validade).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                  <TableCell className="text-xs">{v ? `${v.placa} · ${v.modelo}` : <span className="text-muted-foreground">Sem vínculo</span>}</TableCell>
                   <TableCell>{m.telefone ?? "—"}</TableCell>
                   <TableCell><Badge variant={m.ativo ? "default" : "outline"}>{m.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                   <TableCell className="text-right">
@@ -152,7 +172,8 @@ function MotoristasPage() {
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${m.nome}?`) && del.mutate(m.id)}><Trash2 className="size-4" /></Button>}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -172,6 +193,22 @@ function MotoristasPage() {
             <div className="md:col-span-2"><F label="Endereço"><Input value={form.endereco ?? ""} onChange={(e) => setForm({ ...form, endereco: e.target.value })} /></F></div>
             <F label="Cidade"><Input value={form.cidade ?? ""} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></F>
             <F label="UF"><Input maxLength={2} value={form.uf ?? ""} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></F>
+            <div className="md:col-span-2">
+              <F label="Veículo vinculado">
+                <Select value={form.veiculo_id ?? "none"} onValueChange={(v) => setForm({ ...form, veiculo_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Sem veículo —</SelectItem>
+                    {veiculos.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>{v.placa} · {v.modelo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </F>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Um motorista ativo só pode estar em um veículo, e cada veículo só admite um motorista ativo.
+              </p>
+            </div>
             <div className="flex items-center gap-2 md:col-span-2">
               <Switch checked={form.ativo ?? true} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
               <Label>Ativo</Label>

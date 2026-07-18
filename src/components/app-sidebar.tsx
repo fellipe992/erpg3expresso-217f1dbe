@@ -56,8 +56,8 @@ const operacional: NavItem[] = [
   { label: "Clientes", to: "/app/clientes", icon: Building2 },
   { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
   { label: "Viagens", to: "/app/viagens", icon: MapPin },
-  { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel, soon: true },
-  { label: "Manutenções", to: "/app/manutencoes", icon: Wrench, soon: true },
+  { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
+  { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
 ];
 
 const gestao: NavItem[] = [
@@ -67,7 +67,7 @@ const gestao: NavItem[] = [
 ];
 
 const administracao: NavItem[] = [
-  { label: "Usuários", to: "/app/usuarios", icon: Users, soon: true },
+  { label: "Usuários", to: "/app/usuarios", icon: Users },
   { label: "Empresa", to: "/app/empresa", icon: Building2 },
   { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck, soon: true },
   { label: "Configurações", to: "/app/configuracoes", icon: Settings, soon: true },
@@ -101,7 +101,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.5 · Fase 5
+            v0.6 · Fase 6
           </div>
         )}
       </SidebarFooter>
