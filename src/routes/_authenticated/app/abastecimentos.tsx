@@ -238,7 +238,7 @@ function AbastecimentosPage() {
             <TableBody>
               {filtered.map((a) => (
                 <TableRow key={a.id}>
-                  <TableCell className="text-xs">{new Date(a.data).toLocaleDateString("pt-BR")}{a.hora && ` ${a.hora.slice(0, 5)}`}</TableCell>
+                  <TableCell className="text-xs">{a.data.split("-").reverse().join("/")}{a.hora && ` ${a.hora.slice(0, 5)}`}</TableCell>
                   <TableCell className="font-mono text-xs">{a.veiculo?.placa ?? "—"}</TableCell>
                   <TableCell className="text-xs">{a.motorista?.nome ?? "—"}</TableCell>
                   <TableCell className="text-xs">{Number(a.litros).toFixed(2)}</TableCell>
