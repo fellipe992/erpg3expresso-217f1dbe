@@ -317,6 +317,15 @@ function AbastecimentosPage() {
             <F label="KM atual *"><Input type="number" step="0.1" value={form.km_atual ?? ""} onChange={(e) => setForm({ ...form, km_atual: Number(e.target.value) })} /></F>
 
             <div className="md:col-span-2">
+              <F label="Forma de pagamento *">
+                <Select value={form.forma_pagamento_operacional ?? ""} onValueChange={(v) => setForm({ ...form, forma_pagamento_operacional: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    {FORMAS_PAGTO.map((f) => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </F>
+            </div>
               <F label="Comprovante (foto ou PDF)">
                 <div className="flex items-center gap-2">
                   <Input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
