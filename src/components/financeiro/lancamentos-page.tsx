@@ -305,6 +305,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <TableRow>
                 <TableHead>Descrição</TableHead>
                 <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
+                <TableHead>Conta financeira</TableHead>
                 <TableHead>Origem</TableHead>
                 <TableHead>Centro de custo</TableHead>
                 <TableHead>Veículo / Motorista</TableHead>
