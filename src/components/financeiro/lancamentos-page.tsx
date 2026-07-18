@@ -151,6 +151,11 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
+        centro_custo: form.centro_custo?.trim() || form.categoria?.trim() || null,
+        veiculo_id: form.veiculo_id || null,
+        motorista_id: form.motorista_id || null,
+        origem: form.origem || (form.id ? undefined : "manual"),
+        origem_id: form.origem_id || (form.id ? undefined : null),
       };
 
       if (form.id) {
