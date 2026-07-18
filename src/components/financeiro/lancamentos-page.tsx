@@ -283,7 +283,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <TableRow>
                 <TableHead>Descrição</TableHead>
                 <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
-                <TableHead>Categoria</TableHead>
+                <TableHead>Origem</TableHead>
+                <TableHead>Centro de custo</TableHead>
+                <TableHead>Veículo / Motorista</TableHead>
                 <TableHead>Vencimento</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Status</TableHead>
@@ -296,13 +298,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   <TableCell className="max-w-xs">
                     <div className="font-medium">{l.descricao}</div>
                     {l.numero_documento && (
-                      <div className="text-xs text-muted-foreground">Doc: {l.numero_documento}</div>
+                      <div className="text-xs text-muted-foreground">OS/Doc: {l.numero_documento}</div>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{l.categoria ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {l.origem ? <Badge variant="outline" className="capitalize">{l.origem}</Badge> : <span className="text-muted-foreground">manual</span>}
+                  </TableCell>
+                  <TableCell className="text-xs">{l.centro_custo ?? l.categoria ?? "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {l.veiculo?.placa && <div className="font-mono">{l.veiculo.placa}</div>}
+                    {l.motorista?.nome && <div className="text-muted-foreground">{l.motorista.nome}</div>}
+                    {!l.veiculo?.placa && !l.motorista?.nome && "—"}
+                  </TableCell>
                   <TableCell className="text-sm">{fmtDate(l.data_vencimento)}</TableCell>
                   <TableCell className="text-right font-mono font-semibold">
                     {fmtBRL(Number(l.valor))}
@@ -311,6 +321,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {(() => { const ds = displayStatus(l); return <Badge variant={STATUS_META[ds].variant}>{STATUS_META[ds].label}</Badge>; })()}
                   </TableCell>
                   <TableCell className="text-right">
+                    <OrigemButton l={l} />
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
                       <Button
                         variant="ghost"
