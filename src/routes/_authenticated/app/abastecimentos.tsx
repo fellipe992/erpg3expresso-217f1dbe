@@ -147,6 +147,7 @@ function AbastecimentosPage() {
         km_atual: Number(form.km_atual),
         observacoes: form.observacoes || null,
         comprovante_path,
+        forma_pagamento_operacional: form.forma_pagamento_operacional || null,
         created_by: user!.id,
       };
       if (form.id) {
