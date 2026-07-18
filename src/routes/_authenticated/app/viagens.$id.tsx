@@ -238,6 +238,7 @@ function ViagemDetalheePage() {
           viagemId={id}
           kmSugerido={viagem.km_inicial ?? null}
           onDone={invalidateAll}
+          autoOpen={location.hash === "iniciar"}
         />
       )}
 
@@ -267,9 +268,11 @@ function ViagemDetalheePage() {
             viagemId={id}
             kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
             onDone={invalidateAll}
+            autoOpen={location.hash === "finalizar"}
           />
         </Card>
       )}
+
 
       {/* Checklists */}
       {checklists.length > 0 && (
