@@ -28,7 +28,7 @@ type Row = {
   tipo: "receber" | "pagar";
   descricao: string;
   valor: number;
-  data_vencimento: string;
+  data_vencimento: string | null;
   data_pagamento: string | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
 };
