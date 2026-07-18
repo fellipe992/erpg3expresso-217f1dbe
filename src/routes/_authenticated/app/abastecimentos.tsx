@@ -39,9 +39,17 @@ type Abast = {
   custo_por_km: number | null;
   observacoes: string | null;
   comprovante_path: string | null;
+  forma_pagamento_operacional: string | null;
 };
 
 const COMBUSTIVEIS = ["Diesel S10", "Diesel S500", "Arla 32", "Gasolina", "Etanol", "GNV"];
+const FORMAS_PAGTO = [
+  { value: "convenio", label: "Convênio (vence em 30 dias)" },
+  { value: "cartao", label: "Cartão (vencimento na fatura)" },
+  { value: "pix", label: "PIX" },
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "outro", label: "Outro" },
+];
 
 function AbastecimentosPage() {
   const { user, role } = useAuth();
