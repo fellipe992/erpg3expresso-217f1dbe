@@ -10,8 +10,14 @@ import {
   CheckCircle2,
   Loader2,
   ClipboardCheck,
+  AlertTriangle,
   Camera,
   Fuel,
+  DollarSign,
+  FileText,
+  History,
+  Plus,
+  Receipt,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +37,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { UploadFotos } from "@/components/viagem/upload-fotos";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/$id")({
   head: () => ({ meta: [{ title: "Viagem — G3 Expresso" }] }),
@@ -45,35 +52,26 @@ const STATUS_META = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
-const CHECKLIST_ITENS_SAIDA = [
-  "Pneus (pressão e desgaste)",
-  "Óleo do motor",
-  "Água do radiador",
-  "Faróis e lanternas",
-  "Freios",
-  "Documentos do veículo",
-  "Extintor",
-  "Triângulo e macaco",
-  "Carga conferida",
-  "Lona / amarração",
-];
-
-const CHECKLIST_ITENS_CHEGADA = [
-  "Carga entregue",
-  "Canhoto assinado",
-  "Veículo sem avarias",
-  "Documentos recebidos",
-  "Pneus em ordem",
-  "Combustível registrado",
-];
-
 function ViagemDetalheePage() {
   const { id } = Route.useParams();
   const { role } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const isMotorista = role === "motorista";
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
+  const isStaff = canWrite;
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["viagem", id] });
+    qc.invalidateQueries({ queryKey: ["checklists", id] });
+    qc.invalidateQueries({ queryKey: ["viagem-anexos", id] });
+    qc.invalidateQueries({ queryKey: ["viagem-ocorrencias", id] });
+    qc.invalidateQueries({ queryKey: ["viagem-auditoria", id] });
+    qc.invalidateQueries({ queryKey: ["viagem-financeiro", id] });
+    qc.invalidateQueries({ queryKey: ["viagens"] });
+    qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+  };
 
   const { data: viagem, isLoading } = useQuery({
     queryKey: ["viagem", id],
@@ -91,11 +89,47 @@ function ViagemDetalheePage() {
   const { data: checklists = [] } = useQuery({
     queryKey: ["checklists", id],
     queryFn: async () => {
+      const { data, error } = await supabase.from("checklists").select("*").eq("viagem_id", id).order("created_at");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: ocorrencias = [] } = useQuery({
+    queryKey: ["viagem-ocorrencias", id],
+    queryFn: async () => {
       const { data, error } = await supabase
-        .from("checklists")
+        .from("viagem_ocorrencias")
         .select("*")
         .eq("viagem_id", id)
-        .order("created_at");
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: anexos = [] } = useQuery({
+    queryKey: ["viagem-anexos", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagem_anexos")
+        .select("*")
+        .eq("viagem_id", id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: auditoria = [] } = useQuery({
+    queryKey: ["viagem-auditoria", id],
+    enabled: isStaff,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagem_auditoria")
+        .select("*")
+        .eq("viagem_id", id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -112,38 +146,6 @@ function ViagemDetalheePage() {
       if (error) throw error;
       return data ?? [];
     },
-  });
-
-  const startTrip = useMutation({
-    mutationFn: async (km: number) => {
-      const { error } = await supabase
-        .from("viagens")
-        .update({ status: "em_andamento", data_saida: new Date().toISOString(), km_inicial: km })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Viagem iniciada");
-      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
-    },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
-  });
-
-  const finishTrip = useMutation({
-    mutationFn: async (km: number) => {
-      const { error } = await supabase
-        .from("viagens")
-        .update({ status: "concluida", data_chegada: new Date().toISOString(), km_final: km })
-        .eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Viagem concluída");
-      qc.invalidateQueries({ queryKey: ["viagem", id] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
-    },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
   if (isLoading) {
@@ -171,6 +173,7 @@ function ViagemDetalheePage() {
         <ArrowLeft className="mr-1 size-4" /> Voltar
       </Button>
 
+      {/* Informações gerais */}
       <Card className="overflow-hidden">
         <div className="border-b border-border/60 bg-brand-subtle/40 p-4 md:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -179,7 +182,7 @@ function ViagemDetalheePage() {
                 <Badge variant={STATUS_META[viagem.status as keyof typeof STATUS_META].variant}>
                   {STATUS_META[viagem.status as keyof typeof STATUS_META].label}
                 </Badge>
-                {viagem.codigo && <span className="font-mono text-xs text-muted-foreground">#{viagem.codigo}</span>}
+                {viagem.codigo && <span className="font-mono text-xs text-muted-foreground">OS #{viagem.codigo}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2 font-display text-xl font-bold md:text-2xl">
                 <MapPin className="size-5 text-brand" />
@@ -194,35 +197,18 @@ function ViagemDetalheePage() {
         <div className="grid gap-4 p-4 text-sm md:grid-cols-2 md:p-6">
           <Info label="Cliente" value={viagem.cliente?.razao_social ?? "—"} />
           <Info label="Motorista" value={viagem.motorista?.nome ?? "—"} />
-          <Info
-            label="Veículo"
-            value={viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—"}
-          />
+          <Info label="Veículo" value={viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—"} />
           <Info
             label="Valor do frete"
             value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
           />
-          <Info
-            label="Saída prevista"
-            value={viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—"}
-          />
-          <Info
-            label="Chegada prevista"
-            value={viagem.data_prevista_chegada ? new Date(viagem.data_prevista_chegada).toLocaleString("pt-BR") : "—"}
-          />
-          <Info
-            label="Saída real"
-            value={viagem.data_saida ? new Date(viagem.data_saida).toLocaleString("pt-BR") : "—"}
-          />
-          <Info
-            label="Chegada real"
-            value={viagem.data_chegada ? new Date(viagem.data_chegada).toLocaleString("pt-BR") : "—"}
-          />
+          <Info label="Saída prevista" value={viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—"} />
+          <Info label="Chegada prevista" value={viagem.data_prevista_chegada ? new Date(viagem.data_prevista_chegada).toLocaleString("pt-BR") : "—"} />
+          <Info label="Saída real" value={viagem.data_saida ? new Date(viagem.data_saida).toLocaleString("pt-BR") : "—"} />
+          <Info label="Chegada real" value={viagem.data_chegada ? new Date(viagem.data_chegada).toLocaleString("pt-BR") : "—"} />
           <Info label="Km inicial" value={viagem.km_inicial ? `${viagem.km_inicial} km` : "—"} />
           <Info label="Km final" value={viagem.km_final ? `${viagem.km_final} km` : "—"} />
-          {kmRodado !== null && (
-            <Info label="Km rodado" value={<span className="font-semibold text-brand">{kmRodado} km</span>} />
-          )}
+          {kmRodado !== null && <Info label="Km rodado" value={<span className="font-semibold text-brand">{kmRodado} km</span>} />}
         </div>
 
         {viagem.observacoes && (
@@ -234,60 +220,95 @@ function ViagemDetalheePage() {
             </div>
           </>
         )}
+        {viagem.observacoes_finais && (
+          <>
+            <Separator />
+            <div className="p-4 md:p-6">
+              <Label className="mb-1 block text-[10px] uppercase tracking-widest text-muted-foreground">Observações finais</Label>
+              <p className="whitespace-pre-wrap text-sm">{viagem.observacoes_finais}</p>
+            </div>
+          </>
+        )}
       </Card>
 
-      {/* Ações rápidas do motorista / operacional */}
-      {viagem.status !== "cancelada" && viagem.status !== "concluida" && (
-        <div className="flex flex-wrap gap-2">
-          {viagem.status === "planejada" && (
-            <IniciarViagemDialog
-              disabled={!hasSaida}
-              onConfirm={(km) => startTrip.mutate(km)}
-              pending={startTrip.isPending}
-              hint={!hasSaida ? "Preencha o checklist de saída primeiro" : undefined}
-            />
-          )}
-          {viagem.status === "em_andamento" && (
-            <FinalizarViagemDialog
-              disabled={!hasChegada}
-              onConfirm={(km) => finishTrip.mutate(km)}
-              pending={finishTrip.isPending}
-              hint={!hasChegada ? "Preencha o checklist de chegada primeiro" : undefined}
-              kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
-            />
-          )}
-        </div>
+      {/* Ação: Iniciar viagem */}
+      {viagem.status === "planejada" && (
+        <ChecklistSaidaDialog
+          viagemId={id}
+          kmSugerido={viagem.km_inicial ?? null}
+          onDone={invalidateAll}
+        />
+      )}
+
+      {/* Durante a viagem */}
+      {viagem.status === "em_andamento" && (
+        <Card className="p-4">
+          <h2 className="mb-3 font-display text-lg font-bold">Durante a viagem</h2>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <OcorrenciaDialog viagemId={id} motoristaId={viagem.motorista_id} onDone={invalidateAll} />
+            <QuickPhotoUpload viagemId={id} onDone={invalidateAll} />
+            <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+              <Link to="/app/financeiro" search={{ viagem: id } as any}>
+                <DollarSign className="size-4" />
+                <span className="text-xs">Lançar despesa</span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+              <Link to="/app/abastecimentos" search={{ viagem: id } as any}>
+                <Fuel className="size-4" />
+                <span className="text-xs">Abastecimento</span>
+              </Link>
+            </Button>
+          </div>
+          <Separator className="my-4" />
+          <FinalizarViagemDialog
+            viagemId={id}
+            kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
+            onDone={invalidateAll}
+          />
+        </Card>
       )}
 
       {/* Checklists */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      {checklists.length > 0 && (
+        <div className="space-y-3">
           <h2 className="font-display text-lg font-bold">Checklists</h2>
-          <div className="flex gap-2">
-            {!hasSaida && (
-              <ChecklistDialog viagemId={id} tipo="saida" />
-            )}
-            {!hasChegada && viagem.status !== "planejada" && (
-              <ChecklistDialog viagemId={id} tipo="chegada" />
-            )}
+          <div className="grid gap-3 md:grid-cols-2">
+            {checklists.map((c) => <ChecklistCard key={c.id} c={c} />)}
           </div>
         </div>
-        {checklists.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhum checklist registrado.</Card>
+      )}
+
+      {/* Ocorrências */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold">Ocorrências</h2>
+          {viagem.status === "em_andamento" && (
+            <OcorrenciaDialog viagemId={id} motoristaId={viagem.motorista_id} onDone={invalidateAll} compact />
+          )}
+        </div>
+        {ocorrencias.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma ocorrência registrada.</Card>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {checklists.map((c) => (
-              <ChecklistCard key={c.id} c={c} />
-            ))}
+          <div className="space-y-2">
+            {ocorrencias.map((o: any) => <OcorrenciaCard key={o.id} o={o} anexos={anexos.filter((a: any) => a.ocorrencia_id === o.id)} />)}
           </div>
         )}
       </div>
 
-      {/* Movimentações financeiras da viagem */}
+      {/* Anexos gerais */}
+      {anexos.filter((a: any) => !a.ocorrencia_id).length > 0 && (
+        <div className="space-y-3">
+          <h2 className="font-display text-lg font-bold">Anexos da viagem</h2>
+          <AnexosGrid anexos={anexos.filter((a: any) => !a.ocorrencia_id)} />
+        </div>
+      )}
+
+      {/* Movimentações financeiras */}
       <div className="space-y-3">
-        <h2 className="font-display text-lg font-bold">Movimentações Financeiras da Viagem</h2>
+        <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
         {movimentacoes.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada a esta viagem.</Card>
+          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada.</Card>
         ) : (
           <Card className="divide-y divide-border/60">
             {movimentacoes.map((m: any) => (
@@ -312,11 +333,29 @@ function ViagemDetalheePage() {
         )}
       </div>
 
+      {/* Auditoria (staff) */}
+      {isStaff && auditoria.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="flex items-center gap-2 font-display text-lg font-bold"><History className="size-4" /> Auditoria</h2>
+          <Card className="divide-y divide-border/60">
+            {auditoria.map((a: any) => (
+              <div key={a.id} className="flex items-start gap-3 p-3 text-xs">
+                <Badge variant="outline" className="capitalize">{String(a.evento).replace("_", " ")}</Badge>
+                <div className="min-w-0 flex-1">
+                  <div className="text-muted-foreground">{new Date(a.created_at).toLocaleString("pt-BR")}</div>
+                  {a.detalhes && Object.keys(a.detalhes).length > 0 && (
+                    <pre className="mt-1 overflow-x-auto rounded bg-muted p-2 text-[10px]">{JSON.stringify(a.detalhes, null, 2)}</pre>
+                  )}
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
       {canWrite && (
         <div className="pt-4">
-          <Button asChild variant="outline">
-            <Link to="/app/viagens">Voltar à lista</Link>
-          </Button>
+          <Button asChild variant="outline"><Link to="/app/viagens">Voltar à lista</Link></Button>
         </div>
       )}
     </div>
@@ -334,8 +373,6 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
 
 function ChecklistCard({ c }: { c: any }) {
   const itens = (c.itens ?? {}) as Record<string, boolean>;
-  const marcados = Object.entries(itens).filter(([, v]) => v).length;
-  const total = Object.keys(itens).length;
   return (
     <Card className="p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -347,215 +384,477 @@ function ChecklistCard({ c }: { c: any }) {
           {new Date(c.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
         </span>
       </div>
-      <div className="mb-2 text-xs text-muted-foreground">
-        {marcados}/{total} itens verificados
-        {c.km && <> · {c.km} km</>}
-        {c.combustivel_pct != null && <> · {c.combustivel_pct}% combustível</>}
+      <div className="grid grid-cols-2 gap-1 text-xs">
+        {c.pneus_ok != null && <ItemCheck label="Pneus" ok={c.pneus_ok} />}
+        {c.oleo_ok != null && <ItemCheck label="Óleo" ok={c.oleo_ok} />}
+        {c.agua_radiador_ok != null && <ItemCheck label="Água radiador" ok={c.agua_radiador_ok} />}
+        {c.freios_ok != null && <ItemCheck label="Freios" ok={c.freios_ok} />}
+        {c.tacografo_ok != null && <ItemCheck label="Tacógrafo" ok={c.tacografo_ok} />}
+        {Object.entries(itens).map(([k, v]) => <ItemCheck key={k} label={k} ok={v} />)}
       </div>
-      <ul className="space-y-1 text-xs">
-        {Object.entries(itens).map(([k, v]) => (
-          <li key={k} className="flex items-center gap-1.5">
-            <CheckCircle2 className={v ? "size-3.5 text-brand" : "size-3.5 text-muted-foreground/40"} />
-            <span className={v ? "" : "text-muted-foreground line-through"}>{k}</span>
-          </li>
-        ))}
-      </ul>
-      {c.observacoes && (
-        <p className="mt-2 whitespace-pre-wrap rounded bg-muted p-2 text-xs">{c.observacoes}</p>
-      )}
+      {c.km != null && <div className="mt-2 text-xs text-muted-foreground">Km: {c.km}</div>}
+      {c.observacoes && <p className="mt-2 whitespace-pre-wrap rounded bg-muted p-2 text-xs">{c.observacoes}</p>}
     </Card>
   );
 }
 
-function ChecklistDialog({ viagemId, tipo }: { viagemId: string; tipo: "saida" | "chegada" }) {
-  const [open, setOpen] = useState(false);
-  const qc = useQueryClient();
-  const itensBase = tipo === "saida" ? CHECKLIST_ITENS_SAIDA : CHECKLIST_ITENS_CHEGADA;
-  const [itens, setItens] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(itensBase.map((i) => [i, false])),
+function ItemCheck({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <CheckCircle2 className={ok ? "size-3.5 text-brand" : "size-3.5 text-muted-foreground/40"} />
+      <span className={ok ? "" : "text-muted-foreground line-through"}>{label}</span>
+    </div>
   );
-  const [km, setKm] = useState<string>("");
-  const [combustivel, setCombustivel] = useState<string>("");
-  const [obs, setObs] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+}
 
-  const save = useMutation({
-    mutationFn: async () => {
+function OcorrenciaCard({ o, anexos }: { o: any; anexos: any[] }) {
+  return (
+    <Card className="p-3">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="size-4 text-brand" />
+          <span className="text-sm font-semibold">{o.local ?? "Ocorrência"}</span>
+        </div>
+        <span className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</span>
+      </div>
+      <p className="whitespace-pre-wrap text-sm">{o.descricao}</p>
+      {o.observacoes && <p className="mt-1 text-xs text-muted-foreground">{o.observacoes}</p>}
+      {anexos.length > 0 && <AnexosGrid anexos={anexos} className="mt-2" />}
+    </Card>
+  );
+}
+
+function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }) {
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  const load = async (path: string) => {
+    if (urls[path]) return;
+    const { data } = await supabase.storage.from("viagem-fotos").createSignedUrl(path, 3600);
+    if (data?.signedUrl) setUrls((u) => ({ ...u, [path]: data.signedUrl }));
+  };
+
+  return (
+    <div className={`grid grid-cols-3 gap-2 md:grid-cols-6 ${className ?? ""}`}>
+      {anexos.map((a) => {
+        void load(a.storage_path);
+        const isImg = (a.mime_type ?? "").startsWith("image/");
+        return (
+          <a
+            key={a.id}
+            href={urls[a.storage_path] ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
+          >
+            {isImg && urls[a.storage_path] ? (
+              <img src={urls[a.storage_path]} alt={a.categoria} className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full place-items-center text-muted-foreground">
+                <FileText className="size-6" />
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1 py-0.5 text-[9px] uppercase text-white">
+              {a.categoria.replace("_", " ")}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============ Checklist de Saída ============
+function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone }: { viagemId: string; kmSugerido: number | null; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [pneus, setPneus] = useState<boolean | null>(null);
+  const [pneusFotos, setPneusFotos] = useState<{ path: string; mime: string; name: string }[]>([]);
+  const [oleo, setOleo] = useState<"ok" | "verificar" | null>(null);
+  const [agua, setAgua] = useState<"ok" | "completar" | null>(null);
+  const [freios, setFreios] = useState<"ok" | "manutencao" | null>(null);
+  const [tacografo, setTacografo] = useState<"ok" | "problema" | null>(null);
+  const [obs, setObs] = useState("");
+  const [km, setKm] = useState<string>(kmSugerido?.toString() ?? "");
+  const [salvando, setSalvando] = useState(false);
+
+  const canSubmit =
+    pneus === true &&
+    pneusFotos.length > 0 &&
+    oleo !== null &&
+    agua !== null &&
+    freios !== null &&
+    tacografo !== null &&
+    !!km;
+
+  const submit = async () => {
+    setSalvando(true);
+    try {
       const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase.from("checklists").insert({
+      const { error: cErr } = await supabase.from("checklists").insert({
         viagem_id: viagemId,
-        tipo,
-        itens: itens as any,
+        tipo: "saida",
         km: km ? Number(km) : null,
-        combustivel_pct: combustivel ? Number(combustivel) : null,
-        foto_url: fotoUrl,
+        pneus_ok: pneus,
+        oleo_ok: oleo === "ok",
+        agua_radiador_ok: agua === "ok",
+        freios_ok: freios === "ok",
+        tacografo_ok: tacografo === "ok",
+        itens: {},
         observacoes: obs || null,
         created_by: userData.user?.id,
       });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Checklist registrado");
-      qc.invalidateQueries({ queryKey: ["checklists", viagemId] });
-      setOpen(false);
-    },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
-  });
+      if (cErr) throw cErr;
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const path = `${viagemId}/${tipo}-${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from("viagem-fotos").upload(path, file);
-      if (error) throw error;
-      setFotoUrl(path);
-      toast.success("Foto enviada");
+      const { error: vErr } = await supabase
+        .from("viagens")
+        .update({
+          status: "em_andamento",
+          data_saida: new Date().toISOString(),
+          km_inicial: km ? Number(km) : null,
+          iniciada_por: userData.user?.id,
+        })
+        .eq("id", viagemId);
+      if (vErr) throw vErr;
+
+      toast.success("Viagem iniciada!");
+      setOpen(false);
+      onDone();
     } catch (e) {
-      toast.error("Erro no upload", { description: (e as Error).message });
+      toast.error("Erro", { description: (e as Error).message });
     } finally {
-      setUploading(false);
+      setSalvando(false);
     }
   };
 
   return (
     <>
-      <Button variant={tipo === "saida" ? "default" : "outline"} size="sm" onClick={() => setOpen(true)}>
-        <ClipboardCheck className="mr-1.5 size-4" />
-        Checklist de {tipo === "saida" ? "saída" : "chegada"}
+      <Button onClick={() => setOpen(true)} className="w-full bg-brand py-6 text-base hover:bg-brand/90 md:w-auto">
+        <Play className="mr-2 size-5" /> Iniciar Viagem
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Checklist de {tipo === "saida" ? "saída" : "chegada"}</DialogTitle>
-            <DialogDescription>Confira todos os itens antes de salvar.</DialogDescription>
+            <DialogTitle>Checklist de Saída</DialogTitle>
+            <DialogDescription>Preencha todos os itens antes de iniciar a viagem.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2 rounded-lg border border-border/60 p-3">
-              {itensBase.map((item) => (
-                <label key={item} className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={itens[item]}
-                    onCheckedChange={(v) => setItens({ ...itens, [item]: v === true })}
-                  />
-                  <span>{item}</span>
+
+          <div className="space-y-5 py-2">
+            {/* Pneus */}
+            <section className="space-y-2 rounded-lg border border-border/60 p-3">
+              <Label className="font-semibold">Pneus</Label>
+              <RadioGroup value={pneus === null ? "" : pneus ? "sim" : "nao"} onValueChange={(v) => setPneus(v === "sim")}>
+                <label className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem value="sim" /> Em boas condições
                 </label>
-              ))}
+                <label className="flex items-center gap-2 text-sm">
+                  <RadioGroupItem value="nao" /> Apresenta problema
+                </label>
+              </RadioGroup>
+              <UploadFotos
+                viagemId={viagemId}
+                categoria="checklist_saida"
+                label="Foto dos pneus (obrigatório)"
+                required
+                onChange={setPneusFotos}
+              />
+            </section>
+
+            {/* Óleo */}
+            <RadioSection
+              label="Nível do óleo"
+              value={oleo}
+              onChange={(v) => setOleo(v as any)}
+              options={[["ok", "OK"], ["verificar", "Necessita verificação"]]}
+            />
+
+            {/* Água radiador */}
+            <RadioSection
+              label="Água do radiador"
+              value={agua}
+              onChange={(v) => setAgua(v as any)}
+              options={[["ok", "OK"], ["completar", "Necessita completar"]]}
+            />
+
+            {/* Freios */}
+            <RadioSection
+              label="Freios"
+              value={freios}
+              onChange={(v) => setFreios(v as any)}
+              options={[["ok", "OK"], ["manutencao", "Necessita manutenção"]]}
+            />
+
+            {/* Tacógrafo */}
+            <RadioSection
+              label="Tacógrafo"
+              value={tacografo}
+              onChange={(v) => setTacografo(v as any)}
+              options={[["ok", "Funcionando"], ["problema", "Apresenta problema"]]}
+            />
+
+            <div className="space-y-1.5">
+              <Label>Km inicial do veículo</Label>
+              <Input type="number" value={km} onChange={(e) => setKm(e.target.value)} />
             </div>
+
+            <div className="space-y-1.5">
+              <Label>Estado geral / observações</Label>
+              <Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Observações do veículo..." />
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-border/60 p-3">
+              <Label className="font-semibold">Fotos do veículo</Label>
+              <p className="text-xs text-muted-foreground">Frente, traseira, laterais, painel, carga.</p>
+              <UploadFotos viagemId={viagemId} categoria="veiculo" label="Adicionar fotos" />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={submit} disabled={!canSubmit || salvando} className="bg-brand hover:bg-brand/90">
+              {salvando && <Loader2 className="mr-2 size-4 animate-spin" />} Iniciar Viagem
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function RadioSection({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string | null;
+  onChange: (v: string) => void;
+  options: [string, string][];
+}) {
+  return (
+    <section className="space-y-2 rounded-lg border border-border/60 p-3">
+      <Label className="font-semibold">{label}</Label>
+      <RadioGroup value={value ?? ""} onValueChange={onChange}>
+        {options.map(([k, l]) => (
+          <label key={k} className="flex items-center gap-2 text-sm">
+            <RadioGroupItem value={k} /> {l}
+          </label>
+        ))}
+      </RadioGroup>
+    </section>
+  );
+}
+
+// ============ Ocorrência ============
+function OcorrenciaDialog({ viagemId, motoristaId, onDone, compact }: { viagemId: string; motoristaId: string | null; onDone: () => void; compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [local, setLocal] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [obs, setObs] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [ocorrenciaId, setOcorrenciaId] = useState<string | null>(null);
+
+  const submit = async () => {
+    if (!descricao.trim()) {
+      toast.error("Descreva a ocorrência");
+      return;
+    }
+    setSalvando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from("viagem_ocorrencias")
+        .insert({
+          viagem_id: viagemId,
+          motorista_id: motoristaId,
+          local: local.trim() || null,
+          descricao: descricao.trim(),
+          observacoes: obs.trim() || null,
+          created_by: userData.user?.id,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      setOcorrenciaId(data.id);
+      toast.success("Ocorrência registrada");
+      onDone();
+    } catch (e) {
+      toast.error("Erro", { description: (e as Error).message });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  const close = () => {
+    setOpen(false);
+    setLocal("");
+    setDescricao("");
+    setObs("");
+    setOcorrenciaId(null);
+  };
+
+  return (
+    <>
+      {compact ? (
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          <Plus className="mr-1 size-4" /> Ocorrência
+        </Button>
+      ) : (
+        <Button variant="outline" className="h-auto flex-col gap-1 py-3" onClick={() => setOpen(true)}>
+          <AlertTriangle className="size-4" />
+          <span className="text-xs">Ocorrência</span>
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : close())}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Registrar ocorrência</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Local</Label>
+              <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Cidade/UF, km da rodovia..." disabled={!!ocorrenciaId} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Descrição *</Label>
+              <Textarea rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} disabled={!!ocorrenciaId} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Observações</Label>
+              <Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} disabled={!!ocorrenciaId} />
+            </div>
+            {ocorrenciaId && (
+              <UploadFotos viagemId={viagemId} categoria="ocorrencia" ocorrenciaId={ocorrenciaId} label="Fotos da ocorrência" />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={close}>{ocorrenciaId ? "Concluir" : "Cancelar"}</Button>
+            {!ocorrenciaId && (
+              <Button onClick={submit} disabled={salvando}>
+                {salvando && <Loader2 className="mr-2 size-4 animate-spin" />} Registrar
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ============ Quick photo upload ============
+function QuickPhotoUpload({ viagemId, onDone }: { viagemId: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button variant="outline" className="h-auto flex-col gap-1 py-3" onClick={() => setOpen(true)}>
+        <Camera className="size-4" />
+        <span className="text-xs">Adicionar foto</span>
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Adicionar foto à viagem</DialogTitle></DialogHeader>
+          <UploadFotos viagemId={viagemId} categoria="outro" label="Foto" onChange={() => onDone()} />
+          <DialogFooter>
+            <Button onClick={() => setOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+// ============ Finalizar Viagem ============
+function FinalizarViagemDialog({ viagemId, kmInicial, onDone }: { viagemId: string; kmInicial: number | null; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [dataEnc, setDataEnc] = useState(() => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  });
+  const [kmFinal, setKmFinal] = useState("");
+  const [obs, setObs] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const kmInvalido = kmInicial != null && kmFinal && Number(kmFinal) < kmInicial;
+
+  const submit = async () => {
+    if (!kmFinal || kmInvalido) return;
+    setSalvando(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+
+      // salva checklist de chegada simples para manter histórico
+      await supabase.from("checklists").insert({
+        viagem_id: viagemId,
+        tipo: "chegada",
+        km: Number(kmFinal),
+        itens: {},
+        observacoes: obs || null,
+        created_by: userData.user?.id,
+      });
+
+      const { error } = await supabase
+        .from("viagens")
+        .update({
+          status: "concluida",
+          data_chegada: new Date(dataEnc).toISOString(),
+          km_final: Number(kmFinal),
+          observacoes_finais: obs || null,
+          finalizada_por: userData.user?.id,
+        })
+        .eq("id", viagemId);
+      if (error) throw error;
+
+      toast.success("Viagem finalizada!");
+      setOpen(false);
+      onDone();
+    } catch (e) {
+      toast.error("Erro", { description: (e as Error).message });
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)} variant="secondary" className="w-full py-6 text-base md:w-auto">
+        <CheckCircle2 className="mr-2 size-5" /> Finalizar Viagem
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Encerramento da viagem</DialogTitle>
+            <DialogDescription>Anexe o canhoto e fotos de entrega para concluir.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs">Km atual</Label>
-                <Input type="number" value={km} onChange={(e) => setKm(e.target.value)} />
+                <Label>Data e hora do encerramento</Label>
+                <Input type="datetime-local" value={dataEnc} onChange={(e) => setDataEnc(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs flex items-center gap-1"><Fuel className="size-3" /> Combustível (%)</Label>
-                <Input type="number" min={0} max={100} value={combustivel} onChange={(e) => setCombustivel(e.target.value)} />
+                <Label>Quilometragem final {kmInicial != null && <span className="text-xs text-muted-foreground">(inicial: {kmInicial})</span>}</Label>
+                <Input type="number" value={kmFinal} onChange={(e) => setKmFinal(e.target.value)} />
+                {kmInvalido && <p className="text-xs text-destructive">Km final não pode ser menor que o inicial</p>}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Observações</Label>
-              <Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ocorrências, avarias..." />
+              <Label>Observações finais</Label>
+              <Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1"><Camera className="size-3" /> Foto (opcional)</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-                disabled={uploading}
-              />
-              {fotoUrl && <p className="text-xs text-brand">✓ Foto anexada</p>}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending || uploading}>
-              {save.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar checklist
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
 
-function IniciarViagemDialog({
-  disabled,
-  onConfirm,
-  pending,
-  hint,
-}: {
-  disabled: boolean;
-  onConfirm: (km: number) => void;
-  pending: boolean;
-  hint?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [km, setKm] = useState("");
-  return (
-    <>
-      <div className="flex flex-col gap-1">
-        <Button onClick={() => setOpen(true)} disabled={disabled} className="bg-brand hover:bg-brand/90">
-          <Play className="mr-1.5 size-4" /> Iniciar viagem
-        </Button>
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Iniciar viagem</DialogTitle></DialogHeader>
-          <div className="space-y-1.5">
-            <Label>Km inicial do veículo</Label>
-            <Input type="number" value={km} onChange={(e) => setKm(e.target.value)} autoFocus />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => { onConfirm(Number(km)); setOpen(false); }} disabled={pending || !km}>
-              Iniciar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+            <section className="space-y-2 rounded-lg border border-border/60 p-3">
+              <Label className="flex items-center gap-1 font-semibold"><Receipt className="size-4" /> Canhoto assinado</Label>
+              <p className="text-xs text-muted-foreground">Foto ou PDF.</p>
+              <UploadFotos viagemId={viagemId} categoria="canhoto" label="Anexar canhoto" accept="image/*,application/pdf" multiple={false} />
+            </section>
 
-function FinalizarViagemDialog({
-  disabled,
-  onConfirm,
-  pending,
-  hint,
-  kmInicial,
-}: {
-  disabled: boolean;
-  onConfirm: (km: number) => void;
-  pending: boolean;
-  hint?: string;
-  kmInicial: number | null;
-}) {
-  const [open, setOpen] = useState(false);
-  const [km, setKm] = useState("");
-  const invalido = kmInicial != null && km && Number(km) < kmInicial;
-  return (
-    <>
-      <div className="flex flex-col gap-1">
-        <Button onClick={() => setOpen(true)} disabled={disabled} variant="secondary">
-          <CheckCircle2 className="mr-1.5 size-4" /> Finalizar viagem
-        </Button>
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Finalizar viagem</DialogTitle></DialogHeader>
-          <div className="space-y-1.5">
-            <Label>Km final do veículo{kmInicial != null && ` (inicial: ${kmInicial})`}</Label>
-            <Input type="number" value={km} onChange={(e) => setKm(e.target.value)} autoFocus />
-            {invalido && <p className="text-xs text-destructive">Km final não pode ser menor que o inicial</p>}
+            <section className="space-y-2 rounded-lg border border-border/60 p-3">
+              <Label className="font-semibold">Fotos de entrega</Label>
+              <UploadFotos viagemId={viagemId} categoria="entrega" label="Adicionar fotos" />
+            </section>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => { onConfirm(Number(km)); setOpen(false); }} disabled={pending || !km || !!invalido}>
-              Concluir
+            <Button onClick={submit} disabled={!kmFinal || !!kmInvalido || salvando} className="bg-brand hover:bg-brand/90">
+              {salvando && <Loader2 className="mr-2 size-4 animate-spin" />} Concluir viagem
             </Button>
           </DialogFooter>
         </DialogContent>
