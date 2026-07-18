@@ -101,10 +101,10 @@ export function AdminDashboard() {
     const consumo = totLitros > 0 && totKmAbast > 0 ? totKmAbast / totLitros : 0;
 
     const contasReceber7d = data.lancamentos
-      .filter((l) => l.tipo === "receber" && l.status !== "pago" && l.data_vencimento >= hoje && l.data_vencimento <= em7Str)
+      .filter((l) => l.tipo === "receber" && l.status !== "pago" && l.data_vencimento != null && l.data_vencimento >= hoje && l.data_vencimento <= em7Str)
       .reduce((s, l) => s + Number(l.valor), 0);
     const contasPagar7d = data.lancamentos
-      .filter((l) => l.tipo === "pagar" && l.status !== "pago" && l.data_vencimento >= hoje && l.data_vencimento <= em7Str)
+      .filter((l) => l.tipo === "pagar" && l.status !== "pago" && l.data_vencimento != null && l.data_vencimento >= hoje && l.data_vencimento <= em7Str)
       .reduce((s, l) => s + Number(l.valor), 0);
     const inadimplencia = data.lancamentos
       .filter((l) => l.tipo === "receber" && l.status === "atrasado")
