@@ -104,7 +104,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       await supabase.rpc("marcar_atrasados");
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
-        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome)")
+        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome), plano_conta:plano_contas(codigo, nome, centro_custo)")
         .eq("tipo", tipo)
         .order("data_vencimento");
       if (error) throw error;
