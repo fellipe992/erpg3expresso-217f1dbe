@@ -776,8 +776,16 @@ function QuickPhotoUpload({ viagemId, onDone }: { viagemId: string; onDone: () =
 }
 
 // ============ Finalizar Viagem ============
-function FinalizarViagemDialog({ viagemId, kmInicial, onDone }: { viagemId: string; kmInicial: number | null; onDone: () => void }) {
+function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viagemId: string; kmInicial: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const openedOnce = useRef(false);
+  useEffect(() => {
+    if (autoOpen && !openedOnce.current) {
+      openedOnce.current = true;
+      setOpen(true);
+    }
+  }, [autoOpen]);
+
   const [dataEnc, setDataEnc] = useState(() => {
     const d = new Date();
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
