@@ -335,27 +335,54 @@ function MotoristaViagensView({
   search: string;
   setSearch: (v: string) => void;
 }) {
+  const [tab, setTab] = useState<"planejada" | "em_andamento" | "concluida">("em_andamento");
+  const grouped = {
+    planejada: viagens.filter((v) => v.status === "planejada"),
+    em_andamento: viagens.filter((v) => v.status === "em_andamento"),
+    concluida: viagens.filter((v) => v.status === "concluida"),
+  };
+  const lista = grouped[tab];
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
       <div>
         <h1 className="font-display text-xl font-bold">Minhas viagens</h1>
-        <p className="text-xs text-muted-foreground">Toque em uma viagem para iniciar, finalizar ou preencher o checklist.</p>
+        <p className="text-xs text-muted-foreground">Toque em uma viagem para ver detalhes, iniciar ou finalizar.</p>
       </div>
       <Input placeholder="Buscar por cidade, cliente..." value={search} onChange={(e) => setSearch(e.target.value)} />
+
+      <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/60 bg-muted/40 p-1">
+        {([
+          ["em_andamento", "Em andamento", grouped.em_andamento.length],
+          ["planejada", "Planejadas", grouped.planejada.length],
+          ["concluida", "Concluídas", grouped.concluida.length],
+        ] as const).map(([k, label, count]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={`rounded-md px-2 py-2 text-xs font-medium transition ${
+              tab === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            {label} <span className="ml-1 text-[10px] opacity-70">({count})</span>
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-brand" /></div>
-      ) : viagens.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma viagem atribuída no momento.</Card>
+      ) : lista.length === 0 ? (
+        <Card className="p-8 text-center text-sm text-muted-foreground">Nenhuma viagem nesta categoria.</Card>
       ) : (
         <div className="space-y-3">
-          {viagens.map((v) => (
+          {lista.map((v) => (
             <Link key={v.id} to="/app/viagens/$id" params={{ id: v.id }}>
               <Card className="p-4 transition hover:border-brand hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex items-center gap-2">
                       <Badge variant={STATUS_META[v.status].variant}>{STATUS_META[v.status].label}</Badge>
-                      {v.codigo && <span className="font-mono text-xs text-muted-foreground">#{v.codigo}</span>}
+                      {v.codigo && <span className="font-mono text-xs text-muted-foreground">OS #{v.codigo}</span>}
                     </div>
                     <div className="flex items-center gap-1.5 text-sm font-semibold">
                       <span>{v.origem_cidade ?? "—"}{v.origem_uf ? `/${v.origem_uf}` : ""}</span>
@@ -368,7 +395,7 @@ function MotoristaViagensView({
                     </div>
                     {v.data_prevista_saida && (
                       <div className="mt-1 text-xs text-muted-foreground">
-                        Saída: {new Date(v.data_prevista_saida).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                        Prev. saída: {new Date(v.data_prevista_saida).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                       </div>
                     )}
                   </div>
@@ -382,6 +409,7 @@ function MotoristaViagensView({
     </div>
   );
 }
+
 
 function F({ label, children }: { label: string; children: React.ReactNode }) {
   return (
