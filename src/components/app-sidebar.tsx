@@ -14,6 +14,7 @@ import {
   Building2,
   ShieldCheck,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,7 @@ const financeiro: NavItem[] = [
   { label: "Fluxo de caixa", to: "/app/financeiro", icon: Wallet },
   { label: "Contas a receber", to: "/app/receber", icon: Receipt },
   { label: "Contas a pagar", to: "/app/pagar", icon: Receipt },
+  { label: "Plano de contas", to: "/app/plano-contas", icon: BookOpen },
 ];
 
 const operacional: NavItem[] = [
@@ -101,7 +103,7 @@ export function AppSidebar() {
       <SidebarFooter>
         {!collapsed && (
           <div className="px-2 pb-2 text-[10px] uppercase tracking-[0.2em] text-sidebar-foreground/60">
-            v0.6 · Fase 6
+            v0.7 · Plano de Contas
           </div>
         )}
       </SidebarFooter>

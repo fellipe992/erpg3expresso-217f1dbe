@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PlanoContaSelector, type PlanoContaSelection } from "@/components/financeiro/plano-conta-selector";
 
 type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
 
@@ -40,10 +41,12 @@ export type Lancamento = {
   origem_id: string | null;
   numero_documento: string | null;
   observacoes: string | null;
+  plano_conta_id: string | null;
   cliente?: { razao_social: string } | null;
   fornecedor?: { razao_social: string } | null;
   veiculo?: { placa: string } | null;
   motorista?: { nome: string } | null;
+  plano_conta?: { codigo: string; nome: string; centro_custo: string | null } | null;
 };
 
 type DisplayStatus = Lancamento["status"] | "vence_hoje";
@@ -87,6 +90,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Lancamento>>({ tipo, status: "pendente" });
+  const [plano, setPlano] = useState<PlanoContaSelection>({ grupoId: null, subgrupoId: null, contaId: null });
 
   const isReceber = tipo === "receber";
   const label = isReceber ? "Contas a receber" : "Contas a pagar";
@@ -100,7 +104,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       await supabase.rpc("marcar_atrasados");
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
-        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome)")
+        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome), plano_conta:plano_contas(codigo, nome, centro_custo)")
         .eq("tipo", tipo)
         .order("data_vencimento");
       if (error) throw error;
@@ -136,11 +140,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     mutationFn: async () => {
       if (!form.descricao?.trim()) throw new Error("Descrição obrigatória");
       if (!form.valor || Number(form.valor) <= 0) throw new Error("Valor obrigatório");
+      if (!plano.contaId) throw new Error("Selecione a conta financeira (Grupo → Subgrupo → Conta)");
+
+      // Busca centro de custo e categoria a partir da conta selecionada
+      const { data: contaInfo } = await supabase
+        .from("plano_contas")
+        .select("centro_custo, nome, plano_subgrupos!inner(nome)")
+        .eq("id", plano.contaId)
+        .maybeSingle();
+      const contaData = contaInfo as { centro_custo: string | null; nome: string; plano_subgrupos: { nome: string } } | null;
 
       const payload = {
         tipo,
         descricao: form.descricao.trim(),
-        categoria: form.categoria?.trim() || null,
+        categoria: contaData?.plano_subgrupos.nome ?? form.categoria?.trim() ?? null,
+        plano_conta_id: plano.contaId,
         valor: Number(form.valor),
         data_emissao: form.data_emissao || new Date().toISOString().slice(0, 10),
         data_vencimento: form.data_vencimento || null,
@@ -152,7 +166,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
-        centro_custo: form.centro_custo?.trim() || form.categoria?.trim() || null,
+        centro_custo: contaData?.centro_custo ?? form.centro_custo?.trim() ?? null,
         veiculo_id: form.veiculo_id || null,
         motorista_id: form.motorista_id || null,
         origem: form.origem || (form.id ? undefined : "manual"),
@@ -173,6 +187,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
+      setPlano({ grupoId: null, subgrupoId: null, contaId: null });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -251,6 +266,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           status: "pendente",
           data_emissao: new Date().toISOString().slice(0, 10),
         });
+        setPlano({ grupoId: null, subgrupoId: null, contaId: null });
         setOpen(true);
       }}
     >
@@ -289,6 +305,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               <TableRow>
                 <TableHead>Descrição</TableHead>
                 <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
+                <TableHead>Conta financeira</TableHead>
                 <TableHead>Origem</TableHead>
                 <TableHead>Centro de custo</TableHead>
                 <TableHead>Veículo / Motorista</TableHead>
@@ -309,6 +326,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                   </TableCell>
                   <TableCell className="text-sm">
                     {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {l.plano_conta ? (
+                      <div>
+                        <div className="font-mono text-[10px] text-muted-foreground">{l.plano_conta.codigo}</div>
+                        <div>{l.plano_conta.nome}</div>
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
                   <TableCell className="text-xs">
                     {l.origem ? <Badge variant="outline" className="capitalize">{l.origem}</Badge> : <span className="text-muted-foreground">manual</span>}
@@ -339,7 +364,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       </Button>
                     )}
                     {canWrite && (
-                      <Button variant="ghost" size="icon" onClick={() => { setForm(l); setOpen(true); }}>
+                      <Button variant="ghost" size="icon" onClick={() => { setForm(l); setPlano({ grupoId: null, subgrupoId: null, contaId: l.plano_conta_id }); setOpen(true); }}>
                         <Pencil className="size-4" />
                       </Button>
                     )}
@@ -369,20 +394,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <Input value={form.descricao ?? ""} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
               </F>
             </div>
+            <div className="md:col-span-2">
+              <PlanoContaSelector
+                value={plano}
+                onChange={setPlano}
+                filterTipo={isReceber ? "receita" : "despesa"}
+                required
+              />
+            </div>
             <F label="Valor (R$) *">
               <Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setForm({ ...form, valor: e.target.value as unknown as number })} />
-            </F>
-            <F label="Categoria">
-              <Select
-                value={form.categoria ?? "__none"}
-                onValueChange={(v) => setForm({ ...form, categoria: v === "__none" ? null : v })}
-              >
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">Sem categoria</SelectItem>
-                  {categoriasBase.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
             </F>
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
