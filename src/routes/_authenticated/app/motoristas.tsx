@@ -91,6 +91,7 @@ function MotoristasPage() {
         uf: form.uf || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
+        veiculo_id: form.veiculo_id || null,
       };
       if (form.id) {
         const { error } = await supabase.from("motoristas").update(payload).eq("id", form.id);
