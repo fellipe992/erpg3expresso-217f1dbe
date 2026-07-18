@@ -105,7 +105,7 @@ function ViagensPage() {
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-        codigo: form.codigo?.trim() || null,
+        // codigo: gerado automaticamente pela sequência do banco (BEFORE INSERT trigger)
         cliente_id: form.cliente_id || null,
         motorista_id: form.motorista_id || null,
         veiculo_id: form.veiculo_id || null,
