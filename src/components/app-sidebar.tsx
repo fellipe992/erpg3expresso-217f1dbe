@@ -14,6 +14,7 @@ import {
   Building2,
   ShieldCheck,
   Sparkles,
+  BookOpen,
 } from "lucide-react";
 
 import {
