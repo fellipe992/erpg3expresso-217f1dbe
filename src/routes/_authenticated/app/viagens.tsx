@@ -377,8 +377,8 @@ function MotoristaViagensView({
       ) : (
         <div className="space-y-3">
           {lista.map((v) => (
-            <Link key={v.id} to="/app/viagens/$id" params={{ id: v.id }}>
-              <Card className="p-4 transition hover:border-brand hover:shadow-md">
+            <Card key={v.id} className="overflow-hidden transition hover:border-brand hover:shadow-md">
+              <Link to="/app/viagens/$id" params={{ id: v.id }} className="block p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex items-center gap-2">
@@ -402,14 +402,42 @@ function MotoristaViagensView({
                   </div>
                   <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
                 </div>
-              </Card>
-            </Link>
+              </Link>
+              {v.status === "planejada" && (
+                <div className="border-t border-border/60 bg-brand-subtle/30 p-2">
+                  <Button
+                    asChild
+                    className="w-full bg-brand text-white hover:bg-brand/90"
+                    size="sm"
+                  >
+                    <Link to="/app/viagens/$id" params={{ id: v.id }} search={{ iniciar: 1 } as never}>
+                      <Play className="mr-2 size-4" /> Iniciar viagem
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              {v.status === "em_andamento" && (
+                <div className="border-t border-border/60 bg-brand-subtle/30 p-2">
+                  <Button
+                    asChild
+                    variant="secondary"
+                    className="w-full"
+                    size="sm"
+                  >
+                    <Link to="/app/viagens/$id" params={{ id: v.id }} search={{ finalizar: 1 } as never}>
+                      <CheckCircle2 className="mr-2 size-4" /> Finalizar viagem
+                    </Link>
+                  </Button>
+                </div>
+              )}
+            </Card>
           ))}
         </div>
       )}
     </div>
   );
 }
+
 
 
 function F({ label, children }: { label: string; children: React.ReactNode }) {
