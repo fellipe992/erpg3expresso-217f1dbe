@@ -101,6 +101,19 @@ function ViagemDetalheePage() {
     },
   });
 
+  const { data: movimentacoes = [] } = useQuery({
+    queryKey: ["viagem-financeiro", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_lancamentos")
+        .select("id, tipo, descricao, categoria, centro_custo, valor, data_emissao, data_vencimento, status, origem")
+        .eq("viagem_id", id)
+        .order("data_emissao", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const startTrip = useMutation({
     mutationFn: async (km: number) => {
       const { error } = await supabase
