@@ -473,3 +473,21 @@ function ResumoCard({ label, value, tone }: { label: string; value: string; tone
     </Card>
   );
 }
+
+function OrigemButton({ l }: { l: Lancamento }) {
+  if (!l.origem || !l.origem_id) return null;
+  let to: string | null = null;
+  const params: Record<string, string> = {};
+  if (l.origem === "viagem") { to = "/app/viagens/$id"; params.id = l.origem_id; }
+  else if (l.origem === "abastecimento") to = "/app/abastecimentos";
+  else if (l.origem === "manutencao") to = "/app/manutencoes";
+  else if (l.viagem_id) { to = "/app/viagens/$id"; params.id = l.viagem_id; }
+  if (!to) return null;
+  return (
+    <Button asChild variant="ghost" size="icon" title="Visualizar origem">
+      <Link to={to} params={params as never}>
+        <ExternalLink className="size-4" />
+      </Link>
+    </Button>
+  );
+}
