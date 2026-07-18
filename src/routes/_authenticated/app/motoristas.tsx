@@ -37,7 +37,10 @@ type Motorista = {
   uf: string | null;
   ativo: boolean;
   observacoes: string | null;
+  veiculo_id: string | null;
 };
+
+type VeiculoOpt = { id: string; placa: string; modelo: string };
 
 const empty: Partial<Motorista> = { nome: "", ativo: true };
 
