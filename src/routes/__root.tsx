@@ -79,18 +79,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Portal interno de gestão financeira e operacional da G3 Expresso — controle de frota, motoristas, viagens e custos.",
+          "Sistema de Gestão G3 Expresso",
       },
       { name: "author", content: "G3 Expresso" },
       { property: "og:title", content: "Controle Financeiro G3 Expresso" },
       {
         property: "og:description",
-        content: "Plataforma privada de gestão logística e financeira da G3 Expresso.",
+        content: "Sistema de Gestão G3 Expresso",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "theme-color", content: "#141414" },
+      { name: "twitter:title", content: "Controle Financeiro G3 Expresso" },
+      { name: "twitter:description", content: "Sistema de Gestão G3 Expresso" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/beb0e91a-355d-49e2-aafc-8af9c560dcca/id-preview-a14bf599--ff821eca-162f-4b3a-b7ff-749214f5fc69.lovable.app-1784401493059.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/beb0e91a-355d-49e2-aafc-8af9c560dcca/id-preview-a14bf599--ff821eca-162f-4b3a-b7ff-749214f5fc69.lovable.app-1784401493059.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
