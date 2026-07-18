@@ -364,7 +364,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       </Button>
                     )}
                     {canWrite && (
-                      <Button variant="ghost" size="icon" onClick={() => { setForm(l); setOpen(true); }}>
+                      <Button variant="ghost" size="icon" onClick={() => { setForm(l); setPlano({ grupoId: null, subgrupoId: null, contaId: l.plano_conta_id }); setOpen(true); }}>
                         <Pencil className="size-4" />
                       </Button>
                     )}
