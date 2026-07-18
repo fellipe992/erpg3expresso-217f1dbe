@@ -553,9 +553,31 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="w-full bg-brand py-6 text-base hover:bg-brand/90 md:w-auto">
+      <Button onClick={() => setConfirmOpen(true)} className="w-full bg-brand py-6 text-base hover:bg-brand/90 md:w-auto">
         <Play className="mr-2 size-5" /> Iniciar Viagem
       </Button>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Iniciar esta viagem?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você vai abrir o checklist de saída. Confirme apenas se estiver pronto para iniciar a viagem agora.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-brand text-white hover:bg-brand/90"
+              onClick={() => {
+                setConfirmOpen(false);
+                setOpen(true);
+              }}
+            >
+              Sim, iniciar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
