@@ -26,6 +26,7 @@ import { Route as AuthenticatedAppFinanceiroRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
+import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -119,6 +120,12 @@ const AuthenticatedAppAssistenteRoute =
     path: '/app/assistente',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppAbastecimentosRoute =
+  AuthenticatedAppAbastecimentosRouteImport.update({
+    id: '/app/abastecimentos',
+    path: '/app/abastecimentos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppViagensIdRoute =
   AuthenticatedAppViagensIdRouteImport.update({
     id: '/$id',
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -150,6 +158,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -171,6 +180,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/app/abastecimentos'
     | '/app/assistente'
     | '/app/clientes'
     | '/app/empresa'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/app/abastecimentos'
     | '/app/assistente'
     | '/app/clientes'
     | '/app/empresa'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/empresa'
@@ -375,6 +388,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAssistenteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/abastecimentos': {
+      id: '/_authenticated/app/abastecimentos'
+      path: '/app/abastecimentos'
+      fullPath: '/app/abastecimentos'
+      preLoaderRoute: typeof AuthenticatedAppAbastecimentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/viagens/$id': {
       id: '/_authenticated/app/viagens/$id'
       path: '/$id'
@@ -400,6 +420,7 @@ const AuthenticatedAppViagensRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppAbastecimentosRoute: typeof AuthenticatedAppAbastecimentosRoute
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
@@ -415,6 +436,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppAbastecimentosRoute: AuthenticatedAppAbastecimentosRoute,
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
