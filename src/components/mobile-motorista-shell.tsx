@@ -10,8 +10,8 @@ const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
   { to: "/app/viagens", label: "Viagens", icon: MapPin },
   { to: "/app/abastecimentos", label: "Abast.", icon: Fuel },
-  { to: "/app/alertas", label: "Alertas", icon: Bell, soon: true },
-  { to: "/app/perfil", label: "Perfil", icon: User, soon: true },
+  { to: "/app/alertas", label: "Alertas", icon: Bell },
+  { to: "/app/perfil", label: "Perfil", icon: User },
 ];
 
 export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
@@ -33,29 +33,19 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
           {tabs.map((t) => {
             const active = location.pathname === t.to;
             const Icon = t.icon;
-            const content = (
-              <div
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium",
-                  active ? "text-brand" : "text-muted-foreground",
-                  t.soon && "opacity-50",
-                )}
-              >
-                <Icon className="size-5" />
-                <span>{t.label}</span>
-              </div>
-            );
             return (
               <li key={t.to}>
-                {t.soon ? (
-                  <button type="button" className="w-full" title="Em breve">
-                    {content}
-                  </button>
-                ) : (
-                  <Link to={t.to as never} className="block">
-                    {content}
-                  </Link>
-                )}
+                <Link to={t.to as never} className="block">
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium",
+                      active ? "text-brand" : "text-muted-foreground",
+                    )}
+                  >
+                    <Icon className="size-5" />
+                    <span>{t.label}</span>
+                  </div>
+                </Link>
               </li>
             );
           })}

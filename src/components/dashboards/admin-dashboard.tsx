@@ -90,14 +90,19 @@ export function AdminDashboard() {
     const lucroMes = receitaMes - despesaMes;
 
     const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioMesStr);
-    const kmMes = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
+    const kmMesViagens = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
+    const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioMesStr);
+    const kmMesAbast = abastMes.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
+    const kmMes = kmMesViagens > 0 ? kmMesViagens : kmMesAbast;
 
     const frotaAtiva = data.veiculos.filter((v) => v.ativo).length;
     const motoristasAtivos = data.motoristas.filter((m) => m.ativo).length;
     const emViagem = data.viagens.filter((v) => v.status === "em_andamento").length;
 
-    const totLitros = data.abastecimentos.reduce((s, a) => s + Number(a.litros ?? 0), 0);
-    const totKmAbast = data.abastecimentos.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
+    // Consumo: apenas registros com km_percorridos > 0 (ignora o primeiro abastecimento de cada veículo)
+    const abastValidos = data.abastecimentos.filter((a) => Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0);
+    const totLitros = abastValidos.reduce((s, a) => s + Number(a.litros), 0);
+    const totKmAbast = abastValidos.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
     const consumo = totLitros > 0 && totKmAbast > 0 ? totKmAbast / totLitros : 0;
 
     const contasReceber7d = data.lancamentos

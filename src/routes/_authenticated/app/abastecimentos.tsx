@@ -72,12 +72,16 @@ function AbastecimentosPage() {
     },
   });
 
-  const emptyForm: Partial<Abast> = useMemo(() => ({
-    data: new Date().toISOString().slice(0, 10),
-    veiculo_id: isMotorista ? meMotorista?.veiculo_id ?? "" : "",
-    motorista_id: isMotorista ? meMotorista?.id ?? null : null,
-    combustivel: "Diesel S10",
-  }), [isMotorista, meMotorista]);
+  const emptyForm: Partial<Abast> = useMemo(() => {
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return {
+      data: localDate,
+      veiculo_id: isMotorista ? meMotorista?.veiculo_id ?? "" : "",
+      motorista_id: isMotorista ? meMotorista?.id ?? null : null,
+      combustivel: "Diesel S10",
+    };
+  }, [isMotorista, meMotorista]);
 
   const [form, setForm] = useState<Partial<Abast>>(emptyForm);
 
@@ -234,7 +238,7 @@ function AbastecimentosPage() {
             <TableBody>
               {filtered.map((a) => (
                 <TableRow key={a.id}>
-                  <TableCell className="text-xs">{new Date(a.data).toLocaleDateString("pt-BR")}{a.hora && ` ${a.hora.slice(0, 5)}`}</TableCell>
+                  <TableCell className="text-xs">{a.data.split("-").reverse().join("/")}{a.hora && ` ${a.hora.slice(0, 5)}`}</TableCell>
                   <TableCell className="font-mono text-xs">{a.veiculo?.placa ?? "—"}</TableCell>
                   <TableCell className="text-xs">{a.motorista?.nome ?? "—"}</TableCell>
                   <TableCell className="text-xs">{Number(a.litros).toFixed(2)}</TableCell>
