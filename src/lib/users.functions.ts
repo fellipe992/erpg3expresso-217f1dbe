@@ -113,7 +113,9 @@ export const updateUser = createServerFn({ method: "POST" })
     }
 
     // Atualizar profile (nome / telefone / ativo)
-    const profileUpdate: Record<string, unknown> = {};
+    const profileUpdate: {
+      nome?: string; telefone?: string | null; ativo?: boolean; email?: string;
+    } = {};
     if (data.nome !== undefined) profileUpdate.nome = data.nome;
     if (data.telefone !== undefined) profileUpdate.telefone = data.telefone;
     if (data.ativo !== undefined) profileUpdate.ativo = data.ativo;
@@ -122,6 +124,7 @@ export const updateUser = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.from("profiles").update(profileUpdate).eq("id", data.user_id);
       if (error) throw new Error(error.message);
     }
+
 
     // Atualizar auth (email/password fica separado; aqui só email)
     if (data.email !== undefined && data.email !== prevProfile.email) {
