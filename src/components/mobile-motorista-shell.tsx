@@ -48,8 +48,6 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
                 </Link>
               </li>
             );
-              </li>
-            );
           })}
         </ul>
       </nav>
