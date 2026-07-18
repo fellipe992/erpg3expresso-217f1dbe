@@ -150,19 +150,21 @@ function MotoristasPage() {
                 <TableHead>Nome</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>CNH</TableHead>
-                <TableHead>Validade CNH</TableHead>
+                <TableHead>Veículo</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((m) => (
+              {filtered.map((m) => {
+                const v = veiculos.find((x) => x.id === m.veiculo_id);
+                return (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.nome}</TableCell>
                   <TableCell className="font-mono text-xs">{m.cpf ?? "—"}</TableCell>
                   <TableCell className="font-mono text-xs">{m.cnh ?? "—"}{m.cnh_categoria && ` (${m.cnh_categoria})`}</TableCell>
-                  <TableCell>{m.cnh_validade ? new Date(m.cnh_validade).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                  <TableCell className="text-xs">{v ? `${v.placa} · ${v.modelo}` : <span className="text-muted-foreground">Sem vínculo</span>}</TableCell>
                   <TableCell>{m.telefone ?? "—"}</TableCell>
                   <TableCell><Badge variant={m.ativo ? "default" : "outline"}>{m.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                   <TableCell className="text-right">
@@ -170,7 +172,8 @@ function MotoristasPage() {
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${m.nome}?`) && del.mutate(m.id)}><Trash2 className="size-4" /></Button>}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}
