@@ -326,6 +326,7 @@ function AbastecimentosPage() {
                 </Select>
               </F>
             </div>
+            <div className="md:col-span-2">
               <F label="Comprovante (foto ou PDF)">
                 <div className="flex items-center gap-2">
                   <Input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
