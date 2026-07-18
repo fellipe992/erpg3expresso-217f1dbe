@@ -86,12 +86,12 @@ function AssistentePage() {
       const freteTotal = v.reduce((s, x) => s + Number(x.valor_frete ?? 0), 0);
 
       const proximosVenc = l
-        .filter((x) => x.status !== "pago" && x.status !== "cancelado")
-        .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento))
+        .filter((x) => x.status !== "pago" && x.status !== "cancelado" && x.data_vencimento)
+        .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
         .slice(0, 8)
         .map(
           (x) =>
-            `${x.tipo === "receber" ? "Receber" : "Pagar"} ${fmtBRL(Number(x.valor))} em ${x.data_vencimento} (${x.status}) — ${x.descricao}`,
+            `${x.tipo === "receber" ? "Receber" : "Pagar"} ${fmtBRL(Number(x.valor))} em ${x.data_vencimento ?? "sem vencimento"} (${x.status}) — ${x.descricao}`,
         )
         .join("\n");
 

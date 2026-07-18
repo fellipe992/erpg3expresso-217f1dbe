@@ -28,7 +28,7 @@ type Row = {
   tipo: "receber" | "pagar";
   descricao: string;
   valor: number;
-  data_vencimento: string;
+  data_vencimento: string | null;
   data_pagamento: string | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
 };
@@ -112,8 +112,8 @@ function FinanceiroPage() {
   const proximosVencer = useMemo(() => {
     const hoje = new Date().toISOString().slice(0, 10);
     return rows
-      .filter((r) => r.status !== "pago" && r.data_vencimento >= hoje)
-      .sort((a, b) => a.data_vencimento.localeCompare(b.data_vencimento))
+      .filter((r) => r.status !== "pago" && r.data_vencimento != null && r.data_vencimento >= hoje)
+      .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
       .slice(0, 6);
   }, [rows]);
 
@@ -224,7 +224,7 @@ function FinanceiroPage() {
                         <span className="truncate font-medium">{r.descricao}</span>
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        Vence em {new Date(r.data_vencimento + "T00:00:00").toLocaleDateString("pt-BR")}
+                        Vence em {new Date((r.data_vencimento ?? "") + "T00:00:00").toLocaleDateString("pt-BR")}
                       </div>
                     </div>
                     <div className={`font-mono font-semibold ${r.tipo === "receber" ? "text-brand" : "text-destructive"}`}>

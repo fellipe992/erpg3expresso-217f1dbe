@@ -25,7 +25,7 @@ export type Lancamento = {
   categoria: string | null;
   valor: number;
   data_emissao: string;
-  data_vencimento: string;
+  data_vencimento: string | null;
   data_pagamento: string | null;
   forma_pagamento: FormaPagamento | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
@@ -38,12 +38,23 @@ export type Lancamento = {
   fornecedor?: { razao_social: string } | null;
 };
 
-const STATUS_META: Record<Lancamento["status"], { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+type DisplayStatus = Lancamento["status"] | "vence_hoje";
+
+const STATUS_META: Record<DisplayStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   pendente: { label: "Pendente", variant: "outline" },
+  vence_hoje: { label: "Vence hoje", variant: "default" },
   pago: { label: "Pago", variant: "default" },
   atrasado: { label: "Atrasado", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
 };
+
+function displayStatus(l: Lancamento): DisplayStatus {
+  if (l.status === "pendente" && l.data_vencimento) {
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (l.data_vencimento === hoje) return "vence_hoje";
+  }
+  return l.status;
+}
 
 const FORMAS: { value: string; label: string }[] = [
   { value: "dinheiro", label: "Dinheiro" },
@@ -106,11 +117,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
   });
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       if (!form.descricao?.trim()) throw new Error("Descrição obrigatória");
       if (!form.valor || Number(form.valor) <= 0) throw new Error("Valor obrigatório");
-      if (!form.data_vencimento) throw new Error("Vencimento obrigatório");
 
       const payload = {
         tipo,
@@ -118,7 +134,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         categoria: form.categoria?.trim() || null,
         valor: Number(form.valor),
         data_emissao: form.data_emissao || new Date().toISOString().slice(0, 10),
-        data_vencimento: form.data_vencimento,
+        data_vencimento: form.data_vencimento || null,
         data_pagamento: form.data_pagamento || null,
         forma_pagamento: (form.forma_pagamento as Lancamento["forma_pagamento"]) || null,
         status: (form.status ?? "pendente") as Lancamento["status"],
@@ -140,7 +156,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success(form.id ? "Lançamento atualizado" : `Novo ${singular} registrado`);
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
     },
@@ -160,7 +176,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success(isReceber ? "Marcado como recebido" : "Marcado como pago");
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -172,7 +188,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
     onSuccess: () => {
       toast.success("Lançamento removido");
-      qc.invalidateQueries({ queryKey: ["financeiro"] });
+      invalidateAll();
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -220,7 +236,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           tipo,
           status: "pendente",
           data_emissao: new Date().toISOString().slice(0, 10),
-          data_vencimento: new Date().toISOString().slice(0, 10),
         });
         setOpen(true);
       }}
@@ -285,7 +300,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {fmtBRL(Number(l.valor))}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_META[l.status].variant}>{STATUS_META[l.status].label}</Badge>
+                    {(() => { const ds = displayStatus(l); return <Badge variant={STATUS_META[ds].variant}>{STATUS_META[ds].label}</Badge>; })()}
                   </TableCell>
                   <TableCell className="text-right">
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
@@ -347,8 +362,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
             </F>
-            <F label="Vencimento *">
-              <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })} />
+            <F label={isReceber ? "Vencimento (opcional)" : "Vencimento"}>
+              <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
             {isReceber ? (
               <F label="Cliente">

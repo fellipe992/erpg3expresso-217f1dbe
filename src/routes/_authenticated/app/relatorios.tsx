@@ -43,7 +43,7 @@ type Lanc = {
   tipo: "receber" | "pagar";
   valor: number;
   status: string;
-  data_vencimento: string;
+  data_vencimento: string | null;
   data_pagamento: string | null;
   categoria: string | null;
   cliente_id: string | null;
@@ -198,7 +198,7 @@ function RelatoriosPage() {
         l.tipo,
         Number(l.valor).toFixed(2),
         l.status,
-        l.data_vencimento,
+        l.data_vencimento ?? "",
         l.data_pagamento ?? "",
         l.categoria ?? "",
         l.tipo === "receber"

@@ -105,7 +105,7 @@ function ViagensPage() {
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
-        codigo: form.codigo?.trim() || null,
+        // codigo: gerado automaticamente pela sequência do banco (BEFORE INSERT trigger)
         cliente_id: form.cliente_id || null,
         motorista_id: form.motorista_id || null,
         veiculo_id: form.veiculo_id || null,
@@ -255,7 +255,7 @@ function ViagensPage() {
             <DialogTitle>{form.id ? "Editar viagem" : "Nova viagem"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
-            <F label="Código / OS"><Input value={form.codigo ?? ""} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="Auto" /></F>
+            <F label="Código / OS"><Input value={form.codigo ?? ""} readOnly disabled placeholder="Gerado automaticamente" className="font-mono" /></F>
             <F label="Status">
               <Select value={form.status ?? "planejada"} onValueChange={(v) => setForm({ ...form, status: v as Viagem["status"] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>

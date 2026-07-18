@@ -252,7 +252,7 @@ export type Database = {
           created_by: string | null
           data_emissao: string
           data_pagamento: string | null
-          data_vencimento: string
+          data_vencimento: string | null
           descricao: string
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
           fornecedor_id: string | null
@@ -272,7 +272,7 @@ export type Database = {
           created_by?: string | null
           data_emissao?: string
           data_pagamento?: string | null
-          data_vencimento: string
+          data_vencimento?: string | null
           descricao: string
           forma_pagamento?:
             | Database["public"]["Enums"]["forma_pagamento"]
@@ -294,7 +294,7 @@ export type Database = {
           created_by?: string | null
           data_emissao?: string
           data_pagamento?: string | null
-          data_vencimento?: string
+          data_vencimento?: string | null
           descricao?: string
           forma_pagamento?:
             | Database["public"]["Enums"]["forma_pagamento"]
