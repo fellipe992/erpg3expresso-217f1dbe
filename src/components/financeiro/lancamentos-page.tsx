@@ -328,6 +328,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
                   </TableCell>
                   <TableCell className="text-xs">
+                    {l.plano_conta ? (
+                      <div>
+                        <div className="font-mono text-[10px] text-muted-foreground">{l.plano_conta.codigo}</div>
+                        <div>{l.plano_conta.nome}</div>
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-xs">
                     {l.origem ? <Badge variant="outline" className="capitalize">{l.origem}</Badge> : <span className="text-muted-foreground">manual</span>}
                   </TableCell>
                   <TableCell className="text-xs">{l.centro_custo ?? l.categoria ?? "—"}</TableCell>
