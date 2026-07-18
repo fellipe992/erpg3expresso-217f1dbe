@@ -266,6 +266,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           status: "pendente",
           data_emissao: new Date().toISOString().slice(0, 10),
         });
+        setPlano({ grupoId: null, subgrupoId: null, contaId: null });
         setOpen(true);
       }}
     >
