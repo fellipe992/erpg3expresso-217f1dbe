@@ -56,12 +56,27 @@ function AuthPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword(parsed.data);
-    setLoading(false);
+    const { data: signIn, error } = await supabase.auth.signInWithPassword(parsed.data);
     if (error) {
+      setLoading(false);
       toast.error("Não foi possível entrar", { description: error.message });
       return;
     }
+    // Bloqueia usuários inativos
+    const uid = signIn.user?.id;
+    if (uid) {
+      const { data: profile } = await supabase
+        .from("profiles").select("ativo").eq("id", uid).maybeSingle();
+      if (profile && profile.ativo === false) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error("Acesso bloqueado", {
+          description: "Seu acesso está desativado. Entre em contato com o administrador.",
+        });
+        return;
+      }
+    }
+    setLoading(false);
     toast.success("Bem-vindo(a) de volta");
     navigate({ to: "/app", replace: true });
   }

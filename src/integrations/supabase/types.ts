@@ -632,6 +632,36 @@ export type Database = {
         }
         Relationships: []
       }
+      usuarios_auditoria: {
+        Row: {
+          acao: string
+          actor_email: string | null
+          actor_user_id: string | null
+          created_at: string
+          detalhes: Json | null
+          id: string
+          target_user_id: string
+        }
+        Insert: {
+          acao: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          target_user_id: string
+        }
+        Update: {
+          acao?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       veiculos: {
         Row: {
           ano: number | null
