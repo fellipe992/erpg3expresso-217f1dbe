@@ -41,10 +41,12 @@ export type Lancamento = {
   origem_id: string | null;
   numero_documento: string | null;
   observacoes: string | null;
+  plano_conta_id: string | null;
   cliente?: { razao_social: string } | null;
   fornecedor?: { razao_social: string } | null;
   veiculo?: { placa: string } | null;
   motorista?: { nome: string } | null;
+  plano_conta?: { codigo: string; nome: string; centro_custo: string | null } | null;
 };
 
 type DisplayStatus = Lancamento["status"] | "vence_hoje";
