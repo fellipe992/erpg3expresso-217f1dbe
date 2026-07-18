@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-export const Route = createFileRoute("/_authenticated/app/viagens")({
+export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
   component: ViagensPage,
 });
