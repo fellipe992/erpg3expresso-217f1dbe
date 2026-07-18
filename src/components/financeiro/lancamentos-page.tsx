@@ -140,11 +140,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     mutationFn: async () => {
       if (!form.descricao?.trim()) throw new Error("Descrição obrigatória");
       if (!form.valor || Number(form.valor) <= 0) throw new Error("Valor obrigatório");
+      if (!plano.contaId) throw new Error("Selecione a conta financeira (Grupo → Subgrupo → Conta)");
+
+      // Busca centro de custo e categoria a partir da conta selecionada
+      const { data: contaInfo } = await supabase
+        .from("plano_contas")
+        .select("centro_custo, nome, plano_subgrupos!inner(nome)")
+        .eq("id", plano.contaId)
+        .maybeSingle();
+      const contaData = contaInfo as { centro_custo: string | null; nome: string; plano_subgrupos: { nome: string } } | null;
 
       const payload = {
         tipo,
         descricao: form.descricao.trim(),
-        categoria: form.categoria?.trim() || null,
+        categoria: contaData?.plano_subgrupos.nome ?? form.categoria?.trim() ?? null,
+        plano_conta_id: plano.contaId,
         valor: Number(form.valor),
         data_emissao: form.data_emissao || new Date().toISOString().slice(0, 10),
         data_vencimento: form.data_vencimento || null,
@@ -156,7 +166,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
-        centro_custo: form.centro_custo?.trim() || form.categoria?.trim() || null,
+        centro_custo: contaData?.centro_custo ?? form.centro_custo?.trim() ?? null,
         veiculo_id: form.veiculo_id || null,
         motorista_id: form.motorista_id || null,
         origem: form.origem || (form.id ? undefined : "manual"),
@@ -177,6 +187,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
+      setPlano({ grupoId: null, subgrupoId: null, contaId: null });
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
