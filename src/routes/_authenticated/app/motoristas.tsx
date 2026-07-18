@@ -193,6 +193,22 @@ function MotoristasPage() {
             <div className="md:col-span-2"><F label="Endereço"><Input value={form.endereco ?? ""} onChange={(e) => setForm({ ...form, endereco: e.target.value })} /></F></div>
             <F label="Cidade"><Input value={form.cidade ?? ""} onChange={(e) => setForm({ ...form, cidade: e.target.value })} /></F>
             <F label="UF"><Input maxLength={2} value={form.uf ?? ""} onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })} /></F>
+            <div className="md:col-span-2">
+              <F label="Veículo vinculado">
+                <Select value={form.veiculo_id ?? "none"} onValueChange={(v) => setForm({ ...form, veiculo_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Sem veículo —</SelectItem>
+                    {veiculos.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>{v.placa} · {v.modelo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </F>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Um motorista ativo só pode estar em um veículo, e cada veículo só admite um motorista ativo.
+              </p>
+            </div>
             <div className="flex items-center gap-2 md:col-span-2">
               <Switch checked={form.ativo ?? true} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
               <Label>Ativo</Label>
