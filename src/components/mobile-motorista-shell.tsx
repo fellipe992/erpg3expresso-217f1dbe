@@ -10,8 +10,8 @@ const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
   { to: "/app/viagens", label: "Viagens", icon: MapPin },
   { to: "/app/abastecimentos", label: "Abast.", icon: Fuel },
-  { to: "/app/alertas", label: "Alertas", icon: Bell, soon: true },
-  { to: "/app/perfil", label: "Perfil", icon: User, soon: true },
+  { to: "/app/alertas", label: "Alertas", icon: Bell },
+  { to: "/app/perfil", label: "Perfil", icon: User },
 ];
 
 export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
