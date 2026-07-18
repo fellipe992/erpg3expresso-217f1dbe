@@ -57,9 +57,11 @@ function ViagemDetalheePage() {
   const { id } = Route.useParams();
   const { role } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
   const isStaff = canWrite;
+
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["viagem", id] });
