@@ -140,40 +140,55 @@ export type Database = {
       }
       checklists: {
         Row: {
+          agua_radiador_ok: boolean | null
           combustivel_pct: number | null
           created_at: string
           created_by: string | null
           foto_url: string | null
+          freios_ok: boolean | null
           id: string
           itens: Json
           km: number | null
           observacoes: string | null
+          oleo_ok: boolean | null
+          pneus_ok: boolean | null
+          tacografo_ok: boolean | null
           tipo: Database["public"]["Enums"]["checklist_tipo"]
           updated_at: string
           viagem_id: string
         }
         Insert: {
+          agua_radiador_ok?: boolean | null
           combustivel_pct?: number | null
           created_at?: string
           created_by?: string | null
           foto_url?: string | null
+          freios_ok?: boolean | null
           id?: string
           itens?: Json
           km?: number | null
           observacoes?: string | null
+          oleo_ok?: boolean | null
+          pneus_ok?: boolean | null
+          tacografo_ok?: boolean | null
           tipo: Database["public"]["Enums"]["checklist_tipo"]
           updated_at?: string
           viagem_id: string
         }
         Update: {
+          agua_radiador_ok?: boolean | null
           combustivel_pct?: number | null
           created_at?: string
           created_by?: string | null
           foto_url?: string | null
+          freios_ok?: boolean | null
           id?: string
           itens?: Json
           km?: number | null
           observacoes?: string | null
+          oleo_ok?: boolean | null
+          pneus_ok?: boolean | null
+          tacografo_ok?: boolean | null
           tipo?: Database["public"]["Enums"]["checklist_tipo"]
           updated_at?: string
           viagem_id?: string
@@ -981,6 +996,143 @@ export type Database = {
         }
         Relationships: []
       }
+      viagem_anexos: {
+        Row: {
+          categoria: string
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          id: string
+          mime_type: string | null
+          ocorrencia_id: string | null
+          storage_path: string
+          viagem_id: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          mime_type?: string | null
+          ocorrencia_id?: string | null
+          storage_path: string
+          viagem_id: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          id?: string
+          mime_type?: string | null
+          ocorrencia_id?: string | null
+          storage_path?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_anexos_ocorrencia_id_fkey"
+            columns: ["ocorrencia_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_ocorrencias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_anexos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      viagem_auditoria: {
+        Row: {
+          created_at: string
+          detalhes: Json | null
+          evento: string
+          id: string
+          usuario_id: string | null
+          viagem_id: string
+        }
+        Insert: {
+          created_at?: string
+          detalhes?: Json | null
+          evento: string
+          id?: string
+          usuario_id?: string | null
+          viagem_id: string
+        }
+        Update: {
+          created_at?: string
+          detalhes?: Json | null
+          evento?: string
+          id?: string
+          usuario_id?: string | null
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_auditoria_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      viagem_ocorrencias: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          local: string | null
+          motorista_id: string | null
+          observacoes: string | null
+          updated_at: string
+          viagem_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          local?: string | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          viagem_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          local?: string | null
+          motorista_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_ocorrencias_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_ocorrencias_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagens: {
         Row: {
           cliente_id: string | null
@@ -993,11 +1145,14 @@ export type Database = {
           data_saida: string | null
           destino_cidade: string | null
           destino_uf: string | null
+          finalizada_por: string | null
           id: string
+          iniciada_por: string | null
           km_final: number | null
           km_inicial: number | null
           motorista_id: string | null
           observacoes: string | null
+          observacoes_finais: string | null
           origem_cidade: string | null
           origem_uf: string | null
           status: Database["public"]["Enums"]["viagem_status"]
@@ -1016,11 +1171,14 @@ export type Database = {
           data_saida?: string | null
           destino_cidade?: string | null
           destino_uf?: string | null
+          finalizada_por?: string | null
           id?: string
+          iniciada_por?: string | null
           km_final?: number | null
           km_inicial?: number | null
           motorista_id?: string | null
           observacoes?: string | null
+          observacoes_finais?: string | null
           origem_cidade?: string | null
           origem_uf?: string | null
           status?: Database["public"]["Enums"]["viagem_status"]
@@ -1039,11 +1197,14 @@ export type Database = {
           data_saida?: string | null
           destino_cidade?: string | null
           destino_uf?: string | null
+          finalizada_por?: string | null
           id?: string
+          iniciada_por?: string | null
           km_final?: number | null
           km_inicial?: number | null
           motorista_id?: string | null
           observacoes?: string | null
+          observacoes_finais?: string | null
           origem_cidade?: string | null
           origem_uf?: string | null
           status?: Database["public"]["Enums"]["viagem_status"]
