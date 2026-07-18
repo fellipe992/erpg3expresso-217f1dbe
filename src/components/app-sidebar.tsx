@@ -67,7 +67,7 @@ const gestao: NavItem[] = [
 ];
 
 const administracao: NavItem[] = [
-  { label: "Usuários", to: "/app/usuarios", icon: Users, soon: true },
+  { label: "Usuários", to: "/app/usuarios", icon: Users },
   { label: "Empresa", to: "/app/empresa", icon: Building2 },
   { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck, soon: true },
   { label: "Configurações", to: "/app/configuracoes", icon: Settings, soon: true },
