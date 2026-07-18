@@ -471,14 +471,22 @@ function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }
 }
 
 // ============ Checklist de Saída ============
-function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone }: { viagemId: string; kmSugerido: number | null; onDone: () => void }) {
+function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
   const [open, setOpen] = useState(false);
+  const openedOnce = useRef(false);
+  useEffect(() => {
+    if (autoOpen && !openedOnce.current) {
+      openedOnce.current = true;
+      setOpen(true);
+    }
+  }, [autoOpen]);
   const [pneus, setPneus] = useState<boolean | null>(null);
   const [pneusFotos, setPneusFotos] = useState<{ path: string; mime: string; name: string }[]>([]);
   const [oleo, setOleo] = useState<"ok" | "verificar" | null>(null);
   const [agua, setAgua] = useState<"ok" | "completar" | null>(null);
   const [freios, setFreios] = useState<"ok" | "manutencao" | null>(null);
   const [tacografo, setTacografo] = useState<"ok" | "problema" | null>(null);
+
   const [obs, setObs] = useState("");
   const [km, setKm] = useState<string>(kmSugerido?.toString() ?? "");
   const [salvando, setSalvando] = useState(false);
