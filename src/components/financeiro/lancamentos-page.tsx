@@ -300,7 +300,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {fmtBRL(Number(l.valor))}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_META[l.status].variant}>{STATUS_META[l.status].label}</Badge>
+                    {(() => { const ds = displayStatus(l); return <Badge variant={STATUS_META[ds].variant}>{STATUS_META[ds].label}</Badge>; })()}
                   </TableCell>
                   <TableCell className="text-right">
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
