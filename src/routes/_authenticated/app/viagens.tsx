@@ -424,7 +424,7 @@ function MotoristaViagensView({
                     className="w-full"
                     size="sm"
                   >
-                    <Link to="/app/viagens/$id" params={{ id: v.id }} search={{ finalizar: 1 } as never}>
+                    <Link to="/app/viagens/$id" params={{ id: v.id }} hash="finalizar">
                       <CheckCircle2 className="mr-2 size-4" /> Finalizar viagem
                     </Link>
                   </Button>
