@@ -89,11 +89,14 @@ export function MotoristaDashboard() {
   const concluidasMes = data.viagens.filter(
     (v) => v.status === "concluida" && (v.created_at ?? "") >= inicioMesStr,
   ).length;
-  const kmMes = data.viagens
+  const kmMesViagens = data.viagens
     .filter((v) => (v.created_at ?? "") >= inicioMesStr)
     .reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
-  const totLitros = data.abast.reduce((s, a) => s + Number(a.litros ?? 0), 0);
-  const totKm = data.abast.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
+  const kmMesAbast = data.abast.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
+  const kmMes = kmMesViagens > 0 ? kmMesViagens : kmMesAbast;
+  const abastValidos = data.abast.filter((a) => Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0);
+  const totLitros = abastValidos.reduce((s, a) => s + Number(a.litros), 0);
+  const totKm = abastValidos.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
   const consumo = totLitros > 0 && totKm > 0 ? (totKm / totLitros).toFixed(2) + " km/L" : "—";
 
   const cnhDias = data.motorista.cnh_validade
