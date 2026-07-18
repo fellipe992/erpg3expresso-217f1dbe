@@ -90,6 +90,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Lancamento>>({ tipo, status: "pendente" });
+  const [plano, setPlano] = useState<PlanoContaSelection>({ grupoId: null, subgrupoId: null, contaId: null });
 
   const isReceber = tipo === "receber";
   const label = isReceber ? "Contas a receber" : "Contas a pagar";
