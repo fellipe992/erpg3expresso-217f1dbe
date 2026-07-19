@@ -179,6 +179,7 @@ function ViagemDetalheePage() {
   const hasSaida = checklists.some((c) => c.tipo === "saida");
   const hasChegada = checklists.some((c) => c.tipo === "chegada");
   const kmRodado = viagem.km_inicial && viagem.km_final ? Number(viagem.km_final) - Number(viagem.km_inicial) : null;
+  const podeEditarAnexos = isStaff || (viagem.status === "planejada" || viagem.status === "em_andamento");
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 md:p-8">
