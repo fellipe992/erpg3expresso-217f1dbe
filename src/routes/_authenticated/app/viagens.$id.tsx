@@ -211,10 +211,12 @@ function ViagemDetalheePage() {
           <Info label="Cliente" value={viagem.cliente?.razao_social ?? "—"} />
           <Info label="Motorista" value={viagem.motorista?.nome ?? "—"} />
           <Info label="Veículo" value={viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—"} />
-          <Info
-            label="Valor do frete"
-            value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
-          />
+          {isStaff && (
+            <Info
+              label="Valor do frete"
+              value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+            />
+          )}
           <Info label="Saída prevista" value={viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—"} />
           <Info label="Chegada prevista" value={viagem.data_prevista_chegada ? new Date(viagem.data_prevista_chegada).toLocaleString("pt-BR") : "—"} />
           <Info label="Saída real" value={viagem.data_saida ? new Date(viagem.data_saida).toLocaleString("pt-BR") : "—"} />
