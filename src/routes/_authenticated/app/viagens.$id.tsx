@@ -312,7 +312,7 @@ function ViagemDetalheePage() {
           <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma ocorrência registrada.</Card>
         ) : (
           <div className="space-y-2">
-            {ocorrencias.map((o: any) => <OcorrenciaCard key={o.id} o={o} anexos={anexos.filter((a: any) => a.ocorrencia_id === o.id)} />)}
+            {ocorrencias.map((o: any) => <OcorrenciaCard key={o.id} o={o} anexos={anexos.filter((a: any) => a.ocorrencia_id === o.id)} canDelete={podeEditarAnexos} onDeleted={invalidateAll} />)}
           </div>
         )}
       </div>
@@ -321,7 +321,7 @@ function ViagemDetalheePage() {
       {anexos.filter((a: any) => !a.ocorrencia_id).length > 0 && (
         <div className="space-y-3">
           <h2 className="font-display text-lg font-bold">Anexos da viagem</h2>
-          <AnexosGrid anexos={anexos.filter((a: any) => !a.ocorrencia_id)} />
+          <AnexosGrid anexos={anexos.filter((a: any) => !a.ocorrencia_id)} canDelete={podeEditarAnexos} onDeleted={invalidateAll} />
         </div>
       )}
 
