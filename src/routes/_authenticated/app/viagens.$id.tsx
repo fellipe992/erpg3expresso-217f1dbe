@@ -263,12 +263,14 @@ function ViagemDetalheePage() {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <OcorrenciaDialog viagemId={id} motoristaId={viagem.motorista_id} onDone={invalidateAll} />
             <QuickPhotoUpload viagemId={id} onDone={invalidateAll} />
-            <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
-              <Link to="/app/financeiro">
-                <DollarSign className="size-4" />
-                <span className="text-xs">Lançar despesa</span>
-              </Link>
-            </Button>
+            {isStaff && (
+              <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+                <Link to="/app/financeiro">
+                  <DollarSign className="size-4" />
+                  <span className="text-xs">Lançar despesa</span>
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
               <Link to="/app/abastecimentos">
                 <Fuel className="size-4" />
