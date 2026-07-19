@@ -211,10 +211,12 @@ function ViagemDetalheePage() {
           <Info label="Cliente" value={viagem.cliente?.razao_social ?? "—"} />
           <Info label="Motorista" value={viagem.motorista?.nome ?? "—"} />
           <Info label="Veículo" value={viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—"} />
-          <Info
-            label="Valor do frete"
-            value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
-          />
+          {isStaff && (
+            <Info
+              label="Valor do frete"
+              value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+            />
+          )}
           <Info label="Saída prevista" value={viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—"} />
           <Info label="Chegada prevista" value={viagem.data_prevista_chegada ? new Date(viagem.data_prevista_chegada).toLocaleString("pt-BR") : "—"} />
           <Info label="Saída real" value={viagem.data_saida ? new Date(viagem.data_saida).toLocaleString("pt-BR") : "—"} />
@@ -261,12 +263,14 @@ function ViagemDetalheePage() {
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <OcorrenciaDialog viagemId={id} motoristaId={viagem.motorista_id} onDone={invalidateAll} />
             <QuickPhotoUpload viagemId={id} onDone={invalidateAll} />
-            <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
-              <Link to="/app/financeiro">
-                <DollarSign className="size-4" />
-                <span className="text-xs">Lançar despesa</span>
-              </Link>
-            </Button>
+            {isStaff && (
+              <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
+                <Link to="/app/financeiro">
+                  <DollarSign className="size-4" />
+                  <span className="text-xs">Lançar despesa</span>
+                </Link>
+              </Button>
+            )}
             <Button asChild variant="outline" className="h-auto flex-col gap-1 py-3">
               <Link to="/app/abastecimentos">
                 <Fuel className="size-4" />
@@ -321,34 +325,36 @@ function ViagemDetalheePage() {
         </div>
       )}
 
-      {/* Movimentações financeiras */}
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
-        {movimentacoes.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada.</Card>
-        ) : (
-          <Card className="divide-y divide-border/60">
-            {movimentacoes.map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between gap-3 p-3 text-sm">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={m.tipo === "receber" ? "default" : "secondary"} className="capitalize">
-                      {m.origem ?? m.tipo}
-                    </Badge>
-                    <span className="truncate font-medium">{m.descricao}</span>
+      {/* Movimentações financeiras (staff only) */}
+      {isStaff && (
+        <div className="space-y-3">
+          <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
+          {movimentacoes.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada.</Card>
+          ) : (
+            <Card className="divide-y divide-border/60">
+              {movimentacoes.map((m: any) => (
+                <div key={m.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={m.tipo === "receber" ? "default" : "secondary"} className="capitalize">
+                        {m.origem ?? m.tipo}
+                      </Badge>
+                      <span className="truncate font-medium">{m.descricao}</span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {m.centro_custo ?? m.categoria ?? "—"} · {m.data_emissao ? new Date(m.data_emissao + "T00:00:00").toLocaleDateString("pt-BR") : "—"} · {m.status}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    {m.centro_custo ?? m.categoria ?? "—"} · {m.data_emissao ? new Date(m.data_emissao + "T00:00:00").toLocaleDateString("pt-BR") : "—"} · {m.status}
+                  <div className={`font-mono font-semibold ${m.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
+                    {m.tipo === "receber" ? "+" : "-"} {Number(m.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </div>
                 </div>
-                <div className={`font-mono font-semibold ${m.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
-                  {m.tipo === "receber" ? "+" : "-"} {Number(m.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </div>
-              </div>
-            ))}
-          </Card>
-        )}
-      </div>
+              ))}
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Auditoria (staff) */}
       {isStaff && auditoria.length > 0 && (
