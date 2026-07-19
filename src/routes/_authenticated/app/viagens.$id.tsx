@@ -325,34 +325,36 @@ function ViagemDetalheePage() {
         </div>
       )}
 
-      {/* Movimentações financeiras */}
-      <div className="space-y-3">
-        <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
-        {movimentacoes.length === 0 ? (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada.</Card>
-        ) : (
-          <Card className="divide-y divide-border/60">
-            {movimentacoes.map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between gap-3 p-3 text-sm">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={m.tipo === "receber" ? "default" : "secondary"} className="capitalize">
-                      {m.origem ?? m.tipo}
-                    </Badge>
-                    <span className="truncate font-medium">{m.descricao}</span>
+      {/* Movimentações financeiras (staff only) */}
+      {isStaff && (
+        <div className="space-y-3">
+          <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
+          {movimentacoes.length === 0 ? (
+            <Card className="p-6 text-center text-sm text-muted-foreground">Nenhuma movimentação vinculada.</Card>
+          ) : (
+            <Card className="divide-y divide-border/60">
+              {movimentacoes.map((m: any) => (
+                <div key={m.id} className="flex items-center justify-between gap-3 p-3 text-sm">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={m.tipo === "receber" ? "default" : "secondary"} className="capitalize">
+                        {m.origem ?? m.tipo}
+                      </Badge>
+                      <span className="truncate font-medium">{m.descricao}</span>
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {m.centro_custo ?? m.categoria ?? "—"} · {m.data_emissao ? new Date(m.data_emissao + "T00:00:00").toLocaleDateString("pt-BR") : "—"} · {m.status}
+                    </div>
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    {m.centro_custo ?? m.categoria ?? "—"} · {m.data_emissao ? new Date(m.data_emissao + "T00:00:00").toLocaleDateString("pt-BR") : "—"} · {m.status}
+                  <div className={`font-mono font-semibold ${m.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
+                    {m.tipo === "receber" ? "+" : "-"} {Number(m.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                   </div>
                 </div>
-                <div className={`font-mono font-semibold ${m.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
-                  {m.tipo === "receber" ? "+" : "-"} {Number(m.valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </div>
-              </div>
-            ))}
-          </Card>
-        )}
-      </div>
+              ))}
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Auditoria (staff) */}
       {isStaff && auditoria.length > 0 && (
