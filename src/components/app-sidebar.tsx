@@ -83,6 +83,7 @@ export function AppSidebar() {
 
   const isAdmin = role === "administrador";
   const isFinance = role === "financeiro" || isAdmin;
+  const isGestor = role === "gestor";
 
   return (
     <Sidebar collapsible="icon">
@@ -93,7 +94,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <Group items={overview} pathname={location.pathname} collapsed={collapsed} />
+        {!isGestor && <Group items={overview} pathname={location.pathname} collapsed={collapsed} />}
         {isFinance && <Group label="Financeiro" items={financeiro} pathname={location.pathname} collapsed={collapsed} />}
         <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
         <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
