@@ -431,7 +431,7 @@ function ItemCheck({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
-function OcorrenciaCard({ o, anexos }: { o: any; anexos: any[] }) {
+function OcorrenciaCard({ o, anexos, canDelete, onDeleted }: { o: any; anexos: any[]; canDelete?: boolean; onDeleted?: () => void }) {
   return (
     <Card className="p-3">
       <div className="mb-1 flex items-center justify-between gap-2">
@@ -443,13 +443,15 @@ function OcorrenciaCard({ o, anexos }: { o: any; anexos: any[] }) {
       </div>
       <p className="whitespace-pre-wrap text-sm">{o.descricao}</p>
       {o.observacoes && <p className="mt-1 text-xs text-muted-foreground">{o.observacoes}</p>}
-      {anexos.length > 0 && <AnexosGrid anexos={anexos} className="mt-2" />}
+      {anexos.length > 0 && <AnexosGrid anexos={anexos} className="mt-2" canDelete={canDelete} onDeleted={onDeleted} />}
     </Card>
   );
 }
 
-function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }) {
+function AnexosGrid({ anexos, className, canDelete, onDeleted }: { anexos: any[]; className?: string; canDelete?: boolean; onDeleted?: () => void }) {
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = async (path: string) => {
     if (urls[path]) return;
@@ -457,33 +459,84 @@ function AnexosGrid({ anexos, className }: { anexos: any[]; className?: string }
     if (data?.signedUrl) setUrls((u) => ({ ...u, [path]: data.signedUrl }));
   };
 
+  const handleDelete = async (a: any) => {
+    setDeletingId(a.id);
+    try {
+      const { error: sErr } = await supabase.storage.from("viagem-fotos").remove([a.storage_path]);
+      if (sErr && !/not found/i.test(sErr.message)) throw sErr;
+      const { error } = await supabase.from("viagem_anexos").delete().eq("id", a.id);
+      if (error) throw error;
+      toast.success("Foto removida");
+      onDeleted?.();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao remover");
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
+  };
+
   return (
-    <div className={`grid grid-cols-3 gap-2 md:grid-cols-6 ${className ?? ""}`}>
-      {anexos.map((a) => {
-        void load(a.storage_path);
-        const isImg = (a.mime_type ?? "").startsWith("image/");
-        return (
-          <a
-            key={a.id}
-            href={urls[a.storage_path] ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted"
-          >
-            {isImg && urls[a.storage_path] ? (
-              <img src={urls[a.storage_path]} alt={a.categoria} className="h-full w-full object-cover" />
-            ) : (
-              <div className="grid h-full place-items-center text-muted-foreground">
-                <FileText className="size-6" />
-              </div>
-            )}
-            <div className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1 py-0.5 text-[9px] uppercase text-white">
-              {a.categoria.replace("_", " ")}
+    <>
+      <div className={`grid grid-cols-3 gap-2 md:grid-cols-6 ${className ?? ""}`}>
+        {anexos.map((a) => {
+          void load(a.storage_path);
+          const isImg = (a.mime_type ?? "").startsWith("image/");
+          return (
+            <div key={a.id} className="group relative aspect-square overflow-hidden rounded-md border border-border bg-muted">
+              <a
+                href={urls[a.storage_path] ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full w-full"
+              >
+                {isImg && urls[a.storage_path] ? (
+                  <img src={urls[a.storage_path]} alt={a.categoria} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="grid h-full place-items-center text-muted-foreground">
+                    <FileText className="size-6" />
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 truncate bg-black/60 px-1 py-0.5 text-[9px] uppercase text-white">
+                  {a.categoria.replace("_", " ")}
+                </div>
+              </a>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmId(a.id); }}
+                  disabled={deletingId === a.id}
+                  className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-destructive/90 text-white opacity-0 shadow transition group-hover:opacity-100 focus:opacity-100 disabled:opacity-50"
+                  aria-label="Remover foto"
+                >
+                  {deletingId === a.id ? <Loader2 className="size-3.5 animate-spin" /> : <span className="text-xs leading-none">×</span>}
+                </button>
+              )}
             </div>
-          </a>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+      <AlertDialog open={confirmId !== null} onOpenChange={(o) => !o && setConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta foto?</AlertDialogTitle>
+            <AlertDialogDescription>A imagem será excluída da viagem e não poderá ser recuperada.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                const a = anexos.find((x) => x.id === confirmId);
+                if (a) void handleDelete(a);
+              }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
