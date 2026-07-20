@@ -14,6 +14,8 @@ import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { HideValuesProvider } from "@/hooks/use-hide-values";
+
 
 function NotFoundComponent() {
   return (
@@ -146,10 +148,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <AuthStateSync />
-          <Outlet />
-          <Toaster richColors position="top-right" />
+          <HideValuesProvider>
+            <AuthStateSync />
+            <Outlet />
+            <Toaster richColors position="top-right" />
+          </HideValuesProvider>
         </AuthProvider>
+
       </ThemeProvider>
     </QueryClientProvider>
   );
