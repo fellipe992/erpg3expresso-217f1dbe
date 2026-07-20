@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
   head: () => ({ meta: [{ title: "Relatórios — G3 Expresso" }] }),
@@ -78,6 +80,9 @@ function baixarCsv(nome: string, linhas: (string | number)[][]) {
 
 function RelatoriosPage() {
   const [periodo, setPeriodo] = useState<"30d" | "90d" | "ano">("90d");
+  const { role } = useAuth();
+  const canSeeFinance = role === "administrador" || role === "financeiro";
+
 
   const desde = useMemo(() => {
     const d = new Date();
