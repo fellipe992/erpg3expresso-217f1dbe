@@ -216,23 +216,32 @@ function RelatoriosPage() {
 
   const exportarViagens = () => {
     if (!data) return;
+    const header = canSeeFinance
+      ? ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Frete", "Motorista", "Veículo", "Cliente"]
+      : ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Motorista", "Veículo", "Cliente"];
     const linhas: (string | number)[][] = [
-      ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Frete", "Motorista", "Veículo", "Cliente"],
-      ...data.viagens.map((v) => [
-        v.status,
-        v.data_saida ?? "",
-        v.data_chegada ?? "",
-        v.km_inicial ?? "",
-        v.km_final ?? "",
-        Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
-        Number(v.valor_frete ?? 0).toFixed(2),
-        data.motoristas.get(v.motorista_id ?? "") ?? "",
-        data.veiculos.get(v.veiculo_id ?? "") ?? "",
-        data.clientes.get(v.cliente_id ?? "") ?? "",
-      ]),
+      header,
+      ...data.viagens.map((v) => {
+        const base: (string | number)[] = [
+          v.status,
+          v.data_saida ?? "",
+          v.data_chegada ?? "",
+          v.km_inicial ?? "",
+          v.km_final ?? "",
+          Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
+        ];
+        if (canSeeFinance) base.push(Number(v.valor_frete ?? 0).toFixed(2));
+        base.push(
+          data.motoristas.get(v.motorista_id ?? "") ?? "",
+          data.veiculos.get(v.veiculo_id ?? "") ?? "",
+          data.clientes.get(v.cliente_id ?? "") ?? "",
+        );
+        return base;
+      }),
     ];
     baixarCsv(`viagens-${periodo}.csv`, linhas);
   };
+
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
