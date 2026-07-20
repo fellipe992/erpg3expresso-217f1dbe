@@ -361,65 +361,67 @@ function RelatoriosPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="financeiro" className="space-y-4">
-              <Card className="p-4 md:p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <TrendingUp className="size-4 text-brand" />
-                  <h2 className="font-display font-bold">Top clientes (receitas)</h2>
-                </div>
-                {topClientes.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">Sem dados no período.</p>
-                ) : (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={topClientes} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                        <XAxis type="number" tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} fontSize={11} />
-                        <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
-                        <Tooltip
-                          formatter={(v: number) => fmtBRL(v)}
-                          contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+            {canSeeFinance && (
+              <TabsContent value="financeiro" className="space-y-4">
+                <Card className="p-4 md:p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <TrendingUp className="size-4 text-brand" />
+                    <h2 className="font-display font-bold">Top clientes (receitas)</h2>
                   </div>
-                )}
-              </Card>
+                  {topClientes.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">Sem dados no período.</p>
+                  ) : (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topClientes} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                          <XAxis type="number" tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} fontSize={11} />
+                          <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
+                          <Tooltip
+                            formatter={(v: number) => fmtBRL(v)}
+                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                          />
+                          <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </Card>
 
-              <Card className="p-4 md:p-6">
-                <div className="mb-4">
-                  <h2 className="font-display font-bold">Despesas por categoria</h2>
-                </div>
-                {despesasPorCategoria.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">Sem despesas no período.</p>
-                ) : (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={despesasPorCategoria}
-                          dataKey="value"
-                          nameKey="name"
-                          innerRadius={50}
-                          outerRadius={100}
-                          paddingAngle={2}
-                        >
-                          {despesasPorCategoria.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(v: number) => fmtBRL(v)}
-                          contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                <Card className="p-4 md:p-6">
+                  <div className="mb-4">
+                    <h2 className="font-display font-bold">Despesas por categoria</h2>
                   </div>
-                )}
-              </Card>
-            </TabsContent>
+                  {despesasPorCategoria.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">Sem despesas no período.</p>
+                  ) : (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={despesasPorCategoria}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={100}
+                            paddingAngle={2}
+                          >
+                            {despesasPorCategoria.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(v: number) => fmtBRL(v)}
+                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+            )}
 
             <TabsContent value="exportar" className="space-y-3">
               <Card className="p-4 md:p-6">
@@ -428,14 +430,17 @@ function RelatoriosPage() {
                   Baixe planilhas para análises externas no Excel ou Google Sheets. Período atual: {periodo}.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button onClick={exportarFinanceiro} variant="outline">
-                    <Download className="mr-2 size-4" /> Financeiro
-                  </Button>
+                  {canSeeFinance && (
+                    <Button onClick={exportarFinanceiro} variant="outline">
+                      <Download className="mr-2 size-4" /> Financeiro
+                    </Button>
+                  )}
                   <Button onClick={exportarViagens} variant="outline">
                     <Download className="mr-2 size-4" /> Viagens
                   </Button>
                 </div>
               </Card>
+
             </TabsContent>
           </Tabs>
         </>
