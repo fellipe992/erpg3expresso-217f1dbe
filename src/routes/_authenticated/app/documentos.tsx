@@ -60,7 +60,7 @@ async function listBucketRecursive(bucket: BucketName, prefix = "", acc: Storage
         bucket,
         path,
         size: Number(item.metadata?.size ?? 0),
-        updated_at: item.updated_at ?? item.created_at,
+        updated_at: item.updated_at ?? item.created_at ?? undefined,
         mime: (item.metadata?.mimetype as string) ?? null,
       });
     }
