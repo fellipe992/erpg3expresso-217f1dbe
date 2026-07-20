@@ -261,21 +261,25 @@ function RelatoriosPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 md:grid-cols-4">
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Receitas</div>
-              <div className="mt-1 font-display text-xl font-bold text-brand">{fmtBRL(kpis.receitas)}</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Despesas</div>
-              <div className="mt-1 font-display text-xl font-bold text-destructive">{fmtBRL(kpis.despesas)}</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saldo</div>
-              <div className={`mt-1 font-display text-xl font-bold ${kpis.saldo >= 0 ? "text-brand" : "text-destructive"}`}>
-                {fmtBRL(kpis.saldo)}
-              </div>
-            </Card>
+          <div className={`grid gap-3 ${canSeeFinance ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
+            {canSeeFinance && (
+              <>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Receitas</div>
+                  <div className="mt-1 font-display text-xl font-bold text-brand">{fmtBRL(kpis.receitas)}</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Despesas</div>
+                  <div className="mt-1 font-display text-xl font-bold text-destructive">{fmtBRL(kpis.despesas)}</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saldo</div>
+                  <div className={`mt-1 font-display text-xl font-bold ${kpis.saldo >= 0 ? "text-brand" : "text-destructive"}`}>
+                    {fmtBRL(kpis.saldo)}
+                  </div>
+                </Card>
+              </>
+            )}
             <Card className="p-4">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Viagens</div>
               <div className="mt-1 font-display text-xl font-bold">
@@ -283,14 +287,23 @@ function RelatoriosPage() {
               </div>
               <div className="text-xs text-muted-foreground">{kpis.kmTotal.toLocaleString("pt-BR")} km rodados</div>
             </Card>
+            <Card className="p-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Em andamento</div>
+              <div className="mt-1 font-display text-xl font-bold">
+                {data?.viagens.filter((v) => v.status === "em_andamento").length ?? 0}
+              </div>
+              <div className="text-xs text-muted-foreground">viagens ativas no período</div>
+            </Card>
           </div>
 
           <Tabs defaultValue="operacional">
             <TabsList>
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
-              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+              {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
+
+
 
             <TabsContent value="operacional" className="space-y-4">
               <Card className="p-4 md:p-6">
