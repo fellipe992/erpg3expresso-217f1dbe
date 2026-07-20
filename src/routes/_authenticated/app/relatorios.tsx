@@ -20,6 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
   head: () => ({ meta: [{ title: "Relatórios — G3 Expresso" }] }),
@@ -78,6 +80,9 @@ function baixarCsv(nome: string, linhas: (string | number)[][]) {
 
 function RelatoriosPage() {
   const [periodo, setPeriodo] = useState<"30d" | "90d" | "ano">("90d");
+  const { role } = useAuth();
+  const canSeeFinance = role === "administrador" || role === "financeiro";
+
 
   const desde = useMemo(() => {
     const d = new Date();
@@ -211,23 +216,32 @@ function RelatoriosPage() {
 
   const exportarViagens = () => {
     if (!data) return;
+    const header = canSeeFinance
+      ? ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Frete", "Motorista", "Veículo", "Cliente"]
+      : ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Motorista", "Veículo", "Cliente"];
     const linhas: (string | number)[][] = [
-      ["Status", "Saída", "Chegada", "KM saída", "KM chegada", "KM rodado", "Frete", "Motorista", "Veículo", "Cliente"],
-      ...data.viagens.map((v) => [
-        v.status,
-        v.data_saida ?? "",
-        v.data_chegada ?? "",
-        v.km_inicial ?? "",
-        v.km_final ?? "",
-        Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
-        Number(v.valor_frete ?? 0).toFixed(2),
-        data.motoristas.get(v.motorista_id ?? "") ?? "",
-        data.veiculos.get(v.veiculo_id ?? "") ?? "",
-        data.clientes.get(v.cliente_id ?? "") ?? "",
-      ]),
+      header,
+      ...data.viagens.map((v) => {
+        const base: (string | number)[] = [
+          v.status,
+          v.data_saida ?? "",
+          v.data_chegada ?? "",
+          v.km_inicial ?? "",
+          v.km_final ?? "",
+          Math.max(0, (v.km_final ?? 0) - (v.km_inicial ?? 0)),
+        ];
+        if (canSeeFinance) base.push(Number(v.valor_frete ?? 0).toFixed(2));
+        base.push(
+          data.motoristas.get(v.motorista_id ?? "") ?? "",
+          data.veiculos.get(v.veiculo_id ?? "") ?? "",
+          data.clientes.get(v.cliente_id ?? "") ?? "",
+        );
+        return base;
+      }),
     ];
     baixarCsv(`viagens-${periodo}.csv`, linhas);
   };
+
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
@@ -256,21 +270,25 @@ function RelatoriosPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-3 md:grid-cols-4">
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Receitas</div>
-              <div className="mt-1 font-display text-xl font-bold text-brand">{fmtBRL(kpis.receitas)}</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Despesas</div>
-              <div className="mt-1 font-display text-xl font-bold text-destructive">{fmtBRL(kpis.despesas)}</div>
-            </Card>
-            <Card className="p-4">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saldo</div>
-              <div className={`mt-1 font-display text-xl font-bold ${kpis.saldo >= 0 ? "text-brand" : "text-destructive"}`}>
-                {fmtBRL(kpis.saldo)}
-              </div>
-            </Card>
+          <div className={`grid gap-3 ${canSeeFinance ? "md:grid-cols-4" : "md:grid-cols-2"}`}>
+            {canSeeFinance && (
+              <>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Receitas</div>
+                  <div className="mt-1 font-display text-xl font-bold text-brand">{fmtBRL(kpis.receitas)}</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Despesas</div>
+                  <div className="mt-1 font-display text-xl font-bold text-destructive">{fmtBRL(kpis.despesas)}</div>
+                </Card>
+                <Card className="p-4">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Saldo</div>
+                  <div className={`mt-1 font-display text-xl font-bold ${kpis.saldo >= 0 ? "text-brand" : "text-destructive"}`}>
+                    {fmtBRL(kpis.saldo)}
+                  </div>
+                </Card>
+              </>
+            )}
             <Card className="p-4">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Viagens</div>
               <div className="mt-1 font-display text-xl font-bold">
@@ -278,14 +296,23 @@ function RelatoriosPage() {
               </div>
               <div className="text-xs text-muted-foreground">{kpis.kmTotal.toLocaleString("pt-BR")} km rodados</div>
             </Card>
+            <Card className="p-4">
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Em andamento</div>
+              <div className="mt-1 font-display text-xl font-bold">
+                {data?.viagens.filter((v) => v.status === "em_andamento").length ?? 0}
+              </div>
+              <div className="text-xs text-muted-foreground">viagens ativas no período</div>
+            </Card>
           </div>
 
           <Tabs defaultValue="operacional">
             <TabsList>
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
-              <TabsTrigger value="financeiro">Financeiro</TabsTrigger>
+              {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
+
+
 
             <TabsContent value="operacional" className="space-y-4">
               <Card className="p-4 md:p-6">
@@ -343,65 +370,67 @@ function RelatoriosPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="financeiro" className="space-y-4">
-              <Card className="p-4 md:p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <TrendingUp className="size-4 text-brand" />
-                  <h2 className="font-display font-bold">Top clientes (receitas)</h2>
-                </div>
-                {topClientes.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">Sem dados no período.</p>
-                ) : (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={topClientes} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                        <XAxis type="number" tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} fontSize={11} />
-                        <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
-                        <Tooltip
-                          formatter={(v: number) => fmtBRL(v)}
-                          contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+            {canSeeFinance && (
+              <TabsContent value="financeiro" className="space-y-4">
+                <Card className="p-4 md:p-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <TrendingUp className="size-4 text-brand" />
+                    <h2 className="font-display font-bold">Top clientes (receitas)</h2>
                   </div>
-                )}
-              </Card>
+                  {topClientes.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">Sem dados no período.</p>
+                  ) : (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={topClientes} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                          <XAxis type="number" tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} fontSize={11} />
+                          <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
+                          <Tooltip
+                            formatter={(v: number) => fmtBRL(v)}
+                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                          />
+                          <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </Card>
 
-              <Card className="p-4 md:p-6">
-                <div className="mb-4">
-                  <h2 className="font-display font-bold">Despesas por categoria</h2>
-                </div>
-                {despesasPorCategoria.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">Sem despesas no período.</p>
-                ) : (
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={despesasPorCategoria}
-                          dataKey="value"
-                          nameKey="name"
-                          innerRadius={50}
-                          outerRadius={100}
-                          paddingAngle={2}
-                        >
-                          {despesasPorCategoria.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(v: number) => fmtBRL(v)}
-                          contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
+                <Card className="p-4 md:p-6">
+                  <div className="mb-4">
+                    <h2 className="font-display font-bold">Despesas por categoria</h2>
                   </div>
-                )}
-              </Card>
-            </TabsContent>
+                  {despesasPorCategoria.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">Sem despesas no período.</p>
+                  ) : (
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={despesasPorCategoria}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={100}
+                            paddingAngle={2}
+                          >
+                            {despesasPorCategoria.map((_, i) => (
+                              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(v: number) => fmtBRL(v)}
+                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+            )}
 
             <TabsContent value="exportar" className="space-y-3">
               <Card className="p-4 md:p-6">
@@ -410,14 +439,17 @@ function RelatoriosPage() {
                   Baixe planilhas para análises externas no Excel ou Google Sheets. Período atual: {periodo}.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button onClick={exportarFinanceiro} variant="outline">
-                    <Download className="mr-2 size-4" /> Financeiro
-                  </Button>
+                  {canSeeFinance && (
+                    <Button onClick={exportarFinanceiro} variant="outline">
+                      <Download className="mr-2 size-4" /> Financeiro
+                    </Button>
+                  )}
                   <Button onClick={exportarViagens} variant="outline">
                     <Download className="mr-2 size-4" /> Viagens
                   </Button>
                 </div>
               </Card>
+
             </TabsContent>
           </Tabs>
         </>

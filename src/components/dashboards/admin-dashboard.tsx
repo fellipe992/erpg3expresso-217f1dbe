@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompany } from "@/hooks/use-company";
+import { useHideValues, HideValuesToggle } from "@/hooks/use-hide-values";
 import { supabase } from "@/integrations/supabase/client";
+
 import {
   ResponsiveContainer,
   AreaChart,
@@ -38,7 +40,9 @@ function monthLabel(key: string) {
 export function AdminDashboard() {
   const { user, role } = useAuth();
   const { data: company } = useCompany();
+  const { mask } = useHideValues();
   const nome = user?.email?.split("@")[0] ?? "usuário";
+
 
   const desde = new Date();
   desde.setMonth(desde.getMonth() - 5);
@@ -170,11 +174,15 @@ export function AdminDashboard() {
             Visão consolidada da operação e do financeiro.
           </p>
         </div>
-        {role && (
-          <Badge variant="outline" className="w-fit border-brand/30 text-brand">
-            Perfil: {roleLabel[role] ?? role}
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {role && (
+            <Badge variant="outline" className="border-brand/30 text-brand">
+              Perfil: {roleLabel[role] ?? role}
+            </Badge>
+          )}
+          <HideValuesToggle />
+        </div>
+
       </div>
 
       {isLoading || !kpis ? (
@@ -184,11 +192,12 @@ export function AdminDashboard() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi label="Receita (mês)" value={brl(kpis.receitaMes)} delta="Vencimentos do mês" icon={DollarSign} />
-            <Kpi label="Despesas (mês)" value={brl(kpis.despesaMes)} delta="Vencimentos do mês" icon={TrendingDown} />
-            <Kpi label="Resultado" value={brl(kpis.lucroMes)} delta={kpis.lucroMes >= 0 ? "Positivo" : "Negativo"} icon={TrendingUp} highlight={kpis.lucroMes >= 0} />
+            <Kpi label="Receita (mês)" value={mask(brl(kpis.receitaMes))} delta="Vencimentos do mês" icon={DollarSign} />
+            <Kpi label="Despesas (mês)" value={mask(brl(kpis.despesaMes))} delta="Vencimentos do mês" icon={TrendingDown} />
+            <Kpi label="Resultado" value={mask(brl(kpis.lucroMes))} delta={kpis.lucroMes >= 0 ? "Positivo" : "Negativo"} icon={TrendingUp} highlight={kpis.lucroMes >= 0} />
             <Kpi label="KM rodados (mês)" value={`${kpis.kmMes.toLocaleString("pt-BR")} km`} delta={`${kpis.viagensMes} viagens`} icon={MapPin} />
           </div>
+
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <Kpi label="Frota ativa" value={String(kpis.frotaAtiva)} delta={`${kpis.emViagem} em viagem`} icon={Truck} />
@@ -235,10 +244,11 @@ export function AdminDashboard() {
                 <CardDescription>Indicadores em tempo real</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <HealthRow label="Contas a receber (7d)" value={brl(kpis.contasReceber7d)} tone="good" />
-                <HealthRow label="Contas a pagar (7d)" value={brl(kpis.contasPagar7d)} tone="warn" />
-                <HealthRow label="Inadimplência" value={brl(kpis.inadimplencia)} tone={kpis.inadimplencia > 0 ? "bad" : "good"} />
-                <HealthRow label="Resultado do mês" value={brl(kpis.lucroMes)} tone={kpis.lucroMes >= 0 ? "good" : "bad"} />
+                <HealthRow label="Contas a receber (7d)" value={mask(brl(kpis.contasReceber7d))} tone="good" />
+                <HealthRow label="Contas a pagar (7d)" value={mask(brl(kpis.contasPagar7d))} tone="warn" />
+                <HealthRow label="Inadimplência" value={mask(brl(kpis.inadimplencia))} tone={kpis.inadimplencia > 0 ? "bad" : "good"} />
+                <HealthRow label="Resultado do mês" value={mask(brl(kpis.lucroMes))} tone={kpis.lucroMes >= 0 ? "good" : "bad"} />
+
               </CardContent>
             </Card>
           </div>

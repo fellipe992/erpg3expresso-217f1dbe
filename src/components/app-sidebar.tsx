@@ -65,7 +65,7 @@ const operacional: NavItem[] = [
 const gestao: NavItem[] = [
   { label: "Relatórios", to: "/app/relatorios", icon: BarChart3 },
   { label: "Assistente IA", to: "/app/assistente", icon: Sparkles },
-  { label: "Documentos", to: "/app/documentos", icon: FileText, soon: true },
+  { label: "Documentos", to: "/app/documentos", icon: FileText },
 ];
 
 const administracao: NavItem[] = [

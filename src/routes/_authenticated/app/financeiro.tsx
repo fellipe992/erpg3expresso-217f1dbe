@@ -17,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useHideValues, HideValuesToggle } from "@/hooks/use-hide-values";
+
 
 export const Route = createFileRoute("/_authenticated/app/financeiro")({
   head: () => ({ meta: [{ title: "Fluxo de Caixa — G3 Expresso" }] }),
@@ -37,6 +39,8 @@ const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", cur
 
 function FinanceiroPage() {
   const [periodo, setPeriodo] = useState<"30d" | "90d" | "ano">("90d");
+  const { mask } = useHideValues();
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["financeiro-all"],
@@ -132,13 +136,15 @@ function FinanceiroPage() {
             <p className="text-sm text-muted-foreground">Visão consolidada de receitas e despesas</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["30d", "90d", "ano"] as const).map((p) => (
             <Button key={p} variant={periodo === p ? "default" : "outline"} size="sm" onClick={() => setPeriodo(p)}>
               {p === "30d" ? "30 dias" : p === "90d" ? "90 dias" : "12 meses"}
             </Button>
           ))}
+          <HideValuesToggle />
         </div>
+
       </div>
 
       {isLoading ? (
@@ -152,31 +158,32 @@ function FinanceiroPage() {
             <Kpi
               icon={TrendingUp}
               label="A receber"
-              value={fmtBRL(stats.pendenteReceber + stats.atrasadoReceber)}
-              sub={`${fmtBRL(stats.recebido)} recebido`}
+              value={mask(fmtBRL(stats.pendenteReceber + stats.atrasadoReceber))}
+              sub={`${mask(fmtBRL(stats.recebido))} recebido`}
               tone="success"
             />
             <Kpi
               icon={TrendingDown}
               label="A pagar"
-              value={fmtBRL(stats.pendentePagar + stats.atrasadoPagar)}
-              sub={`${fmtBRL(stats.pago)} pago`}
+              value={mask(fmtBRL(stats.pendentePagar + stats.atrasadoPagar))}
+              sub={`${mask(fmtBRL(stats.pago))} pago`}
               tone="danger"
             />
             <Kpi
               icon={Wallet}
               label="Saldo projetado"
-              value={fmtBRL(saldoProjetado)}
-              sub={`Realizado: ${fmtBRL(saldoRealizado)}`}
+              value={mask(fmtBRL(saldoProjetado))}
+              sub={`Realizado: ${mask(fmtBRL(saldoRealizado))}`}
               tone={saldoProjetado >= 0 ? "success" : "danger"}
             />
             <Kpi
               icon={AlertCircle}
               label="Atrasados"
-              value={fmtBRL(stats.atrasadoReceber + stats.atrasadoPagar)}
-              sub={`${fmtBRL(stats.atrasadoReceber)} receber · ${fmtBRL(stats.atrasadoPagar)} pagar`}
+              value={mask(fmtBRL(stats.atrasadoReceber + stats.atrasadoPagar))}
+              sub={`${mask(fmtBRL(stats.atrasadoReceber))} receber · ${mask(fmtBRL(stats.atrasadoPagar))} pagar`}
               tone="danger"
             />
+
           </div>
 
           {/* Gráfico */}
@@ -228,8 +235,9 @@ function FinanceiroPage() {
                       </div>
                     </div>
                     <div className={`font-mono font-semibold ${r.tipo === "receber" ? "text-brand" : "text-destructive"}`}>
-                      {r.tipo === "receber" ? "+" : "−"} {fmtBRL(Number(r.valor))}
+                      {r.tipo === "receber" ? "+" : "−"} {mask(fmtBRL(Number(r.valor)))}
                     </div>
+
                   </li>
                 ))}
               </ul>
