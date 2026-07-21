@@ -158,7 +158,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     queryKey: ["categorias-plano", tipo],
     queryFn: async () => {
       // Categorias = subgrupos do plano de contas do tipo correspondente
-      const tiposGrupo = isReceber ? ["receita"] : ["despesa", "outros"];
+      const tiposGrupo: ("receita" | "despesa" | "outros")[] = isReceber ? ["receita"] : ["despesa", "outros"];
       const { data: grupos } = await supabase.from("plano_grupos").select("id").eq("ativo", true).in("tipo", tiposGrupo);
       const grupoIds = (grupos ?? []).map((g) => g.id);
       if (!grupoIds.length) return [] as { id: string; nome: string }[];
