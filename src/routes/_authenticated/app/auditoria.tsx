@@ -306,6 +306,8 @@ function ExpandableRow({ row: r }: { row: Row }) {
       )}
     </>
   );
+}
+
 
 function eventoLabel(ev: string) {
   const map: Record<string, string> = {
