@@ -1,12 +1,13 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Truck, Users, MapPin, Fuel, DollarSign, ArrowUpRight, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompany } from "@/hooks/use-company";
 import { useHideValues, HideValuesToggle } from "@/hooks/use-hide-values";
 import { supabase } from "@/integrations/supabase/client";
-
 import {
   ResponsiveContainer,
   AreaChart,
@@ -37,27 +38,43 @@ function monthLabel(key: string) {
   return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
 }
 
+type PeriodKey = "15d" | "30d" | "60d" | "90d" | "12m";
+const PERIOD_OPTIONS: { value: PeriodKey; label: string; days: number; buckets: number; bucket: "day" | "month" }[] = [
+  { value: "15d", label: "Últimos 15 dias", days: 15, buckets: 15, bucket: "day" },
+  { value: "30d", label: "Últimos 30 dias", days: 30, buckets: 30, bucket: "day" },
+  { value: "60d", label: "Últimos 60 dias", days: 60, buckets: 8, bucket: "day" },
+  { value: "90d", label: "Últimos 90 dias", days: 90, buckets: 12, bucket: "day" },
+  { value: "12m", label: "Últimos 12 meses", days: 365, buckets: 12, bucket: "month" },
+];
+
 export function AdminDashboard() {
   const { user, role } = useAuth();
   const { data: company } = useCompany();
   const { mask } = useHideValues();
   const nome = user?.email?.split("@")[0] ?? "usuário";
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const cfg = PERIOD_OPTIONS.find((p) => p.value === period)!;
 
-
-  const desde = new Date();
-  desde.setMonth(desde.getMonth() - 5);
-  desde.setDate(1);
+  const desde = useMemo(() => {
+    const d = new Date();
+    if (cfg.bucket === "month") {
+      d.setMonth(d.getMonth() - 11);
+      d.setDate(1);
+    } else {
+      d.setDate(d.getDate() - (cfg.days - 1));
+    }
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [cfg]);
   const desdeStr = desde.toISOString().slice(0, 10);
-  const inicioMes = new Date();
-  inicioMes.setDate(1);
-  const inicioMesStr = inicioMes.toISOString().slice(0, 10);
+  const inicioPeriodoStr = desdeStr;
   const em7dias = new Date();
   em7dias.setDate(em7dias.getDate() + 7);
   const em7Str = em7dias.toISOString().slice(0, 10);
   const hoje = new Date().toISOString().slice(0, 10);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-dashboard"],
+    queryKey: ["admin-dashboard", period],
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
@@ -88,14 +105,14 @@ export function AdminDashboard() {
 
   const kpis = (() => {
     if (!data) return null;
-    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioMesStr);
+    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioPeriodoStr);
     const receitaMes = mesLanc.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.valor), 0);
     const despesaMes = mesLanc.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.valor), 0);
     const lucroMes = receitaMes - despesaMes;
 
-    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioMesStr);
+    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioPeriodoStr);
     const kmMesViagens = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
-    const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioMesStr);
+    const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioPeriodoStr);
     const kmMesAbast = abastMes.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
     const kmMes = kmMesViagens > 0 ? kmMesViagens : kmMesAbast;
 
@@ -103,7 +120,6 @@ export function AdminDashboard() {
     const motoristasAtivos = data.motoristas.filter((m) => m.ativo).length;
     const emViagem = data.viagens.filter((v) => v.status === "em_andamento").length;
 
-    // Consumo: apenas registros com km_percorridos > 0 (ignora o primeiro abastecimento de cada veículo)
     const abastValidos = data.abastecimentos.filter((a) => Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0);
     const totLitros = abastValidos.reduce((s, a) => s + Number(a.litros), 0);
     const totKmAbast = abastValidos.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
@@ -129,19 +145,46 @@ export function AdminDashboard() {
   const receitaDespesa = (() => {
     if (!data) return [];
     const map = new Map<string, { mes: string; receita: number; despesa: number }>();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const k = monthKey(d);
-      map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
-    }
-    for (const l of data.lancamentos) {
-      if (!l.data_vencimento) continue;
-      const k = l.data_vencimento.slice(0, 7);
-      const cur = map.get(k);
-      if (!cur) continue;
-      if (l.tipo === "receber") cur.receita += Number(l.valor);
-      else cur.despesa += Number(l.valor);
+    if (cfg.bucket === "month") {
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const k = monthKey(d);
+        map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
+      }
+      for (const l of data.lancamentos) {
+        if (!l.data_vencimento) continue;
+        const k = l.data_vencimento.slice(0, 7);
+        const cur = map.get(k);
+        if (!cur) continue;
+        if (l.tipo === "receber") cur.receita += Number(l.valor);
+        else cur.despesa += Number(l.valor);
+      }
+    } else {
+      // Baldes diários agrupados para caber em ~cfg.buckets pontos no gráfico
+      const groupDays = Math.max(1, Math.ceil(cfg.days / cfg.buckets));
+      for (let i = cfg.buckets - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i * groupDays);
+        const k = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+        map.set(k, { mes: label, receita: 0, despesa: 0 });
+      }
+      const keys = Array.from(map.keys()).sort();
+      for (const l of data.lancamentos) {
+        if (!l.data_vencimento) continue;
+        const ref = l.data_vencimento.slice(0, 10);
+        let bucketKey = keys[0];
+        for (const k of keys) {
+          if (ref >= k) bucketKey = k;
+          else break;
+        }
+        const cur = map.get(bucketKey);
+        if (!cur) continue;
+        if (l.tipo === "receber") cur.receita += Number(l.valor);
+        else cur.despesa += Number(l.valor);
+      }
     }
     return Array.from(map.values());
   })();
@@ -174,15 +217,24 @@ export function AdminDashboard() {
             Visão consolidada da operação e do financeiro.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {role && (
             <Badge variant="outline" className="border-brand/30 text-brand">
               Perfil: {roleLabel[role] ?? role}
             </Badge>
           )}
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+            <SelectTrigger className="h-9 w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIOD_OPTIONS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <HideValuesToggle />
         </div>
-
       </div>
 
       {isLoading || !kpis ? (
@@ -192,25 +244,25 @@ export function AdminDashboard() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi label="Receita (mês)" value={mask(brl(kpis.receitaMes))} delta="Vencimentos do mês" icon={DollarSign} />
-            <Kpi label="Despesas (mês)" value={mask(brl(kpis.despesaMes))} delta="Vencimentos do mês" icon={TrendingDown} />
+            <Kpi label={`Receita (${cfg.label.toLowerCase()})`} value={mask(brl(kpis.receitaMes))} delta="Vencimentos no período" icon={DollarSign} />
+            <Kpi label={`Despesas (${cfg.label.toLowerCase()})`} value={mask(brl(kpis.despesaMes))} delta="Vencimentos no período" icon={TrendingDown} />
             <Kpi label="Resultado" value={mask(brl(kpis.lucroMes))} delta={kpis.lucroMes >= 0 ? "Positivo" : "Negativo"} icon={TrendingUp} highlight={kpis.lucroMes >= 0} />
-            <Kpi label="KM rodados (mês)" value={`${kpis.kmMes.toLocaleString("pt-BR")} km`} delta={`${kpis.viagensMes} viagens`} icon={MapPin} />
+            <Kpi label="KM rodados" value={`${kpis.kmMes.toLocaleString("pt-BR")} km`} delta={`${kpis.viagensMes} viagens`} icon={MapPin} />
           </div>
 
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <Kpi label="Frota ativa" value={String(kpis.frotaAtiva)} delta={`${kpis.emViagem} em viagem`} icon={Truck} />
             <Kpi label="Motoristas" value={String(kpis.motoristasAtivos)} delta="Ativos" icon={Users} />
-            <Kpi label="Consumo médio" value={kpis.consumo > 0 ? `${kpis.consumo.toFixed(2)} km/L` : "—"} delta="Últimos 6 meses" icon={Fuel} />
-            <Kpi label="Viagens (mês)" value={String(kpis.viagensMes)} delta={`${kpis.emViagem} em andamento`} icon={ArrowUpRight} />
+            <Kpi label="Consumo médio" value={kpis.consumo > 0 ? `${kpis.consumo.toFixed(2)} km/L` : "—"} delta={cfg.label} icon={Fuel} />
+            <Kpi label="Viagens" value={String(kpis.viagensMes)} delta={`${kpis.emViagem} em andamento`} icon={ArrowUpRight} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Receitas x Despesas</CardTitle>
-                <CardDescription>Últimos 6 meses</CardDescription>
+                <CardDescription>{cfg.label}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
@@ -256,7 +308,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Combustível por veículo</CardTitle>
-              <CardDescription>Gasto com abastecimento nos últimos 6 meses</CardDescription>
+              <CardDescription>Gasto com abastecimento — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-72">

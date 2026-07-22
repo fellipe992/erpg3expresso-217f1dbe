@@ -6,6 +6,7 @@ import { MobileMotoristaShell } from "@/components/mobile-motorista-shell";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -49,6 +50,7 @@ function AuthenticatedLayout() {
               </div>
             </div>
             <ThemeToggle />
+            <NotificationsBell />
             <UserMenu />
           </header>
           <main className="flex-1 bg-background">

@@ -288,14 +288,19 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (dataDe && ref && ref < dataDe) return false;
     if (dataAte && ref && ref > dataAte) return false;
 
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
     if (!q) return true;
     return (
       l.descricao.toLowerCase().includes(q) ||
       (l.categoria ?? "").toLowerCase().includes(q) ||
       (l.numero_documento ?? "").toLowerCase().includes(q) ||
       (l.cliente?.razao_social ?? "").toLowerCase().includes(q) ||
-      (l.fornecedor?.razao_social ?? "").toLowerCase().includes(q)
+      (l.fornecedor?.razao_social ?? "").toLowerCase().includes(q) ||
+      (l.veiculo?.placa ?? "").toLowerCase().includes(q) ||
+      (l.motorista?.nome ?? "").toLowerCase().includes(q) ||
+      (l.viagem?.codigo ?? "").toLowerCase().includes(q) ||
+      (l.plano_conta?.nome ?? "").toLowerCase().includes(q) ||
+      (l.plano_conta?.codigo ?? "").toLowerCase().includes(q)
     );
   });
 
