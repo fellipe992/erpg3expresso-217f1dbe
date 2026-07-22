@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, MapPin, Truck, Clock, Battery, Wifi, WifiOff, Locate, ExternalLink, Radar } from "lucide-react";
@@ -13,10 +13,6 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/monitoramento")({
   head: () => ({ meta: [{ title: "Central de Monitoramento — G3 Expresso" }] }),
-  beforeLoad: ({ context }) => {
-    // gate ficará no componente por role (context não expõe role aqui)
-    return context;
-  },
   component: MonitoramentoPage,
 });
 
