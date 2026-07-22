@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
 import type { ReactNode } from "react";
 
