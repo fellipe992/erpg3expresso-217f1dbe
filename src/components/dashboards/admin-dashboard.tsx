@@ -21,6 +21,7 @@ import {
   Legend,
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VeiculoDrilldownDialog, type VeiculoDrilldownState } from "@/components/dashboards/veiculo-drilldown-dialog";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
@@ -54,6 +55,7 @@ export function AdminDashboard() {
   const { mask } = useHideValues();
   const nome = user?.email?.split("@")[0] ?? "usuário";
   const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [drilldown, setDrilldown] = useState<VeiculoDrilldownState>(null);
   const cfg = PERIOD_OPTIONS.find((p) => p.value === period)!;
 
   const desde = useMemo(() => {
@@ -223,7 +225,7 @@ export function AdminDashboard() {
     if (s.includes("pedág") || s.includes("pedag")) return "Pedágio";
     return "Outros";
   }
-  type DespesaRow = { placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
+  type DespesaRow = { veiculo_id: string; placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
   const despesasPorVeiculo = (() => {
     if (!data) return [] as DespesaRow[];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
@@ -231,7 +233,7 @@ export function AdminDashboard() {
     for (const l of data.lancamentos) {
       if (l.tipo !== "pagar" || !l.veiculo_id) continue;
       const placa = placas.get(l.veiculo_id) ?? "—";
-      const cur = map.get(l.veiculo_id) ?? { placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
+      const cur = map.get(l.veiculo_id) ?? { veiculo_id: l.veiculo_id, placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
       const cat = normalizarCategoria(l.categoria) as "Combustível" | "Manutenção" | "Pedágio" | "Outros";
       cur[cat] = cur[cat] + Number(l.valor ?? 0);
       cur.total += Number(l.valor ?? 0);
