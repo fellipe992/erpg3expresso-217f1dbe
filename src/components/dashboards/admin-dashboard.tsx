@@ -81,7 +81,7 @@ export function AdminDashboard() {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria")
+          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria, veiculo_id")
           .gte("data_vencimento", desdeStr),
         supabase
           .from("viagens")
