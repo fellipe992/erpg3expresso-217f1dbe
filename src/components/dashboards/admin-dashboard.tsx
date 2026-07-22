@@ -1,12 +1,13 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Truck, Users, MapPin, Fuel, DollarSign, ArrowUpRight, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompany } from "@/hooks/use-company";
 import { useHideValues, HideValuesToggle } from "@/hooks/use-hide-values";
 import { supabase } from "@/integrations/supabase/client";
-
 import {
   ResponsiveContainer,
   AreaChart,
