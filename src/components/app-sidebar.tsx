@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Sparkles,
   BookOpen,
+  Radar,
 } from "lucide-react";
 
 import {
@@ -53,6 +54,7 @@ const financeiro: NavItem[] = [
 ];
 
 const operacional: NavItem[] = [
+  { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
   { label: "Veículos", to: "/app/veiculos", icon: Truck },
   { label: "Motoristas", to: "/app/motoristas", icon: Users },
   { label: "Clientes", to: "/app/clientes", icon: Building2 },

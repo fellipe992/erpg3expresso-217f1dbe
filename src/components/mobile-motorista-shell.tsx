@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
+import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
 import type { ReactNode } from "react";
 
 const tabs = [
@@ -16,6 +17,7 @@ const tabs = [
 
 export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
+  useMotoristaAutoTracking();
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
