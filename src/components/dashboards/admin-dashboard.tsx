@@ -217,15 +217,24 @@ export function AdminDashboard() {
             Visão consolidada da operação e do financeiro.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {role && (
             <Badge variant="outline" className="border-brand/30 text-brand">
               Perfil: {roleLabel[role] ?? role}
             </Badge>
           )}
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
+            <SelectTrigger className="h-9 w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIOD_OPTIONS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <HideValuesToggle />
         </div>
-
       </div>
 
       {isLoading || !kpis ? (
