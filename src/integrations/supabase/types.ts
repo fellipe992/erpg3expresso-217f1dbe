@@ -1347,14 +1347,7 @@ export type Database = {
       }
     }
     Views: {
-      company_public: {
-        Row: {
-          id: string | null
-          logo_url: string | null
-          nome_fantasia: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_primary_role: {
