@@ -330,9 +330,9 @@ function RelatoriosPage() {
                         <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                         <XAxis dataKey="nome" fontSize={11} />
                         <YAxis fontSize={11} />
-                        <Tooltip contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+                        <Tooltip contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }} />
                         <Legend />
-                        <Bar dataKey="viagens" name="Viagens" fill="hsl(var(--brand))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="viagens" name="Viagens" fill="var(--color-brand)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -389,9 +389,9 @@ function RelatoriosPage() {
                           <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
                           <Tooltip
                             formatter={(v: number) => fmtBRL(v)}
-                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                            contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }}
                           />
-                          <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="total" fill="var(--color-brand)" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -422,7 +422,7 @@ function RelatoriosPage() {
                           </Pie>
                           <Tooltip
                             formatter={(v: number) => fmtBRL(v)}
-                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                            contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }}
                           />
                           <Legend />
                         </PieChart>
