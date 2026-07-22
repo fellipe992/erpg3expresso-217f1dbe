@@ -25,6 +25,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
         <Logo size="sm" />
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
+          <NotificationsBell />
           <UserMenu />
         </div>
       </header>
