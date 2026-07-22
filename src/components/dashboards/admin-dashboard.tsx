@@ -347,7 +347,9 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Despesas por veículo</CardTitle>
-              <CardDescription>Lançamentos a pagar por categoria — {cfg.label.toLowerCase()}</CardDescription>
+              <CardDescription>
+                Clique em uma barra para ver lançamentos e viagens — {cfg.label.toLowerCase()}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -355,22 +357,32 @@ export function AdminDashboard() {
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhuma despesa registrada.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={despesasPorVeiculo}>
+                    <BarChart
+                      data={despesasPorVeiculo}
+                      onClick={(e) => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const payload = (e as any)?.activePayload?.[0]?.payload as DespesaRow | undefined;
+                        if (payload?.veiculo_id) {
+                          setDrilldown({ veiculoId: payload.veiculo_id, placa: payload.placa, desde: desdeStr });
+                        }
+                      }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="placa" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => brl(v)} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12, color: "var(--color-popover-foreground)" }} formatter={(v: number) => brl(v)} cursor={{ fill: "var(--color-accent)", opacity: 0.4 }} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" />
-                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-muted-foreground)" />
-                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" />
-                      <Bar dataKey="Outros" stackId="a" fill="var(--color-border)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" cursor="pointer" />
+                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-chart-2)" cursor="pointer" />
+                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" cursor="pointer" />
+                      <Bar dataKey="Outros" stackId="a" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} cursor="pointer" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader>
