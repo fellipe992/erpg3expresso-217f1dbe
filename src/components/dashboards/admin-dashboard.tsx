@@ -38,27 +38,43 @@ function monthLabel(key: string) {
   return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
 }
 
+type PeriodKey = "15d" | "30d" | "60d" | "90d" | "12m";
+const PERIOD_OPTIONS: { value: PeriodKey; label: string; days: number; buckets: number; bucket: "day" | "month" }[] = [
+  { value: "15d", label: "Últimos 15 dias", days: 15, buckets: 15, bucket: "day" },
+  { value: "30d", label: "Últimos 30 dias", days: 30, buckets: 30, bucket: "day" },
+  { value: "60d", label: "Últimos 60 dias", days: 60, buckets: 8, bucket: "day" },
+  { value: "90d", label: "Últimos 90 dias", days: 90, buckets: 12, bucket: "day" },
+  { value: "12m", label: "Últimos 12 meses", days: 365, buckets: 12, bucket: "month" },
+];
+
 export function AdminDashboard() {
   const { user, role } = useAuth();
   const { data: company } = useCompany();
   const { mask } = useHideValues();
   const nome = user?.email?.split("@")[0] ?? "usuário";
+  const [period, setPeriod] = useState<PeriodKey>("30d");
+  const cfg = PERIOD_OPTIONS.find((p) => p.value === period)!;
 
-
-  const desde = new Date();
-  desde.setMonth(desde.getMonth() - 5);
-  desde.setDate(1);
+  const desde = useMemo(() => {
+    const d = new Date();
+    if (cfg.bucket === "month") {
+      d.setMonth(d.getMonth() - 11);
+      d.setDate(1);
+    } else {
+      d.setDate(d.getDate() - (cfg.days - 1));
+    }
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [cfg]);
   const desdeStr = desde.toISOString().slice(0, 10);
-  const inicioMes = new Date();
-  inicioMes.setDate(1);
-  const inicioMesStr = inicioMes.toISOString().slice(0, 10);
+  const inicioPeriodoStr = desdeStr;
   const em7dias = new Date();
   em7dias.setDate(em7dias.getDate() + 7);
   const em7Str = em7dias.toISOString().slice(0, 10);
   const hoje = new Date().toISOString().slice(0, 10);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-dashboard"],
+    queryKey: ["admin-dashboard", period],
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
