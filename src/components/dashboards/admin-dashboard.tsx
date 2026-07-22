@@ -20,6 +20,7 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
