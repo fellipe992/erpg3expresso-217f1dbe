@@ -1347,17 +1347,16 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      company_public: {
+        Row: {
+          id: string | null
+          logo_url: string | null
+          nome_fantasia: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      get_company_public: {
-        Args: never
-        Returns: {
-          id: string
-          logo_url: string
-          nome_fantasia: string
-        }[]
-      }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
