@@ -344,26 +344,66 @@ export function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Combustível por veículo</CardTitle>
-              <CardDescription>Gasto com abastecimento — {cfg.label.toLowerCase()}</CardDescription>
+              <CardTitle>Despesas por veículo</CardTitle>
+              <CardDescription>Lançamentos a pagar por categoria — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                {custoVeiculo.length === 0 ? (
-                  <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhum abastecimento registrado.</div>
+              <div className="h-80">
+                {despesasPorVeiculo.length === 0 ? (
+                  <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhuma despesa registrada.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={custoVeiculo}>
+                    <BarChart data={despesasPorVeiculo}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="placa" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                       <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => brl(v)} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="combustivel" name="Combustível" fill="var(--color-brand)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" />
+                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-muted-foreground)" />
+                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" />
+                      <Bar dataKey="Outros" stackId="a" fill="var(--color-border)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Consumo por veículo</CardTitle>
+              <CardDescription>Média km/L, gasto com combustível e custo por km — {cfg.label.toLowerCase()}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {consumoPorVeiculo.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">Nenhum abastecimento registrado no período.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Placa</TableHead>
+                      <TableHead className="text-right">Litros</TableHead>
+                      <TableHead className="text-right">KM</TableHead>
+                      <TableHead className="text-right">Consumo</TableHead>
+                      <TableHead className="text-right">R$/km</TableHead>
+                      <TableHead className="text-right">Gasto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {consumoPorVeiculo.map((v) => (
+                      <TableRow key={v.placa}>
+                        <TableCell className="font-mono text-xs">{v.placa}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.consumo > 0 ? `${v.consumo.toFixed(2)} km/L` : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.custoKm > 0 ? brl(v.custoKm) : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{mask(brl(v.gasto))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </>
