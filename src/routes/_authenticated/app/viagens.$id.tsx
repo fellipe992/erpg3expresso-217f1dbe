@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { RotaViagemButton } from "@/components/viagem/rota-viagem-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -281,12 +282,28 @@ function ViagemDetalheePage() {
 
           </div>
           <Separator className="my-4" />
-          <FinalizarViagemDialog
-            viagemId={id}
-            kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
-            onDone={invalidateAll}
-            autoOpen={location.hash === "finalizar"}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <FinalizarViagemDialog
+              viagemId={id}
+              kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
+              onDone={invalidateAll}
+              autoOpen={location.hash === "finalizar"}
+            />
+            <RotaViagemButton viagemId={id} />
+          </div>
+        </Card>
+      )}
+
+      {/* Rota (viagens concluídas) */}
+      {viagem.status === "concluida" && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-lg font-bold">Trajeto percorrido</h2>
+              <p className="text-xs text-muted-foreground">Histórico de GPS registrado durante a viagem.</p>
+            </div>
+            <RotaViagemButton viagemId={id} />
+          </div>
         </Card>
       )}
 
