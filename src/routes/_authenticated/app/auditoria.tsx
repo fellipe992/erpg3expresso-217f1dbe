@@ -15,9 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  Collapsible, CollapsibleContent, CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/_authenticated/app/auditoria")({
   head: () => ({ meta: [{ title: "Auditoria — G3 Expresso" }] }),
