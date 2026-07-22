@@ -104,6 +104,7 @@ export function AppSidebar() {
         <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
         <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
         {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
+        {isGestor && <Group label="Administração" items={gestorAdmin} pathname={location.pathname} collapsed={collapsed} />}
       </SidebarContent>
 
       <SidebarFooter>
