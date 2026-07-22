@@ -223,21 +223,17 @@ export function AdminDashboard() {
     if (s.includes("pedág") || s.includes("pedag")) return "Pedágio";
     return "Outros";
   }
+  type DespesaRow = { placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
   const despesasPorVeiculo = (() => {
-    if (!data) return [];
+    if (!data) return [] as DespesaRow[];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
-    const map = new Map<string, Record<string, number> & { placa: string; total: number }>();
+    const map = new Map<string, DespesaRow>();
     for (const l of data.lancamentos) {
       if (l.tipo !== "pagar" || !l.veiculo_id) continue;
       const placa = placas.get(l.veiculo_id) ?? "—";
-      const cur =
-        map.get(l.veiculo_id) ??
-        ({ placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 } as Record<string, number> & {
-          placa: string;
-          total: number;
-        });
-      const cat = normalizarCategoria(l.categoria);
-      cur[cat] = (cur[cat] ?? 0) + Number(l.valor ?? 0);
+      const cur = map.get(l.veiculo_id) ?? { placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
+      const cat = normalizarCategoria(l.categoria) as "Combustível" | "Manutenção" | "Pedágio" | "Outros";
+      cur[cat] = cur[cat] + Number(l.valor ?? 0);
       cur.total += Number(l.valor ?? 0);
       map.set(l.veiculo_id, cur);
     }
