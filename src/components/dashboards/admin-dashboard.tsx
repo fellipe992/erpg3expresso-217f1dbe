@@ -190,18 +190,58 @@ export function AdminDashboard() {
     return Array.from(map.values());
   })();
 
-  const custoVeiculo = (() => {
+  const consumoPorVeiculo = (() => {
     if (!data) return [];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
-    const map = new Map<string, { placa: string; combustivel: number }>();
+    const map = new Map<string, { placa: string; litros: number; km: number; gasto: number }>();
     for (const a of data.abastecimentos) {
       if (!a.veiculo_id) continue;
       const placa = placas.get(a.veiculo_id) ?? "—";
-      const cur = map.get(a.veiculo_id) ?? { placa, combustivel: 0 };
-      cur.combustivel += Number(a.valor_total ?? 0);
+      const cur = map.get(a.veiculo_id) ?? { placa, litros: 0, km: 0, gasto: 0 };
+      cur.gasto += Number(a.valor_total ?? 0);
+      if (Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0) {
+        cur.litros += Number(a.litros);
+        cur.km += Number(a.km_percorridos);
+      }
       map.set(a.veiculo_id, cur);
     }
-    return Array.from(map.values()).sort((a, b) => b.combustivel - a.combustivel).slice(0, 8);
+    return Array.from(map.values())
+      .map((v) => ({
+        ...v,
+        consumo: v.litros > 0 ? v.km / v.litros : 0,
+        custoKm: v.km > 0 ? v.gasto / v.km : 0,
+      }))
+      .sort((a, b) => b.gasto - a.gasto);
+  })();
+
+  // Categorias fixas de despesa por veículo (empilhado)
+  const CATEGORIAS_DESP = ["Combustível", "Manutenção", "Pedágio", "Outros"] as const;
+  function normalizarCategoria(c: string | null | undefined) {
+    const s = (c ?? "").toLowerCase();
+    if (s.includes("combust")) return "Combustível";
+    if (s.includes("manut")) return "Manutenção";
+    if (s.includes("pedág") || s.includes("pedag")) return "Pedágio";
+    return "Outros";
+  }
+  const despesasPorVeiculo = (() => {
+    if (!data) return [];
+    const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
+    const map = new Map<string, Record<string, number> & { placa: string; total: number }>();
+    for (const l of data.lancamentos) {
+      if (l.tipo !== "pagar" || !l.veiculo_id) continue;
+      const placa = placas.get(l.veiculo_id) ?? "—";
+      const cur =
+        map.get(l.veiculo_id) ??
+        ({ placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 } as Record<string, number> & {
+          placa: string;
+          total: number;
+        });
+      const cat = normalizarCategoria(l.categoria);
+      cur[cat] = (cur[cat] ?? 0) + Number(l.valor ?? 0);
+      cur.total += Number(l.valor ?? 0);
+      map.set(l.veiculo_id, cur);
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
   })();
 
   return (
