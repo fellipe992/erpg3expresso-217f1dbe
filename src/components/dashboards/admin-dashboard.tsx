@@ -20,6 +20,7 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
@@ -80,7 +81,7 @@ export function AdminDashboard() {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria")
+          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria, veiculo_id")
           .gte("data_vencimento", desdeStr),
         supabase
           .from("viagens")
@@ -189,18 +190,54 @@ export function AdminDashboard() {
     return Array.from(map.values());
   })();
 
-  const custoVeiculo = (() => {
+  const consumoPorVeiculo = (() => {
     if (!data) return [];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
-    const map = new Map<string, { placa: string; combustivel: number }>();
+    const map = new Map<string, { placa: string; litros: number; km: number; gasto: number }>();
     for (const a of data.abastecimentos) {
       if (!a.veiculo_id) continue;
       const placa = placas.get(a.veiculo_id) ?? "—";
-      const cur = map.get(a.veiculo_id) ?? { placa, combustivel: 0 };
-      cur.combustivel += Number(a.valor_total ?? 0);
+      const cur = map.get(a.veiculo_id) ?? { placa, litros: 0, km: 0, gasto: 0 };
+      cur.gasto += Number(a.valor_total ?? 0);
+      if (Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0) {
+        cur.litros += Number(a.litros);
+        cur.km += Number(a.km_percorridos);
+      }
       map.set(a.veiculo_id, cur);
     }
-    return Array.from(map.values()).sort((a, b) => b.combustivel - a.combustivel).slice(0, 8);
+    return Array.from(map.values())
+      .map((v) => ({
+        ...v,
+        consumo: v.litros > 0 ? v.km / v.litros : 0,
+        custoKm: v.km > 0 ? v.gasto / v.km : 0,
+      }))
+      .sort((a, b) => b.gasto - a.gasto);
+  })();
+
+  // Categorias fixas de despesa por veículo (empilhado)
+  const CATEGORIAS_DESP = ["Combustível", "Manutenção", "Pedágio", "Outros"] as const;
+  function normalizarCategoria(c: string | null | undefined) {
+    const s = (c ?? "").toLowerCase();
+    if (s.includes("combust")) return "Combustível";
+    if (s.includes("manut")) return "Manutenção";
+    if (s.includes("pedág") || s.includes("pedag")) return "Pedágio";
+    return "Outros";
+  }
+  type DespesaRow = { placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
+  const despesasPorVeiculo = (() => {
+    if (!data) return [] as DespesaRow[];
+    const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
+    const map = new Map<string, DespesaRow>();
+    for (const l of data.lancamentos) {
+      if (l.tipo !== "pagar" || !l.veiculo_id) continue;
+      const placa = placas.get(l.veiculo_id) ?? "—";
+      const cur = map.get(l.veiculo_id) ?? { placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
+      const cat = normalizarCategoria(l.categoria) as "Combustível" | "Manutenção" | "Pedágio" | "Outros";
+      cur[cat] = cur[cat] + Number(l.valor ?? 0);
+      cur.total += Number(l.valor ?? 0);
+      map.set(l.veiculo_id, cur);
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
   })();
 
   return (
@@ -307,26 +344,66 @@ export function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Combustível por veículo</CardTitle>
-              <CardDescription>Gasto com abastecimento — {cfg.label.toLowerCase()}</CardDescription>
+              <CardTitle>Despesas por veículo</CardTitle>
+              <CardDescription>Lançamentos a pagar por categoria — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-72">
-                {custoVeiculo.length === 0 ? (
-                  <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhum abastecimento registrado.</div>
+              <div className="h-80">
+                {despesasPorVeiculo.length === 0 ? (
+                  <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhuma despesa registrada.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={custoVeiculo}>
+                    <BarChart data={despesasPorVeiculo}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="placa" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
                       <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => brl(v)} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="combustivel" name="Combustível" fill="var(--color-brand)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" />
+                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-muted-foreground)" />
+                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" />
+                      <Bar dataKey="Outros" stackId="a" fill="var(--color-border)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Consumo por veículo</CardTitle>
+              <CardDescription>Média km/L, gasto com combustível e custo por km — {cfg.label.toLowerCase()}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {consumoPorVeiculo.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">Nenhum abastecimento registrado no período.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Placa</TableHead>
+                      <TableHead className="text-right">Litros</TableHead>
+                      <TableHead className="text-right">KM</TableHead>
+                      <TableHead className="text-right">Consumo</TableHead>
+                      <TableHead className="text-right">R$/km</TableHead>
+                      <TableHead className="text-right">Gasto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {consumoPorVeiculo.map((v) => (
+                      <TableRow key={v.placa}>
+                        <TableCell className="font-mono text-xs">{v.placa}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.consumo > 0 ? `${v.consumo.toFixed(2)} km/L` : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{v.custoKm > 0 ? brl(v.custoKm) : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{mask(brl(v.gasto))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </>
