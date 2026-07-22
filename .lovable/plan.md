@@ -1,76 +1,70 @@
-# Fluxo Operacional Completo da Viagem — Motorista
+# Central de Monitoramento em Tempo Real
 
-Vou entregar um fluxo mobile-first onde o motorista opera 100% pelo celular: consulta antecipada, checklist de saída obrigatório com fotos, ações durante a viagem (ocorrências, fotos, despesas, abastecimentos), encerramento com canhoto e recalculo automático de KPIs.
+Módulo novo para Administrador e Gestor acompanharem viagens em andamento no mapa, com o motorista compartilhando localização automaticamente.
 
-## 1. Banco de Dados (1 migration)
+## 1. Banco de dados (1 migration)
 
-**Novas tabelas:**
-- `viagem_ocorrencias` — data/hora auto, local, descricao, observacoes, viagem_id, motorista_id, created_by
-- `viagem_anexos` — categoria (`checklist_saida`, `checklist_chegada`, `ocorrencia`, `canhoto`, `entrega`, `veiculo`), path no Storage, viagem_id, ocorrencia_id (opcional), descricao, created_by
-- `viagem_auditoria` — evento (`iniciada`, `checklist_saida`, `ocorrencia`, `foto`, `finalizada`, `canhoto`), viagem_id, usuario_id, detalhes JSONB, timestamp
+**Nova tabela `viagem_localizacoes`** — histórico de posições:
+- viagem_id, motorista_id, veiculo_id
+- latitude, longitude, precisao, velocidade, heading
+- bateria (nullable), online (bool)
+- created_at
 
-**Alterações:**
-- `checklists`: novas colunas booleanas específicas (pneus_ok, oleo_ok, agua_radiador_ok, freios_ok, tacografo_ok) mantendo `itens` JSONB para compatibilidade
-- `viagens`: colunas `iniciada_por`, `finalizada_por`, `observacoes_finais`
+Índices por (viagem_id, created_at desc) e uma view/consulta auxiliar para "última posição por viagem em andamento".
 
-**RLS:** motorista vê/insere apenas os próprios registros; staff (admin/gestor/financeiro) tem acesso total. GRANTs completos.
+**RLS/GRANTs:**
+- Motorista insere apenas as próprias posições, apenas se a viagem estiver `em_andamento`.
+- Admin/Gestor leem tudo. Financeiro/Motorista sem acesso de leitura (motorista só escreve).
+- Realtime habilitado (`ALTER PUBLICATION supabase_realtime ADD TABLE`) para atualização push.
 
-**Triggers de auditoria** para registrar automaticamente eventos-chave.
+## 2. Conexão Google Maps
 
-**Remover restrição de data**: garantir que motorista consulta viagens `planejadas` mesmo com data futura (já está OK via RLS por motorista_id — apenas confirmar).
+Usar o connector Google Maps já disponível na plataforma. Preciso confirmar/conectar com você antes de codar o mapa (mapa carrega com a chave de browser gerenciada; geocoding reverso da "cidade atual" vai pelo gateway).
 
-## 2. Frontend — Rotas e Componentes
+## 3. Frontend — captura de localização (motorista)
 
-### `src/routes/_authenticated/app/viagens.tsx` (Motorista)
-Já lista as viagens do motorista. Vou reorganizar em **abas por status** (Planejadas / Em andamento / Concluídas) com cards mobile-first mostrando: OS, cliente, origem→destino, data prevista, veículo, status, botão "Visualizar".
+Novo hook `useViagemTracking(viagemId)`:
+- Ao entrar em `em_andamento`, pede permissão e chama `navigator.geolocation.watchPosition`.
+- Envia posição ao Supabase a cada ~12s ou em mudança significativa (>25m).
+- Lê `navigator.getBattery()` e `navigator.onLine` quando disponíveis.
+- Para imediatamente ao finalizar/cancelar; grava última posição.
+- Aviso na tela do motorista: manter app aberto durante a viagem.
 
-### `src/routes/_authenticated/app/viagens.$id.tsx` (Detalhe — reescrita mobile-first)
-Reestruturar o arquivo atual em seções colapsáveis/tabs:
+Integrar no fluxo de "Iniciar viagem" (dispara permissão) e "Finalizar" (para o watcher).
 
-1. **Informações Gerais** (já existe, ajustar layout mobile)
-2. **Checklist de Saída** — botão "Iniciar Viagem" abre modal em etapas com os campos específicos (pneus com foto obrigatória, óleo, água, freios, tacógrafo, observações, fotos múltiplas do veículo). Só depois de salvo o checklist, muda status → `em_andamento` e registra `data_saida`, `iniciada_por`.
-3. **Durante a viagem** (visível quando `em_andamento`): 4 botões — Registrar Ocorrência, Adicionar Foto, Lançar Despesa (link para financeiro pré-preenchido), Lançar Abastecimento (link para abastecimentos pré-preenchido).
-4. **Ocorrências** — lista + botão "Nova ocorrência" (form: local, descrição, fotos).
-5. **Encerramento** — botão "Finalizar Viagem" abre form: data/hora encerramento, KM final, observações, canhoto (foto ou PDF), fotos de entrega. Ao confirmar → status `concluida`, registra `finalizada_por`.
-6. **Movimentações financeiras** (já existe).
-7. **Auditoria** — timeline dos eventos (visível para staff).
+## 4. Frontend — tela de monitoramento
 
-### Novos componentes
-- `src/components/viagem/checklist-saida-dialog.tsx` — modal multi-step com upload de fotos
-- `src/components/viagem/ocorrencia-dialog.tsx`
-- `src/components/viagem/finalizar-viagem-dialog.tsx` — com upload de canhoto e fotos de entrega
-- `src/components/viagem/upload-fotos.tsx` — componente reutilizável (aceita múltiplas, usa `capture="environment"`, guarda em `viagem-fotos/{viagemId}/{categoria}/`)
+Nova rota `/_authenticated/app/monitoramento` (Admin + Gestor apenas).
 
-## 3. Storage
+Layout:
+- **Esquerda (30%)** — painel de operações: busca por placa/motorista, filtros (motorista, veículo, cliente, origem, destino, período), lista de cards com placa, modelo, motorista + foto, cliente, origem→destino, status, tempo desde o início, km percorrido, cidade atual, última atualização, bateria, online/offline, botão "Centralizar".
+- **Direita (70%)** — Google Maps com marcadores customizados de caminhão (laranja G3). Clique abre InfoWindow/card com foto do veículo/motorista, telefone, placa, modelo, cliente, origem, destino, OS, data, hora início, tempo, km, última atualização, status, botão "Abrir detalhes da viagem".
 
-Reutilizar bucket `viagem-fotos` já existente. Policies atuais já permitem motorista vinculado. Estrutura de paths:
-```
-{viagemId}/checklist_saida/*.jpg
-{viagemId}/checklist_chegada/*.jpg
-{viagemId}/ocorrencia/{ocorrenciaId}/*.jpg
-{viagemId}/canhoto/*.{jpg,pdf}
-{viagemId}/entrega/*.jpg
-```
+Query inicial carrega viagens `em_andamento` + última localização; subscription em `viagem_localizacoes` atualiza apenas os marcadores alterados (sem redesenhar o mapa). "Cidade atual" via geocoding reverso (cache por ~2min por viagem).
 
-## 4. Atualizações automáticas ao finalizar
+## 5. Menu e dashboard
 
-Trigger `tg_viagem_financeiro` já existe. Adicionar/garantir:
-- KM rodados = km_final - km_inicial (já calculado no cliente)
-- Dashboards já usam `useQuery`; invalidações cruzadas já implementadas.
-- Auditoria: trigger na `viagens` para registrar `iniciada`/`finalizada`.
+- Sidebar: novo item "Monitoramento" (ícone `Radar` ou `MapPinned`), visível só para Admin/Gestor.
+- Dashboard Admin: novo card "🚚 Viagens em andamento — N veículos em operação" que linka para `/app/monitoramento`.
 
-## 5. Interface
+## 6. Histórico de rota
 
-- Reutilizar `mobile-motorista-shell.tsx` (já ativo).
-- Botões grandes, cards com bastante padding, uploads com `capture="environment"` para câmera direto.
-- Preservar Design System (brand orange, cards, badges).
+Na tela de detalhes da viagem (`viagens.$id.tsx`), botão "Visualizar Rota" (após haver localizações) que abre modal com mapa mostrando origem, destino, polyline do trajeto, última posição, distância total (soma dos segmentos) e tempo total.
+
+## 7. Notificações
+
+Toast no app para Admin/Gestor quando uma viagem inicia/finaliza, via subscription na tabela `viagens` (evento update em `status`). Sem notificações push nativas nesta entrega.
+
+## Fora do escopo (preparado para futuro, não implementado agora)
+Geofencing, alertas de desvio, ETA automático, replay animado da rota, push notifications nativas.
 
 ## Detalhes técnicos
 
-- Todo upload usa `supabase.storage.from('viagem-fotos').upload(path, file)`.
-- Foto de pneus é validada como obrigatória antes de habilitar "Concluir checklist".
-- Ocorrências: `data`/`hora` gravadas com `now()` no banco (default).
-- Canhoto aceita `image/*,application/pdf`.
-- Todas as mutações invalidam: `["viagem", id]`, `["viagens"]`, `["viagem-anexos", id]`, `["viagem-ocorrencias", id]`, `["viagem-auditoria", id]`, `["admin-dashboard"]`, `["motorista-dashboard"]`, `["financeiro"]`.
+- Realtime só na tabela `viagem_localizacoes` filtrando por evento INSERT; um único channel na tela de monitoramento.
+- Marcadores usam `google.maps.Marker` com ícone SVG inline laranja G3 (sem AdvancedMarkerElement/mapId).
+- Rotação do ícone segue `heading` quando disponível.
+- Buffer local no cliente motorista: se `navigator.onLine === false`, enfileira posições e faz flush ao voltar online.
+- Reverse geocoding chamado no servidor (server function) para não expor a chave e permitir cache.
 
-Confirma que posso seguir com a migration + reescrita?
+## Pergunta antes de codar
+Precisa que eu abra o fluxo para conectar o Google Maps (connector) agora? Sem isso o mapa não carrega. Confirma que posso seguir com a migration + toda a implementação acima?
