@@ -306,12 +306,18 @@ function RelatoriosPage() {
             </Card>
           </div>
 
-          <Tabs defaultValue="operacional">
+          <Tabs defaultValue="veiculo">
             <TabsList>
+              <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="veiculo">
+              <RelatorioVeiculo />
+            </TabsContent>
+
 
 
 
