@@ -1082,6 +1082,76 @@ export type Database = {
           },
         ]
       }
+      viagem_localizacoes: {
+        Row: {
+          bateria: number | null
+          created_at: string
+          created_by: string | null
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          motorista_id: string | null
+          online: boolean | null
+          precisao: number | null
+          veiculo_id: string | null
+          velocidade: number | null
+          viagem_id: string
+        }
+        Insert: {
+          bateria?: number | null
+          created_at?: string
+          created_by?: string | null
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          motorista_id?: string | null
+          online?: boolean | null
+          precisao?: number | null
+          veiculo_id?: string | null
+          velocidade?: number | null
+          viagem_id: string
+        }
+        Update: {
+          bateria?: number | null
+          created_at?: string
+          created_by?: string | null
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          motorista_id?: string | null
+          online?: boolean | null
+          precisao?: number | null
+          veiculo_id?: string | null
+          velocidade?: number | null
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_localizacoes_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_localizacoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_localizacoes_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagem_ocorrencias: {
         Row: {
           created_at: string
