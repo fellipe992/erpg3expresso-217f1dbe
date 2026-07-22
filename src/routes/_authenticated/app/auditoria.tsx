@@ -281,6 +281,32 @@ function AuditTable({ loading, rows }: { loading: boolean; rows: Row[] }) {
   );
 }
 
+function ExpandableRow({ row: r }: { row: Row }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <TableRow className="cursor-pointer" onClick={() => setOpen((o) => !o)}>
+        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+          {format(new Date(r.when), "dd/MM/yy HH:mm", { locale: ptBR })}
+        </TableCell>
+        <TableCell>{r.badge}</TableCell>
+        <TableCell>
+          <div className="text-sm">{r.title}</div>
+          <div className="text-xs text-muted-foreground">{r.subtitle}</div>
+        </TableCell>
+      </TableRow>
+      {open && (
+        <TableRow className="bg-muted/40">
+          <TableCell colSpan={3}>
+            <pre className="max-h-72 overflow-auto rounded bg-background p-3 text-[11px] leading-snug">
+              {JSON.stringify(r.details ?? {}, null, 2)}
+            </pre>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+
 function eventoLabel(ev: string) {
   const map: Record<string, string> = {
     criada: "Viagem criada",
