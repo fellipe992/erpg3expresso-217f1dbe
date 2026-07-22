@@ -933,6 +933,51 @@ export type Database = {
         }
         Relationships: []
       }
+      system_settings: {
+        Row: {
+          casas_decimais: number
+          default_theme: string
+          dias_alerta_atraso: number
+          dias_alerta_vencer: number
+          id: string
+          moeda: string
+          notif_config: Json
+          prazo_padrao_vencimento: number
+          singleton: boolean
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          casas_decimais?: number
+          default_theme?: string
+          dias_alerta_atraso?: number
+          dias_alerta_vencer?: number
+          id?: string
+          moeda?: string
+          notif_config?: Json
+          prazo_padrao_vencimento?: number
+          singleton?: boolean
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          casas_decimais?: number
+          default_theme?: string
+          dias_alerta_atraso?: number
+          dias_alerta_vencer?: number
+          id?: string
+          moeda?: string
+          notif_config?: Json
+          prazo_padrao_vencimento?: number
+          singleton?: boolean
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

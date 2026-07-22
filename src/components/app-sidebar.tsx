@@ -72,9 +72,12 @@ const gestao: NavItem[] = [
 
 const administracao: NavItem[] = [
   { label: "Usuários", to: "/app/usuarios", icon: Users },
-  { label: "Empresa", to: "/app/empresa", icon: Building2 },
-  { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck, soon: true },
-  { label: "Configurações", to: "/app/configuracoes", icon: Settings, soon: true },
+  { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck },
+  { label: "Configurações", to: "/app/configuracoes", icon: Settings },
+];
+
+const gestorAdmin: NavItem[] = [
+  { label: "Auditoria de viagens", to: "/app/auditoria", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
@@ -101,6 +104,7 @@ export function AppSidebar() {
         <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
         <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
         {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
+        {isGestor && <Group label="Administração" items={gestorAdmin} pathname={location.pathname} collapsed={collapsed} />}
       </SidebarContent>
 
       <SidebarFooter>
