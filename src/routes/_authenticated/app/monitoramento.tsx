@@ -369,7 +369,9 @@ function MonitoramentoPage() {
                         {v.veiculo?.modelo ?? ""}
                       </span>
                     </div>
-                    <div className="mt-1 truncate text-sm font-medium">{v.motorista?.nome ?? "—"}</div>
+                    <div className="mt-1 truncate text-sm font-medium">
+                      {v.motorista?.nome ?? "—"}
+                    </div>
                     <div className="mt-0.5 truncate text-xs text-muted-foreground">
                       {v.cliente?.razao_social ?? "—"}
                     </div>
