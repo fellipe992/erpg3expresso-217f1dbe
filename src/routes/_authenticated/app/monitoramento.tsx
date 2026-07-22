@@ -2,7 +2,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, MapPin, Truck, Clock, Battery, Wifi, WifiOff, Locate, ExternalLink, Radar } from "lucide-react";
+import {
+  Search,
+  MapPin,
+  Truck,
+  Clock,
+  Battery,
+  Wifi,
+  WifiOff,
+  Locate,
+  ExternalLink,
+  Radar,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
@@ -13,7 +24,24 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/monitoramento")({
-  head: () => ({ meta: [{ title: "Central de Monitoramento — G3 Expresso" }] }),
+  head: () => ({
+    meta: [
+      { title: "Monitoramento de Viagens — G3 Expresso" },
+      {
+        name: "description",
+        content:
+          "Central privada para acompanhar viagens em andamento, posições dos motoristas e rotas operacionais em tempo real.",
+      },
+      { property: "og:title", content: "Monitoramento de Viagens — G3 Expresso" },
+      {
+        property: "og:description",
+        content:
+          "Acompanhe viagens em andamento, posições dos motoristas e rotas operacionais em tempo real.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: MonitoramentoPage,
 });
 
@@ -32,14 +60,22 @@ type Loc = {
 type ViagemAtiva = {
   id: string;
   codigo: string | null;
-  origem: string | null;
-  destino: string | null;
+  origem_cidade: string | null;
+  origem_uf: string | null;
+  destino_cidade: string | null;
+  destino_uf: string | null;
   data_saida: string | null;
   km_inicial: number | null;
   cliente: { razao_social: string | null } | null;
-  motorista: { id: string; nome: string; telefone: string | null; foto_url: string | null } | null;
-  veiculo: { id: string; placa: string; modelo: string | null; marca: string | null; foto_url: string | null } | null;
+  motorista: { id: string; nome: string; telefone: string | null } | null;
+  veiculo: { id: string; placa: string; modelo: string | null; marca: string | null } | null;
 };
+
+function rotaTexto(v: ViagemAtiva) {
+  const origem = `${v.origem_cidade ?? "—"}${v.origem_uf ? `/${v.origem_uf}` : ""}`;
+  const destino = `${v.destino_cidade ?? "—"}${v.destino_uf ? `/${v.destino_uf}` : ""}`;
+  return `${origem} → ${destino}`;
+}
 
 function tempoDesde(iso: string | null) {
   if (!iso) return "—";
@@ -64,7 +100,11 @@ function MonitoramentoPage() {
   const markersRef = useRef<Record<string, google.maps.Marker>>({});
   const infoRef = useRef<google.maps.InfoWindow | null>(null);
 
-  const { data: viagens = [] } = useQuery<ViagemAtiva[]>({
+  const {
+    data: viagens = [],
+    isError: viagensErro,
+    error: viagensError,
+  } = useQuery<ViagemAtiva[]>({
     queryKey: ["monitoramento-viagens"],
     enabled: allowed,
     refetchInterval: 30_000,
@@ -72,7 +112,7 @@ function MonitoramentoPage() {
       const { data, error } = await supabase
         .from("viagens")
         .select(
-          "id, codigo, origem, destino, data_saida, km_inicial, cliente:clientes(razao_social), motorista:motoristas(id, nome, telefone, foto_url), veiculo:veiculos(id, placa, modelo, marca, foto_url)",
+          "id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, data_saida, km_inicial, cliente:clientes(razao_social), motorista:motoristas(id, nome, telefone), veiculo:veiculos(id, placa, modelo, marca)",
         )
         .eq("status", "em_andamento");
       if (error) throw error;
@@ -82,7 +122,13 @@ function MonitoramentoPage() {
 
   // Última posição por viagem.
   const { data: locsByViagem = {} } = useQuery<Record<string, Loc>>({
-    queryKey: ["monitoramento-locs", viagens.map((v) => v.id).sort().join(",")],
+    queryKey: [
+      "monitoramento-locs",
+      viagens
+        .map((v) => v.id)
+        .sort()
+        .join(","),
+    ],
     enabled: allowed && viagens.length > 0,
     refetchInterval: 20_000,
     queryFn: async () => {
@@ -90,7 +136,9 @@ function MonitoramentoPage() {
       if (ids.length === 0) return {};
       const { data, error } = await supabase
         .from("viagem_localizacoes")
-        .select("id, viagem_id, latitude, longitude, heading, velocidade, bateria, online, created_at")
+        .select(
+          "id, viagem_id, latitude, longitude, heading, velocidade, bateria, online, created_at",
+        )
         .in("viagem_id", ids)
         .order("created_at", { ascending: false })
         .limit(500);
@@ -103,11 +151,11 @@ function MonitoramentoPage() {
     },
   });
 
-  // Realtime — invalida ao receber novas posições.
+  // Realtime — invalida ao receber novas posições ou mudanças de status.
   useEffect(() => {
     if (!allowed) return;
     const channel = supabase
-      .channel("mon-locs")
+      .channel("mon-viagens-locs")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "viagem_localizacoes" },
@@ -115,6 +163,9 @@ function MonitoramentoPage() {
           qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
         },
       )
+      .on("postgres_changes", { event: "*", schema: "public", table: "viagens" }, () => {
+        qc.invalidateQueries({ queryKey: ["monitoramento-viagens"] });
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -135,16 +186,16 @@ function MonitoramentoPage() {
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
-          styles: [
-            { featureType: "poi", stylers: [{ visibility: "off" }] },
-          ],
+          styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
         });
         infoRef.current = new google.maps.InfoWindow();
       })
       .catch((err) => {
         console.error("[monitoramento] maps error", err);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [allowed]);
 
   // Atualiza marcadores.
@@ -208,8 +259,7 @@ function MonitoramentoPage() {
         <div style="margin-top:6px; font-size:12px;">
           <div><b>Cliente:</b> ${v.cliente?.razao_social ?? "—"}</div>
           <div><b>OS:</b> ${v.codigo ?? "—"}</div>
-          <div><b>Origem:</b> ${v.origem ?? "—"}</div>
-          <div><b>Destino:</b> ${v.destino ?? "—"}</div>
+          <div><b>Rota:</b> ${rotaTexto(v)}</div>
           <div><b>Início:</b> ${v.data_saida ? new Date(v.data_saida).toLocaleString("pt-BR") : "—"}</div>
           <div><b>Última posição:</b> ${new Date(l.created_at).toLocaleString("pt-BR")}</div>
         </div>
@@ -239,8 +289,10 @@ function MonitoramentoPage() {
         v.motorista?.nome,
         v.cliente?.razao_social,
         v.codigo,
-        v.origem,
-        v.destino,
+        v.origem_cidade,
+        v.origem_uf,
+        v.destino_cidade,
+        v.destino_uf,
       ]
         .filter(Boolean)
         .join(" ")
@@ -271,6 +323,11 @@ function MonitoramentoPage() {
           <p className="mt-1 text-xs text-muted-foreground">
             {viagens.length} {viagens.length === 1 ? "veículo em operação" : "veículos em operação"}
           </p>
+          {viagensErro && (
+            <p className="mt-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+              Não foi possível carregar as viagens: {viagensError?.message ?? "erro desconhecido"}
+            </p>
+          )}
           <div className="relative mt-3">
             <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -281,7 +338,7 @@ function MonitoramentoPage() {
             />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        <div className="flex-1 space-y-2 overflow-y-auto p-3">
           {filtered.length === 0 && (
             <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
               Nenhuma viagem em andamento no momento.
@@ -300,17 +357,9 @@ function MonitoramentoPage() {
                 onClick={() => centralizar(v)}
               >
                 <div className="flex items-start gap-3">
-                  {v.motorista?.foto_url ? (
-                    <img
-                      src={v.motorista.foto_url}
-                      alt=""
-                      className="size-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="grid size-10 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                      {v.motorista?.nome?.slice(0, 2).toUpperCase() ?? "—"}
-                    </div>
-                  )}
+                  <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    {v.motorista?.nome?.slice(0, 2).toUpperCase() ?? "—"}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="rounded bg-foreground/90 px-1.5 py-0.5 text-[10px] font-bold text-background">
@@ -320,16 +369,21 @@ function MonitoramentoPage() {
                         {v.veiculo?.modelo ?? ""}
                       </span>
                     </div>
-                    <div className="mt-1 truncate text-sm font-medium">{v.motorista?.nome ?? "—"}</div>
+                    <div className="mt-1 truncate text-sm font-medium">
+                      {v.motorista?.nome ?? "—"}
+                    </div>
                     <div className="mt-0.5 truncate text-xs text-muted-foreground">
                       {v.cliente?.razao_social ?? "—"}
                     </div>
                     <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                       <MapPin className="size-3" />
-                      <span className="truncate">{v.origem ?? "—"} → {v.destino ?? "—"}</span>
+                      <span className="truncate">{rotaTexto(v)}</span>
                     </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-                      <Badge variant="outline" className="gap-1 border-green-500/40 text-green-700 dark:text-green-400">
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-green-500/40 text-green-700 dark:text-green-400"
+                      >
                         <span className="size-1.5 rounded-full bg-green-500" />
                         Em andamento
                       </Badge>
@@ -361,13 +415,20 @@ function MonitoramentoPage() {
                     size="sm"
                     variant="outline"
                     className="h-8 flex-1 text-xs"
-                    onClick={(e) => { e.stopPropagation(); centralizar(v); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      centralizar(v);
+                    }}
                     disabled={!l}
                   >
                     <Locate className="mr-1 size-3" /> Centralizar
                   </Button>
                   <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-                    <Link to="/app/viagens/$id" params={{ id: v.id }} onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      to="/app/viagens/$id"
+                      params={{ id: v.id }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <ExternalLink className="mr-1 size-3" /> Detalhes
                     </Link>
                   </Button>

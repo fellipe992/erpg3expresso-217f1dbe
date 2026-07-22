@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ const MIN_DISTANCE_M = 25;
  */
 export function useMotoristaAutoTracking() {
   const { user, role } = useAuth();
+  const qc = useQueryClient();
   const isMotorista = role === "motorista";
 
   const { data: viagens = [] } = useQuery<ActiveViagem[]>({
@@ -38,18 +39,19 @@ export function useMotoristaAutoTracking() {
     enabled: !!user?.id && isMotorista,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data: mData } = await supabase
+      const { data: mData, error: mError } = await supabase
         .from("motoristas")
         .select("id")
         .eq("user_id", user!.id)
         .maybeSingle();
+      if (mError) throw mError;
       if (!mData?.id) return [];
       const { data, error } = await supabase
         .from("viagens")
         .select("id, motorista_id, veiculo_id")
         .eq("motorista_id", mData.id)
         .eq("status", "em_andamento");
-      if (error) return [];
+      if (error) throw error;
       return (data ?? []) as ActiveViagem[];
     },
   });
@@ -58,14 +60,20 @@ export function useMotoristaAutoTracking() {
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const batteryRef = useRef<number | null>(null);
   const warnedRef = useRef(false);
+  const insertWarnedRef = useRef(false);
 
   useEffect(() => {
     if (!isMotorista) return;
     // Bateria (opcional).
     const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number }> };
-    nav.getBattery?.().then((b) => {
-      batteryRef.current = Math.round(b.level * 100);
-    }).catch(() => { /* noop */ });
+    nav
+      .getBattery?.()
+      .then((b) => {
+        batteryRef.current = Math.round(b.level * 100);
+      })
+      .catch(() => {
+        /* noop */
+      });
   }, [isMotorista]);
 
   useEffect(() => {
@@ -110,11 +118,33 @@ export function useMotoristaAutoTracking() {
         bateria: batteryRef.current,
         online: navigator.onLine,
       }));
-      await supabase.from("viagem_localizacoes").insert(rows);
+      const { error } = await supabase.from("viagem_localizacoes").insert(rows);
+      if (error) {
+        if (!insertWarnedRef.current) {
+          toast.error("GPS não foi salvo", { description: error.message });
+          insertWarnedRef.current = true;
+        }
+        return;
+      }
+      insertWarnedRef.current = false;
+      qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
+      qc.invalidateQueries({ queryKey: ["rota-viagem"] });
     };
 
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        void send(pos);
+      },
+      () => {
+        /* o watchPosition abaixo mostrará o erro com detalhes se persistir */
+      },
+      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 15_000 },
+    );
+
     watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => { void send(pos); },
+      (pos) => {
+        void send(pos);
+      },
       (err) => {
         if (!warnedRef.current) {
           toast.error("Não foi possível acessar a localização", { description: err.message });
@@ -130,5 +160,5 @@ export function useMotoristaAutoTracking() {
         watchIdRef.current = null;
       }
     };
-  }, [isMotorista, viagens]);
+  }, [isMotorista, viagens, qc]);
 }
