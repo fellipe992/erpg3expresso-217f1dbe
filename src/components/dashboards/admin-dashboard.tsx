@@ -422,9 +422,11 @@ export function AdminDashboard() {
           </Card>
         </>
       )}
+      <VeiculoDrilldownDialog state={drilldown} onOpenChange={(open) => !open && setDrilldown(null)} />
     </div>
   );
 }
+
 
 function Kpi({
   label,
