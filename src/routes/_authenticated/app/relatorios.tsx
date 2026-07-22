@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
@@ -31,13 +32,13 @@ export const Route = createFileRoute("/_authenticated/app/relatorios")({
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const CHART_COLORS = [
-  "hsl(var(--brand))",
-  "hsl(var(--destructive))",
-  "#8b5cf6",
-  "#f59e0b",
-  "#10b981",
-  "#06b6d4",
-  "#ec4899",
+  "var(--color-brand)",
+  "var(--color-chart-2)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-3)",
+  "var(--color-destructive)",
+  "var(--color-muted-foreground)",
 ];
 
 type Lanc = {
