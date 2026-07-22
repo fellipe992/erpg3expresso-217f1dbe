@@ -695,6 +695,45 @@ export type Database = {
           },
         ]
       }
+      notificacoes: {
+        Row: {
+          created_at: string
+          id: string
+          lida_em: string | null
+          link: string | null
+          mensagem: string | null
+          origem: string | null
+          origem_id: string | null
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          mensagem?: string | null
+          origem?: string | null
+          origem_id?: string | null
+          tipo?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          mensagem?: string | null
+          origem?: string | null
+          origem_id?: string | null
+          tipo?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plano_auditoria: {
         Row: {
           acao: string
