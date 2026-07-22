@@ -72,9 +72,12 @@ const gestao: NavItem[] = [
 
 const administracao: NavItem[] = [
   { label: "Usuários", to: "/app/usuarios", icon: Users },
-  { label: "Empresa", to: "/app/empresa", icon: Building2 },
-  { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck, soon: true },
-  { label: "Configurações", to: "/app/configuracoes", icon: Settings, soon: true },
+  { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck },
+  { label: "Configurações", to: "/app/configuracoes", icon: Settings },
+];
+
+const gestorAdmin: NavItem[] = [
+  { label: "Auditoria de viagens", to: "/app/auditoria", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {

@@ -29,7 +29,9 @@ import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppFinanceiroRouteImport } from './routes/_authenticated/app/financeiro'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app/documentos'
+import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
+import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authenticated/app/alertas'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
@@ -145,10 +147,22 @@ const AuthenticatedAppDocumentosRoute =
     path: '/app/documentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppConfiguracoesRoute =
+  AuthenticatedAppConfiguracoesRouteImport.update({
+    id: '/app/configuracoes',
+    path: '/app/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppClientesRoute =
   AuthenticatedAppClientesRouteImport.update({
     id: '/app/clientes',
     path: '/app/clientes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppAuditoriaRoute =
+  AuthenticatedAppAuditoriaRouteImport.update({
+    id: '/app/auditoria',
+    path: '/app/auditoria',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppAssistenteRoute =
@@ -189,7 +203,9 @@ export interface FileRoutesByFullPath {
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
+  '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -216,7 +232,9 @@ export interface FileRoutesByTo {
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
+  '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -245,7 +263,9 @@ export interface FileRoutesById {
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
+  '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
+  '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/_authenticated/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -274,7 +294,9 @@ export interface FileRouteTypes {
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
+    | '/app/auditoria'
     | '/app/clientes'
+    | '/app/configuracoes'
     | '/app/documentos'
     | '/app/empresa'
     | '/app/financeiro'
@@ -301,7 +323,9 @@ export interface FileRouteTypes {
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
+    | '/app/auditoria'
     | '/app/clientes'
+    | '/app/configuracoes'
     | '/app/documentos'
     | '/app/empresa'
     | '/app/financeiro'
@@ -329,7 +353,9 @@ export interface FileRouteTypes {
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
+    | '/_authenticated/app/auditoria'
     | '/_authenticated/app/clientes'
+    | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/empresa'
     | '/_authenticated/app/financeiro'
@@ -499,11 +525,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/configuracoes': {
+      id: '/_authenticated/app/configuracoes'
+      path: '/app/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAppConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/clientes': {
       id: '/_authenticated/app/clientes'
       path: '/app/clientes'
       fullPath: '/app/clientes'
       preLoaderRoute: typeof AuthenticatedAppClientesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/auditoria': {
+      id: '/_authenticated/app/auditoria'
+      path: '/app/auditoria'
+      fullPath: '/app/auditoria'
+      preLoaderRoute: typeof AuthenticatedAppAuditoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/assistente': {
@@ -548,7 +588,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAbastecimentosRoute: typeof AuthenticatedAppAbastecimentosRoute
   AuthenticatedAppAlertasRoute: typeof AuthenticatedAppAlertasRoute
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
+  AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
+  AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
   AuthenticatedAppFinanceiroRoute: typeof AuthenticatedAppFinanceiroRoute
@@ -572,7 +614,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAbastecimentosRoute: AuthenticatedAppAbastecimentosRoute,
   AuthenticatedAppAlertasRoute: AuthenticatedAppAlertasRoute,
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
+  AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
+  AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
   AuthenticatedAppFinanceiroRoute: AuthenticatedAppFinanceiroRoute,
