@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 // Google Maps JS API loader (singleton).
 // Uses the managed browser key from the Google Maps connector.
 
