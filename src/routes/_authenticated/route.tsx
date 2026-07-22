@@ -50,6 +50,7 @@ function AuthenticatedLayout() {
               </div>
             </div>
             <ThemeToggle />
+            <NotificationsBell />
             <UserMenu />
           </header>
           <main className="flex-1 bg-background">
