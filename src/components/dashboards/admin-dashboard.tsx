@@ -308,7 +308,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Combustível por veículo</CardTitle>
-              <CardDescription>Gasto com abastecimento nos últimos 6 meses</CardDescription>
+              <CardDescription>Gasto com abastecimento — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-72">
