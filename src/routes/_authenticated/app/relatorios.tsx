@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
@@ -31,13 +32,13 @@ export const Route = createFileRoute("/_authenticated/app/relatorios")({
 const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const CHART_COLORS = [
-  "hsl(var(--brand))",
-  "hsl(var(--destructive))",
-  "#8b5cf6",
-  "#f59e0b",
-  "#10b981",
-  "#06b6d4",
-  "#ec4899",
+  "var(--color-brand)",
+  "var(--color-chart-2)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-3)",
+  "var(--color-destructive)",
+  "var(--color-muted-foreground)",
 ];
 
 type Lanc = {
@@ -305,12 +306,18 @@ function RelatoriosPage() {
             </Card>
           </div>
 
-          <Tabs defaultValue="operacional">
+          <Tabs defaultValue="veiculo">
             <TabsList>
+              <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="veiculo">
+              <RelatorioVeiculo />
+            </TabsContent>
+
 
 
 
@@ -329,9 +336,9 @@ function RelatoriosPage() {
                         <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                         <XAxis dataKey="nome" fontSize={11} />
                         <YAxis fontSize={11} />
-                        <Tooltip contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+                        <Tooltip contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }} />
                         <Legend />
-                        <Bar dataKey="viagens" name="Viagens" fill="hsl(var(--brand))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="viagens" name="Viagens" fill="var(--color-brand)" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -388,9 +395,9 @@ function RelatoriosPage() {
                           <YAxis type="category" dataKey="nome" width={120} fontSize={11} />
                           <Tooltip
                             formatter={(v: number) => fmtBRL(v)}
-                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                            contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }}
                           />
-                          <Bar dataKey="total" fill="hsl(var(--brand))" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="total" fill="var(--color-brand)" radius={[0, 4, 4, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -421,7 +428,7 @@ function RelatoriosPage() {
                           </Pie>
                           <Tooltip
                             formatter={(v: number) => fmtBRL(v)}
-                            contentStyle={{ borderRadius: 8, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+                            contentStyle={{ borderRadius: 8, background: "var(--color-card)", border: "1px solid var(--color-border)" }}
                           />
                           <Legend />
                         </PieChart>

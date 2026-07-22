@@ -21,6 +21,7 @@ import {
   Legend,
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { VeiculoDrilldownDialog, type VeiculoDrilldownState } from "@/components/dashboards/veiculo-drilldown-dialog";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
@@ -54,6 +55,7 @@ export function AdminDashboard() {
   const { mask } = useHideValues();
   const nome = user?.email?.split("@")[0] ?? "usuário";
   const [period, setPeriod] = useState<PeriodKey>("30d");
+  const [drilldown, setDrilldown] = useState<VeiculoDrilldownState>(null);
   const cfg = PERIOD_OPTIONS.find((p) => p.value === period)!;
 
   const desde = useMemo(() => {
@@ -223,7 +225,7 @@ export function AdminDashboard() {
     if (s.includes("pedág") || s.includes("pedag")) return "Pedágio";
     return "Outros";
   }
-  type DespesaRow = { placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
+  type DespesaRow = { veiculo_id: string; placa: string; total: number; Combustível: number; Manutenção: number; Pedágio: number; Outros: number };
   const despesasPorVeiculo = (() => {
     if (!data) return [] as DespesaRow[];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
@@ -231,7 +233,7 @@ export function AdminDashboard() {
     for (const l of data.lancamentos) {
       if (l.tipo !== "pagar" || !l.veiculo_id) continue;
       const placa = placas.get(l.veiculo_id) ?? "—";
-      const cur = map.get(l.veiculo_id) ?? { placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
+      const cur = map.get(l.veiculo_id) ?? { veiculo_id: l.veiculo_id, placa, total: 0, Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 };
       const cat = normalizarCategoria(l.categoria) as "Combustível" | "Manutenção" | "Pedágio" | "Outros";
       cur[cat] = cur[cat] + Number(l.valor ?? 0);
       cur.total += Number(l.valor ?? 0);
@@ -345,7 +347,9 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Despesas por veículo</CardTitle>
-              <CardDescription>Lançamentos a pagar por categoria — {cfg.label.toLowerCase()}</CardDescription>
+              <CardDescription>
+                Clique em uma barra para ver lançamentos e viagens — {cfg.label.toLowerCase()}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -353,22 +357,32 @@ export function AdminDashboard() {
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">Nenhuma despesa registrada.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={despesasPorVeiculo}>
+                    <BarChart
+                      data={despesasPorVeiculo}
+                      onClick={(e) => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const payload = (e as any)?.activePayload?.[0]?.payload as DespesaRow | undefined;
+                        if (payload?.veiculo_id) {
+                          setDrilldown({ veiculoId: payload.veiculo_id, placa: payload.placa, desde: desdeStr });
+                        }
+                      }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="placa" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
                       <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => brl(v)} />
+                      <Tooltip contentStyle={{ backgroundColor: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12, color: "var(--color-popover-foreground)" }} formatter={(v: number) => brl(v)} cursor={{ fill: "var(--color-accent)", opacity: 0.4 }} />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
-                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" />
-                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-muted-foreground)" />
-                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" />
-                      <Bar dataKey="Outros" stackId="a" fill="var(--color-border)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Combustível" stackId="a" fill="var(--color-brand)" cursor="pointer" />
+                      <Bar dataKey="Manutenção" stackId="a" fill="var(--color-chart-2)" cursor="pointer" />
+                      <Bar dataKey="Pedágio" stackId="a" fill="var(--color-warning)" cursor="pointer" />
+                      <Bar dataKey="Outros" stackId="a" fill="var(--color-chart-3)" radius={[4, 4, 0, 0]} cursor="pointer" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
             </CardContent>
           </Card>
+
 
           <Card>
             <CardHeader>
@@ -408,9 +422,11 @@ export function AdminDashboard() {
           </Card>
         </>
       )}
+      <VeiculoDrilldownDialog state={drilldown} onOpenChange={(open) => !open && setDrilldown(null)} />
     </div>
   );
 }
+
 
 function Kpi({
   label,
