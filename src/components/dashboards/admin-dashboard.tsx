@@ -244,25 +244,25 @@ export function AdminDashboard() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi label="Receita (mês)" value={mask(brl(kpis.receitaMes))} delta="Vencimentos do mês" icon={DollarSign} />
-            <Kpi label="Despesas (mês)" value={mask(brl(kpis.despesaMes))} delta="Vencimentos do mês" icon={TrendingDown} />
+            <Kpi label={`Receita (${cfg.label.toLowerCase()})`} value={mask(brl(kpis.receitaMes))} delta="Vencimentos no período" icon={DollarSign} />
+            <Kpi label={`Despesas (${cfg.label.toLowerCase()})`} value={mask(brl(kpis.despesaMes))} delta="Vencimentos no período" icon={TrendingDown} />
             <Kpi label="Resultado" value={mask(brl(kpis.lucroMes))} delta={kpis.lucroMes >= 0 ? "Positivo" : "Negativo"} icon={TrendingUp} highlight={kpis.lucroMes >= 0} />
-            <Kpi label="KM rodados (mês)" value={`${kpis.kmMes.toLocaleString("pt-BR")} km`} delta={`${kpis.viagensMes} viagens`} icon={MapPin} />
+            <Kpi label="KM rodados" value={`${kpis.kmMes.toLocaleString("pt-BR")} km`} delta={`${kpis.viagensMes} viagens`} icon={MapPin} />
           </div>
 
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <Kpi label="Frota ativa" value={String(kpis.frotaAtiva)} delta={`${kpis.emViagem} em viagem`} icon={Truck} />
             <Kpi label="Motoristas" value={String(kpis.motoristasAtivos)} delta="Ativos" icon={Users} />
-            <Kpi label="Consumo médio" value={kpis.consumo > 0 ? `${kpis.consumo.toFixed(2)} km/L` : "—"} delta="Últimos 6 meses" icon={Fuel} />
-            <Kpi label="Viagens (mês)" value={String(kpis.viagensMes)} delta={`${kpis.emViagem} em andamento`} icon={ArrowUpRight} />
+            <Kpi label="Consumo médio" value={kpis.consumo > 0 ? `${kpis.consumo.toFixed(2)} km/L` : "—"} delta={cfg.label} icon={Fuel} />
+            <Kpi label="Viagens" value={String(kpis.viagensMes)} delta={`${kpis.emViagem} em andamento`} icon={ArrowUpRight} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Receitas x Despesas</CardTitle>
-                <CardDescription>Últimos 6 meses</CardDescription>
+                <CardDescription>{cfg.label}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-72">
