@@ -105,14 +105,14 @@ export function AdminDashboard() {
 
   const kpis = (() => {
     if (!data) return null;
-    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioMesStr);
+    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioPeriodoStr);
     const receitaMes = mesLanc.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.valor), 0);
     const despesaMes = mesLanc.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.valor), 0);
     const lucroMes = receitaMes - despesaMes;
 
-    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioMesStr);
+    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioPeriodoStr);
     const kmMesViagens = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
-    const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioMesStr);
+    const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioPeriodoStr);
     const kmMesAbast = abastMes.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
     const kmMes = kmMesViagens > 0 ? kmMesViagens : kmMesAbast;
 
@@ -120,7 +120,6 @@ export function AdminDashboard() {
     const motoristasAtivos = data.motoristas.filter((m) => m.ativo).length;
     const emViagem = data.viagens.filter((v) => v.status === "em_andamento").length;
 
-    // Consumo: apenas registros com km_percorridos > 0 (ignora o primeiro abastecimento de cada veículo)
     const abastValidos = data.abastecimentos.filter((a) => Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0);
     const totLitros = abastValidos.reduce((s, a) => s + Number(a.litros), 0);
     const totKmAbast = abastValidos.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
@@ -146,19 +145,46 @@ export function AdminDashboard() {
   const receitaDespesa = (() => {
     if (!data) return [];
     const map = new Map<string, { mes: string; receita: number; despesa: number }>();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const k = monthKey(d);
-      map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
-    }
-    for (const l of data.lancamentos) {
-      if (!l.data_vencimento) continue;
-      const k = l.data_vencimento.slice(0, 7);
-      const cur = map.get(k);
-      if (!cur) continue;
-      if (l.tipo === "receber") cur.receita += Number(l.valor);
-      else cur.despesa += Number(l.valor);
+    if (cfg.bucket === "month") {
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const k = monthKey(d);
+        map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
+      }
+      for (const l of data.lancamentos) {
+        if (!l.data_vencimento) continue;
+        const k = l.data_vencimento.slice(0, 7);
+        const cur = map.get(k);
+        if (!cur) continue;
+        if (l.tipo === "receber") cur.receita += Number(l.valor);
+        else cur.despesa += Number(l.valor);
+      }
+    } else {
+      // Baldes diários agrupados para caber em ~cfg.buckets pontos no gráfico
+      const groupDays = Math.max(1, Math.ceil(cfg.days / cfg.buckets));
+      for (let i = cfg.buckets - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i * groupDays);
+        const k = d.toISOString().slice(0, 10);
+        const label = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+        map.set(k, { mes: label, receita: 0, despesa: 0 });
+      }
+      const keys = Array.from(map.keys()).sort();
+      for (const l of data.lancamentos) {
+        if (!l.data_vencimento) continue;
+        const ref = l.data_vencimento.slice(0, 10);
+        let bucketKey = keys[0];
+        for (const k of keys) {
+          if (ref >= k) bucketKey = k;
+          else break;
+        }
+        const cur = map.get(bucketKey);
+        if (!cur) continue;
+        if (l.tipo === "receber") cur.receita += Number(l.valor);
+        else cur.despesa += Number(l.valor);
+      }
     }
     return Array.from(map.values());
   })();
