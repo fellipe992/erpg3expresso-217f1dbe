@@ -580,8 +580,7 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
   const [salvando, setSalvando] = useState(false);
 
   const canSubmit =
-    pneus === true &&
-    pneusFotos.length > 0 &&
+    pneus !== null &&
     oleo !== null &&
     agua !== null &&
     freios !== null &&
