@@ -33,7 +33,7 @@ export function loadGoogleMaps(): Promise<typeof google> {
       key,
       loading: "async",
       callback: "__g3InitGoogleMaps",
-      libraries: "geometry,places,routes",
+      libraries: "geometry,places",
     });
     if (channel) params.set("channel", channel);
     script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
