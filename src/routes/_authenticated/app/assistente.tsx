@@ -131,9 +131,20 @@ function AssistentePage() {
     setInput("");
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        setMessages((m) => m.slice(0, -1));
+        setInput(conteudo);
+        return;
+      }
       const resp = await fetch("/api/assistente", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ messages: nova, contexto }),
       });
       const data = (await resp.json().catch(() => ({}))) as { reply?: string; error?: string };
