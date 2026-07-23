@@ -154,11 +154,27 @@ export function useMotoristaAutoTracking() {
       { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
     );
 
+    // Heartbeat de no máximo 5 minutos — garante posição registrada mesmo parado.
+    const heartbeat = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          // força envio ignorando o filtro de distância/intervalo
+          lastSentRef.current = null;
+          void send(pos);
+        },
+        () => {
+          /* noop */
+        },
+        { enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 },
+      );
+    }, 5 * 60_000);
+
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
+      clearInterval(heartbeat);
     };
   }, [isMotorista, viagens, qc]);
 }
