@@ -23,6 +23,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { RotaViagemButton } from "@/components/viagem/rota-viagem-dialog";
+import { NavegacaoButton } from "@/components/viagem/navegacao-dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -282,6 +283,13 @@ function ViagemDetalheePage() {
 
           </div>
           <Separator className="my-4" />
+          <div className="mb-3">
+            <NavegacaoButton
+              viagemId={id}
+              destinoCidade={viagem.destino_cidade}
+              destinoUf={viagem.destino_uf}
+            />
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <FinalizarViagemDialog
               viagemId={id}
