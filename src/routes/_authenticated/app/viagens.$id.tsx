@@ -676,8 +676,7 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
               <UploadFotos
                 viagemId={viagemId}
                 categoria="checklist_saida"
-                label="Foto dos pneus (obrigatório)"
-                required
+                label="Foto dos pneus (opcional)"
                 onChange={setPneusFotos}
               />
             </section>
