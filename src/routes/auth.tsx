@@ -81,37 +81,8 @@ function AuthPage() {
     navigate({ to: "/app", replace: true });
   }
 
-  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const parsed = signupSchema.safeParse({
-      email: form.get("email"),
-      password: form.get("password"),
-      nome: form.get("nome"),
-    });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { nome: parsed.data.nome },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Não foi possível cadastrar", { description: error.message });
-      return;
-    }
-    toast.success("Cadastro realizado", {
-      description: "Verifique seu e-mail para confirmar a conta.",
-    });
-    setTab("login");
-  }
+
+
 
   async function handleForgot(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
