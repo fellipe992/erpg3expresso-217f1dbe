@@ -35,7 +35,7 @@ function distance(a: { latitude: number; longitude: number }, b: { latitude: num
 
 const MIN_INTERVAL_MS = 12_000;
 const MIN_DISTANCE_M = 25;
-const HEARTBEAT_MS = 5 * 60_000; // 5 minutos garantidos
+const HEARTBEAT_MS = 10 * 60_000; // 10 minutos garantidos
 
 type Coords = {
   latitude: number;
