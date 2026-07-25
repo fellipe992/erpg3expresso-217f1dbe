@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
@@ -55,6 +56,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGoogleMapsConfigRoute = ApiGoogleMapsConfigRouteImport.update({
+  id: '/api/google-maps-config',
+  path: '/api/google-maps-config',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAssistenteRoute = ApiAssistenteRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
+  '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/api/google-maps-config'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/api/google-maps-config'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/api/assistente'
+    | '/api/google-maps-config'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
@@ -381,6 +393,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiAssistenteRoute: typeof ApiAssistenteRoute
+  ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/google-maps-config': {
+      id: '/api/google-maps-config'
+      path: '/api/google-maps-config'
+      fullPath: '/api/google-maps-config'
+      preLoaderRoute: typeof ApiGoogleMapsConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/assistente': {
@@ -645,7 +665,18 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAssistenteRoute: ApiAssistenteRoute,
+  ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
