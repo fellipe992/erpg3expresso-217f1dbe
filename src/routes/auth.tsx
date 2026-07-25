@@ -162,9 +162,8 @@ function AuthPage() {
         <Card className="border-border/60 shadow-elegant">
           <CardContent className="p-6">
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="mt-6">
@@ -188,29 +187,12 @@ function AuthPage() {
                     {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                     Entrar
                   </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="mt-6">
-                <form className="space-y-4" onSubmit={handleSignup}>
-                  <Field id="nome" label="Nome completo">
-                    <Input id="nome" name="nome" type="text" autoComplete="name" required />
-                  </Field>
-                  <Field id="email-s" label="E-mail" icon={<Mail className="size-4" />}>
-                    <Input id="email-s" name="email" type="email" autoComplete="email" required />
-                  </Field>
-                  <Field id="password-s" label="Senha" icon={<Lock className="size-4" />}>
-                    <Input id="password-s" name="password" type="password" autoComplete="new-password" required minLength={6} />
-                  </Field>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                    Criar conta
-                  </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    O primeiro usuário criado será administrador.
+                    Novas contas são criadas apenas por administradores.
                   </p>
                 </form>
               </TabsContent>
+
 
               <TabsContent value="forgot" className="mt-6">
                 <form className="space-y-4" onSubmit={handleForgot}>
