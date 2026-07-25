@@ -32,6 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Enforce deactivation on live sessions: poll profiles.ativo and sign out immediately if false.
+  useEffect(() => {
+    const uid = session?.user.id;
+    if (!uid) return;
+    let cancelled = false;
+    const check = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("ativo")
+        .eq("id", uid)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!error && data && data.ativo === false) {
+        await supabase.auth.signOut();
+      }
+    };
+    check();
+    const t = setInterval(check, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [session?.user.id]);
+
+
   const userId = session?.user.id;
   const { data: role, isLoading: roleLoading } = useQuery({
     queryKey: ["primary-role", userId],
