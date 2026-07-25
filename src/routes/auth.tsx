@@ -29,9 +29,8 @@ const loginSchema = z.object({
   password: z.string().min(6, "Mínimo 6 caracteres").max(72),
 });
 
-const signupSchema = loginSchema.extend({
-  nome: z.string().trim().min(2, "Informe seu nome").max(120),
-});
+
+
 
 function AuthPage() {
   const navigate = useNavigate();
