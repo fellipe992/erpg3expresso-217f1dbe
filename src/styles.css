@@ -198,12 +198,26 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Evita zoom em iOS/Android quando o usuário toca em <input>. */
+    -webkit-text-size-adjust: 100%;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     letter-spacing: -0.015em;
   }
+  /* Tabelas em telas pequenas — evita clip; permite arrastar. */
+  @media (max-width: 640px) {
+    .overflow-x-scroll-mobile,
+    table {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+  /* Todas as inputs herdam largura total no mobile. */
+  input, textarea, select {
+    max-width: 100%;
+  }
 }
+
 
 @utility text-brand {
   color: var(--color-brand);

@@ -1,8 +1,19 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { registerPlugin } from "@capacitor/core";
+import type {
+  BackgroundGeolocationPlugin,
+  Location as BgLocation,
+  CallbackError as BgCallbackError,
+} from "@capacitor-community/background-geolocation";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { isNative } from "@/lib/native";
+
+const BackgroundGeolocation =
+  registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
+
 
 type ActiveViagem = {
   id: string;
@@ -11,7 +22,7 @@ type ActiveViagem = {
 };
 
 // Distância aproximada em metros (Haversine).
-function distance(a: GeolocationCoordinates, b: { latitude: number; longitude: number }) {
+function distance(a: { latitude: number; longitude: number }, b: { latitude: number; longitude: number }) {
   const R = 6371000;
   const toRad = (x: number) => (x * Math.PI) / 180;
   const dLat = toRad(b.latitude - a.latitude);
@@ -24,10 +35,21 @@ function distance(a: GeolocationCoordinates, b: { latitude: number; longitude: n
 
 const MIN_INTERVAL_MS = 12_000;
 const MIN_DISTANCE_M = 25;
+const HEARTBEAT_MS = 5 * 60_000; // 5 minutos garantidos
+
+type Coords = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null;
+  speed?: number | null;
+  heading?: number | null;
+};
 
 /**
  * Ativa o compartilhamento de localização enquanto o motorista tiver
- * viagens em andamento. Só age quando o usuário é motorista.
+ * viagens em andamento. No Android (Capacitor), usa o plugin de
+ * background-geolocation para continuar rastreando com o app minimizado,
+ * tela apagada ou celular bloqueado. No web, usa navigator.geolocation.
  */
 export function useMotoristaAutoTracking() {
   const { user, role } = useAuth();
@@ -57,56 +79,60 @@ export function useMotoristaAutoTracking() {
   });
 
   const watchIdRef = useRef<number | null>(null);
+  const bgWatcherIdRef = useRef<string | null>(null);
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const batteryRef = useRef<number | null>(null);
   const warnedRef = useRef(false);
   const insertWarnedRef = useRef(false);
+  const viagensRef = useRef<ActiveViagem[]>([]);
+  viagensRef.current = viagens;
 
   useEffect(() => {
     if (!isMotorista) return;
-    // Bateria (opcional).
     const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number }> };
     nav
       .getBattery?.()
       .then((b) => {
         batteryRef.current = Math.round(b.level * 100);
       })
-      .catch(() => {
-        /* noop */
-      });
+      .catch(() => {});
   }, [isMotorista]);
 
   useEffect(() => {
     if (!isMotorista) return;
-    if (viagens.length === 0) {
-      if (watchIdRef.current !== null) {
+
+    // Nada a fazer se não há viagens ativas → limpa quaisquer watchers.
+    const stop = async () => {
+      if (watchIdRef.current !== null && "geolocation" in navigator) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
-        lastSentRef.current = null;
       }
+      if (bgWatcherIdRef.current) {
+        try {
+          await BackgroundGeolocation.removeWatcher({ id: bgWatcherIdRef.current });
+        } catch {
+          /* noop */
+        }
+        bgWatcherIdRef.current = null;
+      }
+
+      lastSentRef.current = null;
+    };
+
+    if (viagens.length === 0) {
+      void stop();
       return;
     }
 
-    if (!("geolocation" in navigator)) {
-      if (!warnedRef.current) {
-        toast.error("Este dispositivo não suporta GPS.");
-        warnedRef.current = true;
-      }
-      return;
-    }
-
-    if (watchIdRef.current !== null) return;
-
-    const send = async (pos: GeolocationPosition) => {
+    const send = async (c: Coords, { force = false }: { force?: boolean } = {}) => {
       const now = Date.now();
-      const c = pos.coords;
       const last = lastSentRef.current;
       const dist = last ? distance(c, { latitude: last.lat, longitude: last.lon }) : Infinity;
       const elapsed = last ? now - last.t : Infinity;
-      if (elapsed < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
+      if (!force && elapsed < MIN_INTERVAL_MS && dist < MIN_DISTANCE_M) return;
 
       lastSentRef.current = { t: now, lat: c.latitude, lon: c.longitude };
-      const rows = viagens.map((v) => ({
+      const rows = viagensRef.current.map((v) => ({
         viagem_id: v.id,
         motorista_id: v.motorista_id,
         veiculo_id: v.veiculo_id,
@@ -118,6 +144,7 @@ export function useMotoristaAutoTracking() {
         bateria: batteryRef.current,
         online: navigator.onLine,
       }));
+      if (rows.length === 0) return;
       const { error } = await supabase.from("viagem_localizacoes").insert(rows);
       if (error) {
         if (!insertWarnedRef.current) {
@@ -131,50 +158,153 @@ export function useMotoristaAutoTracking() {
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
     };
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        void send(pos);
-      },
-      () => {
-        /* o watchPosition abaixo mostrará o erro com detalhes se persistir */
-      },
-      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 15_000 },
-    );
+    let disposed = false;
+    let heartbeat: ReturnType<typeof setInterval> | null = null;
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        void send(pos);
-      },
-      (err) => {
-        if (!warnedRef.current) {
-          toast.error("Não foi possível acessar a localização", { description: err.message });
-          warnedRef.current = true;
+    (async () => {
+      if (isNative()) {
+        // -------- Android nativo: rastreamento em background --------
+        try {
+          const id = await BackgroundGeolocation.addWatcher(
+            {
+              backgroundMessage:
+                "G3 Motorista está registrando sua viagem em andamento.",
+              backgroundTitle: "Viagem em andamento",
+              requestPermissions: true,
+              stale: false,
+              distanceFilter: 20,
+            },
+            (location: BgLocation | undefined, error: BgCallbackError | undefined) => {
+              if (error) {
+                if (error.code === "NOT_AUTHORIZED") {
+                  if (!warnedRef.current) {
+                    toast.error("Permissão de localização negada", {
+                      description:
+                        "Habilite a localização em 2º plano nas configurações do Android.",
+                    });
+                    warnedRef.current = true;
+                  }
+                }
+                return;
+              }
+              if (!location) return;
+              void send({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy,
+                speed: location.speed ?? null,
+                heading: location.bearing ?? null,
+              });
+            },
+          );
+
+          if (disposed) {
+            try {
+              await BackgroundGeolocation.removeWatcher({ id });
+            } catch {
+              /* noop */
+            }
+            return;
+          }
+          bgWatcherIdRef.current = id;
+        } catch (e) {
+          if (!warnedRef.current) {
+            toast.error("Rastreamento em background indisponível", {
+              description: (e as Error).message,
+            });
+            warnedRef.current = true;
+          }
         }
-      },
-      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
-    );
+      } else {
+        // -------- Web: watchPosition padrão --------
+        if (!("geolocation" in navigator)) {
+          if (!warnedRef.current) {
+            toast.error("Este dispositivo não suporta GPS.");
+            warnedRef.current = true;
+          }
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) =>
+            void send({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+              speed: pos.coords.speed,
+              heading: pos.coords.heading,
+            }),
+          () => {},
+          { enableHighAccuracy: true, maximumAge: 5_000, timeout: 15_000 },
+        );
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (pos) =>
+            void send({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy,
+              speed: pos.coords.speed,
+              heading: pos.coords.heading,
+            }),
+          (err) => {
+            if (!warnedRef.current) {
+              toast.error("Não foi possível acessar a localização", {
+                description: err.message,
+              });
+              warnedRef.current = true;
+            }
+          },
+          { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
+        );
+      }
 
-    // Heartbeat de no máximo 5 minutos — garante posição registrada mesmo parado.
-    const heartbeat = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          // força envio ignorando o filtro de distância/intervalo
-          lastSentRef.current = null;
-          void send(pos);
-        },
-        () => {
+      // Heartbeat de 5 min — garante ponto no banco mesmo parado, tanto no web quanto no Android.
+      heartbeat = setInterval(async () => {
+        if (viagensRef.current.length === 0) return;
+        try {
+          if (isNative()) {
+            const { Geolocation } = await import("@capacitor/geolocation");
+            const pos = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true,
+              timeout: 15_000,
+              maximumAge: 60_000,
+            });
+            await send(
+              {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy,
+                speed: pos.coords.speed ?? null,
+                heading: pos.coords.heading ?? null,
+              },
+              { force: true },
+            );
+          } else {
+            navigator.geolocation.getCurrentPosition(
+              (pos) =>
+                void send(
+                  {
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy,
+                    speed: pos.coords.speed,
+                    heading: pos.coords.heading,
+                  },
+                  { force: true },
+                ),
+              () => {},
+              { enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 },
+            );
+          }
+        } catch {
           /* noop */
-        },
-        { enableHighAccuracy: true, maximumAge: 60_000, timeout: 15_000 },
-      );
-    }, 5 * 60_000);
+        }
+      }, HEARTBEAT_MS);
+    })();
 
     return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      clearInterval(heartbeat);
+      disposed = true;
+      if (heartbeat) clearInterval(heartbeat);
+      void stop();
     };
   }, [isMotorista, viagens, qc]);
 }
