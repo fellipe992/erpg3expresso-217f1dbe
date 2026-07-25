@@ -109,13 +109,13 @@ export function useMotoristaAutoTracking() {
       }
       if (bgWatcherIdRef.current) {
         try {
-          const { BackgroundGeolocation } = await import("@capacitor-community/background-geolocation");
           await BackgroundGeolocation.removeWatcher({ id: bgWatcherIdRef.current });
         } catch {
           /* noop */
         }
         bgWatcherIdRef.current = null;
       }
+
       lastSentRef.current = null;
     };
 
