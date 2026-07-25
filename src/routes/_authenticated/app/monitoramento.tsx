@@ -252,22 +252,52 @@ function MonitoramentoPage() {
     const info = infoRef.current;
     const marker = markersRef.current[v.id];
     if (!map || !info || !marker) return;
-    const html = `
-      <div style="font-family: system-ui, sans-serif; min-width: 220px; padding: 4px;">
-        <div style="font-weight:700; font-size:14px; color:#141414;">${v.veiculo?.placa ?? ""} · ${v.veiculo?.modelo ?? ""}</div>
-        <div style="font-size:12px; color:#7C7C7C; margin-top:2px;">${v.motorista?.nome ?? "—"}</div>
-        <div style="margin-top:6px; font-size:12px;">
-          <div><b>Cliente:</b> ${v.cliente?.razao_social ?? "—"}</div>
-          <div><b>OS:</b> ${v.codigo ?? "—"}</div>
-          <div><b>Rota:</b> ${rotaTexto(v)}</div>
-          <div><b>Início:</b> ${v.data_saida ? new Date(v.data_saida).toLocaleString("pt-BR") : "—"}</div>
-          <div><b>Última posição:</b> ${new Date(l.created_at).toLocaleString("pt-BR")}</div>
-        </div>
-        <a href="/app/viagens/${v.id}" style="display:inline-block; margin-top:8px; padding:6px 10px; background:#F15A24; color:white; border-radius:6px; font-size:12px; text-decoration:none;">Abrir detalhes</a>
-      </div>`;
-    info.setContent(html);
+
+    // Build InfoWindow via DOM APIs so interpolated values (client/vehicle/trip
+    // strings written by staff users) cannot inject HTML/JS into an admin's session.
+    const root = document.createElement("div");
+    root.style.cssText = "font-family: system-ui, sans-serif; min-width: 220px; padding: 4px;";
+
+    const title = document.createElement("div");
+    title.style.cssText = "font-weight:700; font-size:14px; color:#141414;";
+    title.textContent = `${v.veiculo?.placa ?? ""} · ${v.veiculo?.modelo ?? ""}`.trim();
+    root.appendChild(title);
+
+    const sub = document.createElement("div");
+    sub.style.cssText = "font-size:12px; color:#7C7C7C; margin-top:2px;";
+    sub.textContent = v.motorista?.nome ?? "—";
+    root.appendChild(sub);
+
+    const body = document.createElement("div");
+    body.style.cssText = "margin-top:6px; font-size:12px;";
+    const rows: Array<[string, string]> = [
+      ["Cliente:", v.cliente?.razao_social ?? "—"],
+      ["OS:", v.codigo ?? "—"],
+      ["Rota:", rotaTexto(v)],
+      ["Início:", v.data_saida ? new Date(v.data_saida).toLocaleString("pt-BR") : "—"],
+      ["Última posição:", new Date(l.created_at).toLocaleString("pt-BR")],
+    ];
+    for (const [label, value] of rows) {
+      const row = document.createElement("div");
+      const b = document.createElement("b");
+      b.textContent = label + " ";
+      row.appendChild(b);
+      row.appendChild(document.createTextNode(value));
+      body.appendChild(row);
+    }
+    root.appendChild(body);
+
+    const link = document.createElement("a");
+    link.href = `/app/viagens/${encodeURIComponent(v.id)}`;
+    link.style.cssText =
+      "display:inline-block; margin-top:8px; padding:6px 10px; background:#F15A24; color:white; border-radius:6px; font-size:12px; text-decoration:none;";
+    link.textContent = "Abrir detalhes";
+    root.appendChild(link);
+
+    info.setContent(root);
     info.open({ map, anchor: marker });
   }
+
 
   function centralizar(v: ViagemAtiva) {
     const l = locsByViagem[v.id];
