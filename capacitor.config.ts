@@ -1,27 +1,21 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 /**
- * Capacitor config para o app Android do motorista da G3 Expresso.
- *
- * Estratégia: hybrid webview.
- * O app instalado nos celulares carrega diretamente o site publicado
- * (https://erp.g3expresso.com.br). Assim, qualquer atualização feita no
- * Lovable/ERP aparece automaticamente no aplicativo — não é preciso
- * republicar a APK a cada mudança de tela.
- *
- * Os plugins nativos (Camera, Geolocation, BackgroundGeolocation, etc.)
- * continuam funcionando normalmente pela ponte JS ↔ nativa.
+ * Capacitor config — ajuste temporário para testes.
+ * Apontando exclusivamente ao domínio padrão do Lovable
+ * (https://erpg3expresso.lovable.app) para isolar problemas de
+ * autenticação da Google Maps JavaScript API no domínio personalizado.
  */
 const config: CapacitorConfig = {
   appId: "br.com.g3expresso.motorista",
   appName: "G3 Motorista",
   webDir: "dist",
   server: {
-    url: "https://erp.g3expresso.com.br",
+    url: "https://erpg3expresso.lovable.app",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
-      "erp.g3expresso.com.br",
+      "erpg3expresso.lovable.app",
       "*.lovable.app",
       "*.lovableproject.com",
       "*.supabase.co",
