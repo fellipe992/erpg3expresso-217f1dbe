@@ -165,9 +165,6 @@ export function useMotoristaAutoTracking() {
       if (isNative()) {
         // -------- Android nativo: rastreamento em background --------
         try {
-          const { BackgroundGeolocation } = await import(
-            "@capacitor-community/background-geolocation"
-          );
           const id = await BackgroundGeolocation.addWatcher(
             {
               backgroundMessage:
@@ -175,10 +172,9 @@ export function useMotoristaAutoTracking() {
               backgroundTitle: "Viagem em andamento",
               requestPermissions: true,
               stale: false,
-              // ~30 metros (o plugin também respeita o filtro de app)
               distanceFilter: 20,
             },
-            (location, error) => {
+            (location: BgLocation | undefined, error: BgCallbackError | undefined) => {
               if (error) {
                 if (error.code === "NOT_AUTHORIZED") {
                   if (!warnedRef.current) {
@@ -201,6 +197,7 @@ export function useMotoristaAutoTracking() {
               });
             },
           );
+
           if (disposed) {
             try {
               await BackgroundGeolocation.removeWatcher({ id });
