@@ -29,9 +29,8 @@ const loginSchema = z.object({
   password: z.string().min(6, "Mínimo 6 caracteres").max(72),
 });
 
-const signupSchema = loginSchema.extend({
-  nome: z.string().trim().min(2, "Informe seu nome").max(120),
-});
+
+
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -81,37 +80,8 @@ function AuthPage() {
     navigate({ to: "/app", replace: true });
   }
 
-  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const parsed = signupSchema.safeParse({
-      email: form.get("email"),
-      password: form.get("password"),
-      nome: form.get("nome"),
-    });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message);
-      return;
-    }
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { nome: parsed.data.nome },
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Não foi possível cadastrar", { description: error.message });
-      return;
-    }
-    toast.success("Cadastro realizado", {
-      description: "Verifique seu e-mail para confirmar a conta.",
-    });
-    setTab("login");
-  }
+
+
 
   async function handleForgot(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -162,9 +132,8 @@ function AuthPage() {
         <Card className="border-border/60 shadow-elegant">
           <CardContent className="p-6">
             <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login" className="mt-6">
@@ -188,29 +157,12 @@ function AuthPage() {
                     {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                     Entrar
                   </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="mt-6">
-                <form className="space-y-4" onSubmit={handleSignup}>
-                  <Field id="nome" label="Nome completo">
-                    <Input id="nome" name="nome" type="text" autoComplete="name" required />
-                  </Field>
-                  <Field id="email-s" label="E-mail" icon={<Mail className="size-4" />}>
-                    <Input id="email-s" name="email" type="email" autoComplete="email" required />
-                  </Field>
-                  <Field id="password-s" label="Senha" icon={<Lock className="size-4" />}>
-                    <Input id="password-s" name="password" type="password" autoComplete="new-password" required minLength={6} />
-                  </Field>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                    Criar conta
-                  </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    O primeiro usuário criado será administrador.
+                    Novas contas são criadas apenas por administradores.
                   </p>
                 </form>
               </TabsContent>
+
 
               <TabsContent value="forgot" className="mt-6">
                 <form className="space-y-4" onSubmit={handleForgot}>
