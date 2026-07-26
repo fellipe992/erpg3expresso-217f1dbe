@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { isNative } from "@/lib/native";
+import { notifyLocal } from "@/lib/notifications";
+
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -36,6 +38,9 @@ function distance(a: { latitude: number; longitude: number }, b: { latitude: num
 const MIN_INTERVAL_MS = 12_000;
 const MIN_DISTANCE_M = 25;
 const HEARTBEAT_MS = 10 * 60_000; // 10 minutos garantidos
+const WATCHDOG_MS = 5 * 60_000; // verifica envio de localização
+const SEM_ENVIO_MS = 20 * 60_000; // sem ponto salvo há 20 min -> alerta
+
 
 type Coords = {
   latitude: number;
@@ -84,6 +89,9 @@ export function useMotoristaAutoTracking() {
   const batteryRef = useRef<number | null>(null);
   const warnedRef = useRef(false);
   const insertWarnedRef = useRef(false);
+  const lastOkRef = useRef<number>(Date.now());
+  const semEnvioAvisadoRef = useRef(false);
+
   const viagensRef = useRef<ActiveViagem[]>([]);
   viagensRef.current = viagens;
 
@@ -154,12 +162,18 @@ export function useMotoristaAutoTracking() {
         return;
       }
       insertWarnedRef.current = false;
+      lastOkRef.current = Date.now();
+      semEnvioAvisadoRef.current = false;
+
       qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
     };
 
     let disposed = false;
     let heartbeat: ReturnType<typeof setInterval> | null = null;
+    let watchdog: ReturnType<typeof setInterval> | null = null;
+    let appListener: (() => void) | null = null;
+
 
     (async () => {
       if (isNative()) {
@@ -182,11 +196,19 @@ export function useMotoristaAutoTracking() {
                       description:
                         "Habilite a localização em 2º plano nas configurações do Android.",
                     });
+                    void notifyLocal({
+                      titulo: "Permissão de localização removida",
+                      mensagem:
+                        "Reative a localização em 2º plano para continuar registrando a viagem.",
+                      categoria: "monitoramento",
+                      prioridade: "alta",
+                    });
                     warnedRef.current = true;
                   }
                 }
                 return;
               }
+
               if (!location) return;
               void send({
                 latitude: location.latitude,
@@ -250,9 +272,16 @@ export function useMotoristaAutoTracking() {
               toast.error("Não foi possível acessar a localização", {
                 description: err.message,
               });
+              void notifyLocal({
+                titulo: "GPS desativado",
+                mensagem: "Ative o GPS para continuar registrando sua viagem.",
+                categoria: "monitoramento",
+                prioridade: "alta",
+              });
               warnedRef.current = true;
             }
           },
+
           { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
         );
       }
@@ -299,12 +328,48 @@ export function useMotoristaAutoTracking() {
           /* noop */
         }
       }, HEARTBEAT_MS);
+
+      // Watchdog: avisa o motorista se a localização parar de ser enviada.
+      watchdog = setInterval(() => {
+        if (viagensRef.current.length === 0) return;
+        if (Date.now() - lastOkRef.current < SEM_ENVIO_MS) return;
+        if (semEnvioAvisadoRef.current) return;
+        semEnvioAvisadoRef.current = true;
+        void notifyLocal({
+          titulo: "Localização deixou de ser enviada",
+          mensagem: "Abra o app G3 Motorista e verifique o GPS e a conexão.",
+          categoria: "monitoramento",
+          prioridade: "alta",
+        });
+      }, WATCHDOG_MS);
+
+      // App fechado/minimizado durante a viagem.
+      if (isNative()) {
+        try {
+          const { App } = await import("@capacitor/app");
+          const handle = await App.addListener("appStateChange", ({ isActive }) => {
+            if (isActive || viagensRef.current.length === 0) return;
+            void notifyLocal({
+              titulo: "Viagem em andamento",
+              mensagem: "Mantenha o app aberto em segundo plano para o rastreamento continuar.",
+              categoria: "monitoramento",
+              prioridade: "alta",
+            });
+          });
+          appListener = () => void handle.remove();
+        } catch {
+          /* noop */
+        }
+      }
     })();
 
     return () => {
       disposed = true;
       if (heartbeat) clearInterval(heartbeat);
+      if (watchdog) clearInterval(watchdog);
+      appListener?.();
       void stop();
     };
   }, [isMotorista, viagens, qc]);
+
 }

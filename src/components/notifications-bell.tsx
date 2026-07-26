@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,16 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-
-type Notificacao = {
-  id: string;
-  tipo: string;
-  titulo: string;
-  mensagem: string | null;
-  link: string | null;
-  lida_em: string | null;
-  created_at: string;
-};
+import { ensureNotificationsReady, notifyLocal, type NotifCategoria } from "@/lib/notifications";
+import {
+  CATEGORIA_ICON,
+  NOTIF_SELECT,
+  type NotificacaoRow,
+} from "@/components/notificacoes/notificacoes-central";
 
 function tempo(iso: string) {
   const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -37,51 +33,59 @@ export function NotificationsBell() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const permissionAsked = useRef(false);
+  const bootstrapped = useRef(false);
 
-  const { data: itens = [] } = useQuery<Notificacao[]>({
+  const { data: itens = [] } = useQuery<NotificacaoRow[]>({
     queryKey: ["notificacoes", user?.id],
     enabled: !!user?.id,
     refetchInterval: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("notificacoes")
-        .select("id, tipo, titulo, mensagem, link, lida_em, created_at")
+        .select(NOTIF_SELECT)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data ?? []) as Notificacao[];
+      return (data ?? []) as NotificacaoRow[];
     },
   });
 
-  // Realtime: novas notificações -> toast + browser notification
+  // Permissão + geração de alertas recorrentes (documentos, manutenções, financeiro).
+  useEffect(() => {
+    if (!user?.id || bootstrapped.current) return;
+    bootstrapped.current = true;
+    void ensureNotificationsReady();
+    void supabase.rpc("gerar_notificacoes_alertas").then(() => {
+      qc.invalidateQueries({ queryKey: ["notificacoes", user.id] });
+    });
+  }, [user?.id, qc]);
+
+  // Realtime: novas notificações -> toast + notificação do dispositivo
   useEffect(() => {
     if (!user?.id) return;
-    if (!permissionAsked.current && typeof Notification !== "undefined" && Notification.permission === "default") {
-      permissionAsked.current = true;
-      Notification.requestPermission().catch(() => {});
-    }
     const channel = supabase
       .channel(`notif-${user.id}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notificacoes", filter: `user_id=eq.${user.id}` },
         (payload) => {
-          const n = payload.new as Notificacao;
+          const n = payload.new as NotificacaoRow;
           qc.invalidateQueries({ queryKey: ["notificacoes", user.id] });
+          qc.invalidateQueries({ queryKey: ["notificacoes-central", user.id] });
           toast(n.titulo, {
             description: n.mensagem ?? undefined,
             action: n.link
               ? { label: "Abrir", onClick: () => navigate({ to: n.link as never }) }
               : undefined,
           });
-          if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-            try {
-              new Notification(n.titulo, { body: n.mensagem ?? undefined, tag: n.id });
-            } catch {
-              /* noop */
-            }
-          }
+          void notifyLocal({
+            titulo: n.titulo,
+            mensagem: n.mensagem,
+            categoria: (n.categoria as NotifCategoria) ?? "sistema",
+            prioridade: n.prioridade === "alta" ? "alta" : "normal",
+            tag: n.id,
+            link: n.link,
+          });
         },
       )
       .subscribe();
@@ -89,6 +93,11 @@ export function NotificationsBell() {
       supabase.removeChannel(channel);
     };
   }, [user?.id, qc, navigate]);
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["notificacoes", user?.id] });
+    qc.invalidateQueries({ queryKey: ["notificacoes-central", user?.id] });
+  };
 
   const marcarLida = useMutation({
     mutationFn: async (id: string) => {
@@ -98,7 +107,7 @@ export function NotificationsBell() {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notificacoes", user?.id] }),
+    onSuccess: invalidate,
   });
 
   const marcarTodas = useMutation({
@@ -109,7 +118,7 @@ export function NotificationsBell() {
         .is("lida_em", null);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notificacoes", user?.id] }),
+    onSuccess: invalidate,
   });
 
   const remover = useMutation({
@@ -117,7 +126,7 @@ export function NotificationsBell() {
       const { error } = await supabase.from("notificacoes").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notificacoes", user?.id] }),
+    onSuccess: invalidate,
   });
 
   const naoLidas = itens.filter((n) => !n.lida_em).length;
@@ -153,51 +162,60 @@ export function NotificationsBell() {
             </div>
           ) : (
             <ul className="divide-y">
-              {itens.map((n) => (
-                <li
-                  key={n.id}
-                  className={cn(
-                    "group flex gap-2 px-3 py-2.5 text-sm",
-                    !n.lida_em && "bg-brand/5",
-                  )}
-                >
-                  <button
-                    className="flex-1 text-left"
-                    onClick={() => {
-                      if (!n.lida_em) marcarLida.mutate(n.id);
-                      if (n.link) navigate({ to: n.link as never });
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className={cn("font-medium", !n.lida_em && "text-brand")}>
-                        {n.titulo}
-                      </span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        {tempo(n.created_at)}
-                      </span>
-                    </div>
-                    {n.mensagem && (
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-                        {n.mensagem}
-                      </p>
+              {itens.map((n) => {
+                const Icon = CATEGORIA_ICON[n.categoria] ?? Bell;
+                return (
+                  <li
+                    key={n.id}
+                    className={cn(
+                      "group flex gap-2 px-3 py-2.5 text-sm",
+                      !n.lida_em && "bg-brand/5",
                     )}
-                  </button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      remover.mutate(n.id);
-                    }}
                   >
-                    <Trash2 className="size-3" />
-                  </Button>
-                </li>
-              ))}
+                    <Icon className="mt-0.5 size-4 shrink-0 text-brand" />
+                    <button
+                      className="flex-1 text-left"
+                      onClick={() => {
+                        if (!n.lida_em) marcarLida.mutate(n.id);
+                        if (n.link) navigate({ to: n.link as never });
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className={cn("font-medium", !n.lida_em && "text-brand")}>
+                          {n.titulo}
+                        </span>
+                        <span className="shrink-0 text-[10px] text-muted-foreground">
+                          {tempo(n.created_at)}
+                        </span>
+                      </div>
+                      {n.mensagem && (
+                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                          {n.mensagem}
+                        </p>
+                      )}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0 opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        remover.mutate(n.id);
+                      }}
+                    >
+                      <Trash2 className="size-3" />
+                    </Button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </ScrollArea>
+        <div className="border-t p-2">
+          <Button asChild variant="ghost" size="sm" className="w-full text-xs">
+            <Link to="/app/notificacoes">Ver central de notificações</Link>
+          </Button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

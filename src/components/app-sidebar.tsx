@@ -16,6 +16,8 @@ import {
   Sparkles,
   BookOpen,
   Radar,
+  Bell,
+
 } from "lucide-react";
 
 import {
@@ -68,7 +70,9 @@ const gestao: NavItem[] = [
   { label: "Relatórios", to: "/app/relatorios", icon: BarChart3 },
   { label: "Assistente IA", to: "/app/assistente", icon: Sparkles },
   { label: "Documentos", to: "/app/documentos", icon: FileText },
+  { label: "Notificações", to: "/app/notificacoes", icon: Bell },
 ];
+
 
 const administracao: NavItem[] = [
   { label: "Usuários", to: "/app/usuarios", icon: Users },

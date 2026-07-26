@@ -23,6 +23,7 @@ import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppPlanoContasRouteImport } from './routes/_authenticated/app/plano-contas'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app/perfil'
 import { Route as AuthenticatedAppPagarRouteImport } from './routes/_authenticated/app/pagar'
+import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_authenticated/app/notificacoes'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
 import { Route as AuthenticatedAppMonitoramentoRouteImport } from './routes/_authenticated/app/monitoramento'
 import { Route as AuthenticatedAppManutencoesRouteImport } from './routes/_authenticated/app/manutencoes'
@@ -112,6 +113,12 @@ const AuthenticatedAppPagarRoute = AuthenticatedAppPagarRouteImport.update({
   path: '/app/pagar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppNotificacoesRoute =
+  AuthenticatedAppNotificacoesRouteImport.update({
+    id: '/app/notificacoes',
+    path: '/app/notificacoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppMotoristasRoute =
   AuthenticatedAppMotoristasRouteImport.update({
     id: '/app/motoristas',
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
@@ -282,6 +291,7 @@ export interface FileRoutesById {
   '/_authenticated/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/_authenticated/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
+  '/_authenticated/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/_authenticated/app/pagar': typeof AuthenticatedAppPagarRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/app/manutencoes'
     | '/app/monitoramento'
     | '/app/motoristas'
+    | '/app/notificacoes'
     | '/app/pagar'
     | '/app/perfil'
     | '/app/plano-contas'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/app/manutencoes'
     | '/app/monitoramento'
     | '/app/motoristas'
+    | '/app/notificacoes'
     | '/app/pagar'
     | '/app/perfil'
     | '/app/plano-contas'
@@ -375,6 +387,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/manutencoes'
     | '/_authenticated/app/monitoramento'
     | '/_authenticated/app/motoristas'
+    | '/_authenticated/app/notificacoes'
     | '/_authenticated/app/pagar'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plano-contas'
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/app/pagar'
       fullPath: '/app/pagar'
       preLoaderRoute: typeof AuthenticatedAppPagarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/notificacoes': {
+      id: '/_authenticated/app/notificacoes'
+      path: '/app/notificacoes'
+      fullPath: '/app/notificacoes'
+      preLoaderRoute: typeof AuthenticatedAppNotificacoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/motoristas': {
@@ -618,6 +638,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppManutencoesRoute: typeof AuthenticatedAppManutencoesRoute
   AuthenticatedAppMonitoramentoRoute: typeof AuthenticatedAppMonitoramentoRoute
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
+  AuthenticatedAppNotificacoesRoute: typeof AuthenticatedAppNotificacoesRoute
   AuthenticatedAppPagarRoute: typeof AuthenticatedAppPagarRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppPlanoContasRoute: typeof AuthenticatedAppPlanoContasRoute
@@ -644,6 +665,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppManutencoesRoute: AuthenticatedAppManutencoesRoute,
   AuthenticatedAppMonitoramentoRoute: AuthenticatedAppMonitoramentoRoute,
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
+  AuthenticatedAppNotificacoesRoute: AuthenticatedAppNotificacoesRoute,
   AuthenticatedAppPagarRoute: AuthenticatedAppPagarRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppPlanoContasRoute: AuthenticatedAppPlanoContasRoute,
