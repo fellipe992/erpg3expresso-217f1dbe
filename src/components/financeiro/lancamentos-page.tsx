@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PlanoContaSelector, type PlanoContaSelection } from "@/components/financeiro/plano-conta-selector";
+import { SortHead, useSort } from "@/components/ui/sortable";
+
 
 type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
 
@@ -304,6 +306,22 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     );
   });
 
+  const { sorted, sort, toggle } = useSort(
+    filtered,
+    {
+      descricao: (l) => l.descricao,
+      parceiro: (l) => (isReceber ? l.cliente?.razao_social ?? "" : l.fornecedor?.razao_social ?? ""),
+      categoria: (l) => l.categoria ?? "",
+      origem: (l) => l.origem ?? "",
+      centro: (l) => l.centro_custo ?? "",
+      veiculo: (l) => l.veiculo?.placa ?? l.motorista?.nome ?? "",
+      vencimento: (l) => l.data_vencimento ?? "",
+      valor: (l) => Number(l.valor),
+      status: (l) => l.status,
+    },
+    { key: "vencimento", dir: "asc" },
+  );
+
   const totais = filtered.reduce(
     (acc, l) => {
       acc.total += Number(l.valor);
@@ -456,20 +474,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead>Centro de custo</TableHead>
-                <TableHead>Veículo / Motorista</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
+                <SortHead sortKey="descricao" sort={sort} onToggle={toggle}>Descrição</SortHead>
+                <SortHead sortKey="parceiro" sort={sort} onToggle={toggle}>{isReceber ? "Cliente" : "Fornecedor"}</SortHead>
+                <SortHead sortKey="categoria" sort={sort} onToggle={toggle}>Categoria</SortHead>
+                <SortHead sortKey="origem" sort={sort} onToggle={toggle}>Origem</SortHead>
+                <SortHead sortKey="centro" sort={sort} onToggle={toggle}>Centro de custo</SortHead>
+                <SortHead sortKey="veiculo" sort={sort} onToggle={toggle}>Veículo / Motorista</SortHead>
+                <SortHead sortKey="vencimento" sort={sort} onToggle={toggle}>Vencimento</SortHead>
+                <SortHead sortKey="valor" sort={sort} onToggle={toggle} align="right">Valor</SortHead>
+                <SortHead sortKey="status" sort={sort} onToggle={toggle}>Status</SortHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((l) => (
+              {sorted.map((l) => (
+
                 <TableRow key={l.id}>
                   <TableCell className="max-w-xs">
                     <div className="font-medium">{l.descricao}</div>

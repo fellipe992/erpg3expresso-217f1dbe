@@ -22,6 +22,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
+import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
+import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
+import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
+
 
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
@@ -307,8 +311,11 @@ function RelatoriosPage() {
           </div>
 
           <Tabs defaultValue="veiculo">
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
+              {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
@@ -317,6 +324,21 @@ function RelatoriosPage() {
             <TabsContent value="veiculo">
               <RelatorioVeiculo />
             </TabsContent>
+
+            {canSeeFinance && (
+              <>
+                <TabsContent value="cliente">
+                  <RelatorioCliente />
+                </TabsContent>
+                <TabsContent value="fin-veiculo">
+                  <RelatorioFinanceiroVeiculo />
+                </TabsContent>
+                <TabsContent value="lucratividade">
+                  <RelatorioLucratividade />
+                </TabsContent>
+              </>
+            )}
+
 
 
 

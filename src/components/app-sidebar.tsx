@@ -17,6 +17,8 @@ import {
   BookOpen,
   Radar,
   Bell,
+  Gauge,
+
 
 } from "lucide-react";
 
@@ -52,8 +54,10 @@ const financeiro: NavItem[] = [
   { label: "Fluxo de caixa", to: "/app/financeiro", icon: Wallet },
   { label: "Contas a receber", to: "/app/receber", icon: Receipt },
   { label: "Contas a pagar", to: "/app/pagar", icon: Receipt },
+  { label: "Rentabilidade", to: "/app/rentabilidade", icon: Gauge },
   { label: "Plano de contas", to: "/app/plano-contas", icon: BookOpen },
 ];
+
 
 const operacional: NavItem[] = [
   { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
