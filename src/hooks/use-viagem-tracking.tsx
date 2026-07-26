@@ -325,12 +325,48 @@ export function useMotoristaAutoTracking() {
           /* noop */
         }
       }, HEARTBEAT_MS);
+
+      // Watchdog: avisa o motorista se a localização parar de ser enviada.
+      watchdog = setInterval(() => {
+        if (viagensRef.current.length === 0) return;
+        if (Date.now() - lastOkRef.current < SEM_ENVIO_MS) return;
+        if (semEnvioAvisadoRef.current) return;
+        semEnvioAvisadoRef.current = true;
+        void notifyLocal({
+          titulo: "Localização deixou de ser enviada",
+          mensagem: "Abra o app G3 Motorista e verifique o GPS e a conexão.",
+          categoria: "monitoramento",
+          prioridade: "alta",
+        });
+      }, WATCHDOG_MS);
+
+      // App fechado/minimizado durante a viagem.
+      if (isNative()) {
+        try {
+          const { App } = await import("@capacitor/app");
+          const handle = await App.addListener("appStateChange", ({ isActive }) => {
+            if (isActive || viagensRef.current.length === 0) return;
+            void notifyLocal({
+              titulo: "Viagem em andamento",
+              mensagem: "Mantenha o app aberto em segundo plano para o rastreamento continuar.",
+              categoria: "monitoramento",
+              prioridade: "alta",
+            });
+          });
+          appListener = () => void handle.remove();
+        } catch {
+          /* noop */
+        }
+      }
     })();
 
     return () => {
       disposed = true;
       if (heartbeat) clearInterval(heartbeat);
+      if (watchdog) clearInterval(watchdog);
+      appListener?.();
       void stop();
     };
   }, [isMotorista, viagens, qc]);
+
 }
