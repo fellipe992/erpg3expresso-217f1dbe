@@ -64,7 +64,11 @@ export type ViagemBi = {
 
 export type BiDados = {
   viagens: ViagemBi[];
+  /** Gerencial — lançamentos cuja COMPETÊNCIA cai no período. */
   lancamentos: LancBi[];
+  /** Financeiro — lançamentos cuja data de CAIXA (pagamento/vencimento) cai no período. */
+  lancamentosCaixa: LancBi[];
+
   clientes: { id: string; nome: string }[];
   veiculos: { id: string; placa: string; label: string }[];
   motoristas: { id: string; nome: string }[];
