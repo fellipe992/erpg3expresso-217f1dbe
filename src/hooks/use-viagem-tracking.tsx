@@ -89,6 +89,9 @@ export function useMotoristaAutoTracking() {
   const batteryRef = useRef<number | null>(null);
   const warnedRef = useRef(false);
   const insertWarnedRef = useRef(false);
+  const lastOkRef = useRef<number>(Date.now());
+  const semEnvioAvisadoRef = useRef(false);
+
   const viagensRef = useRef<ActiveViagem[]>([]);
   viagensRef.current = viagens;
 
@@ -159,6 +162,9 @@ export function useMotoristaAutoTracking() {
         return;
       }
       insertWarnedRef.current = false;
+      lastOkRef.current = Date.now();
+      semEnvioAvisadoRef.current = false;
+
       qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
     };
