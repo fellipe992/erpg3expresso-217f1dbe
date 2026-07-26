@@ -50,11 +50,14 @@ export function RelatorioVeiculo() {
     queryFn: async () => {
       const filtroVeic = veiculoId === "all" ? null : veiculoId;
 
+      // COMPETÊNCIA OPERACIONAL: data da viagem (data_saida), com fallback para created_at
+      // apenas quando a viagem ainda não tem data de saída registrada.
       const viagQ = supabase
         .from("viagens")
         .select("id, codigo, status, data_saida, data_chegada, km_inicial, km_final, valor_frete, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf")
-        .gte("created_at", dataInicio)
-        .lte("created_at", `${dataFim}T23:59:59`);
+        .or(
+          `and(data_saida.gte.${dataInicio},data_saida.lte.${dataFim}T23:59:59),and(data_saida.is.null,created_at.gte.${dataInicio},created_at.lte.${dataFim}T23:59:59)`,
+        );
       if (filtroVeic) viagQ.eq("veiculo_id", filtroVeic);
 
       const abastQ = supabase
@@ -64,12 +67,15 @@ export function RelatorioVeiculo() {
         .lte("data", dataFim);
       if (filtroVeic) abastQ.eq("veiculo_id", filtroVeic);
 
+      // Despesas/receitas por COMPETÊNCIA (data_emissao = data do fato gerador),
+      // e não por vencimento/pagamento.
       const lancQ = supabase
         .from("financeiro_lancamentos")
-        .select("id, tipo, valor, status, data_vencimento, data_pagamento, categoria, descricao, veiculo_id")
-        .gte("data_vencimento", dataInicio)
-        .lte("data_vencimento", dataFim);
+        .select("id, tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, descricao, veiculo_id")
+        .gte("data_emissao", dataInicio)
+        .lte("data_emissao", dataFim);
       if (filtroVeic) lancQ.eq("veiculo_id", filtroVeic);
+
 
       const [viag, abast, lanc, mot] = await Promise.all([
         viagQ,
