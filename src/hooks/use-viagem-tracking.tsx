@@ -269,9 +269,16 @@ export function useMotoristaAutoTracking() {
               toast.error("Não foi possível acessar a localização", {
                 description: err.message,
               });
+              void notifyLocal({
+                titulo: "GPS desativado",
+                mensagem: "Ative o GPS para continuar registrando sua viagem.",
+                categoria: "monitoramento",
+                prioridade: "alta",
+              });
               warnedRef.current = true;
             }
           },
+
           { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
         );
       }
