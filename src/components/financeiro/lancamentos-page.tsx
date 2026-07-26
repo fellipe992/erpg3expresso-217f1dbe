@@ -456,20 +456,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Descrição</TableHead>
-                <TableHead>{isReceber ? "Cliente" : "Fornecedor"}</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Origem</TableHead>
-                <TableHead>Centro de custo</TableHead>
-                <TableHead>Veículo / Motorista</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Status</TableHead>
+                <SortHead sortKey="descricao" sort={sort} onToggle={toggle}>Descrição</SortHead>
+                <SortHead sortKey="parceiro" sort={sort} onToggle={toggle}>{isReceber ? "Cliente" : "Fornecedor"}</SortHead>
+                <SortHead sortKey="categoria" sort={sort} onToggle={toggle}>Categoria</SortHead>
+                <SortHead sortKey="origem" sort={sort} onToggle={toggle}>Origem</SortHead>
+                <SortHead sortKey="centro" sort={sort} onToggle={toggle}>Centro de custo</SortHead>
+                <SortHead sortKey="veiculo" sort={sort} onToggle={toggle}>Veículo / Motorista</SortHead>
+                <SortHead sortKey="vencimento" sort={sort} onToggle={toggle}>Vencimento</SortHead>
+                <SortHead sortKey="valor" sort={sort} onToggle={toggle} align="right">Valor</SortHead>
+                <SortHead sortKey="status" sort={sort} onToggle={toggle}>Status</SortHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((l) => (
+              {sorted.map((l) => (
+
                 <TableRow key={l.id}>
                   <TableCell className="max-w-xs">
                     <div className="font-medium">{l.descricao}</div>
