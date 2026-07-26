@@ -307,8 +307,11 @@ function RelatoriosPage() {
           </div>
 
           <Tabs defaultValue="veiculo">
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
+              {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
@@ -317,6 +320,21 @@ function RelatoriosPage() {
             <TabsContent value="veiculo">
               <RelatorioVeiculo />
             </TabsContent>
+
+            {canSeeFinance && (
+              <>
+                <TabsContent value="cliente">
+                  <RelatorioCliente />
+                </TabsContent>
+                <TabsContent value="fin-veiculo">
+                  <RelatorioFinanceiroVeiculo />
+                </TabsContent>
+                <TabsContent value="lucratividade">
+                  <RelatorioLucratividade />
+                </TabsContent>
+              </>
+            )}
+
 
 
 
