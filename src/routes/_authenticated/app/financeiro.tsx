@@ -232,7 +232,7 @@ function FinanceiroPage() {
       { faixa: "31–60 dias", receber: 0, pagar: 0 },
       { faixa: "60+ dias", receber: 0, pagar: 0 },
     ];
-    for (const l of lancamentos) {
+    for (const l of lancamentosCaixa) {
       if (l.status === "pago" || !l.data_vencimento) continue;
       const dias = Math.floor((Date.parse(hoje) - Date.parse(l.data_vencimento)) / 86_400_000);
       const i = dias <= 0 ? 0 : dias <= 15 ? 1 : dias <= 30 ? 2 : dias <= 60 ? 3 : 4;
@@ -240,16 +240,17 @@ function FinanceiroPage() {
       else faixas[i].pagar += l.valor;
     }
     return faixas;
-  }, [lancamentos, hoje]);
+  }, [lancamentosCaixa, hoje]);
 
   const proximosVencer = useMemo(
     () =>
-      lancamentos
+      lancamentosCaixa
         .filter((l) => l.status !== "pago" && l.data_vencimento && l.data_vencimento >= hoje)
         .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
         .slice(0, 8),
-    [lancamentos, hoje],
+    [lancamentosCaixa, hoje],
   );
+
 
   const periodoLabel = `${dt(filtros.de)} a ${dt(filtros.ate)}`;
 
