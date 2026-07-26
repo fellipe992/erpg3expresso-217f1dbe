@@ -167,9 +167,10 @@ function FinanceiroPage() {
   const serie = useMemo(() => {
     const map = new Map<string, { chave: string; mes: string; receitas: number; despesas: number; saldo: number; acumulado: number }>();
     for (const l of lancamentos) {
-      const ref = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao;
+      const ref = l.competencia;
       if (!ref) continue;
       const chave = ref.slice(0, 7);
+
       const b = map.get(chave) ?? { chave, mes: rotuloMes(chave), receitas: 0, despesas: 0, saldo: 0, acumulado: 0 };
       if (l.tipo === "receber") b.receitas += l.valor;
       else b.despesas += l.valor;
