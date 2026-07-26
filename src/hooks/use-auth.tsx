@@ -32,12 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Revalida/renova o token ao voltar para o app ou reconectar à internet.
+  // Evita "sessão expirada" após o celular ficar horas em segundo plano.
+  useEffect(() => {
+    const revalidate = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      void supabase.auth.getSession();
+    };
+    document.addEventListener("visibilitychange", revalidate);
+    window.addEventListener("online", revalidate);
+    window.addEventListener("focus", revalidate);
+    return () => {
+      document.removeEventListener("visibilitychange", revalidate);
+      window.removeEventListener("online", revalidate);
+      window.removeEventListener("focus", revalidate);
+    };
+  }, []);
+
   // Enforce deactivation on live sessions: poll profiles.ativo and sign out immediately if false.
+  // Só encerra a sessão quando o backend confirma ativo=false (nunca em erro de rede).
   useEffect(() => {
     const uid = session?.user.id;
     if (!uid) return;
     let cancelled = false;
     const check = async () => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
       const { data, error } = await supabase
         .from("profiles")
         .select("ativo")
@@ -55,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearInterval(t);
     };
   }, [session?.user.id]);
+
 
 
   const userId = session?.user.id;
