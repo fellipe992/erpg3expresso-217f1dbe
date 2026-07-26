@@ -299,18 +299,19 @@ function FinanceiroPage() {
 
   const exportPdf = () =>
     exportarPdf({
-      arquivo: `financeiro-${filtros.de}-a-${filtros.ate}`,
+      nomeArquivo: `financeiro-${filtros.de}-a-${filtros.ate}`,
       titulo: "Dashboard Financeiro",
       subtitulo: `Período: ${periodoLabel}`,
-      resumo: [
-        { label: "Faturamento", valor: brl(stats.faturamento) },
-        { label: "Despesas", valor: brl(stats.despesas) },
-        { label: "Lucro líquido", valor: brl(stats.lucro) },
-        { label: "Margem", valor: pct(stats.margem) },
-        { label: "Inadimplência", valor: pct(stats.inadimplencia) },
+      kpis: [
+        ["Faturamento", brl(stats.faturamento)],
+        ["Despesas", brl(stats.despesas)],
+        ["Lucro líquido", brl(stats.lucro)],
+        ["Margem", pct(stats.margem)],
+        ["Inadimplência", pct(stats.inadimplencia)],
       ],
       secoes: [{ titulo: "Lançamentos do período", colunas, linhas: linhasExport() }],
     });
+
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
