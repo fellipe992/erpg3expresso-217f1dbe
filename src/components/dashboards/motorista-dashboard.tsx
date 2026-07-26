@@ -86,12 +86,13 @@ export function MotoristaDashboard() {
 
   const emAndamento = data.viagens.find((v) => v.status === "em_andamento");
   const proxima = data.viagens.find((v) => v.status === "planejada");
-  const concluidasMes = data.viagens.filter(
-    (v) => v.status === "concluida" && (v.created_at ?? "") >= inicioMesStr,
-  ).length;
+  // Competência operacional: data da viagem (saída), com fallback para criação.
+  const refV = (v: ViagemLite) => (v.data_saida ?? v.created_at ?? "").slice(0, 10);
+  const concluidasMes = data.viagens.filter((v) => v.status === "concluida" && refV(v) >= inicioMesStr).length;
   const kmMesViagens = data.viagens
-    .filter((v) => (v.created_at ?? "") >= inicioMesStr)
+    .filter((v) => refV(v) >= inicioMesStr)
     .reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
+
   const kmMesAbast = data.abast.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
   const kmMes = kmMesViagens > 0 ? kmMesViagens : kmMesAbast;
   const abastValidos = data.abast.filter((a) => Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0);

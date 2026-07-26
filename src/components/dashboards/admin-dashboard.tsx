@@ -40,6 +40,14 @@ function monthLabel(key: string) {
   return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
 }
 
+/** Competência gerencial de um lançamento: data do fato gerador (emissão), nunca pagamento. */
+const compLanc = (l: { data_emissao?: string | null; data_vencimento?: string | null }) =>
+  (l.data_emissao ?? l.data_vencimento ?? "").slice(0, 10);
+/** Competência operacional de uma viagem: data de saída (fallback criação). */
+const refViagem = (v: { data_saida?: string | null; created_at?: string | null }) =>
+  (v.data_saida ?? v.created_at ?? "").slice(0, 10);
+
+
 type PeriodKey = "15d" | "30d" | "60d" | "90d" | "12m";
 const PERIOD_OPTIONS: { value: PeriodKey; label: string; days: number; buckets: number; bucket: "day" | "month" }[] = [
   { value: "15d", label: "Últimos 15 dias", days: 15, buckets: 15, bucket: "day" },
@@ -83,12 +91,14 @@ export function AdminDashboard() {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria, veiculo_id")
-          .gte("data_vencimento", desdeStr),
+          .select("tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, veiculo_id")
+          .or(`data_emissao.gte.${desdeStr},data_vencimento.gte.${desdeStr}`),
+        // Viagens pela data operacional (data_saida), com fallback para created_at
         supabase
           .from("viagens")
           .select("id, status, data_saida, km_inicial, km_final, veiculo_id, created_at")
-          .gte("created_at", desdeStr),
+          .or(`data_saida.gte.${desdeStr},and(data_saida.is.null,created_at.gte.${desdeStr})`),
+
         supabase.from("veiculos").select("id, placa, ativo"),
         supabase.from("motoristas").select("id, ativo, veiculo_id"),
         supabase
@@ -108,12 +118,14 @@ export function AdminDashboard() {
 
   const kpis = (() => {
     if (!data) return null;
-    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioPeriodoStr);
+    // Gerencial = regime de competência (data do fato gerador), não vencimento/pagamento.
+    const mesLanc = data.lancamentos.filter((l) => compLanc(l) >= inicioPeriodoStr);
     const receitaMes = mesLanc.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.valor), 0);
     const despesaMes = mesLanc.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.valor), 0);
     const lucroMes = receitaMes - despesaMes;
 
-    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioPeriodoStr);
+    const viagMes = data.viagens.filter((v) => refViagem(v) >= inicioPeriodoStr);
+
     const kmMesViagens = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
     const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioPeriodoStr);
     const kmMesAbast = abastMes.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
@@ -156,8 +168,10 @@ export function AdminDashboard() {
         map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
       }
       for (const l of data.lancamentos) {
-        if (!l.data_vencimento) continue;
-        const k = l.data_vencimento.slice(0, 7);
+        const comp = compLanc(l);
+        if (!comp) continue;
+        const k = comp.slice(0, 7);
+
         const cur = map.get(k);
         if (!cur) continue;
         if (l.tipo === "receber") cur.receita += Number(l.valor);
@@ -176,8 +190,9 @@ export function AdminDashboard() {
       }
       const keys = Array.from(map.keys()).sort();
       for (const l of data.lancamentos) {
-        if (!l.data_vencimento) continue;
-        const ref = l.data_vencimento.slice(0, 10);
+        const ref = compLanc(l);
+        if (!ref) continue;
+
         let bucketKey = keys[0];
         for (const k of keys) {
           if (ref >= k) bucketKey = k;

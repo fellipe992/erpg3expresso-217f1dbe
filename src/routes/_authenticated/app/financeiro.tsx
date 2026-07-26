@@ -84,12 +84,9 @@ function FinanceiroPage() {
     return m;
   }, [data]);
 
-  const lancamentos = useMemo(() => {
-    if (!data) return [] as LancBi[];
+  const filtrarComuns = useMemo(() => {
     const q = filtros.busca.trim().toLowerCase();
-    return data.lancamentos.filter((l) => {
-      const emissao = l.data_emissao ?? l.data_vencimento ?? "";
-      if (emissao && (emissao < filtros.de || emissao > filtros.ate)) return false;
+    return (l: LancBi) => {
       if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) return false;
       if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) return false;
       if (filtros.motoristaId !== "todos" && l.motorista_id !== filtros.motoristaId) return false;
@@ -99,17 +96,30 @@ function FinanceiroPage() {
       return [
         l.descricao,
         l.numero_documento ?? "",
-        data.nomeCliente(l.cliente_id),
-        data.nomeVeiculo(l.veiculo_id),
-        data.nomeMotorista(l.motorista_id),
+        data?.nomeCliente(l.cliente_id) ?? "",
+        data?.nomeVeiculo(l.veiculo_id) ?? "",
+        data?.nomeMotorista(l.motorista_id) ?? "",
         v?.codigo ?? "",
         v?.placa ?? "",
       ]
         .join(" ")
         .toLowerCase()
         .includes(q);
-    });
+    };
   }, [data, filtros, viagemInfo]);
+
+  /** Regime de COMPETÊNCIA — base de todos os indicadores gerenciais. */
+  const lancamentos = useMemo(
+    () => (data?.lancamentos ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
+  /** Regime de CAIXA — aging, próximos vencimentos e fluxo de caixa. */
+  const lancamentosCaixa = useMemo(
+    () => (data?.lancamentosCaixa ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
 
   const hoje = new Date().toISOString().slice(0, 10);
 
@@ -157,9 +167,10 @@ function FinanceiroPage() {
   const serie = useMemo(() => {
     const map = new Map<string, { chave: string; mes: string; receitas: number; despesas: number; saldo: number; acumulado: number }>();
     for (const l of lancamentos) {
-      const ref = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao;
+      const ref = l.competencia;
       if (!ref) continue;
       const chave = ref.slice(0, 7);
+
       const b = map.get(chave) ?? { chave, mes: rotuloMes(chave), receitas: 0, despesas: 0, saldo: 0, acumulado: 0 };
       if (l.tipo === "receber") b.receitas += l.valor;
       else b.despesas += l.valor;
@@ -221,7 +232,7 @@ function FinanceiroPage() {
       { faixa: "31–60 dias", receber: 0, pagar: 0 },
       { faixa: "60+ dias", receber: 0, pagar: 0 },
     ];
-    for (const l of lancamentos) {
+    for (const l of lancamentosCaixa) {
       if (l.status === "pago" || !l.data_vencimento) continue;
       const dias = Math.floor((Date.parse(hoje) - Date.parse(l.data_vencimento)) / 86_400_000);
       const i = dias <= 0 ? 0 : dias <= 15 ? 1 : dias <= 30 ? 2 : dias <= 60 ? 3 : 4;
@@ -229,16 +240,17 @@ function FinanceiroPage() {
       else faixas[i].pagar += l.valor;
     }
     return faixas;
-  }, [lancamentos, hoje]);
+  }, [lancamentosCaixa, hoje]);
 
   const proximosVencer = useMemo(
     () =>
-      lancamentos
+      lancamentosCaixa
         .filter((l) => l.status !== "pago" && l.data_vencimento && l.data_vencimento >= hoje)
         .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
         .slice(0, 8),
-    [lancamentos, hoje],
+    [lancamentosCaixa, hoje],
   );
+
 
   const periodoLabel = `${dt(filtros.de)} a ${dt(filtros.ate)}`;
 
@@ -250,6 +262,7 @@ function FinanceiroPage() {
       data?.nomeVeiculo(l.veiculo_id) ?? "—",
       l.categoria ?? "—",
       l.centro_custo ?? "—",
+      dt(l.competencia),
       dt(l.data_emissao),
       dt(l.data_vencimento),
       dt(l.data_pagamento),
@@ -264,7 +277,9 @@ function FinanceiroPage() {
     "Veículo",
     "Categoria",
     "Centro de custo",
+    "Competência",
     "Emissão",
+
     "Vencimento",
     "Pagamento",
     "Status",

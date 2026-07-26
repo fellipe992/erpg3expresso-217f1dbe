@@ -50,7 +50,9 @@ type Lanc = {
   tipo: "receber" | "pagar";
   valor: number;
   status: string;
+  data_emissao: string | null;
   data_vencimento: string | null;
+
   data_pagamento: string | null;
   categoria: string | null;
   cliente_id: string | null;
@@ -103,12 +105,14 @@ function RelatoriosPage() {
       const [lanc, viag, mot, vei, cli, forn] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("id, tipo, valor, status, data_vencimento, data_pagamento, categoria, cliente_id, fornecedor_id")
-          .gte("data_vencimento", desde),
+          .select("id, tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, cliente_id, fornecedor_id")
+          .gte("data_emissao", desde),
+        // Viagens pela data operacional (data_saida), com fallback para created_at
         supabase
           .from("viagens")
           .select("id, status, data_saida, data_chegada, km_inicial, km_final, valor_frete, motorista_id, veiculo_id, cliente_id")
-          .gte("created_at", desde),
+          .or(`data_saida.gte.${desde},and(data_saida.is.null,created_at.gte.${desde})`),
+
         supabase.from("motoristas").select("id, nome"),
         supabase.from("veiculos").select("id, placa, modelo"),
         supabase.from("clientes").select("id, razao_social"),

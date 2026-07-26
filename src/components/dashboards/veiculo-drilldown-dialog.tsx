@@ -34,16 +34,17 @@ export function VeiculoDrilldownDialog({
       const [lanc, viag, mot] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("id, tipo, valor, status, data_vencimento, data_pagamento, categoria, descricao")
+          .select("id, tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, descricao")
           .eq("veiculo_id", veiculoId)
-          .gte("data_vencimento", desde)
-          .order("data_vencimento", { ascending: false }),
+          .gte("data_emissao", desde)
+          .order("data_emissao", { ascending: false }),
         supabase
           .from("viagens")
           .select("id, codigo, status, data_saida, data_chegada, km_inicial, km_final, valor_frete, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf")
           .eq("veiculo_id", veiculoId)
-          .gte("created_at", desde)
+          .or(`data_saida.gte.${desde},and(data_saida.is.null,created_at.gte.${desde})`)
           .order("data_saida", { ascending: false, nullsFirst: false }),
+
         supabase.from("motoristas").select("id, nome"),
       ]);
       const motMap = new Map((mot.data ?? []).map((m: { id: string; nome: string }) => [m.id, m.nome]));
@@ -109,7 +110,7 @@ export function VeiculoDrilldownDialog({
                       <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</TableCell></TableRow>
                     ) : data.lancamentos.map((l) => (
                       <TableRow key={l.id}>
-                        <TableCell className="text-xs">{l.data_vencimento ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{l.data_emissao ?? l.data_vencimento ?? "—"}</TableCell>
                         <TableCell className="text-xs">{l.categoria ?? "—"}</TableCell>
                         <TableCell className="text-xs">{l.descricao ?? "—"}</TableCell>
                         <TableCell>
