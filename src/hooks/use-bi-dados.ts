@@ -19,7 +19,13 @@ export type LancBi = {
   motorista_id: string | null;
   numero_documento: string | null;
   descricao: string;
+  /** Regime de COMPETÊNCIA (gerencial): data em que a operação ocorreu.
+   *  Receita de frete = data da viagem; despesas = data do fato (abastecimento, manutenção, pedágio…). */
+  competencia: string;
+  /** Regime de CAIXA (financeiro): pagamento, senão vencimento, senão emissão. */
+  dataCaixa: string;
 };
+
 
 export type ViagemBi = {
   id: string;
