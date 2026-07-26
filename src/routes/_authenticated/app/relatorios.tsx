@@ -22,6 +22,10 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
+import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
+import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
+import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
+
 
 
 export const Route = createFileRoute("/_authenticated/app/relatorios")({
