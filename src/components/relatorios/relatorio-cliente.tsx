@@ -80,8 +80,9 @@ export function RelatorioCliente() {
       if (l.tipo !== "receber" || !l.cliente_id) continue;
       if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
       if (!statusCombina(l, filtros.status)) continue;
-      const ref = l.data_emissao ?? l.data_vencimento ?? "";
+      const ref = l.competencia;
       if (ref && (ref < filtros.de || ref > filtros.ate)) continue;
+
       const nome = data.nomeCliente(l.cliente_id);
       if (q && !nome.toLowerCase().includes(q) && !(l.numero_documento ?? "").toLowerCase().includes(q)) continue;
       const row = get(l.cliente_id, nome);
