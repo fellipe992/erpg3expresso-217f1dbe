@@ -262,6 +262,7 @@ function FinanceiroPage() {
       data?.nomeVeiculo(l.veiculo_id) ?? "—",
       l.categoria ?? "—",
       l.centro_custo ?? "—",
+      dt(l.competencia),
       dt(l.data_emissao),
       dt(l.data_vencimento),
       dt(l.data_pagamento),
@@ -276,7 +277,9 @@ function FinanceiroPage() {
     "Veículo",
     "Categoria",
     "Centro de custo",
+    "Competência",
     "Emissão",
+
     "Vencimento",
     "Pagamento",
     "Status",
