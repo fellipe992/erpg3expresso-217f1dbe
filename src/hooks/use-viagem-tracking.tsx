@@ -171,6 +171,9 @@ export function useMotoristaAutoTracking() {
 
     let disposed = false;
     let heartbeat: ReturnType<typeof setInterval> | null = null;
+    let watchdog: ReturnType<typeof setInterval> | null = null;
+    let appListener: (() => void) | null = null;
+
 
     (async () => {
       if (isNative()) {
