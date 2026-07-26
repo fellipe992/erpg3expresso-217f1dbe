@@ -83,12 +83,14 @@ export function AdminDashboard() {
       const [lanc, viag, veic, mot, abast] = await Promise.all([
         supabase
           .from("financeiro_lancamentos")
-          .select("tipo, valor, status, data_vencimento, data_pagamento, categoria, veiculo_id")
-          .gte("data_vencimento", desdeStr),
+          .select("tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, veiculo_id")
+          .or(`data_emissao.gte.${desdeStr},data_vencimento.gte.${desdeStr}`),
+        // Viagens pela data operacional (data_saida), com fallback para created_at
         supabase
           .from("viagens")
           .select("id, status, data_saida, km_inicial, km_final, veiculo_id, created_at")
-          .gte("created_at", desdeStr),
+          .or(`data_saida.gte.${desdeStr},and(data_saida.is.null,created_at.gte.${desdeStr})`),
+
         supabase.from("veiculos").select("id, placa, ativo"),
         supabase.from("motoristas").select("id, ativo, veiculo_id"),
         supabase
