@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.marcar_atrasados() TO authenticated;
