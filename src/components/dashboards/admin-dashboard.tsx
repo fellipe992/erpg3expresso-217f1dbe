@@ -110,12 +110,14 @@ export function AdminDashboard() {
 
   const kpis = (() => {
     if (!data) return null;
-    const mesLanc = data.lancamentos.filter((l) => (l.data_vencimento ?? "") >= inicioPeriodoStr);
+    // Gerencial = regime de competência (data do fato gerador), não vencimento/pagamento.
+    const mesLanc = data.lancamentos.filter((l) => compLanc(l) >= inicioPeriodoStr);
     const receitaMes = mesLanc.filter((l) => l.tipo === "receber").reduce((s, l) => s + Number(l.valor), 0);
     const despesaMes = mesLanc.filter((l) => l.tipo === "pagar").reduce((s, l) => s + Number(l.valor), 0);
     const lucroMes = receitaMes - despesaMes;
 
-    const viagMes = data.viagens.filter((v) => (v.created_at ?? "") >= inicioPeriodoStr);
+    const viagMes = data.viagens.filter((v) => refViagem(v) >= inicioPeriodoStr);
+
     const kmMesViagens = viagMes.reduce((s, v) => s + Math.max(0, Number(v.km_final ?? 0) - Number(v.km_inicial ?? 0)), 0);
     const abastMes = data.abastecimentos.filter((a) => (a.data ?? "") >= inicioPeriodoStr);
     const kmMesAbast = abastMes.reduce((s, a) => s + Number(a.km_percorridos ?? 0), 0);
