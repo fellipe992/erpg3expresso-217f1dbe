@@ -190,8 +190,9 @@ export function AdminDashboard() {
       }
       const keys = Array.from(map.keys()).sort();
       for (const l of data.lancamentos) {
-        if (!l.data_vencimento) continue;
-        const ref = l.data_vencimento.slice(0, 10);
+        const ref = compLanc(l);
+        if (!ref) continue;
+
         let bucketKey = keys[0];
         for (const k of keys) {
           if (ref >= k) bucketKey = k;
