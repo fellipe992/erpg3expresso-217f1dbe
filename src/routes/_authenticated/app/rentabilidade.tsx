@@ -24,8 +24,13 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
-import { FiltrosFinanceiros, filtrosIniciais, type FiltrosFin } from "@/components/relatorios/filtros-financeiros";
-import { useEmpresas } from "@/components/relatorios/filtros-financeiros";
+import {
+  FiltrosFinanceiros,
+  filtrosIniciais,
+  useEmpresas,
+  type FiltrosFin,
+} from "@/components/relatorios/filtros-financeiros";
+
 import { useBiDados, rotuloMes, type ViagemBi } from "@/hooks/use-bi-dados";
 import { brl, num, pct } from "@/lib/export-utils";
 import { useAuth } from "@/hooks/use-auth";
