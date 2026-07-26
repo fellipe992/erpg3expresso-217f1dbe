@@ -40,6 +40,14 @@ function monthLabel(key: string) {
   return new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
 }
 
+/** Competência gerencial de um lançamento: data do fato gerador (emissão), nunca pagamento. */
+const compLanc = (l: { data_emissao?: string | null; data_vencimento?: string | null }) =>
+  (l.data_emissao ?? l.data_vencimento ?? "").slice(0, 10);
+/** Competência operacional de uma viagem: data de saída (fallback criação). */
+const refViagem = (v: { data_saida?: string | null; created_at?: string | null }) =>
+  (v.data_saida ?? v.created_at ?? "").slice(0, 10);
+
+
 type PeriodKey = "15d" | "30d" | "60d" | "90d" | "12m";
 const PERIOD_OPTIONS: { value: PeriodKey; label: string; days: number; buckets: number; bucket: "day" | "month" }[] = [
   { value: "15d", label: "Últimos 15 dias", days: 15, buckets: 15, bucket: "day" },
