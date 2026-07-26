@@ -45,7 +45,7 @@ function FinanceiroPage() {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["financeiro-all"],
     queryFn: async () => {
-      await supabase.rpc("marcar_atrasados");
+      
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
         .select("id, tipo, descricao, valor, data_vencimento, data_pagamento, status")

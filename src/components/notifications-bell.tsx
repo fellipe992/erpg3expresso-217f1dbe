@@ -50,15 +50,14 @@ export function NotificationsBell() {
     },
   });
 
-  // Permissão + geração de alertas recorrentes (documentos, manutenções, financeiro).
+  // Permissão de notificações. Os alertas recorrentes (documentos, manutenções,
+  // financeiro) são gerados no servidor por rotina agendada.
   useEffect(() => {
     if (!user?.id || bootstrapped.current) return;
     bootstrapped.current = true;
     void ensureNotificationsReady();
-    void supabase.rpc("gerar_notificacoes_alertas").then(() => {
-      qc.invalidateQueries({ queryKey: ["notificacoes", user.id] });
-    });
-  }, [user?.id, qc]);
+  }, [user?.id]);
+
 
   // Realtime: novas notificações -> toast + notificação do dispositivo
   useEffect(() => {

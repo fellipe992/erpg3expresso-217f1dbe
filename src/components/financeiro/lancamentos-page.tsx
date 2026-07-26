@@ -111,7 +111,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { data: lancamentos = [], isLoading } = useQuery({
     queryKey: ["financeiro", tipo],
     queryFn: async () => {
-      await supabase.rpc("marcar_atrasados");
+      
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
         .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome), plano_conta:plano_contas(codigo, nome, centro_custo), viagem:viagens(codigo)")
