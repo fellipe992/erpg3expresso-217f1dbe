@@ -174,8 +174,11 @@ export function useBiDados(de: string, ate: string) {
       const veiMap = new Map(veiculos.map((v) => [v.id, v]));
       const motMap = new Map(motoristas.map((m) => [m.id, m.nome]));
 
+      // Totais por viagem usam TODOS os lançamentos vinculados, independentemente de quando
+      // foram emitidos/pagos — a viagem já está no período pela sua data operacional.
       const porViagem = new Map<string, LancBi[]>();
-      for (const l of lancamentos) {
+      for (const l of todosLanc) {
+
         if (!l.viagem_id) continue;
         const arr = porViagem.get(l.viagem_id) ?? [];
         arr.push(l);
