@@ -304,6 +304,22 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     );
   });
 
+  const { sorted, sort, toggle } = useSort(
+    filtered,
+    {
+      descricao: (l) => l.descricao,
+      parceiro: (l) => (isReceber ? l.cliente?.razao_social ?? "" : l.fornecedor?.razao_social ?? ""),
+      categoria: (l) => l.categoria ?? "",
+      origem: (l) => l.origem ?? "",
+      centro: (l) => l.centro_custo ?? "",
+      veiculo: (l) => l.veiculo?.placa ?? l.motorista?.nome ?? "",
+      vencimento: (l) => l.data_vencimento ?? "",
+      valor: (l) => Number(l.valor),
+      status: (l) => l.status,
+    },
+    { key: "vencimento", dir: "asc" },
+  );
+
   const totais = filtered.reduce(
     (acc, l) => {
       acc.total += Number(l.valor);
