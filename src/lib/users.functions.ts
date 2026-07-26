@@ -24,12 +24,18 @@ type UpdateInput = {
 };
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "administrador",
-  });
-  if (!isAdmin) throw new Error("Acesso negado");
+  // has_role vive no schema `private` (não exposto no PostgREST), então a checagem
+  // é feita direto em user_roles sob RLS do próprio usuário.
+  const { data, error } = await context.supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", context.userId)
+    .eq("role", "administrador")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Acesso negado");
 }
+
 
 async function audit(
   admin: any,
