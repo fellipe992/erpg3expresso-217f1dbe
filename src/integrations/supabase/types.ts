@@ -697,6 +697,7 @@ export type Database = {
       }
       notificacoes: {
         Row: {
+          categoria: string
           created_at: string
           id: string
           lida_em: string | null
@@ -704,11 +705,13 @@ export type Database = {
           mensagem: string | null
           origem: string | null
           origem_id: string | null
+          prioridade: string
           tipo: string
           titulo: string
           user_id: string
         }
         Insert: {
+          categoria?: string
           created_at?: string
           id?: string
           lida_em?: string | null
@@ -716,11 +719,13 @@ export type Database = {
           mensagem?: string | null
           origem?: string | null
           origem_id?: string | null
+          prioridade?: string
           tipo?: string
           titulo: string
           user_id: string
         }
         Update: {
+          categoria?: string
           created_at?: string
           id?: string
           lida_em?: string | null
@@ -728,6 +733,7 @@ export type Database = {
           mensagem?: string | null
           origem?: string | null
           origem_id?: string | null
+          prioridade?: string
           tipo?: string
           titulo?: string
           user_id?: string
@@ -1037,12 +1043,15 @@ export type Database = {
           chassi: string | null
           cor: string | null
           created_at: string
+          crlv_validade: string | null
           id: string
+          licenciamento_validade: string | null
           marca: string | null
           modelo: string
           observacoes: string | null
           placa: string
           renavam: string | null
+          seguro_validade: string | null
           tipo: Database["public"]["Enums"]["veiculo_tipo"]
           updated_at: string
         }
@@ -1053,12 +1062,15 @@ export type Database = {
           chassi?: string | null
           cor?: string | null
           created_at?: string
+          crlv_validade?: string | null
           id?: string
+          licenciamento_validade?: string | null
           marca?: string | null
           modelo: string
           observacoes?: string | null
           placa: string
           renavam?: string | null
+          seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]
           updated_at?: string
         }
@@ -1069,12 +1081,15 @@ export type Database = {
           chassi?: string | null
           cor?: string | null
           created_at?: string
+          crlv_validade?: string | null
           id?: string
+          licenciamento_validade?: string | null
           marca?: string | null
           modelo?: string
           observacoes?: string | null
           placa?: string
           renavam?: string | null
+          seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]
           updated_at?: string
         }
@@ -1395,6 +1410,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gerar_notificacoes_alertas: { Args: never; Returns: undefined }
       get_primary_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
