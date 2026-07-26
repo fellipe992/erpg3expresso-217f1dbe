@@ -261,6 +261,8 @@ export function useBiDados(de: string, ate: string) {
       return {
         viagens,
         lancamentos,
+        lancamentosCaixa,
+
         clientes,
         veiculos,
         motoristas,
