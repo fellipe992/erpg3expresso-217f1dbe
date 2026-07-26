@@ -94,21 +94,26 @@ export function useBiDados(de: string, ate: string) {
     queryFn: async (): Promise<BiDados> => {
       const fim = `${ate}T23:59:59`;
 
+      const COLS_LANC =
+        "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao";
+
       const [viagRes, lancRes, cliRes, veiRes, motRes] = await Promise.all([
+        // COMPETÊNCIA operacional da viagem: data_saida (fallback created_at quando ainda não saiu)
         supabase
           .from("viagens")
           .select(
             "id, codigo, status, created_at, data_saida, data_chegada, km_inicial, km_final, valor_frete, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf",
           )
-          .gte("created_at", de)
-          .lte("created_at", fim),
+          .or(
+            `and(data_saida.gte.${de},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${de},created_at.lte.${fim})`,
+          ),
+        // Superset: cobre competência (emissão) e caixa (vencimento/pagamento)
         supabase
           .from("financeiro_lancamentos")
-          .select(
-            "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao",
-          )
-          .gte("data_emissao", de)
-          .lte("data_emissao", ate),
+          .select(COLS_LANC)
+          .or(
+            `and(data_emissao.gte.${de},data_emissao.lte.${ate}),and(data_vencimento.gte.${de},data_vencimento.lte.${ate}),and(data_pagamento.gte.${de},data_pagamento.lte.${ate})`,
+          ),
         supabase.from("clientes").select("id, razao_social").order("razao_social"),
         supabase.from("veiculos").select("id, placa, modelo").order("placa"),
         supabase.from("motoristas").select("id, nome").order("nome"),
@@ -117,29 +122,42 @@ export function useBiDados(de: string, ate: string) {
       const viagensRaw = (viagRes.data ?? []) as Array<Record<string, unknown>>;
       const viagemIds = viagensRaw.map((v) => String(v.id));
 
-      // Lançamentos vinculados às viagens do período mas emitidos fora dele
+      // Lançamentos vinculados às viagens do período mas emitidos/pagos fora dele
       let extras: LancBi[] = [];
       if (viagemIds.length) {
         const chunks: string[][] = [];
         for (let i = 0; i < viagemIds.length; i += 200) chunks.push(viagemIds.slice(i, i + 200));
         const res = await Promise.all(
-          chunks.map((ids) =>
-            supabase
-              .from("financeiro_lancamentos")
-              .select(
-                "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao",
-              )
-              .in("viagem_id", ids),
-          ),
+          chunks.map((ids) => supabase.from("financeiro_lancamentos").select(COLS_LANC).in("viagem_id", ids)),
         );
         extras = res.flatMap((r) => (r.data ?? []) as unknown as LancBi[]);
       }
 
+      // Data de competência operacional de cada viagem (data_saida > created_at)
+      const refViagem = new Map<string, string>();
+      for (const raw of viagensRaw) {
+        refViagem.set(String(raw.id), String((raw.data_saida as string) ?? raw.created_at).slice(0, 10));
+      }
+
       const mapLanc = new Map<string, LancBi>();
       for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
-        mapLanc.set(l.id, { ...l, valor: Number(l.valor) });
+        const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
+        // Receita de frete pertence ao mês da viagem; despesas pertencem ao mês do fato (data_emissao).
+        const competencia =
+          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? "";
+        const dataCaixa = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao ?? competencia;
+        mapLanc.set(l.id, {
+          ...l,
+          valor: Number(l.valor),
+          competencia: competencia.slice(0, 10),
+          dataCaixa: (dataCaixa ?? "").slice(0, 10),
+        });
       }
-      const lancamentos = Array.from(mapLanc.values()).filter((l) => l.status !== "cancelado");
+      const todosLanc = Array.from(mapLanc.values()).filter((l) => l.status !== "cancelado");
+      const noPeriodo = (d: string) => !!d && d >= de && d <= ate;
+      const lancamentos = todosLanc.filter((l) => noPeriodo(l.competencia));
+      const lancamentosCaixa = todosLanc.filter((l) => noPeriodo(l.dataCaixa));
+
 
       const clientes = ((cliRes.data ?? []) as { id: string; razao_social: string }[]).map((c) => ({
         id: c.id,
