@@ -17,6 +17,8 @@ import {
   BookOpen,
   Radar,
   Bell,
+  Gauge,
+
 
 } from "lucide-react";
 
