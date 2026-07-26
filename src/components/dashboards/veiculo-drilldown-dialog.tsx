@@ -110,7 +110,7 @@ export function VeiculoDrilldownDialog({
                       <TableRow><TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">Sem lançamentos.</TableCell></TableRow>
                     ) : data.lancamentos.map((l) => (
                       <TableRow key={l.id}>
-                        <TableCell className="text-xs">{l.data_vencimento ?? "—"}</TableCell>
+                        <TableCell className="text-xs">{l.data_emissao ?? l.data_vencimento ?? "—"}</TableCell>
                         <TableCell className="text-xs">{l.categoria ?? "—"}</TableCell>
                         <TableCell className="text-xs">{l.descricao ?? "—"}</TableCell>
                         <TableCell>
