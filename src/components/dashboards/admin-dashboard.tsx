@@ -168,8 +168,10 @@ export function AdminDashboard() {
         map.set(k, { mes: monthLabel(k), receita: 0, despesa: 0 });
       }
       for (const l of data.lancamentos) {
-        if (!l.data_vencimento) continue;
-        const k = l.data_vencimento.slice(0, 7);
+        const comp = compLanc(l);
+        if (!comp) continue;
+        const k = comp.slice(0, 7);
+
         const cur = map.get(k);
         if (!cur) continue;
         if (l.tipo === "receber") cur.receita += Number(l.valor);
