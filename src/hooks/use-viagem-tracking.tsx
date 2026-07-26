@@ -193,11 +193,19 @@ export function useMotoristaAutoTracking() {
                       description:
                         "Habilite a localização em 2º plano nas configurações do Android.",
                     });
+                    void notifyLocal({
+                      titulo: "Permissão de localização removida",
+                      mensagem:
+                        "Reative a localização em 2º plano para continuar registrando a viagem.",
+                      categoria: "monitoramento",
+                      prioridade: "alta",
+                    });
                     warnedRef.current = true;
                   }
                 }
                 return;
               }
+
               if (!location) return;
               void send({
                 latitude: location.latitude,
