@@ -30,10 +30,17 @@ async function getGoogleMapsConfig(): Promise<GoogleMapsConfig> {
     return { key: connectorKey, channel: connectorChannel };
   }
 
+  // Endpoint protegido: exige sessão válida do usuário.
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
   const response = await fetch("/api/google-maps-config", {
     cache: "no-store",
     credentials: "same-origin",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
+
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
