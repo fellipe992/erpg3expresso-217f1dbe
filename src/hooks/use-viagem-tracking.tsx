@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { isNative } from "@/lib/native";
+import { notifyLocal } from "@/lib/notifications";
+
 
 const BackgroundGeolocation =
   registerPlugin<BackgroundGeolocationPlugin>("BackgroundGeolocation");
@@ -36,6 +38,9 @@ function distance(a: { latitude: number; longitude: number }, b: { latitude: num
 const MIN_INTERVAL_MS = 12_000;
 const MIN_DISTANCE_M = 25;
 const HEARTBEAT_MS = 10 * 60_000; // 10 minutos garantidos
+const WATCHDOG_MS = 5 * 60_000; // verifica envio de localização
+const SEM_ENVIO_MS = 20 * 60_000; // sem ponto salvo há 20 min -> alerta
+
 
 type Coords = {
   latitude: number;
