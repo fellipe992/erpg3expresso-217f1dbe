@@ -50,7 +50,9 @@ type Lanc = {
   tipo: "receber" | "pagar";
   valor: number;
   status: string;
+  data_emissao: string | null;
   data_vencimento: string | null;
+
   data_pagamento: string | null;
   categoria: string | null;
   cliente_id: string | null;
