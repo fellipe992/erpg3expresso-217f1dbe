@@ -104,17 +104,18 @@ export function RelatorioVeiculo() {
 
     const despesas = { Combustível: 0, Manutenção: 0, Pedágio: 0, Outros: 0 } as Record<string, number>;
     let totalDespesas = 0;
-    let receitaFrete = 0;
     for (const l of data.lancamentos) {
       const val = Number(l.valor ?? 0);
-      if (l.tipo === "pagar") {
-        const cat = normalizarCategoria(l.categoria);
-        despesas[cat] += val;
-        totalDespesas += val;
-      } else if (l.tipo === "receber") {
-        receitaFrete += val;
-      }
+      if (l.tipo !== "pagar") continue;
+      const cat = normalizarCategoria(l.categoria);
+      despesas[cat] += val;
+      totalDespesas += val;
     }
+    // Receita de frete pela COMPETÊNCIA da viagem (data da viagem), não pelo faturamento/recebimento.
+    const receitaFrete = data.viagens
+      .filter((v) => v.status !== "cancelada")
+      .reduce((s, v) => s + Number(v.valor_frete ?? 0), 0);
+
     const kmTotal = kmViagens > 0 ? kmViagens : kmAbast;
     const custoKm = kmTotal > 0 ? totalDespesas / kmTotal : 0;
 
