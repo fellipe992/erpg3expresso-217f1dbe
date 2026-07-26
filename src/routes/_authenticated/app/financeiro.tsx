@@ -84,12 +84,9 @@ function FinanceiroPage() {
     return m;
   }, [data]);
 
-  const lancamentos = useMemo(() => {
-    if (!data) return [] as LancBi[];
+  const filtrarComuns = useMemo(() => {
     const q = filtros.busca.trim().toLowerCase();
-    return data.lancamentos.filter((l) => {
-      const emissao = l.data_emissao ?? l.data_vencimento ?? "";
-      if (emissao && (emissao < filtros.de || emissao > filtros.ate)) return false;
+    return (l: LancBi) => {
       if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) return false;
       if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) return false;
       if (filtros.motoristaId !== "todos" && l.motorista_id !== filtros.motoristaId) return false;
@@ -99,17 +96,30 @@ function FinanceiroPage() {
       return [
         l.descricao,
         l.numero_documento ?? "",
-        data.nomeCliente(l.cliente_id),
-        data.nomeVeiculo(l.veiculo_id),
-        data.nomeMotorista(l.motorista_id),
+        data?.nomeCliente(l.cliente_id) ?? "",
+        data?.nomeVeiculo(l.veiculo_id) ?? "",
+        data?.nomeMotorista(l.motorista_id) ?? "",
         v?.codigo ?? "",
         v?.placa ?? "",
       ]
         .join(" ")
         .toLowerCase()
         .includes(q);
-    });
+    };
   }, [data, filtros, viagemInfo]);
+
+  /** Regime de COMPETÊNCIA — base de todos os indicadores gerenciais. */
+  const lancamentos = useMemo(
+    () => (data?.lancamentos ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
+  /** Regime de CAIXA — aging, próximos vencimentos e fluxo de caixa. */
+  const lancamentosCaixa = useMemo(
+    () => (data?.lancamentosCaixa ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
 
   const hoje = new Date().toISOString().slice(0, 10);
 
