@@ -18,6 +18,7 @@ import {
   Radar,
   Bell,
   Gauge,
+  KanbanSquare,
 
 
 } from "lucide-react";
@@ -68,6 +69,10 @@ const operacional: NavItem[] = [
   { label: "Viagens", to: "/app/viagens", icon: MapPin },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
+];
+
+const comercial: NavItem[] = [
+  { label: "Funil de vendas", to: "/app/crm/funil", icon: KanbanSquare },
 ];
 
 const gestao: NavItem[] = [
