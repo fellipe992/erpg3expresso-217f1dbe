@@ -72,10 +72,11 @@ function FunilPage() {
   const mover = useMutation({
     mutationFn: async ({ id, etapaId }: { id: string; etapaId: string }) => {
       const etapa = etapas.find((e) => e.id === etapaId);
-      const patch: Record<string, unknown> = { etapa_id: etapaId };
-      if (etapa && etapa.tipo !== "aberta") patch.fechada_em = new Date().toISOString();
-      else patch.fechada_em = null;
-      const { error } = await supabase.from("crm_oportunidades").update(patch).eq("id", id);
+      const fechada = etapa && etapa.tipo !== "aberta" ? new Date().toISOString() : null;
+      const { error } = await supabase
+        .from("crm_oportunidades")
+        .update({ etapa_id: etapaId, fechada_em: fechada })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

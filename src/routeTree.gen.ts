@@ -40,6 +40,7 @@ import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
+import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -214,6 +215,12 @@ const AuthenticatedAppViagensIdRoute =
     path: '/app/viagens/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppCrmFunilRoute =
+  AuthenticatedAppCrmFunilRouteImport.update({
+    id: '/app/crm/funil',
+    path: '/app/crm/funil',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -276,6 +284,7 @@ export interface FileRoutesByTo {
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -310,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/app/usuarios'
     | '/app/veiculos'
     | '/app/'
+    | '/app/crm/funil'
     | '/app/viagens/$id'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/app/usuarios'
     | '/app/veiculos'
     | '/app'
+    | '/app/crm/funil'
     | '/app/viagens/$id'
     | '/app/viagens'
   id:
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
     | '/_authenticated/app/'
+    | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/viagens/$id'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppViagensIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/crm/funil': {
+      id: '/_authenticated/app/crm/funil'
+      path: '/app/crm/funil'
+      fullPath: '/app/crm/funil'
+      preLoaderRoute: typeof AuthenticatedAppCrmFunilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -668,6 +688,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppCrmFunilRoute: typeof AuthenticatedAppCrmFunilRoute
   AuthenticatedAppViagensIdRoute: typeof AuthenticatedAppViagensIdRoute
   AuthenticatedAppViagensIndexRoute: typeof AuthenticatedAppViagensIndexRoute
 }
@@ -696,6 +717,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppCrmFunilRoute: AuthenticatedAppCrmFunilRoute,
   AuthenticatedAppViagensIdRoute: AuthenticatedAppViagensIdRoute,
   AuthenticatedAppViagensIndexRoute: AuthenticatedAppViagensIndexRoute,
 }
