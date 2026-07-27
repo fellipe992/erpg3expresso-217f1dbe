@@ -1,70 +1,52 @@
-# Central de Monitoramento em Tempo Real
+## Módulo CRM G3 — plano de execução
 
-Módulo novo para Administrador e Gestor acompanharem viagens em andamento no mapa, com o motorista compartilhando localização automaticamente.
+O escopo pedido equivale a um produto inteiro (Agendor). Vou entregar em 5 fases, cada uma funcionando de ponta a ponta, sem quebrar nada do ERP atual. Começo pela Fase 1 assim que você aprovar.
 
-## 1. Banco de dados (1 migration)
+### Princípio de integração
+Nada de cadastro duplicado: `clientes`, `financeiro_lancamentos`, `viagens`, `veiculos`, `motoristas` e `profiles/user_roles` continuam sendo a fonte da verdade. O CRM adiciona apenas as tabelas que hoje não existem e referencia as atuais por FK.
 
-**Nova tabela `viagem_localizacoes`** — histórico de posições:
-- viagem_id, motorista_id, veiculo_id
-- latitude, longitude, precisao, velocidade, heading
-- bateria (nullable), online (bool)
-- created_at
+---
 
-Índices por (viagem_id, created_at desc) e uma view/consulta auxiliar para "última posição por viagem em andamento".
+### Fase 1 — Base do CRM: Leads, Funil e Oportunidades
+- Novas tabelas: `crm_leads`, `crm_oportunidades`, `crm_etapas` (funil configurável com as 10 etapas pedidas), `crm_atividades` (timeline), `crm_etiquetas`.
+- Kanban arrastável com as etapas Lead → Fechado Perdido; toda movimentação grava histórico automático.
+- Cadastro de Lead com todos os campos listados (empresa, contato, cargo, telefones, WhatsApp, origem, potencial, classificação, prioridade, etiquetas, próximo contato…).
+- Conversão de Lead → Cliente reaproveitando a tabela `clientes` (checagem de CNPJ/CPF para evitar duplicidade).
+- Ficha da oportunidade com timeline cronológica.
+- Menu "Comercial" na sidebar, seguindo o visual atual (laranja #F15A24, claro/escuro, responsivo).
 
-**RLS/GRANTs:**
-- Motorista insere apenas as próprias posições, apenas se a viagem estiver `em_andamento`.
-- Admin/Gestor leem tudo. Financeiro/Motorista sem acesso de leitura (motorista só escreve).
-- Realtime habilitado (`ALTER PUBLICATION supabase_realtime ADD TABLE`) para atualização push.
+### Fase 2 — Dashboard Comercial e Relatórios
+- Dashboard com os 13 KPIs pedidos (oportunidades abertas, em negociação, receita prevista/fechada, meta, % da meta, ticket médio, conversão, tempo médio de fechamento, ganhos, perdidos, clientes ativos/inativos).
+- Gráficos: funil, receita por mês/cliente/vendedor, origem dos leads, conversão por etapa, evolução mensal.
+- Tabela `crm_metas` (meta mensal por vendedor/equipe).
+- 14 relatórios com exportação PDF e Excel, reutilizando `export-utils.ts` e a ordenação estilo Excel já existente.
 
-## 2. Conexão Google Maps
+### Fase 3 — Agenda, Tarefas e Notificações
+- `crm_compromissos` (ligação, reunião, visita, follow-up, cobrança, retorno) e `crm_tarefas`.
+- Agenda integrada com visão por dia/semana/mês e lista.
+- Notificações no sino/central e push mobile: novo lead, nova oportunidade, follow-up vencido, tarefa vencida, proposta aprovada/recusada, cliente sem contato há 30 dias, contrato vencendo (via rotina agendada já existente).
 
-Usar o connector Google Maps já disponível na plataforma. Preciso confirmar/conectar com você antes de codar o mapa (mapa carrega com a chave de browser gerenciada; geocoding reverso da "cidade atual" vai pelo gateway).
+### Fase 4 — Propostas, Contratos e integração Financeira/Operacional
+- `crm_propostas` (rascunho → enviada → em negociação → aprovada → recusada) com anexos e histórico; PDF da proposta.
+- Ao marcar "Fechado Ganho": cria o Cliente se não existir, gera contas a receber, contrato e permite abrir viagem/frete já preenchidos.
+- Ficha 360º do cliente: viagens (quantidade, KM, última viagem/motorista/veículo), receita por período/veículo/motorista, faturado/recebido/em aberto/atrasado, margem, últimos recebimentos e histórico único cronológico.
 
-## 3. Frontend — captura de localização (motorista)
+### Fase 5 — IA comercial, WhatsApp, E-mail e Permissões finais
+- Assistente comercial com IA (resumo do histórico e de reuniões, sugestão de próximo contato, geração de mensagem de WhatsApp e e-mail, probabilidade de fechamento, alertas de inatividade e de proposta vencendo).
+- Botão de WhatsApp em todas as telas, com registro automático na timeline.
+- Registro de e-mails enviados/recebidos vinculados ao cliente.
+- Papéis comerciais (Diretor, Gerente Comercial, Comercial, Assistente) e RLS: cada usuário vê apenas seus próprios registros; administrador e diretor veem tudo.
 
-Novo hook `useViagemTracking(viagemId)`:
-- Ao entrar em `em_andamento`, pede permissão e chama `navigator.geolocation.watchPosition`.
-- Envia posição ao Supabase a cada ~12s ou em mudança significativa (>25m).
-- Lê `navigator.getBattery()` e `navigator.onLine` quando disponíveis.
-- Para imediatamente ao finalizar/cancelar; grava última posição.
-- Aviso na tela do motorista: manter app aberto durante a viagem.
+---
 
-Integrar no fluxo de "Iniciar viagem" (dispara permissão) e "Finalizar" (para o watcher).
+### Detalhes técnicos
+- Banco: novas tabelas em `public` com GRANTs explícitos, RLS por responsável + função `is_staff`/papéis, triggers de auditoria e timeline automática (mesmo padrão de `tg_plano_auditoria`).
+- Papéis novos entram no enum `app_role`; regras atuais de administrador/financeiro/gestor/motorista permanecem intactas.
+- Frontend: rotas em `src/routes/_authenticated/app/crm/*`, componentes reutilizáveis em `src/components/crm/`, drag-and-drop com `@dnd-kit`, tabelas com o `sortable.tsx` atual, exportação com jsPDF/xlsx já instalados.
+- IA via Lovable AI (sem chave nova), em server function protegida.
+- Nenhuma tabela ou tela existente é alterada de forma destrutiva.
 
-## 4. Frontend — tela de monitoramento
-
-Nova rota `/_authenticated/app/monitoramento` (Admin + Gestor apenas).
-
-Layout:
-- **Esquerda (30%)** — painel de operações: busca por placa/motorista, filtros (motorista, veículo, cliente, origem, destino, período), lista de cards com placa, modelo, motorista + foto, cliente, origem→destino, status, tempo desde o início, km percorrido, cidade atual, última atualização, bateria, online/offline, botão "Centralizar".
-- **Direita (70%)** — Google Maps com marcadores customizados de caminhão (laranja G3). Clique abre InfoWindow/card com foto do veículo/motorista, telefone, placa, modelo, cliente, origem, destino, OS, data, hora início, tempo, km, última atualização, status, botão "Abrir detalhes da viagem".
-
-Query inicial carrega viagens `em_andamento` + última localização; subscription em `viagem_localizacoes` atualiza apenas os marcadores alterados (sem redesenhar o mapa). "Cidade atual" via geocoding reverso (cache por ~2min por viagem).
-
-## 5. Menu e dashboard
-
-- Sidebar: novo item "Monitoramento" (ícone `Radar` ou `MapPinned`), visível só para Admin/Gestor.
-- Dashboard Admin: novo card "🚚 Viagens em andamento — N veículos em operação" que linka para `/app/monitoramento`.
-
-## 6. Histórico de rota
-
-Na tela de detalhes da viagem (`viagens.$id.tsx`), botão "Visualizar Rota" (após haver localizações) que abre modal com mapa mostrando origem, destino, polyline do trajeto, última posição, distância total (soma dos segmentos) e tempo total.
-
-## 7. Notificações
-
-Toast no app para Admin/Gestor quando uma viagem inicia/finaliza, via subscription na tabela `viagens` (evento update em `status`). Sem notificações push nativas nesta entrega.
-
-## Fora do escopo (preparado para futuro, não implementado agora)
-Geofencing, alertas de desvio, ETA automático, replay animado da rota, push notifications nativas.
-
-## Detalhes técnicos
-
-- Realtime só na tabela `viagem_localizacoes` filtrando por evento INSERT; um único channel na tela de monitoramento.
-- Marcadores usam `google.maps.Marker` com ícone SVG inline laranja G3 (sem AdvancedMarkerElement/mapId).
-- Rotação do ícone segue `heading` quando disponível.
-- Buffer local no cliente motorista: se `navigator.onLine === false`, enfileira posições e faz flush ao voltar online.
-- Reverse geocoding chamado no servidor (server function) para não expor a chave e permitir cache.
-
-## Pergunta antes de codar
-Precisa que eu abra o fluxo para conectar o Google Maps (connector) agora? Sem isso o mapa não carrega. Confirma que posso seguir com a migration + toda a implementação acima?
+### Antes de começar
+Duas definições rápidas (posso assumir o padrão se preferir):
+1. Meta mensal: por vendedor, por equipe, ou ambos? (padrão: ambos)
+2. Vendedor responsável: qualquer usuário do sistema ou apenas quem tiver papel comercial? (padrão: apenas papéis comerciais + administrador)

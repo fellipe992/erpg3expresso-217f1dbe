@@ -18,6 +18,7 @@ import {
   Radar,
   Bell,
   Gauge,
+  KanbanSquare,
 
 
 } from "lucide-react";
@@ -70,6 +71,10 @@ const operacional: NavItem[] = [
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
 ];
 
+const comercial: NavItem[] = [
+  { label: "Funil de vendas", to: "/app/crm/funil", icon: KanbanSquare },
+];
+
 const gestao: NavItem[] = [
   { label: "Relatórios", to: "/app/relatorios", icon: BarChart3 },
   { label: "Assistente IA", to: "/app/assistente", icon: Sparkles },
@@ -110,6 +115,7 @@ export function AppSidebar() {
         {!isGestor && <Group items={overview} pathname={location.pathname} collapsed={collapsed} />}
         {isFinance && <Group label="Financeiro" items={financeiro} pathname={location.pathname} collapsed={collapsed} />}
         <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
+        {!isGestor && <Group label="Comercial" items={comercial} pathname={location.pathname} collapsed={collapsed} />}
         <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
         {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
         {isGestor && <Group label="Administração" items={gestorAdmin} pathname={location.pathname} collapsed={collapsed} />}
