@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadFotos } from "@/components/viagem/upload-fotos";
+import { DemonstrativoViagem, calcularProvisao, brl } from "@/components/viagem/demonstrativo-viagem";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/$id")({
   head: () => ({ meta: [{ title: "Viagem — G3 Expresso" }] }),
@@ -93,7 +94,7 @@ function ViagemDetalheePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viagens")
-        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca)")
+        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, provisao_manutencao_km, provisao_pneus_km)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -351,7 +352,19 @@ function ViagemDetalheePage() {
         </div>
       )}
 
+      {/* Provisionamentos e demonstrativo (staff only) */}
+      {isStaff && (
+        <ProvisionamentosSection
+          km={kmRodado}
+          receita={Number(viagem.valor_frete ?? 0)}
+          movimentacoes={movimentacoes}
+          padraoManutencao={(viagem.veiculo as any)?.provisao_manutencao_km ?? null}
+          padraoPneus={(viagem.veiculo as any)?.provisao_pneus_km ?? null}
+        />
+      )}
+
       {/* Movimentações financeiras (staff only) */}
+
       {isStaff && (
         <div className="space-y-3">
           <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
@@ -999,5 +1012,73 @@ function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viag
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function ProvisionamentosSection({
+  km,
+  receita,
+  movimentacoes,
+  padraoManutencao,
+  padraoPneus,
+}: {
+  km: number | null;
+  receita: number;
+  movimentacoes: any[];
+  padraoManutencao: number | null;
+  padraoPneus: number | null;
+}) {
+  const [manutKm, setManutKm] = useState<string>(padraoManutencao ? String(padraoManutencao) : "");
+  const [pneusKm, setPneusKm] = useState<string>(padraoPneus ? String(padraoPneus) : "");
+
+  const bucket = (pred: (m: any) => boolean) =>
+    movimentacoes
+      .filter((m) => m.tipo === "pagar" && m.status !== "cancelado" && pred(m))
+      .reduce((s, m) => s + Number(m.valor ?? 0), 0);
+
+  const cat = (m: any) => `${m.categoria ?? ""} ${m.centro_custo ?? ""}`.toLowerCase();
+  const combustivel = bucket((m) => cat(m).includes("combust"));
+  const pedagio = bucket((m) => cat(m).includes("pedágio") || cat(m).includes("pedagio"));
+  const comissao = bucket((m) => cat(m).includes("comiss"));
+  const outros = bucket(
+    (m) => !cat(m).includes("combust") && !cat(m).includes("pedágio") && !cat(m).includes("pedagio") && !cat(m).includes("comiss"),
+  );
+
+  const custos = {
+    receita,
+    combustivel,
+    pedagio,
+    comissao,
+    provisaoManutencao: calcularProvisao(km, manutKm),
+    provisaoPneus: calcularProvisao(km, pneusKm),
+    outros,
+    km,
+  };
+
+  return (
+    <div className="space-y-3">
+      <h2 className="font-display text-lg font-bold">Provisionamentos operacionais</h2>
+      <Card className="space-y-3 p-4">
+        <p className="text-xs text-muted-foreground">
+          Valores por quilômetro (padrão do veículo, editáveis nesta viagem). Em branco ou zero não entram no cálculo.
+          {km ? ` Distância considerada: ${km} km.` : " Informe km inicial e final para calcular."}
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Manutenção (R$/km)</Label>
+            <Input type="number" step="0.01" placeholder="Ex.: 0,60" value={manutKm} onChange={(e) => setManutKm(e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Provisão: {brl(custos.provisaoManutencao)}</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Pneus (R$/km)</Label>
+            <Input type="number" step="0.01" placeholder="Ex.: 0,15" value={pneusKm} onChange={(e) => setPneusKm(e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Provisão: {brl(custos.provisaoPneus)}</p>
+          </div>
+        </div>
+      </Card>
+
+      <h2 className="font-display text-lg font-bold">Demonstrativo financeiro</h2>
+      <DemonstrativoViagem custos={custos} />
+    </div>
   );
 }

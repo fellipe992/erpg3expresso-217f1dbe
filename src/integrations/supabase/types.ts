@@ -1363,6 +1363,8 @@ export type Database = {
           modelo: string
           observacoes: string | null
           placa: string
+          provisao_manutencao_km: number | null
+          provisao_pneus_km: number | null
           renavam: string | null
           seguro_validade: string | null
           tipo: Database["public"]["Enums"]["veiculo_tipo"]
@@ -1382,6 +1384,8 @@ export type Database = {
           modelo: string
           observacoes?: string | null
           placa: string
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
           renavam?: string | null
           seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]
@@ -1401,6 +1405,8 @@ export type Database = {
           modelo?: string
           observacoes?: string | null
           placa?: string
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
           renavam?: string | null
           seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]

@@ -36,7 +36,10 @@ type Veiculo = {
   cor: string | null;
   ativo: boolean;
   observacoes: string | null;
+  provisao_manutencao_km: number | null;
+  provisao_pneus_km: number | null;
 };
+
 
 const TIPOS = ["cavalo", "carreta", "truck", "toco", "van", "utilitario", "outro"];
 const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true };
@@ -76,7 +79,10 @@ function VeiculosPage() {
         cor: form.cor || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
+        provisao_manutencao_km: form.provisao_manutencao_km ? Number(form.provisao_manutencao_km) : null,
+        provisao_pneus_km: form.provisao_pneus_km ? Number(form.provisao_pneus_km) : null,
       };
+
       if (form.id) {
         const { error } = await supabase.from("veiculos").update(payload).eq("id", form.id);
         if (error) throw error;
@@ -202,9 +208,38 @@ function VeiculosPage() {
               <Switch checked={form.ativo ?? true} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
               <Label>Ativo</Label>
             </div>
+            <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 p-3">
+              <div>
+                <p className="text-sm font-semibold">Provisionamentos operacionais</p>
+                <p className="text-xs text-muted-foreground">
+                  Valores padrão por km deste veículo. Opcionais — em branco ou zero não entram no cálculo.
+                </p>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <F label="Provisão manutenção (R$/km)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex.: 0,60"
+                    value={form.provisao_manutencao_km ?? ""}
+                    onChange={(e) => setForm({ ...form, provisao_manutencao_km: e.target.value ? Number(e.target.value) : null })}
+                  />
+                </F>
+                <F label="Provisão pneus (R$/km)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Ex.: 0,15"
+                    value={form.provisao_pneus_km ?? ""}
+                    onChange={(e) => setForm({ ...form, provisao_pneus_km: e.target.value ? Number(e.target.value) : null })}
+                  />
+                </F>
+              </div>
+            </div>
             <div className="md:col-span-2">
               <F label="Observações"><Textarea rows={2} value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></F>
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
