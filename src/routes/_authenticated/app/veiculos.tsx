@@ -36,7 +36,10 @@ type Veiculo = {
   cor: string | null;
   ativo: boolean;
   observacoes: string | null;
+  provisao_manutencao_km: number | null;
+  provisao_pneus_km: number | null;
 };
+
 
 const TIPOS = ["cavalo", "carreta", "truck", "toco", "van", "utilitario", "outro"];
 const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true };
