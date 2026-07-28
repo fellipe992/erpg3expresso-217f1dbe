@@ -19,6 +19,7 @@ import {
   Bell,
   Gauge,
   KanbanSquare,
+  Calculator,
 
 
 } from "lucide-react";
@@ -67,6 +68,7 @@ const operacional: NavItem[] = [
   { label: "Clientes", to: "/app/clientes", icon: Building2 },
   { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
   { label: "Viagens", to: "/app/viagens", icon: MapPin },
+  { label: "Simulador de viagem", to: "/app/simulador", icon: Calculator },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
 ];
