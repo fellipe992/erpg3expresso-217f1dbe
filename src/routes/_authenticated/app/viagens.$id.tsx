@@ -351,7 +351,19 @@ function ViagemDetalheePage() {
         </div>
       )}
 
+      {/* Provisionamentos e demonstrativo (staff only) */}
+      {isStaff && (
+        <ProvisionamentosSection
+          km={kmRodado}
+          receita={Number(viagem.valor_frete ?? 0)}
+          movimentacoes={movimentacoes}
+          padraoManutencao={(viagem.veiculo as any)?.provisao_manutencao_km ?? null}
+          padraoPneus={(viagem.veiculo as any)?.provisao_pneus_km ?? null}
+        />
+      )}
+
       {/* Movimentações financeiras (staff only) */}
+
       {isStaff && (
         <div className="space-y-3">
           <h2 className="font-display text-lg font-bold">Movimentações financeiras</h2>
