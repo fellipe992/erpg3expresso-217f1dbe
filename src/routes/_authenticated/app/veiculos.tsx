@@ -79,7 +79,10 @@ function VeiculosPage() {
         cor: form.cor || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
+        provisao_manutencao_km: form.provisao_manutencao_km ? Number(form.provisao_manutencao_km) : null,
+        provisao_pneus_km: form.provisao_pneus_km ? Number(form.provisao_pneus_km) : null,
       };
+
       if (form.id) {
         const { error } = await supabase.from("veiculos").update(payload).eq("id", form.id);
         if (error) throw error;
