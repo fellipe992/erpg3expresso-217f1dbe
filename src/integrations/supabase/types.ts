@@ -1252,6 +1252,147 @@ export type Database = {
         }
         Relationships: []
       }
+      simulacoes_viagem: {
+        Row: {
+          cliente_id: string | null
+          comissao_percentual: number | null
+          comissao_valor: number | null
+          consumo_km_l: number | null
+          created_at: string
+          created_by: string | null
+          custo_combustivel: number | null
+          custo_pedagios: number | null
+          custo_total: number | null
+          destino: string
+          distancia_km: number | null
+          duracao_min: number | null
+          eixos: number
+          id: string
+          litros: number | null
+          lucro: number | null
+          margem: number | null
+          motorista_id: string | null
+          nome: string | null
+          origem: string
+          paradas: Json
+          polyline: string | null
+          preco_combustivel: number | null
+          provisao_manutencao_km: number | null
+          provisao_pneus_km: number | null
+          reboque_id: string | null
+          tipo_rota: string
+          tipo_veiculo: string
+          updated_at: string
+          valor_frete: number | null
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
+          consumo_km_l?: number | null
+          created_at?: string
+          created_by?: string | null
+          custo_combustivel?: number | null
+          custo_pedagios?: number | null
+          custo_total?: number | null
+          destino: string
+          distancia_km?: number | null
+          duracao_min?: number | null
+          eixos?: number
+          id?: string
+          litros?: number | null
+          lucro?: number | null
+          margem?: number | null
+          motorista_id?: string | null
+          nome?: string | null
+          origem: string
+          paradas?: Json
+          polyline?: string | null
+          preco_combustivel?: number | null
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
+          reboque_id?: string | null
+          tipo_rota?: string
+          tipo_veiculo?: string
+          updated_at?: string
+          valor_frete?: number | null
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
+          consumo_km_l?: number | null
+          created_at?: string
+          created_by?: string | null
+          custo_combustivel?: number | null
+          custo_pedagios?: number | null
+          custo_total?: number | null
+          destino?: string
+          distancia_km?: number | null
+          duracao_min?: number | null
+          eixos?: number
+          id?: string
+          litros?: number | null
+          lucro?: number | null
+          margem?: number | null
+          motorista_id?: string | null
+          nome?: string | null
+          origem?: string
+          paradas?: Json
+          polyline?: string | null
+          preco_combustivel?: number | null
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
+          reboque_id?: string | null
+          tipo_rota?: string
+          tipo_veiculo?: string
+          updated_at?: string
+          valor_frete?: number | null
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulacoes_viagem_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulacoes_viagem_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulacoes_viagem_reboque_id_fkey"
+            columns: ["reboque_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulacoes_viagem_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulacoes_viagem_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_settings: {
         Row: {
           casas_decimais: number

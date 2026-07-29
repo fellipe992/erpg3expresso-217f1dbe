@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
@@ -60,6 +61,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
+  id: '/api/planejador-rota',
+  path: '/api/planejador-rota',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGoogleMapsConfigRoute = ApiGoogleMapsConfigRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/planejador-rota'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/planejador-rota'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/planejador-rota'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiAssistenteRoute: typeof ApiAssistenteRoute
   ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
+  ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -476,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/planejador-rota': {
+      id: '/api/planejador-rota'
+      path: '/api/planejador-rota'
+      fullPath: '/api/planejador-rota'
+      preLoaderRoute: typeof ApiPlanejadorRotaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/google-maps-config': {
@@ -754,6 +774,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAssistenteRoute: ApiAssistenteRoute,
   ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
+  ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
