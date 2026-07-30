@@ -9,8 +9,14 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FROTA_PADRAO, JORNADA_PADRAO, custoPorKm } from "@/lib/roteirizacao/frota";
-import type { CustosVeiculo, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
+import { Switch } from "@/components/ui/switch";
+import { FROTA_PADRAO, JORNADA_PADRAO, OPCOES_OTIMIZACAO_PADRAO, custoPorKm } from "@/lib/roteirizacao/frota";
+import type {
+  CustosVeiculo,
+  OpcoesOtimizacao,
+  PerfilVeiculo,
+  RegrasJornada,
+} from "@/lib/roteirizacao/tipos";
 import { brl, num } from "@/lib/roteirizacao/format";
 
 const CAMPOS_CUSTO: { key: keyof CustosVeiculo; label: string; sufixo?: string }[] = [
@@ -31,11 +37,15 @@ export function FrotaPanel({
   onChange,
   jornada,
   onJornada,
+  opcoes,
+  onOpcoes,
 }: {
   frota: PerfilVeiculo[];
   onChange: (f: PerfilVeiculo[]) => void;
   jornada: RegrasJornada;
   onJornada: (j: RegrasJornada) => void;
+  opcoes: OpcoesOtimizacao;
+  onOpcoes: (o: OpcoesOtimizacao) => void;
 }) {
   const atualizar = (id: string, patch: Partial<PerfilVeiculo>) =>
     onChange(frota.map((v) => (v.id === id ? { ...v, ...patch } : v)));
@@ -126,6 +136,92 @@ export function FrotaPanel({
         </Accordion>
       </Card>
 
+      <div className="space-y-4">
+      <Card className="space-y-3 p-4">
+        <div>
+          <h3 className="font-semibold">Otimização</h3>
+          <p className="text-xs text-muted-foreground">
+            Define como o sistema escolhe a próxima entrega e trata a capacidade.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">Modo de otimização</Label>
+          <div className="grid grid-cols-2 gap-1 rounded-md border border-border p-1">
+            {(
+              [
+                ["insercao", "Menor inserção"],
+                ["setor", "Setor (sweep)"],
+              ] as const
+            ).map(([valor, rotulo]) => (
+              <Button
+                key={valor}
+                type="button"
+                size="sm"
+                variant={opcoes.modo === valor ? "default" : "ghost"}
+                onClick={() => onOpcoes({ ...opcoes, modo: valor })}
+              >
+                {rotulo}
+              </Button>
+            ))}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {opcoes.modo === "insercao"
+              ? "Cada entrega entra pelo menor aumento de distância, enchendo o veículo até o limite de peso."
+              : "Agrupamento por setor angular a partir do CD, depois refino da sequência."}
+          </p>
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-md border border-border p-2">
+          <div>
+            <Label className="text-xs">Ignorar cubagem (prioridade ao peso)</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Desligue para respeitar também a capacidade em m³ de cada veículo.
+            </p>
+          </div>
+          <Switch
+            checked={opcoes.ignorarCubagem}
+            onCheckedChange={(v) => onOpcoes({ ...opcoes, ignorarCubagem: v })}
+            aria-label="Ignorar cubagem"
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-md border border-border p-2">
+          <div>
+            <Label className="text-xs">Consolidar rotas ociosas</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Pós-otimização que redistribui entregas e reduz veículos com pouca carga.
+            </p>
+          </div>
+          <Switch
+            checked={opcoes.consolidarRotas}
+            onCheckedChange={(v) => onOpcoes({ ...opcoes, consolidarRotas: v })}
+            aria-label="Consolidar rotas ociosas"
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs">Ocupação mínima de peso (%)</Label>
+          <Input
+            inputMode="numeric"
+            value={Math.round(opcoes.ocupacaoMinima * 100)}
+            onChange={(e) =>
+              onOpcoes({
+                ...opcoes,
+                ocupacaoMinima: Math.min(100, Math.max(0, Number(e.target.value) || 0)) / 100,
+              })
+            }
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Rotas abaixo desse patamar tentam ser dissolvidas nas rotas próximas.
+          </p>
+        </div>
+
+        <Button variant="ghost" size="sm" onClick={() => onOpcoes({ ...OPCOES_OTIMIZACAO_PADRAO })}>
+          Restaurar padrão
+        </Button>
+      </Card>
+
       <Card className="space-y-3 p-4">
         <div>
           <h3 className="font-semibold">Controle de jornada</h3>
@@ -153,6 +249,7 @@ export function FrotaPanel({
           Restaurar limites legais
         </Button>
       </Card>
+      </div>
     </div>
   );
 }

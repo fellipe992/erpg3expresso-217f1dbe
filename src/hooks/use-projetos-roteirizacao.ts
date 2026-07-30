@@ -3,13 +3,14 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Plano } from "@/lib/roteirizacao/plano";
-import type { Deposito, Entrega, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
+import type { Deposito, Entrega, OpcoesOtimizacao, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
 
 export type DadosProjeto = {
   depositos: Deposito[];
   entregas: Entrega[];
   frota: PerfilVeiculo[];
   jornada: RegrasJornada;
+  opcoes?: OpcoesOtimizacao;
   plano: Plano;
 };
 

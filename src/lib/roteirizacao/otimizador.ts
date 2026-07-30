@@ -194,23 +194,28 @@ export function melhorInsercao(
 /**
  * Monta uma rota enchendo o veículo pelo PESO: parte da entrega mais distante
  * do CD (semente) e vai agregando sempre a entrega de menor custo de inserção
- * que ainda cabe na capacidade restante.
+ * (menor aumento de distância) que ainda cabe na capacidade restante.
+ * Quando `capacidadeM3` é informado, a cubagem também limita a alocação.
  */
 export function montarSequenciaPorPeso(
   disponiveis: (Entrega & Coordenada)[],
   deposito: Deposito,
   capacidadeKg: number,
   maxEntregas?: number,
+  capacidadeM3?: number,
 ): { seq: (Entrega & Coordenada)[]; restantes: (Entrega & Coordenada)[] } {
   const restantes = [...disponiveis];
   const seq: (Entrega & Coordenada)[] = [];
   let peso = 0;
+  let volume = 0;
+  const limiteM3 = capacidadeM3 && capacidadeM3 > 0 ? capacidadeM3 : Infinity;
 
   // semente: entrega mais distante do CD que caiba sozinha
   let idxSemente = -1;
   let maiorD = -1;
   restantes.forEach((e, i) => {
     if (e.pesoKg > capacidadeKg) return;
+    if ((e.volumeM3 ?? 0) > limiteM3) return;
     const d = distanciaKm(deposito, e);
     if (d > maiorD) {
       maiorD = d;
@@ -221,6 +226,7 @@ export function montarSequenciaPorPeso(
   const [semente] = restantes.splice(idxSemente, 1);
   seq.push(semente);
   peso += semente.pesoKg;
+  volume += semente.volumeM3 ?? 0;
 
   while (restantes.length) {
     if (maxEntregas && seq.length >= maxEntregas) break;
@@ -230,6 +236,7 @@ export function montarSequenciaPorPeso(
     for (let i = 0; i < restantes.length; i++) {
       const e = restantes[i];
       if (peso + e.pesoKg > capacidadeKg) continue;
+      if (volume + (e.volumeM3 ?? 0) > limiteM3) continue;
       const { posicao, delta } = melhorInsercao(seq, e, deposito);
       // leve bônus para entregas pesadas: ajuda a encher o veículo
       const score = delta - (e.pesoKg / Math.max(1, capacidadeKg)) * 3;
@@ -243,6 +250,7 @@ export function montarSequenciaPorPeso(
     const [e] = restantes.splice(melhor, 1);
     seq.splice(melhorPos, 0, e);
     peso += e.pesoKg;
+    volume += e.volumeM3 ?? 0;
   }
 
   return { seq, restantes };

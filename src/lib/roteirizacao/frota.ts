@@ -1,4 +1,4 @@
-import type { CategoriaVeiculo, CustosVeiculo, PerfilVeiculo, RegrasJornada } from "./tipos";
+import type { CategoriaVeiculo, CustosVeiculo, OpcoesOtimizacao, OrigemAlocacao, PerfilVeiculo, RegrasJornada } from "./tipos";
 
 export const CUSTOS_PADRAO: CustosVeiculo = {
   consumoKmL: 8,
@@ -86,3 +86,19 @@ export function custoPorKm(v: PerfilVeiculo) {
     c.outrosKm
   );
 }
+
+/** Configuração padrão do motor de otimização. */
+export const OPCOES_OTIMIZACAO_PADRAO: OpcoesOtimizacao = {
+  modo: "insercao",
+  ignorarCubagem: true,
+  consolidarRotas: true,
+  ocupacaoMinima: 0.55,
+};
+
+export const ROTULO_ORIGEM: Record<OrigemAlocacao, string> = {
+  zona: "Zona",
+  proximidade: "Proximidade",
+  sobra: "Reaproveitamento",
+  consolidacao: "Consolidação",
+  manual: "Manual",
+};
