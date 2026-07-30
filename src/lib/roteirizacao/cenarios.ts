@@ -373,7 +373,10 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
   const dispersao = comRegiao
     .map((e) => distanciaKm(centro, e))
     .sort((a, b) => a - b)[Math.floor(comRegiao.length / 2)] ?? 0;
-  const raioVizinhoKm = Math.max(2, dispersao * 0.45);
+  const raioVizinhoKm =
+    opcoes.raioProximidadeKm && opcoes.raioProximidadeKm > 0
+      ? opcoes.raioProximidadeKm
+      : Math.max(2, dispersao * 0.45);
 
   /** Puxa entregas de outras zonas que estejam próximas da rota e caibam no peso. */
   const puxarVizinhos = (
