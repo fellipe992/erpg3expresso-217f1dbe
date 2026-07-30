@@ -316,6 +316,7 @@ export function montarRotaComSequencia(
 
 function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenario {
   const { deposito, jornada } = entrada;
+  const opcoes: OpcoesOtimizacao = { ...OPCOES_OTIMIZACAO_PADRAO, ...entrada.opcoes };
   const entregas = somenteGeocodificadas(entrada.entregas) as (Entrega & Coordenada)[];
   const frota = ordenarFrota(
     entrada.frota.filter((v) => v.disponiveis > 0),
