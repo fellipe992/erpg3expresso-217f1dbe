@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
@@ -20,6 +21,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
+import { Route as AuthenticatedAppRoteirizadorRouteImport } from './routes/_authenticated/app/roteirizador'
 import { Route as AuthenticatedAppRentabilidadeRouteImport } from './routes/_authenticated/app/rentabilidade'
 import { Route as AuthenticatedAppRelatoriosRouteImport } from './routes/_authenticated/app/relatorios'
 import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
@@ -63,6 +65,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
+  id: '/api/roteirizador-geocode',
+  path: '/api/roteirizador-geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
   id: '/api/planejador-rota',
   path: '/api/planejador-rota',
@@ -99,6 +106,12 @@ const AuthenticatedAppSimuladorRoute =
   AuthenticatedAppSimuladorRouteImport.update({
     id: '/app/simulador',
     path: '/app/simulador',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppRoteirizadorRoute =
+  AuthenticatedAppRoteirizadorRouteImport.update({
+    id: '/app/roteirizador',
+    path: '/app/roteirizador',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppRentabilidadeRoute =
@@ -242,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -262,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -277,6 +292,7 @@ export interface FileRoutesByTo {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -297,6 +313,7 @@ export interface FileRoutesByTo {
   '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -314,6 +331,7 @@ export interface FileRoutesById {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -334,6 +352,7 @@ export interface FileRoutesById {
   '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
   '/_authenticated/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/_authenticated/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/_authenticated/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -351,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -371,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/receber'
     | '/app/relatorios'
     | '/app/rentabilidade'
+    | '/app/roteirizador'
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
@@ -386,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -406,6 +428,7 @@ export interface FileRouteTypes {
     | '/app/receber'
     | '/app/relatorios'
     | '/app/rentabilidade'
+    | '/app/roteirizador'
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
@@ -422,6 +445,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
@@ -442,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/receber'
     | '/_authenticated/app/relatorios'
     | '/_authenticated/app/rentabilidade'
+    | '/_authenticated/app/roteirizador'
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
@@ -459,6 +484,7 @@ export interface RootRouteChildren {
   ApiAssistenteRoute: typeof ApiAssistenteRoute
   ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
+  ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -489,6 +515,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/roteirizador-geocode': {
+      id: '/api/roteirizador-geocode'
+      path: '/api/roteirizador-geocode'
+      fullPath: '/api/roteirizador-geocode'
+      preLoaderRoute: typeof ApiRoteirizadorGeocodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/planejador-rota': {
@@ -538,6 +571,13 @@ declare module '@tanstack/react-router' {
       path: '/app/simulador'
       fullPath: '/app/simulador'
       preLoaderRoute: typeof AuthenticatedAppSimuladorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/roteirizador': {
+      id: '/_authenticated/app/roteirizador'
+      path: '/app/roteirizador'
+      fullPath: '/app/roteirizador'
+      preLoaderRoute: typeof AuthenticatedAppRoteirizadorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/rentabilidade': {
@@ -725,6 +765,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
   AuthenticatedAppRelatoriosRoute: typeof AuthenticatedAppRelatoriosRoute
   AuthenticatedAppRentabilidadeRoute: typeof AuthenticatedAppRentabilidadeRoute
+  AuthenticatedAppRoteirizadorRoute: typeof AuthenticatedAppRoteirizadorRoute
   AuthenticatedAppSimuladorRoute: typeof AuthenticatedAppSimuladorRoute
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
@@ -755,6 +796,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,
   AuthenticatedAppRelatoriosRoute: AuthenticatedAppRelatoriosRoute,
   AuthenticatedAppRentabilidadeRoute: AuthenticatedAppRentabilidadeRoute,
+  AuthenticatedAppRoteirizadorRoute: AuthenticatedAppRoteirizadorRoute,
   AuthenticatedAppSimuladorRoute: AuthenticatedAppSimuladorRoute,
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
@@ -775,17 +817,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAssistenteRoute: ApiAssistenteRoute,
   ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
+  ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

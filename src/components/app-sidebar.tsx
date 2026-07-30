@@ -69,6 +69,7 @@ const operacional: NavItem[] = [
   { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
   { label: "Viagens", to: "/app/viagens", icon: MapPin },
   { label: "Planejador de viagens", to: "/app/simulador", icon: Calculator },
+  { label: "Roteirizador inteligente", to: "/app/roteirizador", icon: Radar },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
 ];
