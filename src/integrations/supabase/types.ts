@@ -1252,6 +1252,36 @@ export type Database = {
         }
         Relationships: []
       }
+      roteirizacao_projetos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dados: Json
+          data_operacao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dados?: Json
+          data_operacao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dados?: Json
+          data_operacao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       simulacoes_viagem: {
         Row: {
           cliente_id: string | null

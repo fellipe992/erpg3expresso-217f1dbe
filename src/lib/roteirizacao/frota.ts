@@ -18,13 +18,17 @@ export const ORDEM_CATEGORIAS: CategoriaVeiculo[] = [
   "van",
   "vuc",
   "tres_quartos",
+  "fiorino",
+  "hr",
   "toco",
   "truck",
   "carreta",
 ];
 
 export const ROTULO_CATEGORIA: Record<CategoriaVeiculo, string> = {
+  fiorino: "Fiorino",
   van: "Van",
+  hr: "HR",
   vuc: "VUC",
   tres_quartos: "3/4",
   toco: "Toco",
@@ -52,7 +56,9 @@ const base = (
 });
 
 export const FROTA_PADRAO: PerfilVeiculo[] = [
+  base("fiorino", 650, 3.5, 2, 45, { consumoKmL: 11, salarioDiario: 135, custoHora: 19, depreciacaoKm: 0.16, pneusKm: 0.05, manutencaoKm: 0.15, pedagioPorKm: 0.06 }),
   base("van", 1500, 7, 2, 42, { consumoKmL: 9.5, salarioDiario: 150, custoHora: 22, depreciacaoKm: 0.22, pneusKm: 0.08, manutencaoKm: 0.2, pedagioPorKm: 0.08 }),
+  base("hr", 1800, 9, 2, 40, { consumoKmL: 9, salarioDiario: 158, custoHora: 23, depreciacaoKm: 0.25, pneusKm: 0.1, manutencaoKm: 0.22, pedagioPorKm: 0.08 }),
   base("vuc", 3000, 14, 2, 38, { consumoKmL: 7.5, salarioDiario: 165, custoHora: 25, depreciacaoKm: 0.3, pneusKm: 0.12, manutencaoKm: 0.26, pedagioPorKm: 0.1 }),
   base("tres_quartos", 4000, 22, 2, 36, { consumoKmL: 6.5, salarioDiario: 175, custoHora: 27, depreciacaoKm: 0.34, pneusKm: 0.15, manutencaoKm: 0.3 }),
   base("toco", 6000, 32, 2, 34, { consumoKmL: 5.5, salarioDiario: 190, custoHora: 30, depreciacaoKm: 0.42, pneusKm: 0.2, manutencaoKm: 0.36, pedagioPorKm: 0.16 }),

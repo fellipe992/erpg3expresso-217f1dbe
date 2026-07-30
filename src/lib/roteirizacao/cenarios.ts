@@ -6,12 +6,15 @@ import {
   escolherVeiculo,
   kmDaSequencia,
   refinar2opt,
+  sequenciarComJanelas,
   sequenciarVizinhoProximo,
   somenteGeocodificadas,
+  temJanelas,
   type Cluster,
 } from "./otimizador";
 import type {
   Cenario,
+  Coordenada,
   CustoDetalhado,
   Deposito,
   Entrega,
@@ -160,12 +163,24 @@ export function montarRota(
   jornada: RegrasJornada,
   passadas2opt: number,
 ): Rota {
-  const seq = refinar2opt(
-    sequenciarVizinhoProximo(cluster.entregas, deposito),
-    deposito,
-    passadas2opt,
-  );
+  const comJanela = temJanelas(cluster.entregas);
+  const seq = comJanela
+    ? sequenciarComJanelas(cluster.entregas, deposito, veiculo.velocidadeMediaKmh)
+    : refinar2opt(sequenciarVizinhoProximo(cluster.entregas, deposito), deposito, passadas2opt);
 
+  return montarRotaComSequencia(id, veiculo, seq, deposito, jornada);
+}
+
+/** Monta a rota preservando exatamente a sequência informada (edição manual). */
+export function montarRotaComSequencia(
+  id: string,
+  veiculo: PerfilVeiculo,
+  seq: (Entrega & Coordenada)[],
+  deposito: Deposito,
+  jornada: RegrasJornada,
+): Rota {
+  const pesoKg = seq.reduce((s, e) => s + e.pesoKg, 0);
+  const volumeM3 = seq.reduce((s, e) => s + (e.volumeM3 ?? 0), 0);
   const paradas: ParadaRota[] = [];
   let km = 0;
   let relogio = 0;
@@ -201,11 +216,12 @@ export function montarRota(
     minutos,
     minutosDirecao,
     minutosParado: minutosParado + pausas,
-    pesoKg: cluster.pesoKg,
-    volumeM3: cluster.volumeM3,
-    ocupacaoPeso: veiculo.capacidadeKg ? cluster.pesoKg / veiculo.capacidadeKg : 0,
+    deposito,
+    pesoKg,
+    volumeM3,
+    ocupacaoPeso: veiculo.capacidadeKg ? pesoKg / veiculo.capacidadeKg : 0,
     custo: calcularCusto(veiculo, km, minutos),
-    receita: cluster.entregas.reduce((s, e) => s + (e.receita ?? 0), 0),
+    receita: 0,
     alertasJornada: [],
   };
   rota.alertasJornada = avaliarJornada(rota, jornada);
@@ -229,7 +245,11 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
   const alvoKg = Math.max(1, maiorKg * estrategia.ocupacaoAlvo);
   const alvoM3 = Math.max(0, maiorM3 * estrategia.ocupacaoAlvo);
 
-  let clusters = agruparPorSetor(entregas, deposito, alvoKg, alvoM3);
+  const maxEntregasFrota = frota.reduce<number | undefined>(
+    (acc, v) => (v.maxEntregas ? Math.max(acc ?? 0, v.maxEntregas) : acc),
+    undefined,
+  );
+  let clusters = agruparPorSetor(entregas, deposito, alvoKg, alvoM3, maxEntregasFrota);
 
   // No cenário de menor custo/km, tenta compactar clusters no menor veículo possível.
   if (estrategia.preferencia === "menor") {
@@ -237,7 +257,7 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
       const cabe = frota.some((v) => v.capacidadeKg >= c.pesoKg && v.capacidadeM3 >= c.volumeM3);
       if (cabe) return [c];
       const menorAlvo = Math.max(...frota.map((v) => v.capacidadeKg));
-      return agruparPorSetor(c.entregas, deposito, menorAlvo, maiorM3);
+      return agruparPorSetor(c.entregas, deposito, menorAlvo, maiorM3, maxEntregasFrota);
     });
   }
 
