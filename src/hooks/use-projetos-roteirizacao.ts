@@ -49,7 +49,7 @@ export function useProjetosRoteirizacao() {
         .insert({
           nome,
           data_operacao: dataOperacao ?? new Date().toISOString().slice(0, 10),
-          dados: dados as unknown as Record<string, unknown>,
+          dados: JSON.parse(JSON.stringify(dados)),
           created_by: sessao.user?.id ?? null,
         })
         .select("id")
@@ -72,7 +72,7 @@ export function useProjetosRoteirizacao() {
       setSalvando(true);
       const { error } = await supabase
         .from("roteirizacao_projetos")
-        .update({ dados: dados as unknown as Record<string, unknown>, ...(nome ? { nome } : {}) })
+        .update({ dados: JSON.parse(JSON.stringify(dados)), ...(nome ? { nome } : {}) })
         .eq("id", projetoId);
       setSalvando(false);
       if (error) return;
