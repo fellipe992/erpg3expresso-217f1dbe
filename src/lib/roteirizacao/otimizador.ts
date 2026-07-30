@@ -13,6 +13,7 @@ export function agruparPorSetor(
   deposito: Deposito,
   capacidadeKgAlvo: number,
   capacidadeM3Alvo: number,
+  maxEntregas?: number,
 ): Cluster[] {
   if (!entregas.length) return [];
   const ordenadas = [...entregas].sort(
@@ -25,7 +26,8 @@ export function agruparPorSetor(
     const estouraPeso = atual.entregas.length > 0 && atual.pesoKg + e.pesoKg > capacidadeKgAlvo;
     const estouraVol =
       capacidadeM3Alvo > 0 && atual.entregas.length > 0 && atual.volumeM3 + vol > capacidadeM3Alvo;
-    if (estouraPeso || estouraVol) {
+    const estouraQtd = !!maxEntregas && atual.entregas.length >= maxEntregas;
+    if (estouraPeso || estouraVol || estouraQtd) {
       clusters.push(atual);
       atual = { entregas: [], pesoKg: 0, volumeM3: 0 };
     }
@@ -109,6 +111,7 @@ export function escolherVeiculo(
   const candidatos = perfis
     .filter((p) => (usados[p.id] ?? 0) < p.disponiveis)
     .filter((p) => p.capacidadeKg >= cluster.pesoKg && p.capacidadeM3 >= cluster.volumeM3)
+    .filter((p) => !p.maxEntregas || cluster.entregas.length <= p.maxEntregas)
     .sort((a, b) => a.capacidadeKg - b.capacidadeKg);
   return candidatos[0] ?? null;
 }
@@ -119,4 +122,47 @@ export function centroCluster(c: Cluster) {
 
 export function somenteGeocodificadas(entregas: Entrega[]) {
   return entregas.filter(temCoordenada);
+}
+
+/**
+ * Sequenciamento sensível a janelas de entrega: em cada passo escolhe o
+ * próximo ponto equilibrando distância, risco de atraso e urgência da janela.
+ */
+export function sequenciarComJanelas(
+  entregas: (Entrega & Coordenada)[],
+  deposito: Deposito,
+  velocidadeKmh: number,
+): (Entrega & Coordenada)[] {
+  const restantes = [...entregas];
+  const seq: (Entrega & Coordenada)[] = [];
+  let atual: Coordenada = deposito;
+  let relogio = 0;
+  const v = Math.max(5, velocidadeKmh);
+  while (restantes.length) {
+    let melhor = 0;
+    let melhorScore = Infinity;
+    for (let i = 0; i < restantes.length; i++) {
+      const e = restantes[i];
+      const d = distanciaKm(atual, e);
+      const chegada = relogio + (d / v) * 60;
+      const janela = e.janelaFimMin;
+      const atraso = janela != null ? Math.max(0, chegada - janela) : 0;
+      const folga = janela != null ? Math.max(0, janela - chegada) : 720;
+      const score = d + atraso * 2.5 + folga * 0.04;
+      if (score < melhorScore) {
+        melhorScore = score;
+        melhor = i;
+      }
+    }
+    const [e] = restantes.splice(melhor, 1);
+    const d = distanciaKm(atual, e);
+    relogio += (d / v) * 60 + e.tempoDescargaMin;
+    seq.push(e);
+    atual = e;
+  }
+  return seq;
+}
+
+export function temJanelas(entregas: Entrega[]) {
+  return entregas.some((e) => typeof e.janelaFimMin === "number");
 }
