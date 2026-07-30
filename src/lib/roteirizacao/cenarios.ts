@@ -315,7 +315,7 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
       const lista = pools.get(melhorZona);
       if (!lista) break;
       const [e] = lista.splice(melhorIdx, 1);
-      seq.splice(melhorPos, 0, e);
+      seq.splice(melhorPos, 0, { ...e, origemAlocacao: "proximidade" });
       restante -= e.pesoKg;
     }
   };
