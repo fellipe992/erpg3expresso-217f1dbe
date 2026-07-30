@@ -1,4 +1,4 @@
-import { montarRotaComSequencia, simularCenarios } from "./cenarios";
+import { montarRota, montarRotaComSequencia, simularCenarios } from "./cenarios";
 import { distanciaKm, temCoordenada } from "./geo";
 import type {
   Coordenada,
@@ -161,7 +161,6 @@ export function otimizarRota(plano: Plano, rotaId: string, jornada: RegrasJornad
     ...plano,
     rotas: plano.rotas.map((r) => {
       if (r.id !== rotaId || !r.deposito) return r;
-      const { montarRota } = requireCenarios();
       const cluster = {
         entregas: seqDaRota(r),
         pesoKg: r.pesoKg,
@@ -172,13 +171,6 @@ export function otimizarRota(plano: Plano, rotaId: string, jornada: RegrasJornad
     }),
   };
 }
-
-// import estático evitando ciclo de leitura no topo do arquivo
-function requireCenarios() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return cenariosModule;
-}
-import * as cenariosModule from "./cenarios";
 
 export function duplicarRota(plano: Plano, rotaId: string): Plano {
   const original = plano.rotas.find((r) => r.id === rotaId);
