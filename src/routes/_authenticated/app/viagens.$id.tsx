@@ -230,24 +230,48 @@ function ViagemDetalheePage() {
           {kmRodado !== null && <Info label="Km rodado" value={<span className="font-semibold text-brand">{kmRodado} km</span>} />}
         </div>
 
-        {viagem.observacoes && (
-          <>
-            <Separator />
-            <div className="p-4 md:p-6">
-              <Label className="mb-1 block text-[10px] uppercase tracking-widest text-muted-foreground">Observações</Label>
-              <p className="whitespace-pre-wrap text-sm">{viagem.observacoes}</p>
-            </div>
-          </>
-        )}
-        {viagem.observacoes_finais && (
-          <>
-            <Separator />
-            <div className="p-4 md:p-6">
-              <Label className="mb-1 block text-[10px] uppercase tracking-widest text-muted-foreground">Observações finais</Label>
-              <p className="whitespace-pre-wrap text-sm">{viagem.observacoes_finais}</p>
-            </div>
-          </>
-        )}
+        {(() => {
+          // Motoristas não podem ver valores financeiros nas observações.
+          const limpar = (t: string | null) => {
+            if (!t) return "";
+            const linhas = isStaff
+              ? t.split("\n")
+              : t
+                  .split("\n")
+                  .map((l) =>
+                    l
+                      .split(/\s·\s/)
+                      .filter((p) => !/R\$|custo|lucro|receita|frete|margem/i.test(p))
+                      .join(" · "),
+                  )
+                  .filter((l) => l.trim().length > 0);
+            return linhas.join("\n").trim();
+          };
+          const obs = limpar(viagem.observacoes);
+          const obsFinais = limpar(viagem.observacoes_finais);
+          return (
+            <>
+              {obs && (
+                <>
+                  <Separator />
+                  <div className="p-4 md:p-6">
+                    <Label className="mb-1 block text-[10px] uppercase tracking-widest text-muted-foreground">Observações</Label>
+                    <p className="whitespace-pre-wrap text-sm">{obs}</p>
+                  </div>
+                </>
+              )}
+              {obsFinais && (
+                <>
+                  <Separator />
+                  <div className="p-4 md:p-6">
+                    <Label className="mb-1 block text-[10px] uppercase tracking-widest text-muted-foreground">Observações finais</Label>
+                    <p className="whitespace-pre-wrap text-sm">{obsFinais}</p>
+                  </div>
+                </>
+              )}
+            </>
+          );
+        })()}
       </Card>
 
       {/* Ação: Iniciar viagem */}
