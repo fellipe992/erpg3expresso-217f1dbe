@@ -152,7 +152,7 @@ function ordenarFrota(frota: PerfilVeiculo[], preferencia: Estrategia["preferenc
   return [...frota].sort((a, b) => porOrdem(a) - porOrdem(b));
 }
 
-function montarRota(
+export function montarRota(
   id: string,
   veiculo: PerfilVeiculo,
   cluster: Cluster,
