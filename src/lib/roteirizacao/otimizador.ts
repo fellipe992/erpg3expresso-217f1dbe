@@ -166,3 +166,84 @@ export function sequenciarComJanelas(
 export function temJanelas(entregas: Entrega[]) {
   return entregas.some((e) => typeof e.janelaFimMin === "number");
 }
+
+/* ------------------------------------------------------------------ *
+ * Alocação por peso (ignora cubagem) com inserção de menor custo.
+ * ------------------------------------------------------------------ */
+
+/** Menor custo de inserção de `e` na sequência (rota fechada no depósito). */
+export function melhorInsercao(
+  seq: (Entrega & Coordenada)[],
+  e: Coordenada,
+  deposito: Deposito,
+): { posicao: number; delta: number } {
+  const pontos: Coordenada[] = [deposito, ...seq, deposito];
+  let posicao = 0;
+  let delta = Infinity;
+  for (let i = 0; i < pontos.length - 1; i++) {
+    const d =
+      distanciaKm(pontos[i], e) + distanciaKm(e, pontos[i + 1]) - distanciaKm(pontos[i], pontos[i + 1]);
+    if (d < delta) {
+      delta = d;
+      posicao = i;
+    }
+  }
+  return { posicao, delta };
+}
+
+/**
+ * Monta uma rota enchendo o veículo pelo PESO: parte da entrega mais distante
+ * do CD (semente) e vai agregando sempre a entrega de menor custo de inserção
+ * que ainda cabe na capacidade restante.
+ */
+export function montarSequenciaPorPeso(
+  disponiveis: (Entrega & Coordenada)[],
+  deposito: Deposito,
+  capacidadeKg: number,
+  maxEntregas?: number,
+): { seq: (Entrega & Coordenada)[]; restantes: (Entrega & Coordenada)[] } {
+  const restantes = [...disponiveis];
+  const seq: (Entrega & Coordenada)[] = [];
+  let peso = 0;
+
+  // semente: entrega mais distante do CD que caiba sozinha
+  let idxSemente = -1;
+  let maiorD = -1;
+  restantes.forEach((e, i) => {
+    if (e.pesoKg > capacidadeKg) return;
+    const d = distanciaKm(deposito, e);
+    if (d > maiorD) {
+      maiorD = d;
+      idxSemente = i;
+    }
+  });
+  if (idxSemente < 0) return { seq, restantes };
+  const [semente] = restantes.splice(idxSemente, 1);
+  seq.push(semente);
+  peso += semente.pesoKg;
+
+  while (restantes.length) {
+    if (maxEntregas && seq.length >= maxEntregas) break;
+    let melhor = -1;
+    let melhorScore = Infinity;
+    let melhorPos = 0;
+    for (let i = 0; i < restantes.length; i++) {
+      const e = restantes[i];
+      if (peso + e.pesoKg > capacidadeKg) continue;
+      const { posicao, delta } = melhorInsercao(seq, e, deposito);
+      // leve bônus para entregas pesadas: ajuda a encher o veículo
+      const score = delta - (e.pesoKg / Math.max(1, capacidadeKg)) * 3;
+      if (score < melhorScore) {
+        melhorScore = score;
+        melhor = i;
+        melhorPos = posicao;
+      }
+    }
+    if (melhor < 0) break;
+    const [e] = restantes.splice(melhor, 1);
+    seq.splice(melhorPos, 0, e);
+    peso += e.pesoKg;
+  }
+
+  return { seq, restantes };
+}
