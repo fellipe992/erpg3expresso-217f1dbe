@@ -429,7 +429,7 @@ function RoteirizadorPage() {
             <TabsTrigger value="execucao">Execução</TabsTrigger>
           </TabsList>
           <TabsContent value="dashboard" className="mt-4">
-            <DashboardExecutivo cenario={cenario} />
+            <DashboardExecutivo cenario={cenario} impostoPct={0} administrativoPct={0} />
           </TabsContent>
           <TabsContent value="ia" className="mt-4">
             <PainelIa sugestoes={sugestoes} onAplicar={onAplicarSugestao} />
