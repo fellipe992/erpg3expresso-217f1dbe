@@ -341,13 +341,27 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
         veiculo.capacidadeKg,
         Math.max(Math.min(...lista.map((e) => e.pesoKg)), veiculo.capacidadeKg * fator),
       );
-      const { seq, restantes } = montarSequenciaPorPeso(
-        lista,
-        deposito,
-        limiteKg,
-        veiculo.maxEntregas,
-      );
+      const limiteM3 = opcoes.ignorarCubagem ? undefined : veiculo.capacidadeM3;
+
+      let seq: (Entrega & Coordenada)[];
+      let restantes: (Entrega & Coordenada)[];
+      if (opcoes.modo === "setor") {
+        const [primeiro, ...resto] = agruparPorSetor(
+          lista,
+          deposito,
+          limiteKg,
+          limiteM3 ?? 0,
+          veiculo.maxEntregas,
+        );
+        seq = primeiro?.entregas ?? [];
+        restantes = resto.flatMap((c) => c.entregas);
+      } else {
+        const r = montarSequenciaPorPeso(lista, deposito, limiteKg, veiculo.maxEntregas, limiteM3);
+        seq = r.seq;
+        restantes = r.restantes;
+      }
       if (!seq.length) break;
+      seq = seq.map((e) => ({ ...e, origemAlocacao: e.origemAlocacao ?? "zona" }));
       pools.set(zona, restantes);
 
       // redistribuição entre zonas: sobrou peso disponível? puxa vizinhos próximos
@@ -374,6 +388,7 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
       );
     }
   }
+
 
   const pendentes: (Entrega & Coordenada)[] = [...pools.values()].flat();
 
