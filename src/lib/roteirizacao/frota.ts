@@ -15,11 +15,11 @@ export const CUSTOS_PADRAO: CustosVeiculo = {
 
 /** Ordem de prioridade do menor para o maior — usada no cenário de menor custo. */
 export const ORDEM_CATEGORIAS: CategoriaVeiculo[] = [
-  "fiorino",
   "van",
-  "hr",
   "vuc",
   "tres_quartos",
+  "fiorino",
+  "hr",
   "toco",
   "truck",
   "carreta",
