@@ -237,57 +237,54 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
   );
 
   const rotas: Rota[] = [];
-  const naoAtendidas: Entrega[] = [];
   const usados: Record<string, number> = {};
 
-  const maiorKg = Math.max(...frota.map((v) => v.capacidadeKg), 0);
-  const maiorM3 = Math.max(...frota.map((v) => v.capacidadeM3), 0);
-  const alvoKg = Math.max(1, maiorKg * estrategia.ocupacaoAlvo);
-  const alvoM3 = Math.max(0, maiorM3 * estrategia.ocupacaoAlvo);
+  /** Escolhe o veículo da próxima rota olhando o peso ainda pendente. */
+  const escolherParaLote = (pesoPendente: number) => {
+    const livres = frota.filter((v) => (usados[v.id] ?? 0) < v.disponiveis);
+    if (!livres.length) return null;
+    if (estrategia.preferencia === "maior")
+      return [...livres].sort((a, b) => b.capacidadeKg - a.capacidadeKg)[0];
+    const eficientes = [...livres].sort(
+      (a, b) => custoPorKm(a) / a.capacidadeKg - custoPorKm(b) / b.capacidadeKg,
+    );
+    // se há carga suficiente para lotar um veículo, usa o mais eficiente por kg
+    const lotaveis = eficientes.filter((v) => v.capacidadeKg <= pesoPendente);
+    if (lotaveis.length) return lotaveis[0];
+    // sobra pequena: menor veículo que ainda comporta o restante
+    const porCapacidade = [...livres].sort((a, b) => a.capacidadeKg - b.capacidadeKg);
+    return porCapacidade.find((v) => v.capacidadeKg >= pesoPendente) ?? porCapacidade[porCapacidade.length - 1];
+  };
 
-  const maxEntregasFrota = frota.reduce<number | undefined>(
-    (acc, v) => (v.maxEntregas ? Math.max(acc ?? 0, v.maxEntregas) : acc),
-    undefined,
-  );
-  let clusters = agruparPorSetor(entregas, deposito, alvoKg, alvoM3, maxEntregasFrota);
-
-  // No cenário de menor custo/km, tenta compactar clusters no menor veículo possível.
-  if (estrategia.preferencia === "menor") {
-    clusters = clusters.flatMap((c) => {
-      const cabe = frota.some((v) => v.capacidadeKg >= c.pesoKg && v.capacidadeM3 >= c.volumeM3);
-      if (cabe) return [c];
-      const menorAlvo = Math.max(...frota.map((v) => v.capacidadeKg));
-      return agruparPorSetor(c.entregas, deposito, menorAlvo, maiorM3, maxEntregasFrota);
-    });
-  }
-
-  clusters.forEach((cluster, i) => {
-    let veiculo = escolherVeiculo(cluster, frota, usados);
-    if (!veiculo) {
-      // sem veículo disponível para o cluster inteiro: tenta o maior livre e sobra o resto
-      const livre = frota
-        .filter((v) => (usados[v.id] ?? 0) < v.disponiveis)
-        .sort((a, b) => b.capacidadeKg - a.capacidadeKg)[0];
-      if (!livre) {
-        naoAtendidas.push(...cluster.entregas);
-        return;
-      }
-      const cabem: Cluster = { entregas: [], pesoKg: 0, volumeM3: 0 };
-      for (const e of cluster.entregas) {
-        if (cabem.pesoKg + e.pesoKg <= livre.capacidadeKg) {
-          cabem.entregas.push(e);
-          cabem.pesoKg += e.pesoKg;
-          cabem.volumeM3 += e.volumeM3 ?? 0;
-        } else naoAtendidas.push(e);
-      }
-      if (!cabem.entregas.length) return;
-      cluster = cabem;
-      veiculo = livre;
-    }
+  let pendentes = [...entregas];
+  let indice = 0;
+  while (pendentes.length) {
+    const pesoPendente = pendentes.reduce((s, e) => s + e.pesoKg, 0);
+    const veiculo = escolherParaLote(pesoPendente);
+    if (!veiculo) break;
+    // o cenário de "menor tempo" espalha a carga; os demais enchem o veículo
+    const fator = estrategia.id === "tempo" ? estrategia.ocupacaoAlvo : 1;
+    const limiteKg = Math.max(
+      Math.min(...pendentes.map((e) => e.pesoKg)),
+      veiculo.capacidadeKg * fator,
+    );
+    const { seq, restantes } = montarSequenciaPorPeso(
+      pendentes,
+      deposito,
+      Math.min(limiteKg, veiculo.capacidadeKg),
+      veiculo.maxEntregas,
+    );
+    if (!seq.length) break;
     usados[veiculo.id] = (usados[veiculo.id] ?? 0) + 1;
+    indice += 1;
+    const cluster: Cluster = {
+      entregas: seq,
+      pesoKg: seq.reduce((s, e) => s + e.pesoKg, 0),
+      volumeM3: seq.reduce((s, e) => s + (e.volumeM3 ?? 0), 0),
+    };
     rotas.push(
       montarRota(
-        `${estrategia.id}-${i + 1}`,
+        `${estrategia.id}-${indice}`,
         veiculo,
         cluster,
         deposito,
@@ -295,7 +292,43 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
         estrategia.passadas2opt,
       ),
     );
-  });
+    pendentes = restantes;
+  }
+
+  // Reaproveitamento: tenta encaixar sobras em rotas que ainda têm folga de peso.
+  const naoAtendidas: Entrega[] = [];
+  for (const e of pendentes) {
+    let melhorIdx = -1;
+    let melhorPos = 0;
+    let melhorDelta = Infinity;
+    rotas.forEach((r, i) => {
+      if (r.pesoKg + e.pesoKg > r.veiculo.capacidadeKg) return;
+      if (r.veiculo.maxEntregas && r.paradas.length >= r.veiculo.maxEntregas) return;
+      const seq = r.paradas.map((p) => p.entrega).filter(temCoordenada);
+      const { posicao, delta } = melhorInsercao(seq, e, r.deposito ?? deposito);
+      if (delta < melhorDelta) {
+        melhorDelta = delta;
+        melhorIdx = i;
+        melhorPos = posicao;
+      }
+    });
+    if (melhorIdx < 0) {
+      naoAtendidas.push(e);
+      continue;
+    }
+    const alvo = rotas[melhorIdx];
+    const seq = alvo.paradas.map((p) => p.entrega).filter(temCoordenada);
+    seq.splice(melhorPos, 0, e);
+    rotas[melhorIdx] = montarRotaComSequencia(
+      alvo.id,
+      alvo.veiculo,
+      seq,
+      alvo.deposito ?? deposito,
+      jornada,
+    );
+  }
+
+
 
   const km = rotas.reduce((s, r) => s + r.km, 0);
   const minutos = rotas.reduce((s, r) => s + r.minutos, 0);
