@@ -1,8 +1,9 @@
 import { centroide, distanciaKm, temCoordenada } from "./geo";
 import { identificarRegioes } from "./regioes";
-import { custoPorKm, ORDEM_CATEGORIAS } from "./frota";
+import { custoPorKm, OPCOES_OTIMIZACAO_PADRAO, ORDEM_CATEGORIAS } from "./frota";
 import { avaliarJornada, pausasObrigatoriasMin } from "./jornada";
 import {
+  agruparPorSetor,
   melhorInsercao,
   montarSequenciaPorPeso,
   refinar2opt,
@@ -18,6 +19,7 @@ import type {
   CustoDetalhado,
   Deposito,
   Entrega,
+  OpcoesOtimizacao,
   ParadaRota,
   PerfilVeiculo,
   RegrasJornada,
@@ -33,7 +35,91 @@ export type EntradaSimulacao = {
   jornada: RegrasJornada;
   /** receita total prevista quando as entregas não trazem receita individual */
   receitaTotal?: number;
+  /** configuração do motor de otimização (modo, cubagem, consolidação) */
+  opcoes?: Partial<OpcoesOtimizacao>;
 };
+
+/**
+ * Pós-otimização: dissolve rotas com baixa ocupação de peso, realocando suas
+ * entregas nas rotas próximas que ainda têm capacidade — reduz o número de
+ * veículos sem aumentar significativamente a quilometragem.
+ */
+export function consolidarRotasOciosas(
+  rotas: Rota[],
+  deposito: Deposito,
+  jornada: RegrasJornada,
+  opcoes: OpcoesOtimizacao,
+): Rota[] {
+  if (rotas.length < 2) return rotas;
+  let atuais = [...rotas];
+  let mexeu = true;
+  let voltas = 0;
+
+  while (mexeu && voltas < 4) {
+    mexeu = false;
+    voltas += 1;
+    const candidatas = atuais
+      .filter((r) => r.ocupacaoPeso < opcoes.ocupacaoMinima)
+      .sort((a, b) => a.ocupacaoPeso - b.ocupacaoPeso);
+
+    for (const ociosa of candidatas) {
+      const outras = atuais.filter((r) => r.id !== ociosa.id);
+      if (!outras.length) continue;
+      const entregas = ociosa.paradas.map((p) => p.entrega).filter(temCoordenada);
+
+      // simula a realocação completa antes de aplicar
+      const destinos = new Map<string, (Entrega & Coordenada)[]>();
+      outras.forEach((r) => destinos.set(r.id, r.paradas.map((p) => p.entrega).filter(temCoordenada)));
+      const pesos = new Map(outras.map((r) => [r.id, r.pesoKg]));
+      const volumes = new Map(outras.map((r) => [r.id, r.volumeM3]));
+      let coube = true;
+
+      for (const bruta of entregas) {
+        const e = { ...bruta, origemAlocacao: "consolidacao" as const };
+        let alvoId = "";
+        let alvoPos = 0;
+        let melhorDelta = Infinity;
+        for (const r of outras) {
+          const seq = destinos.get(r.id)!;
+          if ((pesos.get(r.id) ?? 0) + e.pesoKg > r.veiculo.capacidadeKg) continue;
+          if (
+            !opcoes.ignorarCubagem &&
+            (volumes.get(r.id) ?? 0) + (e.volumeM3 ?? 0) > r.veiculo.capacidadeM3
+          )
+            continue;
+          if (r.veiculo.maxEntregas && seq.length >= r.veiculo.maxEntregas) continue;
+          const { posicao, delta } = melhorInsercao(seq, e, r.deposito ?? deposito);
+          if (delta < melhorDelta) {
+            melhorDelta = delta;
+            alvoId = r.id;
+            alvoPos = posicao;
+          }
+        }
+        if (!alvoId) {
+          coube = false;
+          break;
+        }
+        destinos.get(alvoId)!.splice(alvoPos, 0, e);
+        pesos.set(alvoId, (pesos.get(alvoId) ?? 0) + e.pesoKg);
+        volumes.set(alvoId, (volumes.get(alvoId) ?? 0) + (e.volumeM3 ?? 0));
+      }
+
+      if (!coube) continue;
+
+      atuais = outras.map((r) => {
+        const seq = destinos.get(r.id)!;
+        if (seq.length === r.paradas.length) return r;
+        const nova = montarRotaComSequencia(r.id, r.veiculo, seq, r.deposito ?? deposito, jornada);
+        return { ...nova, rotulo: r.rotulo };
+      });
+      mexeu = true;
+      break;
+    }
+  }
+
+  return atuais;
+}
+
 
 type Estrategia = {
   id: TipoCenario;
