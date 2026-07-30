@@ -205,7 +205,7 @@ export function montarRota(
     volumeM3: cluster.volumeM3,
     ocupacaoPeso: veiculo.capacidadeKg ? cluster.pesoKg / veiculo.capacidadeKg : 0,
     custo: calcularCusto(veiculo, km, minutos),
-    receita: cluster.entregas.reduce((s, e) => s + (e.receita ?? 0), 0),
+    receita: 0,
     alertasJornada: [],
   };
   rota.alertasJornada = avaliarJornada(rota, jornada);
