@@ -5,6 +5,7 @@ import type {
   Coordenada,
   Deposito,
   Entrega,
+  OpcoesOtimizacao,
   PerfilVeiculo,
   RegrasJornada,
   Rota,
@@ -46,13 +47,14 @@ export type EntradaPlano = {
   depositos: Deposito[];
   frota: PerfilVeiculo[];
   jornada: RegrasJornada;
+  opcoes?: Partial<OpcoesOtimizacao>;
 };
 
 /**
  * Distribui as entregas entre os veículos considerando múltiplos CDs:
  * cada CD roda a simulação de cenários e o cenário recomendado é consolidado.
  */
-export function gerarPlano({ entregas, depositos, frota, jornada }: EntradaPlano): Plano {
+export function gerarPlano({ entregas, depositos, frota, jornada, opcoes }: EntradaPlano): Plano {
   const comCd = associarDepositos(entregas, depositos);
   const rotas: Rota[] = [];
   const naoAtendidas: Entrega[] = [];
@@ -65,6 +67,7 @@ export function gerarPlano({ entregas, depositos, frota, jornada }: EntradaPlano
       deposito: cd,
       frota,
       jornada,
+      opcoes,
     });
     const escolhido = cenarios.find((c) => c.id === recomendado) ?? cenarios[0];
     if (!escolhido) continue;
@@ -131,7 +134,7 @@ export function moverEntrega(
     if (pendente && temCoordenada(pendente)) entrega = pendente;
   }
   if (!entrega) return plano;
-  const alvo = entrega;
+  const alvo: EntregaGeo = { ...entrega, origemAlocacao: "manual" };
   return {
     ...plano,
     naoAtendidas: plano.naoAtendidas.filter((e) => e.id !== entregaId),
