@@ -2,9 +2,6 @@ import { distanciaKm, temCoordenada } from "./geo";
 import { custoPorKm, ORDEM_CATEGORIAS } from "./frota";
 import { avaliarJornada, pausasObrigatoriasMin } from "./jornada";
 import {
-  agruparPorSetor,
-  escolherVeiculo,
-  kmDaSequencia,
   melhorInsercao,
   montarSequenciaPorPeso,
   refinar2opt,
