@@ -64,7 +64,13 @@ import {
 } from "@/lib/roteirizacao/exportar";
 import { brl, duracao, num, pct } from "@/lib/roteirizacao/format";
 import { kg } from "@/lib/roteirizacao/parse";
-import type { Deposito, Entrega, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
+import type {
+  Deposito,
+  Entrega,
+  OpcoesOtimizacao,
+  PerfilVeiculo,
+  RegrasJornada,
+} from "@/lib/roteirizacao/tipos";
 
 export const Route = createFileRoute("/_authenticated/app/roteirizador")({
   head: () => ({
