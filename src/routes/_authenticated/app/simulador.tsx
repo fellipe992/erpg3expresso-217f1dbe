@@ -341,8 +341,9 @@ function PlanejadorPage() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_1fr]">
-        <div className="space-y-4">
+      <div className="grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4">
+
           <Card className="space-y-4 p-4">
             <div className="space-y-2">
               <Label className="text-xs">Origem</Label>
@@ -388,7 +389,7 @@ function PlanejadorPage() {
 
             <div className="space-y-2">
               <Label className="text-xs">Tipo de veículo</Label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {VEICULOS.map((v) => {
                   const Icon = v.icon;
                   const ativo = tipoVeiculo === v.id;
@@ -403,14 +404,15 @@ function PlanejadorPage() {
                         setEixos(v.eixos);
                       }}
                       className={cn(
-                        "flex flex-col items-center gap-1 rounded-lg border p-2 text-[10px] transition",
+                        "flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 text-[10px] transition",
                         ativo
                           ? "border-brand bg-brand-subtle text-brand"
                           : "border-border text-muted-foreground hover:border-brand/50",
                       )}
                     >
-                      <Icon className="size-5" />
-                      {v.nome.split(" ")[0]}
+                      <Icon className="size-5 shrink-0" />
+                      <span className="w-full truncate text-center">{v.nome.split(" ")[0]}</span>
+
                     </button>
                   );
                 })}
@@ -525,7 +527,7 @@ function PlanejadorPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <MapaRota polyline={resultado?.polyline ?? ""} pontos={pontos} />
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
