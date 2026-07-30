@@ -1,10 +1,12 @@
-import { distanciaKm } from "./geo";
+import { distanciaKm, temCoordenada } from "./geo";
 import { custoPorKm, ORDEM_CATEGORIAS } from "./frota";
 import { avaliarJornada, pausasObrigatoriasMin } from "./jornada";
 import {
   agruparPorSetor,
   escolherVeiculo,
   kmDaSequencia,
+  melhorInsercao,
+  montarSequenciaPorPeso,
   refinar2opt,
   sequenciarComJanelas,
   sequenciarVizinhoProximo,
@@ -230,7 +232,7 @@ export function montarRotaComSequencia(
 
 function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenario {
   const { deposito, jornada } = entrada;
-  const entregas = somenteGeocodificadas(entrada.entregas);
+  const entregas = somenteGeocodificadas(entrada.entregas) as (Entrega & Coordenada)[];
   const frota = ordenarFrota(
     entrada.frota.filter((v) => v.disponiveis > 0),
     estrategia.preferencia,
@@ -256,7 +258,7 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
     return porCapacidade.find((v) => v.capacidadeKg >= pesoPendente) ?? porCapacidade[porCapacidade.length - 1];
   };
 
-  let pendentes = [...entregas];
+  let pendentes: (Entrega & Coordenada)[] = [...entregas];
   let indice = 0;
   while (pendentes.length) {
     const pesoPendente = pendentes.reduce((s, e) => s + e.pesoKg, 0);
