@@ -51,6 +51,9 @@ export function consolidarRotasOciosas(
   opcoes: OpcoesOtimizacao,
 ): Rota[] {
   if (rotas.length < 2) return rotas;
+  const raioConfigurado = opcoes.raioProximidadeKm && opcoes.raioProximidadeKm > 0
+    ? opcoes.raioProximidadeKm
+    : null;
   let atuais = [...rotas];
   let mexeu = true;
   let voltas = 0;
@@ -88,6 +91,11 @@ export function consolidarRotasOciosas(
           )
             continue;
           if (r.veiculo.maxEntregas && seq.length >= r.veiculo.maxEntregas) continue;
+          if (raioConfigurado) {
+            let dMin = Infinity;
+            for (const s of seq) dMin = Math.min(dMin, distanciaKm(s, e));
+            if (seq.length && dMin > raioConfigurado) continue;
+          }
           const { posicao, delta } = melhorInsercao(seq, e, r.deposito ?? deposito);
           if (delta < melhorDelta) {
             melhorDelta = delta;
@@ -365,7 +373,10 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
   const dispersao = comRegiao
     .map((e) => distanciaKm(centro, e))
     .sort((a, b) => a - b)[Math.floor(comRegiao.length / 2)] ?? 0;
-  const raioVizinhoKm = Math.max(2, dispersao * 0.45);
+  const raioVizinhoKm =
+    opcoes.raioProximidadeKm && opcoes.raioProximidadeKm > 0
+      ? opcoes.raioProximidadeKm
+      : Math.max(2, dispersao * 0.45);
 
   /** Puxa entregas de outras zonas que estejam próximas da rota e caibam no peso. */
   const puxarVizinhos = (

@@ -58,6 +58,11 @@ export type OpcoesOtimizacao = {
   consolidarRotas: boolean;
   /** ocupação de peso mínima aceitável (0-1) antes de tentar dissolver a rota */
   ocupacaoMinima: number;
+  /**
+   * Raio (km) usado para puxar entregas de zonas vizinhas e para consolidar
+   * rotas próximas. `null`/0 = calculado automaticamente pela dispersão da malha.
+   */
+  raioProximidadeKm: number | null;
 };
 
 export type CategoriaVeiculo =

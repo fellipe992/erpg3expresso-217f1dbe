@@ -217,6 +217,28 @@ export function FrotaPanel({
           </p>
         </div>
 
+        <div className="space-y-1">
+          <Label className="text-xs">Raio de proximidade (km)</Label>
+          <Input
+            inputMode="decimal"
+            placeholder="Automático"
+            value={opcoes.raioProximidadeKm ?? ""}
+            onChange={(e) => {
+              const bruto = e.target.value.replace(",", ".");
+              const n = Number(bruto);
+              onOpcoes({
+                ...opcoes,
+                raioProximidadeKm: bruto === "" || !Number.isFinite(n) || n <= 0 ? null : n,
+              });
+            }}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Distância máxima para classificar uma entrega como “proximidade” (puxada de outra zona) e
+            para realocar entregas entre rotas próximas na consolidação. Vazio = calculado
+            automaticamente pela dispersão da malha.
+          </p>
+        </div>
+
         <Button variant="ghost" size="sm" onClick={() => onOpcoes({ ...OPCOES_OTIMIZACAO_PADRAO })}>
           Restaurar padrão
         </Button>
