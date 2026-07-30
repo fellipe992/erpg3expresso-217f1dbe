@@ -14,6 +14,7 @@ import {
 } from "./otimizador";
 import type {
   Cenario,
+  Coordenada,
   CustoDetalhado,
   Deposito,
   Entrega,
