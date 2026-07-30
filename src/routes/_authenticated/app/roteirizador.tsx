@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -53,7 +52,6 @@ import {
   moverEntrega,
   otimizarRota,
   planoVazio,
-  removerEntrega,
   totaisPlano,
   type Plano,
 } from "@/lib/roteirizacao/plano";
@@ -446,15 +444,6 @@ function RoteirizadorPage() {
         onImportar={(novas) => definirEntregas([...entregas, ...novas])}
       />
 
-      <Label className="sr-only" htmlFor="remover-entrega-atalho">
-        Ações de entrega
-      </Label>
-      <button
-        id="remover-entrega-atalho"
-        type="button"
-        className="hidden"
-        onClick={() => selecionada && setPlano((p) => removerEntrega(p, selecionada, jornada))}
-      />
     </div>
   );
 }
