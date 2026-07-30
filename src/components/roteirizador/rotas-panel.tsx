@@ -11,7 +11,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { corDaRota } from "@/lib/roteirizacao/regioes";
-import { brl, tempo } from "@/lib/roteirizacao/format";
+import { brl, duracao } from "@/lib/roteirizacao/format";
 import { kg, minutosParaHora } from "@/lib/roteirizacao/parse";
 import type { Plano } from "@/lib/roteirizacao/plano";
 import type { Entrega } from "@/lib/roteirizacao/tipos";
@@ -92,7 +92,7 @@ export function RotasPanel({
                     <Badge variant="outline" className="text-[10px]">{r.paradas.length} paradas</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {r.km.toFixed(1)} km · {tempo(r.minutos)} · {brl(r.custo.total)}
+                    {r.km.toFixed(1)} km · {duracao(r.minutos)} · {brl(r.custo.total)}
                     {r.deposito ? ` · ${r.deposito.nome}` : ""}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
