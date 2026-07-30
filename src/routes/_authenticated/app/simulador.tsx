@@ -389,7 +389,7 @@ function PlanejadorPage() {
 
             <div className="space-y-2">
               <Label className="text-xs">Tipo de veículo</Label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {VEICULOS.map((v) => {
                   const Icon = v.icon;
                   const ativo = tipoVeiculo === v.id;
