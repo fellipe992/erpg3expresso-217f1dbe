@@ -1,4 +1,5 @@
-import { distanciaKm, temCoordenada } from "./geo";
+import { centroide, distanciaKm, temCoordenada } from "./geo";
+import { identificarRegioes } from "./regioes";
 import { custoPorKm, ORDEM_CATEGORIAS } from "./frota";
 import { avaliarJornada, pausasObrigatoriasMin } from "./jornada";
 import {
@@ -255,44 +256,126 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
     return porCapacidade.find((v) => v.capacidadeKg >= pesoPendente) ?? porCapacidade[porCapacidade.length - 1];
   };
 
-  let pendentes: (Entrega & Coordenada)[] = [...entregas];
-  let indice = 0;
-  while (pendentes.length) {
-    const pesoPendente = pendentes.reduce((s, e) => s + e.pesoKg, 0);
-    const veiculo = escolherParaLote(pesoPendente);
-    if (!veiculo) break;
-    // o cenário de "menor tempo" espalha a carga; os demais enchem o veículo
-    const fator = estrategia.id === "tempo" ? estrategia.ocupacaoAlvo : 1;
-    const limiteKg = Math.max(
-      Math.min(...pendentes.map((e) => e.pesoKg)),
-      veiculo.capacidadeKg * fator,
-    );
-    const { seq, restantes } = montarSequenciaPorPeso(
-      pendentes,
-      deposito,
-      Math.min(limiteKg, veiculo.capacidadeKg),
-      veiculo.maxEntregas,
-    );
-    if (!seq.length) break;
-    usados[veiculo.id] = (usados[veiculo.id] ?? 0) + 1;
-    indice += 1;
-    const cluster: Cluster = {
-      entregas: seq,
-      pesoKg: seq.reduce((s, e) => s + e.pesoKg, 0),
-      volumeM3: seq.reduce((s, e) => s + (e.volumeM3 ?? 0), 0),
-    };
-    rotas.push(
-      montarRota(
-        `${estrategia.id}-${indice}`,
-        veiculo,
-        cluster,
-        deposito,
-        jornada,
-        estrategia.passadas2opt,
-      ),
-    );
-    pendentes = restantes;
+  /**
+   * Zoneamento: as entregas são agrupadas por região (Norte, Sul, Leste,
+   * Oeste, Centro) e cada zona é lotada por peso antes de passar à próxima.
+   */
+  const comRegiao = entregas.some((e) => e.regiaoCodigo)
+    ? entregas
+    : identificarRegioes(entregas);
+
+  const pools = new Map<string, (Entrega & Coordenada)[]>();
+  for (const e of comRegiao) {
+    const chave = e.regiaoCodigo ?? "sem_zona";
+    const lista = pools.get(chave) ?? [];
+    lista.push(e);
+    pools.set(chave, lista);
   }
+  const pesoDe = (lista: (Entrega & Coordenada)[]) => lista.reduce((s, e) => s + e.pesoKg, 0);
+
+  // raio de vizinhança usado para redistribuir carga entre zonas limítrofes
+  const centro = centroide(comRegiao);
+  const dispersao = comRegiao
+    .map((e) => distanciaKm(centro, e))
+    .sort((a, b) => a - b)[Math.floor(comRegiao.length / 2)] ?? 0;
+  const raioVizinhoKm = Math.max(2, dispersao * 0.45);
+
+  /** Puxa entregas de outras zonas que estejam próximas da rota e caibam no peso. */
+  const puxarVizinhos = (
+    seq: (Entrega & Coordenada)[],
+    capacidadeRestante: number,
+    maxEntregas: number | undefined,
+    zonaAtual: string,
+  ) => {
+    let restante = capacidadeRestante;
+    for (;;) {
+      if (maxEntregas && seq.length >= maxEntregas) break;
+      let melhorZona = "";
+      let melhorIdx = -1;
+      let melhorPos = 0;
+      let melhorDelta = Infinity;
+      for (const [zona, lista] of pools) {
+        if (zona === zonaAtual) continue;
+        for (let i = 0; i < lista.length; i++) {
+          const e = lista[i];
+          if (e.pesoKg > restante) continue;
+          let dMin = Infinity;
+          for (const s of seq) dMin = Math.min(dMin, distanciaKm(s, e));
+          if (dMin > raioVizinhoKm) continue;
+          const { posicao, delta } = melhorInsercao(seq, e, deposito);
+          if (delta < melhorDelta) {
+            melhorDelta = delta;
+            melhorZona = zona;
+            melhorIdx = i;
+            melhorPos = posicao;
+          }
+        }
+      }
+      if (melhorIdx < 0) break;
+      const lista = pools.get(melhorZona);
+      if (!lista) break;
+      const [e] = lista.splice(melhorIdx, 1);
+      seq.splice(melhorPos, 0, e);
+      restante -= e.pesoKg;
+    }
+  };
+
+  let indice = 0;
+  let semVeiculo = false;
+  // zonas mais pesadas primeiro (consomem os veículos mais eficientes)
+  const zonas = [...pools.keys()].sort((a, b) => pesoDe(pools.get(b)!) - pesoDe(pools.get(a)!));
+
+  for (const zona of zonas) {
+    if (semVeiculo) break;
+    for (;;) {
+      const lista = pools.get(zona)!;
+      if (!lista.length) break;
+      const veiculo = escolherParaLote(pesoDe(lista));
+      if (!veiculo) {
+        semVeiculo = true;
+        break;
+      }
+      // o cenário de "menor tempo" espalha a carga; os demais enchem o veículo
+      const fator = estrategia.id === "tempo" ? estrategia.ocupacaoAlvo : 1;
+      const limiteKg = Math.min(
+        veiculo.capacidadeKg,
+        Math.max(Math.min(...lista.map((e) => e.pesoKg)), veiculo.capacidadeKg * fator),
+      );
+      const { seq, restantes } = montarSequenciaPorPeso(
+        lista,
+        deposito,
+        limiteKg,
+        veiculo.maxEntregas,
+      );
+      if (!seq.length) break;
+      pools.set(zona, restantes);
+
+      // redistribuição entre zonas: sobrou peso disponível? puxa vizinhos próximos
+      const pesoSeq = seq.reduce((s, e) => s + e.pesoKg, 0);
+      const folga = limiteKg - pesoSeq;
+      if (folga > veiculo.capacidadeKg * 0.08) puxarVizinhos(seq, folga, veiculo.maxEntregas, zona);
+
+      usados[veiculo.id] = (usados[veiculo.id] ?? 0) + 1;
+      indice += 1;
+      const cluster: Cluster = {
+        entregas: seq,
+        pesoKg: seq.reduce((s, e) => s + e.pesoKg, 0),
+        volumeM3: seq.reduce((s, e) => s + (e.volumeM3 ?? 0), 0),
+      };
+      rotas.push(
+        montarRota(
+          `${estrategia.id}-${indice}`,
+          veiculo,
+          cluster,
+          deposito,
+          jornada,
+          estrategia.passadas2opt,
+        ),
+      );
+    }
+  }
+
+  const pendentes: (Entrega & Coordenada)[] = [...pools.values()].flat();
 
   // Reaproveitamento: tenta encaixar sobras em rotas que ainda têm folga de peso.
   const naoAtendidas: Entrega[] = [];
