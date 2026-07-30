@@ -41,7 +41,7 @@ import { DashboardExecutivo } from "@/components/roteirizador/dashboard-executiv
 import { PainelIa } from "@/components/roteirizador/painel-ia";
 import { RastreamentoPanel } from "@/components/roteirizador/rastreamento-panel";
 
-import { FROTA_PADRAO, JORNADA_PADRAO } from "@/lib/roteirizacao/frota";
+import { FROTA_PADRAO, JORNADA_PADRAO, OPCOES_OTIMIZACAO_PADRAO } from "@/lib/roteirizacao/frota";
 import { identificarRegioes, resumirRegioes } from "@/lib/roteirizacao/regioes";
 import {
   cenarioDoPlano,
@@ -98,6 +98,7 @@ function RoteirizadorPage() {
     FROTA_PADRAO.map((v) => ({ ...v, custos: { ...v.custos } })),
   );
   const [jornada, setJornada] = useState<RegrasJornada>({ ...JORNADA_PADRAO });
+  const [opcoes, setOpcoes] = useState<OpcoesOtimizacao>({ ...OPCOES_OTIMIZACAO_PADRAO });
   const [plano, setPlano] = useState<Plano>(planoVazio);
   const [ocultas, setOcultas] = useState<Set<string>>(new Set());
   const [selecionada, setSelecionada] = useState<string | null>(null);
@@ -114,8 +115,8 @@ function RoteirizadorPage() {
   }, []);
 
   const dados: DadosProjeto = useMemo(
-    () => ({ depositos, entregas, frota, jornada, plano }),
-    [depositos, entregas, frota, jornada, plano],
+    () => ({ depositos, entregas, frota, jornada, opcoes, plano }),
+    [depositos, entregas, frota, jornada, opcoes, plano],
   );
 
   useEffect(() => {
@@ -140,7 +141,7 @@ function RoteirizadorPage() {
     setCalculando(true);
     setTimeout(() => {
       try {
-        const novo = gerarPlano({ entregas, depositos, frota, jornada });
+        const novo = gerarPlano({ entregas, depositos, frota, jornada, opcoes });
         setPlano(novo);
         setOcultas(new Set());
         setAba("rotas");
@@ -174,6 +175,7 @@ function RoteirizadorPage() {
     setEntregas(d.entregas ?? []);
     setFrota(d.frota ?? FROTA_PADRAO);
     setJornada(d.jornada ?? JORNADA_PADRAO);
+    setOpcoes(d.opcoes ?? { ...OPCOES_OTIMIZACAO_PADRAO });
     setPlano(d.plano ?? planoVazio());
     setAba("rotas");
     toast.success(`Projeto “${nome}” carregado`);
@@ -296,7 +298,14 @@ function RoteirizadorPage() {
                 <SheetTitle>Frota, custos e jornada</SheetTitle>
               </SheetHeader>
               <div className="mt-4">
-                <FrotaPanel frota={frota} onChange={setFrota} jornada={jornada} onJornada={setJornada} />
+                <FrotaPanel
+                  frota={frota}
+                  onChange={setFrota}
+                  jornada={jornada}
+                  onJornada={setJornada}
+                  opcoes={opcoes}
+                  onOpcoes={setOpcoes}
+                />
               </div>
             </SheetContent>
           </Sheet>

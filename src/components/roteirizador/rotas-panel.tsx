@@ -11,6 +11,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { corDaRota } from "@/lib/roteirizacao/regioes";
+import { ROTULO_ORIGEM } from "@/lib/roteirizacao/frota";
 import { brl, duracao } from "@/lib/roteirizacao/format";
 import { kg, minutosParaHora } from "@/lib/roteirizacao/parse";
 import type { Plano } from "@/lib/roteirizacao/plano";
@@ -68,6 +69,13 @@ export function RotasPanel({
       {plano.rotas.map((r) => {
         const cor = cores.get(r.id) ?? "#F15A24";
         const oculta = ocultas.has(r.id);
+        const folga = r.veiculo.capacidadeKg - r.pesoKg;
+        const porProximidade = r.paradas.filter(
+          (p) =>
+            p.entrega.origemAlocacao === "proximidade" ||
+            p.entrega.origemAlocacao === "sobra" ||
+            p.entrega.origemAlocacao === "consolidacao",
+        ).length;
         return (
           <Card
             key={r.id}
@@ -101,6 +109,13 @@ export function RotasPanel({
                       {(r.ocupacaoPeso * 100).toFixed(0)}% · {kg(r.pesoKg)}
                     </span>
                   </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Peso planejado {kg(r.pesoKg)} de {kg(r.veiculo.capacidadeKg)} · folga{" "}
+                    <span className={folga <= 0 ? "font-semibold text-destructive" : ""}>
+                      {kg(Math.max(0, folga))}
+                    </span>
+                    {porProximidade > 0 ? ` · ${porProximidade} por proximidade` : ""}
+                  </p>
                   {r.alertasJornada.length > 0 && (
                     <p className="mt-1 flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-400">
                       <AlertTriangle className="mt-0.5 size-3 shrink-0" />
@@ -156,6 +171,15 @@ export function RotasPanel({
                         </span>
                         <span className="block truncate text-muted-foreground">{p.entrega.endereco}</span>
                       </span>
+                      {p.entrega.origemAlocacao && p.entrega.origemAlocacao !== "zona" && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 text-[9px]"
+                          title="Como esta entrega foi alocada nesta rota"
+                        >
+                          {ROTULO_ORIGEM[p.entrega.origemAlocacao]}
+                        </Badge>
+                      )}
                       <span className="shrink-0 text-right text-muted-foreground">
                         <span className={`block ${p.atrasada ? "font-semibold text-destructive" : ""}`}>
                           {minutosParaHora(p.chegadaMin)}
