@@ -341,8 +341,9 @@ function PlanejadorPage() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_1fr]">
-        <div className="space-y-4">
+      <div className="grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4">
+
           <Card className="space-y-4 p-4">
             <div className="space-y-2">
               <Label className="text-xs">Origem</Label>
