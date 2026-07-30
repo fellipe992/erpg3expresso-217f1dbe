@@ -21,6 +21,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
+import { Route as AuthenticatedAppRoteirizadorRouteImport } from './routes/_authenticated/app/roteirizador'
 import { Route as AuthenticatedAppRentabilidadeRouteImport } from './routes/_authenticated/app/rentabilidade'
 import { Route as AuthenticatedAppRelatoriosRouteImport } from './routes/_authenticated/app/relatorios'
 import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
@@ -105,6 +106,12 @@ const AuthenticatedAppSimuladorRoute =
   AuthenticatedAppSimuladorRouteImport.update({
     id: '/app/simulador',
     path: '/app/simulador',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppRoteirizadorRoute =
+  AuthenticatedAppRoteirizadorRouteImport.update({
+    id: '/app/roteirizador',
+    path: '/app/roteirizador',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppRentabilidadeRoute =
@@ -269,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -305,6 +313,7 @@ export interface FileRoutesByTo {
   '/app/receber': typeof AuthenticatedAppReceberRoute
   '/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -343,6 +352,7 @@ export interface FileRoutesById {
   '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
   '/_authenticated/app/relatorios': typeof AuthenticatedAppRelatoriosRoute
   '/_authenticated/app/rentabilidade': typeof AuthenticatedAppRentabilidadeRoute
+  '/_authenticated/app/roteirizador': typeof AuthenticatedAppRoteirizadorRoute
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/app/receber'
     | '/app/relatorios'
     | '/app/rentabilidade'
+    | '/app/roteirizador'
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/app/receber'
     | '/app/relatorios'
     | '/app/rentabilidade'
+    | '/app/roteirizador'
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
@@ -454,6 +466,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/receber'
     | '/_authenticated/app/relatorios'
     | '/_authenticated/app/rentabilidade'
+    | '/_authenticated/app/roteirizador'
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
@@ -558,6 +571,13 @@ declare module '@tanstack/react-router' {
       path: '/app/simulador'
       fullPath: '/app/simulador'
       preLoaderRoute: typeof AuthenticatedAppSimuladorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/roteirizador': {
+      id: '/_authenticated/app/roteirizador'
+      path: '/app/roteirizador'
+      fullPath: '/app/roteirizador'
+      preLoaderRoute: typeof AuthenticatedAppRoteirizadorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/rentabilidade': {
@@ -745,6 +765,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
   AuthenticatedAppRelatoriosRoute: typeof AuthenticatedAppRelatoriosRoute
   AuthenticatedAppRentabilidadeRoute: typeof AuthenticatedAppRentabilidadeRoute
+  AuthenticatedAppRoteirizadorRoute: typeof AuthenticatedAppRoteirizadorRoute
   AuthenticatedAppSimuladorRoute: typeof AuthenticatedAppSimuladorRoute
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
@@ -775,6 +796,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,
   AuthenticatedAppRelatoriosRoute: AuthenticatedAppRelatoriosRoute,
   AuthenticatedAppRentabilidadeRoute: AuthenticatedAppRentabilidadeRoute,
+  AuthenticatedAppRoteirizadorRoute: AuthenticatedAppRoteirizadorRoute,
   AuthenticatedAppSimuladorRoute: AuthenticatedAppSimuladorRoute,
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
