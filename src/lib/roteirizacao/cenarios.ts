@@ -51,6 +51,9 @@ export function consolidarRotasOciosas(
   opcoes: OpcoesOtimizacao,
 ): Rota[] {
   if (rotas.length < 2) return rotas;
+  const raioConfigurado = opcoes.raioProximidadeKm && opcoes.raioProximidadeKm > 0
+    ? opcoes.raioProximidadeKm
+    : null;
   let atuais = [...rotas];
   let mexeu = true;
   let voltas = 0;
