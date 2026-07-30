@@ -404,14 +404,15 @@ function PlanejadorPage() {
                         setEixos(v.eixos);
                       }}
                       className={cn(
-                        "flex flex-col items-center gap-1 rounded-lg border p-2 text-[10px] transition",
+                        "flex min-w-0 flex-col items-center gap-1 rounded-lg border p-2 text-[10px] transition",
                         ativo
                           ? "border-brand bg-brand-subtle text-brand"
                           : "border-border text-muted-foreground hover:border-brand/50",
                       )}
                     >
-                      <Icon className="size-5" />
-                      {v.nome.split(" ")[0]}
+                      <Icon className="size-5 shrink-0" />
+                      <span className="w-full truncate text-center">{v.nome.split(" ")[0]}</span>
+
                     </button>
                   );
                 })}
