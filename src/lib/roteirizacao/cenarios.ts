@@ -379,12 +379,14 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
 
   // Reaproveitamento: tenta encaixar sobras em rotas que ainda têm folga de peso.
   const naoAtendidas: Entrega[] = [];
-  for (const e of pendentes) {
+  for (const bruta of pendentes) {
+    const e = { ...bruta, origemAlocacao: "sobra" as const };
     let melhorIdx = -1;
     let melhorPos = 0;
     let melhorDelta = Infinity;
     rotas.forEach((r, i) => {
       if (r.pesoKg + e.pesoKg > r.veiculo.capacidadeKg) return;
+      if (!opcoes.ignorarCubagem && r.volumeM3 + (e.volumeM3 ?? 0) > r.veiculo.capacidadeM3) return;
       if (r.veiculo.maxEntregas && r.paradas.length >= r.veiculo.maxEntregas) return;
       const seq = r.paradas.map((p) => p.entrega).filter(temCoordenada);
       const { posicao, delta } = melhorInsercao(seq, e, r.deposito ?? deposito);
@@ -395,7 +397,7 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
       }
     });
     if (melhorIdx < 0) {
-      naoAtendidas.push(e);
+      naoAtendidas.push(bruta);
       continue;
     }
     const alvo = rotas[melhorIdx];
