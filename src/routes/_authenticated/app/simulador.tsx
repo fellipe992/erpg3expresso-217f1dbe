@@ -527,7 +527,7 @@ function PlanejadorPage() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <MapaRota polyline={resultado?.polyline ?? ""} pontos={pontos} />
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
