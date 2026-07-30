@@ -1,24 +1,72 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Loader2, Play } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Download,
+  FolderOpen,
+  Loader2,
+  Printer,
+  Route as RouteIcon,
+  Save,
+  Settings2,
+  Sparkles,
+  Trash2,
+  Truck,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
-import { Card } from "@/components/ui/card";
+import { useProjetosRoteirizacao, type DadosProjeto } from "@/hooks/use-projetos-roteirizacao";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import { DepositosPanel } from "@/components/roteirizador/depositos-panel";
 import { EntregasPanel } from "@/components/roteirizador/entregas-panel";
 import { FrotaPanel } from "@/components/roteirizador/frota-panel";
-import { ComparadorCenarios } from "@/components/roteirizador/comparador-cenarios";
+import { ImportarEntregasDialog } from "@/components/roteirizador/importar-entregas-dialog";
+import { MapaRoteirizador } from "@/components/roteirizador/mapa-roteirizador";
+import { RotasPanel } from "@/components/roteirizador/rotas-panel";
 import { DashboardExecutivo } from "@/components/roteirizador/dashboard-executivo";
 import { PainelIa } from "@/components/roteirizador/painel-ia";
 import { RastreamentoPanel } from "@/components/roteirizador/rastreamento-panel";
+
 import { FROTA_PADRAO, JORNADA_PADRAO } from "@/lib/roteirizacao/frota";
-import { simularCenarios } from "@/lib/roteirizacao/cenarios";
+import { identificarRegioes, resumirRegioes } from "@/lib/roteirizacao/regioes";
+import {
+  cenarioDoPlano,
+  dividirRota,
+  excluirRota,
+  gerarPlano,
+  mesclarRotas,
+  moverEntrega,
+  otimizarRota,
+  planoVazio,
+  removerEntrega,
+  totaisPlano,
+  type Plano,
+} from "@/lib/roteirizacao/plano";
 import { analisarCenario, aplicarSugestao, type Sugestao } from "@/lib/roteirizacao/ia";
-import type { Cenario, Deposito, Entrega, PerfilVeiculo, RegrasJornada, TipoCenario } from "@/lib/roteirizacao/tipos";
+import {
+  exportarCarregamento,
+  exportarResumo,
+  exportarSequencia,
+  imprimirRoteiro,
+} from "@/lib/roteirizacao/exportar";
+import { brl, duracao, num, pct } from "@/lib/roteirizacao/format";
+import { kg } from "@/lib/roteirizacao/parse";
+import type { Deposito, Entrega, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
 
 export const Route = createFileRoute("/_authenticated/app/roteirizador")({
   head: () => ({
@@ -27,12 +75,12 @@ export const Route = createFileRoute("/_authenticated/app/roteirizador")({
       {
         name: "description",
         content:
-          "Gere cenários de roteirização, compare custo, tempo, ocupação e quilometragem e aplique o melhor plano de entregas da frota.",
+          "Monte a malha de entregas no mapa, distribua a frota automaticamente, ajuste rotas manualmente e exporte roteiro e mapa de carregamento.",
       },
       { property: "og:title", content: "Roteirizador inteligente — G3 Expresso" },
       {
         property: "og:description",
-        content: "Simulação de cenários, custos operacionais, KPIs logísticos e recomendações automáticas.",
+        content: "Mapa protagonista, regiões automáticas, edição manual de rotas e projetos salvos.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -45,75 +93,109 @@ function RoteirizadorPage() {
   const { role } = useAuth();
   const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
 
+  const [nomeProjeto, setNomeProjeto] = useState("Roteirização do dia");
+  const [depositos, setDepositos] = useState<Deposito[]>([]);
   const [entregas, setEntregas] = useState<Entrega[]>([]);
-  const [deposito, setDeposito] = useState<Deposito | null>(null);
   const [frota, setFrota] = useState<PerfilVeiculo[]>(() =>
     FROTA_PADRAO.map((v) => ({ ...v, custos: { ...v.custos } })),
   );
   const [jornada, setJornada] = useState<RegrasJornada>({ ...JORNADA_PADRAO });
-  const [receita, setReceita] = useState("");
-  const [impostoPct, setImpostoPct] = useState("8");
-  const [adminPct, setAdminPct] = useState("5");
-
-  const [cenarios, setCenarios] = useState<Cenario[]>([]);
-  const [selecionado, setSelecionado] = useState<TipoCenario | null>(null);
-  const [aplicado, setAplicado] = useState<Cenario | null>(null);
+  const [plano, setPlano] = useState<Plano>(planoVazio);
+  const [ocultas, setOcultas] = useState<Set<string>>(new Set());
+  const [selecionada, setSelecionada] = useState<string | null>(null);
+  const [importando, setImportando] = useState(false);
   const [calculando, setCalculando] = useState(false);
   const [aba, setAba] = useState("entregas");
+  const carregandoProjeto = useRef(false);
 
-  const cenarioAtual = useMemo(
-    () => aplicado ?? cenarios.find((c) => c.id === selecionado) ?? cenarios.find((c) => c.recomendado) ?? null,
-    [aplicado, cenarios, selecionado],
+  const { projetos, projetoId, criar, salvar, autoSalvar, carregar, excluir, salvando, salvoEm } =
+    useProjetosRoteirizacao();
+
+  const definirEntregas = useCallback((lista: Entrega[]) => {
+    setEntregas(identificarRegioes(lista));
+  }, []);
+
+  const dados: DadosProjeto = useMemo(
+    () => ({ depositos, entregas, frota, jornada, plano }),
+    [depositos, entregas, frota, jornada, plano],
   );
 
+  useEffect(() => {
+    if (carregandoProjeto.current) {
+      carregandoProjeto.current = false;
+      return;
+    }
+    autoSalvar(dados);
+  }, [dados, autoSalvar]);
+
+  const totais = useMemo(() => totaisPlano(plano), [plano]);
+  const regioes = useMemo(() => resumirRegioes(entregas), [entregas]);
+  const cenario = useMemo(() => cenarioDoPlano(plano), [plano]);
   const sugestoes = useMemo(
-    () => (cenarioAtual ? analisarCenario(cenarioAtual, cenarios, jornada) : []),
-    [cenarioAtual, cenarios, jornada],
+    () => (plano.rotas.length ? analisarCenario(cenario, [cenario], jornada) : []),
+    [cenario, jornada, plano.rotas.length],
   );
 
-  const baseline = useMemo(
-    () => (cenarios.length ? cenarios.reduce((a, b) => (b.custo > a.custo ? b : a)) : undefined),
-    [cenarios],
-  );
-
-  const gerar = () => {
-    if (!deposito) return toast.error("Defina a base de saída antes de simular");
+  const roteirizar = () => {
+    if (!depositos.length) return toast.error("Cadastre ao menos um centro de distribuição");
     if (entregas.length < 2) return toast.error("Adicione ao menos 2 entregas");
     setCalculando(true);
     setTimeout(() => {
       try {
-        const { cenarios: gerados, recomendado } = simularCenarios({
-          entregas,
-          deposito,
-          frota,
-          jornada,
-          receitaTotal: receita ? Number(receita) : undefined,
+        const novo = gerarPlano({ entregas, depositos, frota, jornada });
+        setPlano(novo);
+        setOcultas(new Set());
+        setAba("rotas");
+        toast.success("Malha roteirizada", {
+          description: `${novo.rotas.length} rota(s) · ${totaisPlano(novo).km.toFixed(0)} km`,
         });
-        setCenarios(gerados);
-        setSelecionado(recomendado);
-        setAplicado(null);
-        setAba("cenarios");
-        toast.success("Cenários gerados", { description: `Recomendado: ${gerados.find((c) => c.recomendado)?.nome}` });
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao simular cenários");
+        toast.error(e instanceof Error ? e.message : "Falha ao roteirizar");
       } finally {
         setCalculando(false);
       }
     }, 30);
   };
 
-  const onAplicarSugestao = (s: Sugestao) => {
-    if (!cenarioAtual || !deposito) return;
-    if (s.acao?.tipo === "trocar_cenario") {
-      setSelecionado(s.acao.alvo);
-      setAplicado(null);
-      toast.success("Cenário alternativo selecionado");
+  const salvarProjeto = async () => {
+    if (projetoId) {
+      await salvar(dados, nomeProjeto);
+      toast.success("Projeto salvo");
       return;
     }
-    const novo = aplicarSugestao(cenarioAtual, s, { deposito, jornada });
-    setAplicado(novo);
-    toast.success("Melhoria aplicada à roteirização");
+    const id = await criar(nomeProjeto, dados);
+    if (id) toast.success("Projeto criado — alterações salvas automaticamente");
   };
+
+  const abrirProjeto = async (id: string, nome: string) => {
+    const d = await carregar(id);
+    if (!d) return;
+    carregandoProjeto.current = true;
+    setNomeProjeto(nome);
+    setDepositos(d.depositos ?? []);
+    setEntregas(d.entregas ?? []);
+    setFrota(d.frota ?? FROTA_PADRAO);
+    setJornada(d.jornada ?? JORNADA_PADRAO);
+    setPlano(d.plano ?? planoVazio());
+    setAba("rotas");
+    toast.success(`Projeto “${nome}” carregado`);
+  };
+
+  const onAplicarSugestao = (s: Sugestao) => {
+    const cd = plano.rotas[0]?.deposito ?? depositos[0];
+    if (!cd) return;
+    const novo = aplicarSugestao(cenario, s, { deposito: cd, jornada });
+    setPlano((p) => ({ ...p, rotas: novo.rotas, naoAtendidas: novo.entregasNaoAtendidas }));
+    toast.success("Melhoria aplicada");
+  };
+
+  const toggleVisibilidade = (rotaId: string) =>
+    setOcultas((s) => {
+      const novo = new Set(s);
+      if (novo.has(rotaId)) novo.delete(rotaId);
+      else novo.add(rotaId);
+      return novo;
+    });
 
   if (!isStaff) {
     return (
@@ -124,108 +206,255 @@ function RoteirizadorPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+    <div className="space-y-4">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-[220px] flex-1">
           <h1 className="text-2xl font-semibold">Roteirizador inteligente</h1>
-          <p className="text-sm text-muted-foreground">
-            Simule cenários de distribuição, compare custo, tempo e ocupação e aplique o melhor plano.
-          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <Input
+              value={nomeProjeto}
+              onChange={(e) => setNomeProjeto(e.target.value)}
+              className="h-8 max-w-xs text-sm"
+              aria-label="Nome do projeto"
+            />
+            <span className="text-xs text-muted-foreground">
+              {salvando ? "Salvando…" : salvoEm ? `Salvo ${new Date(salvoEm).toLocaleTimeString("pt-BR")}` : "Não salvo"}
+            </span>
+          </div>
         </div>
-        <Button onClick={gerar} disabled={calculando}>
-          {calculando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-          Simular cenários
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FolderOpen className="mr-2 size-4" /> Projetos
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              <DropdownMenuLabel>Projetos salvos</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {projetos.length === 0 && (
+                <DropdownMenuItem disabled>Nenhum projeto salvo</DropdownMenuItem>
+              )}
+              {projetos.map((p) => (
+                <DropdownMenuItem
+                  key={p.id}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    void abrirProjeto(p.id, p.nome);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <span className="min-w-0 flex-1 truncate">{p.nome}</span>
+                  <Trash2
+                    className="size-3.5 text-muted-foreground hover:text-destructive"
+                    role="button"
+                    aria-label={`Excluir ${p.nome}`}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      void excluir(p.id);
+                    }}
+                  />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="outline" size="sm" onClick={salvarProjeto}>
+            <Save className="mr-2 size-4" /> Salvar
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={!plano.rotas.length}>
+                <Download className="mr-2 size-4" /> Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => exportarSequencia(plano, nomeProjeto)}>
+                Sequência de entregas (Excel)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => exportarCarregamento(plano, nomeProjeto)}>
+                Mapa de carregamento (Excel)
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => exportarResumo(plano, nomeProjeto)}>
+                Resumo gerencial (Excel)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => imprimirRoteiro(plano, nomeProjeto)}>
+                <Printer className="mr-2 size-4" /> Roteiro para impressão / PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings2 className="mr-2 size-4" /> Frota e custos
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-3xl">
+              <SheetHeader>
+                <SheetTitle>Frota, custos e jornada</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4">
+                <FrotaPanel frota={frota} onChange={setFrota} jornada={jornada} onJornada={setJornada} />
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Button onClick={roteirizar} disabled={calculando}>
+            {calculando ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <RouteIcon className="mr-2 size-4" />
+            )}
+            Roteirizar
+          </Button>
+        </div>
       </header>
 
-      <Tabs value={aba} onValueChange={setAba}>
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="entregas">Entregas</TabsTrigger>
-          <TabsTrigger value="frota">Frota e custos</TabsTrigger>
-          <TabsTrigger value="cenarios">Cenários</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard executivo</TabsTrigger>
-          <TabsTrigger value="rastreamento">Execução</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="entregas" className="mt-4 space-y-4">
-          <EntregasPanel
-            entregas={entregas}
-            onChange={setEntregas}
-            deposito={deposito}
-            onDeposito={setDeposito}
-          />
-          <Card className="grid gap-3 p-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Receita prevista total (R$)</Label>
-              <Input inputMode="decimal" value={receita} onChange={(e) => setReceita(e.target.value)} placeholder="Opcional se informada por entrega" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Impostos sobre receita (%)</Label>
-              <Input inputMode="decimal" value={impostoPct} onChange={(e) => setImpostoPct(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Rateio administrativo (%)</Label>
-              <Input inputMode="decimal" value={adminPct} onChange={(e) => setAdminPct(e.target.value)} />
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="frota" className="mt-4">
-          <FrotaPanel frota={frota} onChange={setFrota} jornada={jornada} onJornada={setJornada} />
-        </TabsContent>
-
-        <TabsContent value="cenarios" className="mt-4 space-y-4">
-          {cenarios.length === 0 ? (
-            <Card className="p-10 text-center text-sm text-muted-foreground">
-              Cadastre as entregas e clique em “Simular cenários”.
+      {plano.rotas.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
+          {[
+            ["Veículos", num(totais.veiculos)],
+            ["Entregas", num(totais.entregas)],
+            ["Distância", `${num(totais.km)} km`],
+            ["Operação", duracao(totais.minutosOperacao)],
+            ["Ocupação média", pct(totais.ocupacaoMedia)],
+            ["Custo total", brl(totais.custo)],
+          ].map(([label, valor]) => (
+            <Card key={label} className="p-3">
+              <p className="text-[11px] text-muted-foreground">{label}</p>
+              <p className="text-base font-semibold">{valor}</p>
             </Card>
-          ) : (
-            <>
-              <ComparadorCenarios
-                cenarios={cenarios}
-                selecionado={cenarioAtual?.id ?? null}
-                onSelecionar={(id) => {
-                  setSelecionado(id);
-                  setAplicado(null);
-                }}
-                onAplicar={(c) => {
-                  setSelecionado(c.id);
-                  setAplicado(c);
-                  setAba("dashboard");
-                  toast.success(`Cenário "${c.nome}" aplicado`);
-                }}
+          ))}
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(320px,32%)_1fr]">
+        <div className="order-2 space-y-3 lg:order-1">
+          <Tabs value={aba} onValueChange={setAba}>
+            <TabsList className="w-full">
+              <TabsTrigger value="entregas" className="flex-1">
+                Entregas
+              </TabsTrigger>
+              <TabsTrigger value="rotas" className="flex-1">
+                Rotas {plano.rotas.length ? `(${plano.rotas.length})` : ""}
+              </TabsTrigger>
+              <TabsTrigger value="bases" className="flex-1">
+                Bases
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="entregas" className="mt-3">
+              <Card className="p-3">
+                <EntregasPanel
+                  entregas={entregas}
+                  onChange={definirEntregas}
+                  onImportar={() => setImportando(true)}
+                  selecionada={selecionada}
+                  onSelecionar={setSelecionada}
+                />
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="rotas" className="mt-3">
+              <RotasPanel
+                plano={plano}
+                ocultas={ocultas}
+                onToggleVisibilidade={toggleVisibilidade}
+                selecionada={selecionada}
+                onSelecionar={setSelecionada}
+                onMover={(entregaId, rotaId, posicao) =>
+                  setPlano((p) => moverEntrega(p, entregaId, rotaId, jornada, posicao))
+                }
+                onOtimizar={(id) => setPlano((p) => otimizarRota(p, id, jornada))}
+                onDividir={(id) => setPlano((p) => dividirRota(p, id, jornada))}
+                onMesclar={(o, d) => setPlano((p) => mesclarRotas(p, o, d, jornada))}
+                onExcluir={(id) => setPlano((p) => excluirRota(p, id))}
               />
-              <PainelIa sugestoes={sugestoes} onAplicar={onAplicarSugestao} />
-            </>
-          )}
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="dashboard" className="mt-4">
-          {cenarioAtual ? (
-            <DashboardExecutivo
-              cenario={cenarioAtual}
-              baseline={baseline}
-              receita={receita ? Number(receita) : undefined}
-              impostoPct={Number(impostoPct) || 0}
-              administrativoPct={Number(adminPct) || 0}
+            <TabsContent value="bases" className="mt-3">
+              <Card className="p-3">
+                <DepositosPanel depositos={depositos} onChange={setDepositos} />
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {regioes.length > 0 && (
+            <Card className="p-3">
+              <p className="mb-2 text-sm font-semibold">Regiões identificadas</p>
+              <ul className="space-y-1">
+                {regioes.map((r) => (
+                  <li key={r.codigo} className="flex items-center gap-2 text-xs">
+                    <span className="size-3 rounded-full" style={{ backgroundColor: r.cor }} aria-hidden />
+                    <span className="flex-1">{r.rotulo}</span>
+                    <Badge variant="outline" className="text-[10px]">{r.entregas} entregas</Badge>
+                    <span className="text-muted-foreground">{kg(r.pesoKg)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+
+        <div className="order-1 lg:order-2">
+          <div className="h-[60vh] lg:sticky lg:top-4 lg:h-[calc(100vh-9rem)]">
+            <MapaRoteirizador
+              entregas={entregas}
+              depositos={depositos}
+              rotas={plano.rotas}
+              ocultas={ocultas}
+              selecionada={selecionada}
+              onSelecionarEntrega={setSelecionada}
+              onSoltarEmRota={(entregaId, rotaId) =>
+                setPlano((p) => moverEntrega(p, entregaId, rotaId, jornada))
+              }
             />
-          ) : (
-            <Card className="p-10 text-center text-sm text-muted-foreground">
-              Gere os cenários para ver o dashboard executivo.
-            </Card>
-          )}
-        </TabsContent>
+          </div>
+        </div>
+      </div>
 
-        <TabsContent value="rastreamento" className="mt-4">
-          {cenarioAtual ? (
-            <RastreamentoPanel cenario={cenarioAtual} progresso={{}} />
-          ) : (
-            <Card className="p-10 text-center text-sm text-muted-foreground">
-              Aplique um cenário para acompanhar a execução.
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+      {plano.rotas.length > 0 && (
+        <Tabs defaultValue="dashboard">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="dashboard">
+              <Truck className="mr-2 size-4" /> Dashboard executivo
+            </TabsTrigger>
+            <TabsTrigger value="ia">
+              <Sparkles className="mr-2 size-4" /> Assistente
+            </TabsTrigger>
+            <TabsTrigger value="execucao">Execução</TabsTrigger>
+          </TabsList>
+          <TabsContent value="dashboard" className="mt-4">
+            <DashboardExecutivo cenario={cenario} />
+          </TabsContent>
+          <TabsContent value="ia" className="mt-4">
+            <PainelIa sugestoes={sugestoes} onAplicar={onAplicarSugestao} />
+          </TabsContent>
+          <TabsContent value="execucao" className="mt-4">
+            <RastreamentoPanel cenario={cenario} progresso={{}} />
+          </TabsContent>
+        </Tabs>
+      )}
+
+      <ImportarEntregasDialog
+        open={importando}
+        onOpenChange={setImportando}
+        onImportar={(novas) => definirEntregas([...entregas, ...novas])}
+      />
+
+      <Label className="sr-only" htmlFor="remover-entrega-atalho">
+        Ações de entrega
+      </Label>
+      <button
+        id="remover-entrega-atalho"
+        type="button"
+        className="hidden"
+        onClick={() => selecionada && setPlano((p) => removerEntrega(p, selecionada, jornada))}
+      />
     </div>
   );
 }
