@@ -148,9 +148,10 @@ export function aplicarSugestao(
 ): Cenario {
   if (!sugestao.acao) return cenario;
   const rotas = [...cenario.rotas];
+  const acao = sugestao.acao;
 
-  if (sugestao.acao.tipo === "reotimizar_sequencia") {
-    const idx = rotas.findIndex((r) => r.id === sugestao.acao!["rotaId" as never]);
+  if (acao.tipo === "reotimizar_sequencia") {
+    const idx = rotas.findIndex((r) => r.id === acao.rotaId);
     if (idx < 0) return cenario;
     const alvo = rotas[idx];
     rotas[idx] = montarRota(
