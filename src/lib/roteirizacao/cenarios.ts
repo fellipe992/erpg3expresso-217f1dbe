@@ -514,6 +514,11 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
     );
   }
 
+  // Pós-otimização: reduz veículos com baixa ocupação de peso.
+  if (opcoes.consolidarRotas) {
+    const consolidadas = consolidarRotasOciosas(rotas, deposito, jornada, opcoes);
+    rotas.splice(0, rotas.length, ...consolidadas);
+  }
 
 
   const km = rotas.reduce((s, r) => s + r.km, 0);
