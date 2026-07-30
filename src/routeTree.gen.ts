@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
@@ -61,6 +62,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
+  id: '/api/roteirizador-geocode',
+  path: '/api/roteirizador-geocode',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
+  '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/planejador-rota'
+    | '/api/roteirizador-geocode'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
@@ -459,6 +471,7 @@ export interface RootRouteChildren {
   ApiAssistenteRoute: typeof ApiAssistenteRoute
   ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
+  ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -489,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/roteirizador-geocode': {
+      id: '/api/roteirizador-geocode'
+      path: '/api/roteirizador-geocode'
+      fullPath: '/api/roteirizador-geocode'
+      preLoaderRoute: typeof ApiRoteirizadorGeocodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/planejador-rota': {
@@ -775,6 +795,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAssistenteRoute: ApiAssistenteRoute,
   ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
+  ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
