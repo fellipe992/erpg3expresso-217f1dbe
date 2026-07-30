@@ -6,22 +6,40 @@
 
 export type Coordenada = { lat: number; lng: number };
 
+export type CodigoRegiao = "norte" | "sul" | "leste" | "oeste" | "centro";
+
 export type Entrega = {
   id: string;
+  /** número da nota fiscal */
+  nf?: string;
   endereco: string;
   cliente?: string;
+  /** rótulo da região identificada automaticamente (ex.: "Zona Norte") */
   regiao?: string;
+  /** código da região usado para cor do marcador */
+  regiaoCodigo?: CodigoRegiao;
+  /** CD de origem associado */
+  depositoId?: string;
   pesoKg: number;
   volumeM3?: number;
   /** minutos de permanência no cliente (descarga + canhoto) */
   tempoDescargaMin: number;
-  /** receita prevista dessa entrega (frete) */
-  receita?: number;
+  observacoes?: string;
+  /** horário limite de entrega no formato HH:MM */
+  horarioEntrega?: string;
   /** horário limite de entrega em minutos desde o início da jornada */
   janelaFimMin?: number;
 } & Partial<Coordenada>;
 
-export type CategoriaVeiculo = "van" | "vuc" | "tres_quartos" | "toco" | "truck" | "carreta";
+export type CategoriaVeiculo =
+  | "fiorino"
+  | "van"
+  | "hr"
+  | "vuc"
+  | "tres_quartos"
+  | "toco"
+  | "truck"
+  | "carreta";
 
 export type CustosVeiculo = {
   consumoKmL: number;
@@ -44,13 +62,19 @@ export type PerfilVeiculo = {
   capacidadeM3: number;
   /** quantidade disponível na frota */
   disponiveis: number;
+  /** limite opcional de entregas por rota */
+  maxEntregas?: number;
   /** velocidade média urbana/rodoviária considerada (km/h) */
   velocidadeMediaKmh: number;
   eixos: number;
   custos: CustosVeiculo;
 };
 
-export type Deposito = { endereco: string } & Coordenada;
+export type Deposito = {
+  id: string;
+  nome: string;
+  endereco: string;
+} & Coordenada;
 
 export type RegrasJornada = {
   maxDirecaoContinuaMin: number;
@@ -84,7 +108,10 @@ export type CustoDetalhado = {
 
 export type Rota = {
   id: string;
+  rotulo?: string;
   veiculo: PerfilVeiculo;
+  /** CD de saída desta rota */
+  deposito?: Deposito;
   paradas: ParadaRota[];
   km: number;
   minutos: number;
