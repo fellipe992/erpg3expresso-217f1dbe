@@ -1,6 +1,7 @@
-import { montarRota, montarRotaComSequencia, simularCenarios } from "./cenarios";
+import { montarRota, montarRotaComSequencia, simularCenarios, somarCustos } from "./cenarios";
 import { distanciaKm, temCoordenada } from "./geo";
 import type {
+  Cenario,
   Coordenada,
   Deposito,
   Entrega,
@@ -240,4 +241,28 @@ export function totaisPlano(plano: Plano) {
     ? plano.rotas.reduce((s, r) => s + r.ocupacaoPeso, 0) / plano.rotas.length
     : 0;
   return { km, custo, entregas, pesoKg, minutosOperacao, ocupacaoMedia, veiculos: plano.rotas.length };
+}
+
+/** Converte o plano manual em um "cenário" para reaproveitar KPIs, dashboard e execução. */
+export function cenarioDoPlano(plano: Plano, receita = 0): Cenario {
+  const t = totaisPlano(plano);
+  return {
+    id: "balanceado",
+    nome: "Plano aplicado",
+    objetivo: "Malha atual, considerando ajustes manuais",
+    rotas: plano.rotas,
+    veiculos: t.veiculos,
+    km: t.km,
+    minutos: plano.rotas.reduce((s, r) => s + r.minutos, 0),
+    minutosOperacao: t.minutosOperacao,
+    pesoKg: t.pesoKg,
+    custo: t.custo,
+    custoDetalhado: somarCustos(plano.rotas.map((r) => r.custo)),
+    receita,
+    ocupacaoMedia: t.ocupacaoMedia,
+    entregasAtendidas: t.entregas,
+    entregasNaoAtendidas: plano.naoAtendidas,
+    score: 0,
+    recomendado: true,
+  };
 }
