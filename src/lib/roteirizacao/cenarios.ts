@@ -91,6 +91,11 @@ export function consolidarRotasOciosas(
           )
             continue;
           if (r.veiculo.maxEntregas && seq.length >= r.veiculo.maxEntregas) continue;
+          if (raioConfigurado) {
+            let dMin = Infinity;
+            for (const s of seq) dMin = Math.min(dMin, distanciaKm(s, e));
+            if (seq.length && dMin > raioConfigurado) continue;
+          }
           const { posicao, delta } = melhorInsercao(seq, e, r.deposito ?? deposito);
           if (delta < melhorDelta) {
             melhorDelta = delta;
