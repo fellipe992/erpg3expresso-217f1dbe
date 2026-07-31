@@ -95,8 +95,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#141414" },
       { name: "twitter:title", content: "Controle Financeiro G3 Expresso" },
       { name: "twitter:description", content: "Sistema de Gestão G3 Expresso" },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/beb0e91a-355d-49e2-aafc-8af9c560dcca/id-preview-a14bf599--ff821eca-162f-4b3a-b7ff-749214f5fc69.lovable.app-1784401493059.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/beb0e91a-355d-49e2-aafc-8af9c560dcca/id-preview-a14bf599--ff821eca-162f-4b3a-b7ff-749214f5fc69.lovable.app-1784401493059.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RDDezQarWoPtarvZTaZBf3jN0G22/social-images/social-1785519660940-social-image.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RDDezQarWoPtarvZTaZBf3jN0G22/social-images/social-1785519660940-social-image.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
