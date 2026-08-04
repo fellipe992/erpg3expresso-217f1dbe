@@ -78,6 +78,32 @@ dentro de `<manifest>` (antes de `<application>`):
 <uses-feature android:name="android.hardware.location.gps" android:required="true" />
 ```
 
+Confirme também que existe o serviço em primeiro plano do plugin dentro de
+`<application>` (o `cap sync` já adiciona; se faltar, o GPS para ao fechar o app):
+
+```xml
+<service
+  android:name="com.equimper.backgroundgeolocation.BackgroundGeolocationService"
+  android:foregroundServiceType="location"
+  android:enabled="true"
+  android:exported="false" />
+```
+
+### 4.1) Ajustes obrigatórios no celular do motorista
+
+Sem estes 3 itens o Android mata o rastreamento assim que o motorista sai do app:
+
+1. **Localização → "Permitir sempre"** (não "somente ao usar o app").
+   Configurações → Apps → G3 Motorista → Permissões → Localização → *Permitir
+   o tempo todo* + *Usar localização precisa*.
+2. **Bateria sem restrição**: Configurações → Apps → G3 Motorista → Bateria →
+   *Sem restrições / Não otimizar*. Em Xiaomi/Samsung/Motorola também é preciso
+   marcar *Inicialização automática* e travar o app na lista de recentes.
+3. **Notificações permitidas**: a notificação "Viagem em andamento" é o que mantém
+   o serviço vivo. Se o motorista bloquear essa notificação, o Android encerra o serviço.
+
+
+
 ### 5) Abrir no Android Studio
 
 ```bash
