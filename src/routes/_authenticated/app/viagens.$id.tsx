@@ -379,7 +379,8 @@ function ViagemDetalheePage() {
       {/* Provisionamentos e demonstrativo (staff only) */}
       {isStaff && (
         <ProvisionamentosSection
-          viagemId={viagemId}
+          viagemId={id}
+
           km={kmRodado ?? (viagem.distancia_estimada_km ? Number(viagem.distancia_estimada_km) : null)}
           kmEstimado={!kmRodado && !!viagem.distancia_estimada_km}
           receita={Number(viagem.valor_frete ?? 0)}
