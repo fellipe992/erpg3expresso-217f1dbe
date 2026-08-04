@@ -140,7 +140,12 @@ function PlanejadorPage() {
     queryKey: ["clientes-planejador"],
     enabled: isStaff,
     queryFn: async () => {
-      const { data } = await supabase.from("clientes").select("id, nome").eq("ativo", true).order("nome");
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, razao_social, nome_fantasia")
+        .eq("ativo", true)
+        .order("razao_social");
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -657,7 +662,7 @@ function PlanejadorPage() {
                 <SelectContent>
                   <SelectItem value="__none">Sem cliente</SelectItem>
                   {clientes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
