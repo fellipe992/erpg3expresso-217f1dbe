@@ -379,6 +379,6 @@ export function useMotoristaAutoTracking() {
       appListener?.();
       void stop();
     };
-  }, [isMotorista, viagens, qc]);
+  }, [isMotorista, viagensKey, qc]);
 
 }
