@@ -662,7 +662,7 @@ function PlanejadorPage() {
                 <SelectContent>
                   <SelectItem value="__none">Sem cliente</SelectItem>
                   {clientes.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
