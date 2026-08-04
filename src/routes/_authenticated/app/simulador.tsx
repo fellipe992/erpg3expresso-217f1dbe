@@ -142,13 +142,16 @@ function PlanejadorPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id, razao_social, nome_fantasia")
-        .eq("ativo", true)
-        .order("razao_social");
-      if (error) throw error;
-      return data ?? [];
+        .select("id, razao_social, nome_fantasia, ativo")
+        .order("razao_social", { ascending: true });
+      if (error) {
+        toast.error("Não foi possível carregar os clientes.");
+        throw error;
+      }
+      return (data ?? []).filter((c) => c.ativo !== false);
     },
   });
+
 
   const { data: motoristas = [] } = useQuery({
     queryKey: ["motoristas-planejador"],
@@ -301,18 +304,25 @@ function PlanejadorPage() {
           destino_uf: d.uf || null,
           data_prevista_saida: dataSaida || null,
           valor_frete: receita || null,
+          comissao_percentual: num(comissaoPct) || null,
+          comissao_valor: comissao || null,
+          provisao_manutencao_km: num(manutKm) || null,
+          provisao_pneus_km: num(pneusKm) || null,
+          pedagio_estimado: pedagio || null,
+          outros_custos_estimados: num(outros) || null,
+          distancia_estimada_km: resultado.km || null,
           status: "planejada" as const,
           created_by: userData.user?.id ?? null,
           observacoes: [
             `Planejada pelo Planejador Inteligente.`,
             `Distância: ${resultado.km.toFixed(0)} km · Tempo: ${formatarDuracao(resultado.minutos)}`,
             paradas.length ? `Paradas: ${paradas.join(" | ")}` : null,
-            `Combustível: ${litros.toFixed(0)} L (${brl(custoCombustivel)}) · Pedágios (${eixos} eixos): ${brl(pedagio)}`,
-            `Custo total estimado: ${brl(custoTotal)} · Lucro estimado: ${brl(lucro)}`,
+            `Combustível estimado: ${litros.toFixed(0)} L · Pedágios: ${eixos} eixos`,
           ]
             .filter(Boolean)
             .join("\n"),
         })
+
         .select("id")
         .single();
       if (error) throw error;

@@ -1796,6 +1796,8 @@ export type Database = {
         Row: {
           cliente_id: string | null
           codigo: string | null
+          comissao_percentual: number | null
+          comissao_valor: number | null
           created_at: string
           created_by: string | null
           data_chegada: string | null
@@ -1804,6 +1806,7 @@ export type Database = {
           data_saida: string | null
           destino_cidade: string | null
           destino_uf: string | null
+          distancia_estimada_km: number | null
           finalizada_por: string | null
           id: string
           iniciada_por: string | null
@@ -1814,6 +1817,10 @@ export type Database = {
           observacoes_finais: string | null
           origem_cidade: string | null
           origem_uf: string | null
+          outros_custos_estimados: number | null
+          pedagio_estimado: number | null
+          provisao_manutencao_km: number | null
+          provisao_pneus_km: number | null
           status: Database["public"]["Enums"]["viagem_status"]
           updated_at: string
           valor_frete: number | null
@@ -1822,6 +1829,8 @@ export type Database = {
         Insert: {
           cliente_id?: string | null
           codigo?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
           created_at?: string
           created_by?: string | null
           data_chegada?: string | null
@@ -1830,6 +1839,7 @@ export type Database = {
           data_saida?: string | null
           destino_cidade?: string | null
           destino_uf?: string | null
+          distancia_estimada_km?: number | null
           finalizada_por?: string | null
           id?: string
           iniciada_por?: string | null
@@ -1840,6 +1850,10 @@ export type Database = {
           observacoes_finais?: string | null
           origem_cidade?: string | null
           origem_uf?: string | null
+          outros_custos_estimados?: number | null
+          pedagio_estimado?: number | null
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
           status?: Database["public"]["Enums"]["viagem_status"]
           updated_at?: string
           valor_frete?: number | null
@@ -1848,6 +1862,8 @@ export type Database = {
         Update: {
           cliente_id?: string | null
           codigo?: string | null
+          comissao_percentual?: number | null
+          comissao_valor?: number | null
           created_at?: string
           created_by?: string | null
           data_chegada?: string | null
@@ -1856,6 +1872,7 @@ export type Database = {
           data_saida?: string | null
           destino_cidade?: string | null
           destino_uf?: string | null
+          distancia_estimada_km?: number | null
           finalizada_por?: string | null
           id?: string
           iniciada_por?: string | null
@@ -1866,6 +1883,10 @@ export type Database = {
           observacoes_finais?: string | null
           origem_cidade?: string | null
           origem_uf?: string | null
+          outros_custos_estimados?: number | null
+          pedagio_estimado?: number | null
+          provisao_manutencao_km?: number | null
+          provisao_pneus_km?: number | null
           status?: Database["public"]["Enums"]["viagem_status"]
           updated_at?: string
           valor_frete?: number | null

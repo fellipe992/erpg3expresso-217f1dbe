@@ -379,13 +379,29 @@ function ViagemDetalheePage() {
       {/* Provisionamentos e demonstrativo (staff only) */}
       {isStaff && (
         <ProvisionamentosSection
-          km={kmRodado}
+          viagemId={id}
+
+          km={kmRodado ?? (viagem.distancia_estimada_km ? Number(viagem.distancia_estimada_km) : null)}
+          kmEstimado={!kmRodado && !!viagem.distancia_estimada_km}
           receita={Number(viagem.valor_frete ?? 0)}
           movimentacoes={movimentacoes}
-          padraoManutencao={(viagem.veiculo as any)?.provisao_manutencao_km ?? null}
-          padraoPneus={(viagem.veiculo as any)?.provisao_pneus_km ?? null}
+          comissaoPctSalvo={viagem.comissao_percentual != null ? Number(viagem.comissao_percentual) : null}
+          pedagioEstimado={viagem.pedagio_estimado != null ? Number(viagem.pedagio_estimado) : null}
+          outrosEstimados={viagem.outros_custos_estimados != null ? Number(viagem.outros_custos_estimados) : null}
+          manutencaoSalva={
+            viagem.provisao_manutencao_km != null
+              ? Number(viagem.provisao_manutencao_km)
+              : ((viagem.veiculo as any)?.provisao_manutencao_km ?? null)
+          }
+          pneusSalvo={
+            viagem.provisao_pneus_km != null
+              ? Number(viagem.provisao_pneus_km)
+              : ((viagem.veiculo as any)?.provisao_pneus_km ?? null)
+          }
+          onSaved={invalidateAll}
         />
       )}
+
 
       {/* Movimentações financeiras (staff only) */}
 
@@ -1040,20 +1056,52 @@ function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viag
 }
 
 function ProvisionamentosSection({
+  viagemId,
   km,
+  kmEstimado,
   receita,
   movimentacoes,
-  padraoManutencao,
-  padraoPneus,
+  comissaoPctSalvo,
+  pedagioEstimado,
+  outrosEstimados,
+  manutencaoSalva,
+  pneusSalvo,
+  onSaved,
 }: {
+  viagemId: string;
   km: number | null;
+  kmEstimado: boolean;
   receita: number;
   movimentacoes: any[];
-  padraoManutencao: number | null;
-  padraoPneus: number | null;
+  comissaoPctSalvo: number | null;
+  pedagioEstimado: number | null;
+  outrosEstimados: number | null;
+  manutencaoSalva: number | null;
+  pneusSalvo: number | null;
+  onSaved: () => void;
 }) {
-  const [manutKm, setManutKm] = useState<string>(padraoManutencao ? String(padraoManutencao) : "");
-  const [pneusKm, setPneusKm] = useState<string>(padraoPneus ? String(padraoPneus) : "");
+  const [manutKm, setManutKm] = useState<string>(manutencaoSalva ? String(manutencaoSalva) : "");
+  const [pneusKm, setPneusKm] = useState<string>(pneusSalvo ? String(pneusSalvo) : "");
+  const [comissaoPct, setComissaoPct] = useState<string>(comissaoPctSalvo ? String(comissaoPctSalvo) : "");
+  const [salvando, setSalvando] = useState(false);
+
+  const salvar = async () => {
+    setSalvando(true);
+    const { error } = await supabase
+      .from("viagens")
+      .update({
+        provisao_manutencao_km: Number(manutKm) > 0 ? Number(manutKm) : null,
+        provisao_pneus_km: Number(pneusKm) > 0 ? Number(pneusKm) : null,
+        comissao_percentual: Number(comissaoPct) > 0 ? Number(comissaoPct) : null,
+        comissao_valor:
+          Number(comissaoPct) > 0 && receita > 0 ? (receita * Number(comissaoPct)) / 100 : null,
+      })
+      .eq("id", viagemId);
+    setSalvando(false);
+    if (error) return toast.error("Não foi possível salvar os provisionamentos.");
+    toast.success("Provisionamentos salvos nesta viagem.");
+    onSaved();
+  };
 
   const bucket = (pred: (m: any) => boolean) =>
     movimentacoes
@@ -1062,11 +1110,21 @@ function ProvisionamentosSection({
 
   const cat = (m: any) => `${m.categoria ?? ""} ${m.centro_custo ?? ""}`.toLowerCase();
   const combustivel = bucket((m) => cat(m).includes("combust"));
-  const pedagio = bucket((m) => cat(m).includes("pedágio") || cat(m).includes("pedagio"));
-  const comissao = bucket((m) => cat(m).includes("comiss"));
-  const outros = bucket(
+  const pedagioLancado = bucket((m) => cat(m).includes("pedágio") || cat(m).includes("pedagio"));
+  const comissaoLancada = bucket((m) => cat(m).includes("comiss"));
+  const outrosLancados = bucket(
     (m) => !cat(m).includes("combust") && !cat(m).includes("pedágio") && !cat(m).includes("pedagio") && !cat(m).includes("comiss"),
   );
+
+  // Lançamento real prevalece; sem lançamento, mantemos o valor planejado.
+  const comissao =
+    comissaoLancada > 0
+      ? comissaoLancada
+      : Number(comissaoPct) > 0 && receita > 0
+        ? (receita * Number(comissaoPct)) / 100
+        : 0;
+  const pedagio = pedagioLancado > 0 ? pedagioLancado : (pedagioEstimado ?? 0);
+  const outros = outrosLancados > 0 ? outrosLancados : (outrosEstimados ?? 0);
 
   const custos = {
     receita,
@@ -1084,10 +1142,17 @@ function ProvisionamentosSection({
       <h2 className="font-display text-lg font-bold">Provisionamentos operacionais</h2>
       <Card className="space-y-3 p-4">
         <p className="text-xs text-muted-foreground">
-          Valores por quilômetro (padrão do veículo, editáveis nesta viagem). Em branco ou zero não entram no cálculo.
-          {km ? ` Distância considerada: ${km} km.` : " Informe km inicial e final para calcular."}
+          Valores planejados desta viagem. Em branco ou zero não entram no cálculo.
+          {km
+            ? ` Distância considerada: ${km.toFixed(0)} km${kmEstimado ? " (estimada do planejamento)" : ""}.`
+            : " Informe km inicial e final para calcular."}
         </p>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Comissão do motorista (%)</Label>
+            <Input type="number" step="0.1" placeholder="Ex.: 10" value={comissaoPct} onChange={(e) => setComissaoPct(e.target.value)} />
+            <p className="text-[11px] text-muted-foreground">Comissão: {brl(custos.comissao)}</p>
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Manutenção (R$/km)</Label>
             <Input type="number" step="0.01" placeholder="Ex.: 0,60" value={manutKm} onChange={(e) => setManutKm(e.target.value)} />
@@ -1099,6 +1164,11 @@ function ProvisionamentosSection({
             <p className="text-[11px] text-muted-foreground">Provisão: {brl(custos.provisaoPneus)}</p>
           </div>
         </div>
+        <div className="flex justify-end">
+          <Button size="sm" onClick={salvar} disabled={salvando}>
+            {salvando && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar provisionamentos
+          </Button>
+        </div>
       </Card>
 
       <h2 className="font-display text-lg font-bold">Demonstrativo financeiro</h2>
@@ -1106,3 +1176,4 @@ function ProvisionamentosSection({
     </div>
   );
 }
+
