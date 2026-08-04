@@ -95,6 +95,15 @@ export function useMotoristaAutoTracking() {
   const viagensRef = useRef<ActiveViagem[]>([]);
   viagensRef.current = viagens;
 
+  // Chave estável: só muda quando o conjunto de viagens ativas muda de fato.
+  // Sem isso, cada refetch (30s) trocava a referência do array e o watcher
+  // nativo era removido/recriado, derrubando o serviço em primeiro plano
+  // responsável por manter o GPS ativo com o app fechado.
+  const viagensKey = viagens
+    .map((v) => v.id)
+    .sort()
+    .join(",");
+
   useEffect(() => {
     if (!isMotorista) return;
     const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number }> };
