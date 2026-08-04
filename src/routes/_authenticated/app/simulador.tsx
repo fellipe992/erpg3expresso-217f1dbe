@@ -142,13 +142,16 @@ function PlanejadorPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clientes")
-        .select("id, razao_social, nome_fantasia")
-        .eq("ativo", true)
-        .order("razao_social");
-      if (error) throw error;
-      return data ?? [];
+        .select("id, razao_social, nome_fantasia, ativo")
+        .order("razao_social", { ascending: true });
+      if (error) {
+        toast.error("Não foi possível carregar os clientes.");
+        throw error;
+      }
+      return (data ?? []).filter((c) => c.ativo !== false);
     },
   });
+
 
   const { data: motoristas = [] } = useQuery({
     queryKey: ["motoristas-planejador"],
