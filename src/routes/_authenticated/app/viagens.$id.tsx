@@ -379,13 +379,28 @@ function ViagemDetalheePage() {
       {/* Provisionamentos e demonstrativo (staff only) */}
       {isStaff && (
         <ProvisionamentosSection
-          km={kmRodado}
+          viagemId={viagemId}
+          km={kmRodado ?? (viagem.distancia_estimada_km ? Number(viagem.distancia_estimada_km) : null)}
+          kmEstimado={!kmRodado && !!viagem.distancia_estimada_km}
           receita={Number(viagem.valor_frete ?? 0)}
           movimentacoes={movimentacoes}
-          padraoManutencao={(viagem.veiculo as any)?.provisao_manutencao_km ?? null}
-          padraoPneus={(viagem.veiculo as any)?.provisao_pneus_km ?? null}
+          comissaoPctSalvo={viagem.comissao_percentual != null ? Number(viagem.comissao_percentual) : null}
+          pedagioEstimado={viagem.pedagio_estimado != null ? Number(viagem.pedagio_estimado) : null}
+          outrosEstimados={viagem.outros_custos_estimados != null ? Number(viagem.outros_custos_estimados) : null}
+          manutencaoSalva={
+            viagem.provisao_manutencao_km != null
+              ? Number(viagem.provisao_manutencao_km)
+              : ((viagem.veiculo as any)?.provisao_manutencao_km ?? null)
+          }
+          pneusSalvo={
+            viagem.provisao_pneus_km != null
+              ? Number(viagem.provisao_pneus_km)
+              : ((viagem.veiculo as any)?.provisao_pneus_km ?? null)
+          }
+          onSaved={invalidateAll}
         />
       )}
+
 
       {/* Movimentações financeiras (staff only) */}
 
