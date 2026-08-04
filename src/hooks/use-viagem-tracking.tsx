@@ -136,7 +136,7 @@ export function useMotoristaAutoTracking() {
       lastSentRef.current = null;
     };
 
-    if (viagens.length === 0) {
+    if (viagensKey === "") {
       void stop();
       return;
     }
