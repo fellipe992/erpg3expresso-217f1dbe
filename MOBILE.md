@@ -198,3 +198,37 @@ logo da G3 (`src/assets/g3-expresso-logo.png`). Para o splash, substitua
 Já funciona automaticamente porque a APK carrega o mesmo site publicado
 com a chave do Google Maps já configurada. Basta ter o domínio
 `erp.g3expresso.com.br` na lista de **HTTP referrers** da chave (já está).
+
+---
+
+## Rastreamento em segundo plano (nativo)
+
+A partir desta versão o GPS **não** depende mais do JavaScript. O WebView é
+congelado pelo Android quando o app sai da tela — era por isso que a localização
+só voltava ao reabrir o app. Agora existe um Foreground Service em Kotlin
+(`G3TrackingService`) que usa `FusedLocationProviderClient` +
+`LocationCallback` e grava cada posição direto no banco via REST, com fila
+offline e renovação automática do token.
+
+Os arquivos nativos estão em `android-native/` — siga o `android-native/README.md`
+para copiá-los para `android/` e adicionar as dependências Gradle
+(`play-services-location` e `okhttp`). Depois disso é preciso gerar uma nova APK.
+
+O React só chama `G3Tracking.start()` quando há viagem em andamento e
+`G3Tracking.stop()` quando não há mais nenhuma.
+
+### Validar em aparelho físico
+
+1. Instale a APK nova e faça login como motorista.
+2. Permissões: Localização → **Permitir o tempo todo** + precisa; Bateria →
+   **Sem restrições**; Notificações → permitidas.
+3. Inicie uma viagem. A notificação "Viagem em andamento" aparece.
+4. Minimize o app, apague a tela e deixe o celular de lado 10–15 min.
+5. No ERP, abra Monitoramento: novos pontos devem entrar a cada ~20 s.
+6. Confirme por SQL/tela que há pontos com horários durante o período em que a
+   tela estava apagada.
+7. Com o cabo USB: `adb logcat -s G3Tracking` mostra
+   `requestLocationUpdates ativo` e eventuais falhas de envio.
+8. Teste de várias horas: mantenha a viagem aberta e verifique que os pontos
+   continuam chegando sem abrir o app. Ao clicar em **Finalizar viagem** a
+   notificação desaparece e os envios param.
