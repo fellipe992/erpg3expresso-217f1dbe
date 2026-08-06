@@ -29,11 +29,15 @@ function tempo(iso: string) {
   return `${Math.floor(diff / 86400)} d`;
 }
 
+// Categorias com conteúdo financeiro/administrativo: nunca exibidas ao perfil monitor.
+const CATEGORIAS_BLOQUEADAS_MONITOR = new Set(["financeiro", "documento", "manutencao"]);
+
 export function NotificationsBell() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const bootstrapped = useRef(false);
+  const isMonitor = role === "monitor";
 
   const { data: itens = [] } = useQuery<NotificacaoRow[]>({
     queryKey: ["notificacoes", user?.id],
@@ -43,10 +47,14 @@ export function NotificationsBell() {
       const { data, error } = await supabase
         .from("notificacoes")
         .select(NOTIF_SELECT)
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data ?? []) as NotificacaoRow[];
+      const rows = (data ?? []) as NotificacaoRow[];
+      return isMonitor
+        ? rows.filter((n) => !CATEGORIAS_BLOQUEADAS_MONITOR.has(n.categoria))
+        : rows;
     },
   });
 
