@@ -483,15 +483,18 @@ function MonitoramentoPage() {
                   >
                     <Locate className="mr-1 size-3" /> Centralizar
                   </Button>
-                  <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-                    <Link
-                      to="/app/viagens/$id"
-                      params={{ id: v.id }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <ExternalLink className="mr-1 size-3" /> Detalhes
-                    </Link>
-                  </Button>
+                  {!isMonitor && (
+                    <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
+                      <Link
+                        to="/app/viagens/$id"
+                        params={{ id: v.id }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="mr-1 size-3" /> Detalhes
+                      </Link>
+                    </Button>
+                  )}
+
                 </div>
               </Card>
             );
