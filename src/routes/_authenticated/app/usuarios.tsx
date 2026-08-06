@@ -367,6 +367,19 @@ function UsuariosPage() {
                 </Select>
               </F>
             )}
+            {form.role === "monitor" && (
+              <F label="Cliente monitorado *">
+                <Select value={form.cliente_id} onValueChange={(v) => setForm({ ...form, cliente_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o cliente..." /></SelectTrigger>
+                  <SelectContent>
+                    {clientesLista.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </F>
+            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
