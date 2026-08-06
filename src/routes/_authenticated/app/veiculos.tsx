@@ -209,33 +209,82 @@ function VeiculosPage() {
               <Label>Ativo</Label>
             </div>
             <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 p-3">
-              <div>
-                <p className="text-sm font-semibold">Provisionamentos operacionais</p>
-                <p className="text-xs text-muted-foreground">
-                  Valores padrão por km deste veículo. Opcionais — em branco ou zero não entram no cálculo.
-                </p>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <F label="Provisão manutenção (R$/km)">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex.: 0,60"
-                    value={form.provisao_manutencao_km ?? ""}
-                    onChange={(e) => setForm({ ...form, provisao_manutencao_km: e.target.value ? Number(e.target.value) : null })}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Veículo agregado (terceiro)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Agregados são usados apenas na operação: viagens, rastreamento em tempo real,
+                    checklist, ocorrências e fotos. Sem controle de custos, consumo ou provisionamentos.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    checked={form.agregado ?? false}
+                    onCheckedChange={(v) =>
+                      setForm({
+                        ...form,
+                        agregado: v,
+                        ...(v ? { provisao_manutencao_km: null, provisao_pneus_km: null } : {}),
+                      })
+                    }
                   />
-                </F>
-                <F label="Provisão pneus (R$/km)">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Ex.: 0,15"
-                    value={form.provisao_pneus_km ?? ""}
-                    onChange={(e) => setForm({ ...form, provisao_pneus_km: e.target.value ? Number(e.target.value) : null })}
-                  />
-                </F>
+                  <Label>Agregado</Label>
+                </div>
               </div>
+              {form.agregado && (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <F label="Proprietário">
+                    <Input
+                      value={form.proprietario_nome ?? ""}
+                      onChange={(e) => setForm({ ...form, proprietario_nome: e.target.value })}
+                    />
+                  </F>
+                  <F label="CNPJ / CPF do proprietário">
+                    <Input
+                      value={form.proprietario_documento ?? ""}
+                      onChange={(e) => setForm({ ...form, proprietario_documento: e.target.value })}
+                    />
+                  </F>
+                  <F label="Telefone do proprietário">
+                    <Input
+                      value={form.proprietario_telefone ?? ""}
+                      onChange={(e) => setForm({ ...form, proprietario_telefone: e.target.value })}
+                    />
+                  </F>
+                </div>
+              )}
             </div>
+            {!form.agregado && (
+              <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 p-3">
+                <div>
+                  <p className="text-sm font-semibold">Provisionamentos operacionais</p>
+                  <p className="text-xs text-muted-foreground">
+                    Valores padrão por km deste veículo. Opcionais — em branco ou zero não entram no cálculo.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <F label="Provisão manutenção (R$/km)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex.: 0,60"
+                      value={form.provisao_manutencao_km ?? ""}
+                      onChange={(e) => setForm({ ...form, provisao_manutencao_km: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </F>
+                  <F label="Provisão pneus (R$/km)">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex.: 0,15"
+                      value={form.provisao_pneus_km ?? ""}
+                      onChange={(e) => setForm({ ...form, provisao_pneus_km: e.target.value ? Number(e.target.value) : null })}
+                    />
+                  </F>
+                </div>
+              </div>
+            )}
+
             <div className="md:col-span-2">
               <F label="Observações"><Textarea rows={2} value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></F>
             </div>
