@@ -36,6 +36,12 @@ function AuthenticatedLayout() {
     return <MobileMotoristaShell><Outlet /></MobileMotoristaShell>;
   }
 
+  // Monitor (cliente): acesso exclusivo à Central de Monitoramento
+  if (role === "monitor" && location.pathname !== "/app/monitoramento") {
+    return <Navigate to="/app/monitoramento" replace />;
+  }
+
+
   // Admin / Financeiro / Gestor: layout com sidebar
   return (
     <SidebarProvider>
