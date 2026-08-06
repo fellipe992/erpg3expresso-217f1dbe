@@ -81,6 +81,8 @@ export function useMotoristaAutoTracking() {
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const insertWarnedRef = useRef(false);
+  const pausedUntilRef = useRef(0);
+
 
   // ------------------------------------------------ Android: serviço nativo
   useEffect(() => {
