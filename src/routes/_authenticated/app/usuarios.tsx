@@ -113,6 +113,7 @@ function UsuariosPage() {
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["usuarios-admin"] });
     qc.invalidateQueries({ queryKey: ["motoristas-livres"] });
+    qc.invalidateQueries({ queryKey: ["monitor-clientes-map"] });
   };
 
   // ------ Novo usuário
