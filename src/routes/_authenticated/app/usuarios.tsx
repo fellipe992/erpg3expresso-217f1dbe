@@ -350,6 +350,8 @@ function UsuariosPage() {
                   <SelectItem value="financeiro">Financeiro</SelectItem>
                   <SelectItem value="gestor">Gestor</SelectItem>
                   <SelectItem value="motorista">Motorista</SelectItem>
+                  <SelectItem value="monitor">Monitor (cliente)</SelectItem>
+
                 </SelectContent>
               </Select>
             </F>
