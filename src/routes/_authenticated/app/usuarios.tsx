@@ -219,6 +219,9 @@ function UsuariosPage() {
     if (edit.role === "motorista" && !edit.motorista_id) {
       return toast.error("Selecione um motorista para vincular");
     }
+    if (edit.role === "monitor" && !edit.cliente_id) {
+      return toast.error("Selecione o cliente monitorado");
+    }
 
     const wasMotorista = openEdit.role === "motorista";
     const nowOther = edit.role !== "motorista";
@@ -247,6 +250,10 @@ function UsuariosPage() {
       if (edit.motorista_id !== current) payload.motorista_id = edit.motorista_id || null;
     } else if (removeLink) {
       payload.motorista_id = null;
+    }
+
+    if (edit.role === "monitor" && edit.cliente_id) {
+      payload.cliente_ids = [edit.cliente_id];
     }
     setConfirmRemoveLink(null);
     updateMut.mutate(payload);
