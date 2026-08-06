@@ -304,13 +304,21 @@ function MonitoramentoPage() {
 
     const body = document.createElement("div");
     body.style.cssText = "margin-top:6px; font-size:12px;";
+    // `velocidade` é gravada em m/s (Geolocation API no web e Location.speed no
+    // Android), por isso convertemos para km/h na exibição.
+    const kmh =
+      typeof l.velocidade === "number" && Number.isFinite(l.velocidade) && l.velocidade >= 0
+        ? `${Math.round(l.velocidade * 3.6)} km/h`
+        : "—";
     const rows: Array<[string, string]> = [
+      ["Velocidade:", kmh],
       ["Cliente:", v.cliente?.razao_social ?? "—"],
       ["OS:", v.codigo ?? "—"],
       ["Rota:", rotaTexto(v)],
       ["Início:", v.data_saida ? new Date(v.data_saida).toLocaleString("pt-BR") : "—"],
       ["Última posição:", new Date(l.created_at).toLocaleString("pt-BR")],
     ];
+
     for (const [label, value] of rows) {
       const row = document.createElement("div");
       const b = document.createElement("b");
