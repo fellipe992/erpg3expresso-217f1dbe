@@ -169,7 +169,17 @@ function VeiculosPage() {
                     {v.modelo}
                     {v.marca && <span className="ml-1 text-muted-foreground">· {v.marca}</span>}
                   </TableCell>
-                  <TableCell className="capitalize">{v.tipo}</TableCell>
+                  <TableCell className="capitalize">
+                    <div className="flex items-center gap-2">
+                      <span>{v.tipo}</span>
+                      {v.agregado && (
+                        <Badge variant="outline" className="border-brand/50 text-[10px] uppercase tracking-wide text-brand">
+                          Agregado
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+
                   <TableCell>{v.ano ?? "—"}</TableCell>
                   <TableCell>{v.capacidade_kg ? `${v.capacidade_kg} kg` : "—"}</TableCell>
                   <TableCell>
