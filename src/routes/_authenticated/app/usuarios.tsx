@@ -125,6 +125,7 @@ function UsuariosPage() {
       if (!form.email || !form.password || !form.nome) throw new Error("Preencha nome, e-mail e senha");
       if (form.password.length < 6) throw new Error("Senha mínima de 6 caracteres");
       if (form.role === "motorista" && !form.motorista_id) throw new Error("Selecione um motorista para vincular");
+      if (form.role === "monitor" && !form.cliente_id) throw new Error("Selecione o cliente monitorado");
       return createFn({
         data: {
           email: form.email.trim(),
@@ -133,6 +134,7 @@ function UsuariosPage() {
           telefone: form.telefone || null,
           role: form.role,
           motorista_id: form.role === "motorista" ? form.motorista_id : null,
+          cliente_ids: form.role === "monitor" ? [form.cliente_id] : null,
         },
       });
     },
@@ -140,7 +142,8 @@ function UsuariosPage() {
       toast.success("Usuário criado");
       invalidateAll();
       setOpenNew(false);
-      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "" });
+      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
