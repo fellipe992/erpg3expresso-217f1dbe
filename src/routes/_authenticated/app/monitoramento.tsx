@@ -161,19 +161,26 @@ function MonitoramentoPage() {
     queryFn: async () => {
       const ids = viagens.map((v) => v.id);
       if (ids.length === 0) return {};
-      const { data, error } = await supabase
-        .from("viagem_localizacoes")
-        .select(
-          "id, viagem_id, latitude, longitude, heading, velocidade, bateria, online, created_at",
-        )
-        .in("viagem_id", ids)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
+      // Busca a última posição de CADA viagem separadamente. Uma consulta única
+      // com limite global fazia a viagem que envia mais pontos consumir todo o
+      // limite, deixando as demais sem posição no mapa.
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const { data, error } = await supabase
+            .from("viagem_localizacoes")
+            .select(
+              "id, viagem_id, latitude, longitude, heading, velocidade, bateria, online, created_at",
+            )
+            .eq("viagem_id", id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (error) throw error;
+          return data as Loc | null;
+        }),
+      );
       const map: Record<string, Loc> = {};
-      for (const l of (data ?? []) as Loc[]) {
-        if (!map[l.viagem_id]) map[l.viagem_id] = l;
-      }
+      for (const l of results) if (l) map[l.viagem_id] = l;
       return map;
     },
   });
