@@ -201,6 +201,7 @@ function UsuariosPage() {
       user_id: string;
       nome?: string; email?: string; role?: Role; ativo?: boolean;
       motorista_id?: string | null;
+      cliente_ids?: string[];
     }) => updateFn({ data: payload }),
     onSuccess: () => {
       toast.success("Alterações salvas");
