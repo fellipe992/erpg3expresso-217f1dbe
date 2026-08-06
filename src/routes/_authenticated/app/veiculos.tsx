@@ -38,7 +38,12 @@ type Veiculo = {
   observacoes: string | null;
   provisao_manutencao_km: number | null;
   provisao_pneus_km: number | null;
+  agregado: boolean;
+  proprietario_nome: string | null;
+  proprietario_documento: string | null;
+  proprietario_telefone: string | null;
 };
+
 
 
 const TIPOS = ["cavalo", "carreta", "truck", "toco", "van", "utilitario", "outro"];
