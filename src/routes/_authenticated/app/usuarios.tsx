@@ -470,6 +470,18 @@ function UsuariosPage() {
                   </Select>
                 </F>
               )}
+              {edit.role === "monitor" && (
+                <F label="Cliente monitorado *">
+                  <Select value={edit.cliente_id} onValueChange={(v) => setEdit({ ...edit, cliente_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o cliente..." /></SelectTrigger>
+                    <SelectContent>
+                      {clientesLista.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </F>
+              )}
               <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
                 <div>
                   <div className="text-sm font-medium">Status</div>
