@@ -96,6 +96,10 @@ const gestorAdmin: NavItem[] = [
   { label: "Auditoria de viagens", to: "/app/auditoria", icon: ShieldCheck },
 ];
 
+const monitorNav: NavItem[] = [
+  { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
+];
+
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
@@ -105,6 +109,7 @@ export function AppSidebar() {
   const isAdmin = role === "administrador";
   const isFinance = role === "financeiro" || isAdmin;
   const isGestor = role === "gestor";
+  const isMonitor = role === "monitor";
 
   return (
     <Sidebar collapsible="icon">
@@ -115,14 +120,21 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {!isGestor && <Group items={overview} pathname={location.pathname} collapsed={collapsed} />}
-        {isFinance && <Group label="Financeiro" items={financeiro} pathname={location.pathname} collapsed={collapsed} />}
-        <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
-        {!isGestor && <Group label="Comercial" items={comercial} pathname={location.pathname} collapsed={collapsed} />}
-        <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
-        {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
-        {isGestor && <Group label="Administração" items={gestorAdmin} pathname={location.pathname} collapsed={collapsed} />}
+        {isMonitor ? (
+          <Group label="Acompanhamento" items={monitorNav} pathname={location.pathname} collapsed={collapsed} />
+        ) : (
+          <>
+            <>{!isGestor && <Group items={overview} pathname={location.pathname} collapsed={collapsed} />}</>
+            {isFinance && <Group label="Financeiro" items={financeiro} pathname={location.pathname} collapsed={collapsed} />}
+            <Group label="Operacional" items={operacional} pathname={location.pathname} collapsed={collapsed} />
+            {!isGestor && <Group label="Comercial" items={comercial} pathname={location.pathname} collapsed={collapsed} />}
+            <Group label="Gestão" items={gestao} pathname={location.pathname} collapsed={collapsed} />
+            {isAdmin && <Group label="Administração" items={administracao} pathname={location.pathname} collapsed={collapsed} />}
+            {isGestor && <Group label="Administração" items={gestorAdmin} pathname={location.pathname} collapsed={collapsed} />}
+          </>
+        )}
       </SidebarContent>
+
 
       <SidebarFooter>
         {!collapsed && (
