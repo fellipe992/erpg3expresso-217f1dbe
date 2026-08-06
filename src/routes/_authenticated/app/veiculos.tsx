@@ -47,7 +47,7 @@ type Veiculo = {
 
 
 const TIPOS = ["cavalo", "carreta", "truck", "toco", "van", "utilitario", "outro"];
-const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true };
+const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true, agregado: false };
 
 function VeiculosPage() {
   const { role } = useAuth();
