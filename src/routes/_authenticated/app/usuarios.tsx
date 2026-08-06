@@ -103,8 +103,22 @@ function UsuariosPage() {
 
   // ------ Novo usuário
   const [form, setForm] = useState<{
-    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string;
-  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "" });
+    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string;
+  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+
+  const { data: clientesLista = [] } = useQuery({
+    queryKey: ["clientes-monitor-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, razao_social")
+        .eq("ativo", true)
+        .order("razao_social");
+      if (error) throw error;
+      return (data ?? []) as { id: string; razao_social: string }[];
+    },
+  });
+
 
   const createMut = useMutation({
     mutationFn: async () => {
