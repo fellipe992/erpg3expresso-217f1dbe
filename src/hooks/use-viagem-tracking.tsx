@@ -214,16 +214,17 @@ export function useMotoristaAutoTracking() {
       const { error } = await supabase.from("viagem_localizacoes").insert(rows);
       if (error) {
         // RLS recusa a gravação quando a viagem já não está "em_andamento".
-        // Nesse caso a lista em cache está desatualizada: revalida imediatamente
-        // (o watcher é encerrado quando não sobra viagem ativa) e pausa os envios
-        // para não repetir a violação em loop.
+        // Nesse caso a lista em cache está desatualizada: revalida na hora
+        // (o watcher é encerrado quando não sobra viagem ativa) e pausa os
+        // envios por um intervalo para não repetir a violação em loop.
         const rlsBlocked =
           error.code === "42501" || /row-level security/i.test(error.message ?? "");
         if (rlsBlocked) {
-          stop();
+          pausedUntilRef.current = now + RLS_BACKOFF_MS;
           await qc.invalidateQueries({ queryKey: ["motorista-viagens-ativas"] });
           return;
         }
+
         if (!insertWarnedRef.current) {
           insertWarnedRef.current = true;
           toast.error("GPS não foi salvo", { description: error.message });
