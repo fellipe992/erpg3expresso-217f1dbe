@@ -68,7 +68,13 @@ type ViagemAtiva = {
   km_inicial: number | null;
   cliente: { razao_social: string | null } | null;
   motorista: { id: string; nome: string; telefone: string | null } | null;
-  veiculo: { id: string; placa: string; modelo: string | null; marca: string | null } | null;
+  veiculo: {
+    id: string;
+    placa: string;
+    modelo: string | null;
+    marca: string | null;
+    agregado: boolean;
+  } | null;
 };
 
 function rotaTexto(v: ViagemAtiva) {
@@ -90,7 +96,8 @@ function tempoDesde(iso: string | null) {
 function MonitoramentoPage() {
   const { role } = useAuth();
   const qc = useQueryClient();
-  const allowed = role === "administrador" || role === "gestor";
+  const isMonitor = role === "monitor";
+  const allowed = role === "administrador" || role === "gestor" || isMonitor;
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -109,16 +116,36 @@ function MonitoramentoPage() {
     enabled: allowed,
     refetchInterval: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("viagens")
-        .select(
-          "id, codigo, origem_cidade, origem_uf, destino_cidade, destino_uf, data_saida, km_inicial, cliente:clientes(razao_social), motorista:motoristas(id, nome, telefone), veiculo:veiculos(id, placa, modelo, marca)",
-        )
-        .eq("status", "em_andamento");
+      // A consulta abaixo já devolve apenas o que o usuário pode ver:
+      // equipe interna vê tudo; monitor vê só as viagens dos clientes vinculados.
+      const { data, error } = await supabase.rpc("monitoramento_viagens_ativas");
       if (error) throw error;
-      return (data ?? []) as unknown as ViagemAtiva[];
+      return (data ?? []).map((r) => ({
+        id: r.id,
+        codigo: r.codigo,
+        origem_cidade: r.origem_cidade,
+        origem_uf: r.origem_uf,
+        destino_cidade: r.destino_cidade,
+        destino_uf: r.destino_uf,
+        data_saida: r.data_saida,
+        km_inicial: r.km_inicial,
+        cliente: { razao_social: r.cliente_nome },
+        motorista: r.motorista_id
+          ? { id: r.motorista_id, nome: r.motorista_nome ?? "—", telefone: r.motorista_telefone }
+          : null,
+        veiculo: r.veiculo_id
+          ? {
+              id: r.veiculo_id,
+              placa: r.veiculo_placa ?? "—",
+              modelo: r.veiculo_modelo,
+              marca: r.veiculo_marca,
+              agregado: !!r.veiculo_agregado,
+            }
+          : null,
+      })) as ViagemAtiva[];
     },
   });
+
 
   // Última posição por viagem.
   const { data: locsByViagem = {} } = useQuery<Record<string, Loc>>({
