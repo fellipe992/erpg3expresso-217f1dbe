@@ -365,7 +365,10 @@ function MonitoramentoPage() {
     return (
       <div className="p-6">
         <Card className="p-6">
-          <p className="text-sm text-muted-foreground">Acesso restrito a Administrador e Gestor.</p>
+          <p className="text-sm text-muted-foreground">
+            Acesso restrito a Administrador, Gestor e usuários Monitor.
+          </p>
+
         </Card>
       </div>
     );
