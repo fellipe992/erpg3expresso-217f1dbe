@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Role = "administrador" | "financeiro" | "gestor" | "motorista";
+type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 
 type CreateInput = {
   email: string;
@@ -10,6 +10,8 @@ type CreateInput = {
   telefone?: string | null;
   role: Role;
   motorista_id?: string | null;
+  // clientes monitorados (apenas para o perfil "monitor")
+  cliente_ids?: string[] | null;
 };
 
 type UpdateInput = {
@@ -21,7 +23,10 @@ type UpdateInput = {
   ativo?: boolean;
   // motorista vinculado: string = vincular a esse motorista; null = desvincular; undefined = não alterar
   motorista_id?: string | null;
+  // clientes monitorados: array = substitui os vínculos; undefined = não alterar
+  cliente_ids?: string[] | null;
 };
+
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   // has_role vive no schema `private` (não exposto no PostgREST), então a checagem
