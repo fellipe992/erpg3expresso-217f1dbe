@@ -199,6 +199,24 @@ export const updateUser = createServerFn({ method: "POST" })
       }
     }
 
+    // Vínculo de clientes monitorados (perfil monitor)
+    if (nextRole === "monitor" && data.cliente_ids !== undefined) {
+      const ids = data.cliente_ids ?? [];
+      if (ids.length === 0) throw new Error("Selecione pelo menos um cliente para o usuário monitor.");
+      await supabaseAdmin.from("monitor_clientes").delete().eq("user_id", data.user_id);
+      const { error } = await supabaseAdmin
+        .from("monitor_clientes")
+        .insert(ids.map((cliente_id) => ({ user_id: data.user_id, cliente_id })));
+      if (error) throw new Error(error.message);
+      await audit(supabaseAdmin, actor, data.user_id, "vincular_clientes_monitor", { cliente_ids: ids });
+    }
+    // Ao deixar de ser monitor, remove os vínculos de clientes
+    if (nextRole !== "monitor" && prevRole === "monitor") {
+      await supabaseAdmin.from("monitor_clientes").delete().eq("user_id", data.user_id);
+    }
+
+
+
     // Auditar status
     if (data.ativo !== undefined && data.ativo !== prevProfile.ativo) {
       await audit(supabaseAdmin, actor, data.user_id, data.ativo ? "ativar_usuario" : "inativar_usuario", {
