@@ -84,8 +84,13 @@ function VeiculosPage() {
         cor: form.cor || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
-        provisao_manutencao_km: form.provisao_manutencao_km ? Number(form.provisao_manutencao_km) : null,
-        provisao_pneus_km: form.provisao_pneus_km ? Number(form.provisao_pneus_km) : null,
+        agregado: form.agregado ?? false,
+        proprietario_nome: form.agregado ? form.proprietario_nome || null : null,
+        proprietario_documento: form.agregado ? form.proprietario_documento || null : null,
+        proprietario_telefone: form.agregado ? form.proprietario_telefone || null : null,
+        provisao_manutencao_km: form.agregado || !form.provisao_manutencao_km ? null : Number(form.provisao_manutencao_km),
+        provisao_pneus_km: form.agregado || !form.provisao_pneus_km ? null : Number(form.provisao_pneus_km),
+
       };
 
       if (form.id) {
