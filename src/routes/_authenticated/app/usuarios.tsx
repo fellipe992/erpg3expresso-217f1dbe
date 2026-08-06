@@ -165,7 +165,7 @@ function UsuariosPage() {
 
   // ------ Edição
   const [edit, setEdit] = useState<{
-    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string;
+    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string;
   } | null>(null);
   const [confirmRemoveLink, setConfirmRemoveLink] = useState<null | (() => void)>(null);
 
@@ -176,6 +176,7 @@ function UsuariosPage() {
       role: (r.role ?? "motorista") as Role,
       ativo: r.ativo,
       motorista_id: r.motorista_id ?? "",
+      cliente_id: vinculosMonitor[r.id] ?? "",
     });
     setOpenEdit(r);
   }
