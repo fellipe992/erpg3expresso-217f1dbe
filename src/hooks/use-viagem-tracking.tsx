@@ -18,6 +18,9 @@ const WEB_MIN_INTERVAL_MS = 12_000;
 const WEB_MIN_DISTANCE_M = 25;
 /** Pausa após recusa por RLS (viagem já não está em andamento). */
 const RLS_BACKOFF_MS = 60_000;
+/** Fila local de posições capturadas sem internet. */
+const QUEUE_KEY = "g3:loc-queue";
+const QUEUE_MAX = 500;
 
 function distance(
   a: { latitude: number; longitude: number },
@@ -84,6 +87,7 @@ export function useMotoristaAutoTracking() {
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const insertWarnedRef = useRef(false);
   const pausedUntilRef = useRef(0);
+  const flushingRef = useRef(false);
 
 
   // ------------------------------------------------ Android: serviço nativo
@@ -189,6 +193,86 @@ export function useMotoristaAutoTracking() {
       return;
     }
 
+    type PendingRow = {
+      viagem_id: string;
+      motorista_id: string | null;
+      veiculo_id: string | null;
+      latitude: number;
+      longitude: number;
+      precisao: number | null;
+      velocidade: number | null;
+      heading: number | null;
+      online: boolean;
+      created_at: string;
+    };
+
+    const readQueue = (): PendingRow[] => {
+      try {
+        const raw = localStorage.getItem(QUEUE_KEY);
+        return raw ? (JSON.parse(raw) as PendingRow[]) : [];
+      } catch {
+        return [];
+      }
+    };
+    const writeQueue = (rows: PendingRow[]) => {
+      try {
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(rows.slice(-QUEUE_MAX)));
+      } catch {
+        /* noop */
+      }
+    };
+    const enqueue = (rows: PendingRow[]) => writeQueue([...readQueue(), ...rows]);
+
+    /** Grava no banco. Retorna "ok" | "retry" (sem rede) | "drop" (recusado). */
+    const persist = async (rows: PendingRow[]): Promise<"ok" | "retry" | "drop"> => {
+      const { error } = await supabase.from("viagem_localizacoes").insert(rows);
+      if (!error) return "ok";
+      // RLS recusa a gravação quando a viagem já não está "em_andamento":
+      // nunca vai passar em nova tentativa, então descarta.
+      const rlsBlocked =
+        error.code === "42501" || /row-level security/i.test(error.message ?? "");
+      if (rlsBlocked) {
+        pausedUntilRef.current = Date.now() + RLS_BACKOFF_MS;
+        await qc.invalidateQueries({ queryKey: ["motorista-viagens-ativas"] });
+        return "drop";
+      }
+      // Falha de rede / servidor indisponível → guarda para reenviar depois.
+      const offline = !navigator.onLine || !error.code || /fetch|network/i.test(error.message ?? "");
+      if (offline) return "retry";
+      if (!insertWarnedRef.current) {
+        insertWarnedRef.current = true;
+        toast.error("GPS não foi salvo", { description: error.message });
+      }
+      return "drop";
+    };
+
+    /** Reenvia o que ficou pendente enquanto o dispositivo estava sem internet. */
+    const flushQueue = async () => {
+      if (flushingRef.current || !navigator.onLine) return;
+      const pending = readQueue();
+      if (pending.length === 0) return;
+      flushingRef.current = true;
+      try {
+        // Envia em lotes para não estourar o tamanho da requisição.
+        let rest = pending;
+        while (rest.length > 0) {
+          const batch = rest.slice(0, 100);
+          const result = await persist(batch);
+          if (result === "retry") break; // continua offline: mantém a fila
+          rest = rest.slice(100);
+          writeQueue(rest);
+        }
+        if (rest.length === 0) {
+          writeQueue([]);
+          insertWarnedRef.current = false;
+          qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
+          qc.invalidateQueries({ queryKey: ["rota-viagem"] });
+        }
+      } finally {
+        flushingRef.current = false;
+      }
+    };
+
     const send = async (c: {
       latitude: number;
       longitude: number;
@@ -205,7 +289,7 @@ export function useMotoristaAutoTracking() {
 
 
       lastSentRef.current = { t: now, lat: c.latitude, lon: c.longitude };
-      const rows = viagensRef.current.map((v) => ({
+      const rows: PendingRow[] = viagensRef.current.map((v) => ({
         viagem_id: v.id,
         motorista_id: v.motorista_id,
         veiculo_id: v.veiculo_id,
@@ -215,33 +299,33 @@ export function useMotoristaAutoTracking() {
         velocidade: c.speed ?? null,
         heading: c.heading ?? null,
         online: navigator.onLine,
+        created_at: new Date(now).toISOString(),
       }));
       if (rows.length === 0) return;
-      const { error } = await supabase.from("viagem_localizacoes").insert(rows);
-      if (error) {
-        // RLS recusa a gravação quando a viagem já não está "em_andamento".
-        // Nesse caso a lista em cache está desatualizada: revalida na hora
-        // (o watcher é encerrado quando não sobra viagem ativa) e pausa os
-        // envios por um intervalo para não repetir a violação em loop.
-        const rlsBlocked =
-          error.code === "42501" || /row-level security/i.test(error.message ?? "");
-        if (rlsBlocked) {
-          pausedUntilRef.current = now + RLS_BACKOFF_MS;
-          await qc.invalidateQueries({ queryKey: ["motorista-viagens-ativas"] });
-          return;
-        }
 
-        if (!insertWarnedRef.current) {
-          insertWarnedRef.current = true;
-          toast.error("GPS não foi salvo", { description: error.message });
-        }
+      if (!navigator.onLine) {
+        enqueue(rows);
         return;
       }
+
+      const result = await persist(rows);
+      if (result === "retry") {
+        enqueue(rows);
+        return;
+      }
+      if (result !== "ok") return;
       insertWarnedRef.current = false;
+      void flushQueue();
       qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
-
     };
+
+    // Ao voltar a rede, reenvia imediatamente as posições guardadas.
+    const onOnline = () => void flushQueue();
+    window.addEventListener("online", onOnline);
+    void flushQueue();
+    const flushTimer = window.setInterval(() => void flushQueue(), 60_000);
+
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) =>
@@ -261,6 +345,10 @@ export function useMotoristaAutoTracking() {
       { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
     );
 
-    return stop;
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.clearInterval(flushTimer);
+      stop();
+    };
   }, [isMotorista, viagensKey, qc]);
 }

@@ -96,9 +96,24 @@ function UsuariosPage() {
     },
   });
 
+  // Vínculos monitor → cliente (para pré-selecionar na edição)
+  const { data: vinculosMonitor = {} } = useQuery<Record<string, string>>({
+    queryKey: ["monitor-clientes-map"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("monitor_clientes").select("user_id, cliente_id");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const v of data ?? []) if (!map[v.user_id]) map[v.user_id] = v.cliente_id;
+      return map;
+    },
+  });
+
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["usuarios-admin"] });
     qc.invalidateQueries({ queryKey: ["motoristas-livres"] });
+    qc.invalidateQueries({ queryKey: ["monitor-clientes-map"] });
   };
 
   // ------ Novo usuário
@@ -150,7 +165,7 @@ function UsuariosPage() {
 
   // ------ Edição
   const [edit, setEdit] = useState<{
-    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string;
+    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string;
   } | null>(null);
   const [confirmRemoveLink, setConfirmRemoveLink] = useState<null | (() => void)>(null);
 
@@ -161,6 +176,7 @@ function UsuariosPage() {
       role: (r.role ?? "motorista") as Role,
       ativo: r.ativo,
       motorista_id: r.motorista_id ?? "",
+      cliente_id: vinculosMonitor[r.id] ?? "",
     });
     setOpenEdit(r);
   }
@@ -185,6 +201,7 @@ function UsuariosPage() {
       user_id: string;
       nome?: string; email?: string; role?: Role; ativo?: boolean;
       motorista_id?: string | null;
+      cliente_ids?: string[];
     }) => updateFn({ data: payload }),
     onSuccess: () => {
       toast.success("Alterações salvas");
@@ -201,6 +218,9 @@ function UsuariosPage() {
     if (!edit.email.trim()) return toast.error("Informe o e-mail");
     if (edit.role === "motorista" && !edit.motorista_id) {
       return toast.error("Selecione um motorista para vincular");
+    }
+    if (edit.role === "monitor" && !edit.cliente_id) {
+      return toast.error("Selecione o cliente monitorado");
     }
 
     const wasMotorista = openEdit.role === "motorista";
@@ -230,6 +250,10 @@ function UsuariosPage() {
       if (edit.motorista_id !== current) payload.motorista_id = edit.motorista_id || null;
     } else if (removeLink) {
       payload.motorista_id = null;
+    }
+
+    if (edit.role === "monitor" && edit.cliente_id) {
+      payload.cliente_ids = [edit.cliente_id];
     }
     setConfirmRemoveLink(null);
     updateMut.mutate(payload);
@@ -441,6 +465,18 @@ function UsuariosPage() {
                     <SelectContent>
                       {editMotoristasOptions.map((m) => (
                         <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </F>
+              )}
+              {edit.role === "monitor" && (
+                <F label="Cliente monitorado *">
+                  <Select value={edit.cliente_id} onValueChange={(v) => setEdit({ ...edit, cliente_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o cliente..." /></SelectTrigger>
+                    <SelectContent>
+                      {clientesLista.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
