@@ -892,6 +892,38 @@ export type Database = {
           },
         ]
       }
+      monitor_clientes: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitor_clientes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motorista_veiculo_historico: {
         Row: {
           created_at: string
@@ -1521,6 +1553,7 @@ export type Database = {
       }
       veiculos: {
         Row: {
+          agregado: boolean
           ano: number | null
           ativo: boolean
           capacidade_kg: number | null
@@ -1534,6 +1567,9 @@ export type Database = {
           modelo: string
           observacoes: string | null
           placa: string
+          proprietario_documento: string | null
+          proprietario_nome: string | null
+          proprietario_telefone: string | null
           provisao_manutencao_km: number | null
           provisao_pneus_km: number | null
           renavam: string | null
@@ -1542,6 +1578,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agregado?: boolean
           ano?: number | null
           ativo?: boolean
           capacidade_kg?: number | null
@@ -1555,6 +1592,9 @@ export type Database = {
           modelo: string
           observacoes?: string | null
           placa: string
+          proprietario_documento?: string | null
+          proprietario_nome?: string | null
+          proprietario_telefone?: string | null
           provisao_manutencao_km?: number | null
           provisao_pneus_km?: number | null
           renavam?: string | null
@@ -1563,6 +1603,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agregado?: boolean
           ano?: number | null
           ativo?: boolean
           capacidade_kg?: number | null
@@ -1576,6 +1617,9 @@ export type Database = {
           modelo?: string
           observacoes?: string | null
           placa?: string
+          proprietario_documento?: string | null
+          proprietario_nome?: string | null
+          proprietario_telefone?: string | null
           provisao_manutencao_km?: number | null
           provisao_pneus_km?: number | null
           renavam?: string | null
@@ -1927,6 +1971,28 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       marcar_atrasados: { Args: never; Returns: undefined }
+      monitoramento_viagens_ativas: {
+        Args: never
+        Returns: {
+          cliente_nome: string
+          codigo: string
+          data_saida: string
+          destino_cidade: string
+          destino_uf: string
+          id: string
+          km_inicial: number
+          motorista_id: string
+          motorista_nome: string
+          motorista_telefone: string
+          origem_cidade: string
+          origem_uf: string
+          veiculo_agregado: boolean
+          veiculo_id: string
+          veiculo_marca: string
+          veiculo_modelo: string
+          veiculo_placa: string
+        }[]
+      }
     }
     Enums: {
       app_role:
