@@ -16,6 +16,8 @@ const NATIVE_INTERVAL_MS = 20_000;
 // -------- fallback web (navegador) --------
 const WEB_MIN_INTERVAL_MS = 12_000;
 const WEB_MIN_DISTANCE_M = 25;
+/** Pausa após recusa por RLS (viagem já não está em andamento). */
+const RLS_BACKOFF_MS = 60_000;
 
 function distance(
   a: { latitude: number; longitude: number },
