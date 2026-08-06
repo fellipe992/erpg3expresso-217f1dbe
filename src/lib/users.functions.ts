@@ -66,6 +66,9 @@ export const createUser = createServerFn({ method: "POST" })
     if (data.role === "motorista" && !data.motorista_id) {
       throw new Error("Selecione um motorista para vincular ao usuário.");
     }
+    if (data.role === "monitor" && (data.cliente_ids ?? []).length === 0) {
+      throw new Error("Selecione pelo menos um cliente para o usuário monitor.");
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -90,10 +93,21 @@ export const createUser = createServerFn({ method: "POST" })
       await supabaseAdmin.from("motoristas").update({ user_id: uid }).eq("id", data.motorista_id);
     }
 
+    if (data.role === "monitor" && data.cliente_ids?.length) {
+      const { error: mcErr } = await supabaseAdmin
+        .from("monitor_clientes")
+        .insert(data.cliente_ids.map((cliente_id) => ({ user_id: uid, cliente_id })));
+      if (mcErr) throw new Error(mcErr.message);
+    }
+
     const actor = { id: context.userId, email: context.claims?.email as string | undefined };
     await audit(supabaseAdmin, actor, uid, "criar_usuario", {
-      email: data.email, role: data.role, motorista_id: data.motorista_id ?? null,
+      email: data.email,
+      role: data.role,
+      motorista_id: data.motorista_id ?? null,
+      cliente_ids: data.cliente_ids ?? null,
     });
+
     return { id: uid };
   });
 
