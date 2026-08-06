@@ -197,10 +197,12 @@ export function useMotoristaAutoTracking() {
       heading?: number | null;
     }) => {
       const now = Date.now();
+      if (now < pausedUntilRef.current) return;
       const last = lastSentRef.current;
       const dist = last ? distance(c, { latitude: last.lat, longitude: last.lon }) : Infinity;
       const elapsed = last ? now - last.t : Infinity;
       if (elapsed < WEB_MIN_INTERVAL_MS && dist < WEB_MIN_DISTANCE_M) return;
+
 
       lastSentRef.current = { t: now, lat: c.latitude, lon: c.longitude };
       const rows = viagensRef.current.map((v) => ({
