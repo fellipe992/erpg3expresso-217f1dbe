@@ -87,6 +87,7 @@ export function useMotoristaAutoTracking() {
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const insertWarnedRef = useRef(false);
   const pausedUntilRef = useRef(0);
+  const flushingRef = useRef(false);
 
 
   // ------------------------------------------------ Android: serviço nativo
