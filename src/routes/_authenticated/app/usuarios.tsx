@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/app/usuarios")({
   component: UsuariosPage,
 });
 
-type Role = "administrador" | "financeiro" | "gestor" | "motorista";
+type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 type Filter = "todos" | "vinculados" | "nao_vinculados";
 
 type Row = {
