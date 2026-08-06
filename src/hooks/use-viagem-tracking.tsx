@@ -16,6 +16,8 @@ const NATIVE_INTERVAL_MS = 20_000;
 // -------- fallback web (navegador) --------
 const WEB_MIN_INTERVAL_MS = 12_000;
 const WEB_MIN_DISTANCE_M = 25;
+/** Pausa após recusa por RLS (viagem já não está em andamento). */
+const RLS_BACKOFF_MS = 60_000;
 
 function distance(
   a: { latitude: number; longitude: number },
@@ -81,6 +83,8 @@ export function useMotoristaAutoTracking() {
   const watchIdRef = useRef<number | null>(null);
   const lastSentRef = useRef<{ t: number; lat: number; lon: number } | null>(null);
   const insertWarnedRef = useRef(false);
+  const pausedUntilRef = useRef(0);
+
 
   // ------------------------------------------------ Android: serviço nativo
   useEffect(() => {
@@ -193,10 +197,12 @@ export function useMotoristaAutoTracking() {
       heading?: number | null;
     }) => {
       const now = Date.now();
+      if (now < pausedUntilRef.current) return;
       const last = lastSentRef.current;
       const dist = last ? distance(c, { latitude: last.lat, longitude: last.lon }) : Infinity;
       const elapsed = last ? now - last.t : Infinity;
       if (elapsed < WEB_MIN_INTERVAL_MS && dist < WEB_MIN_DISTANCE_M) return;
+
 
       lastSentRef.current = { t: now, lat: c.latitude, lon: c.longitude };
       const rows = viagensRef.current.map((v) => ({
@@ -213,6 +219,18 @@ export function useMotoristaAutoTracking() {
       if (rows.length === 0) return;
       const { error } = await supabase.from("viagem_localizacoes").insert(rows);
       if (error) {
+        // RLS recusa a gravação quando a viagem já não está "em_andamento".
+        // Nesse caso a lista em cache está desatualizada: revalida na hora
+        // (o watcher é encerrado quando não sobra viagem ativa) e pausa os
+        // envios por um intervalo para não repetir a violação em loop.
+        const rlsBlocked =
+          error.code === "42501" || /row-level security/i.test(error.message ?? "");
+        if (rlsBlocked) {
+          pausedUntilRef.current = now + RLS_BACKOFF_MS;
+          await qc.invalidateQueries({ queryKey: ["motorista-viagens-ativas"] });
+          return;
+        }
+
         if (!insertWarnedRef.current) {
           insertWarnedRef.current = true;
           toast.error("GPS não foi salvo", { description: error.message });
@@ -222,6 +240,7 @@ export function useMotoristaAutoTracking() {
       insertWarnedRef.current = false;
       qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
+
     };
 
     watchIdRef.current = navigator.geolocation.watchPosition(

@@ -207,11 +207,17 @@ class G3TrackingService : Service() {
     val pendentes = drainQueue()
     for (i in 0 until pendentes.length()) rows.put(pendentes.get(i))
 
-    if (!post(rows)) enqueue(rows)
+    // Recusa definitiva (RLS: viagem já não está "em_andamento") não volta para a
+    // fila — reenviar apenas repetiria a violação indefinidamente.
+    if (!post(rows) && !lastRejectPermanent) enqueue(rows)
   }
+
+  /** true quando a última recusa do banco é definitiva (não deve ser reenfileirada). */
+  @Volatile private var lastRejectPermanent = false
 
   /** POST /rest/v1/viagem_localizacoes — renova o token e tenta de novo se 401. */
   private fun post(rows: JSONArray, retried: Boolean = false): Boolean {
+    if (!retried) lastRejectPermanent = false
     val req = Request.Builder()
       .url("$supabaseUrl/rest/v1/viagem_localizacoes")
       .addHeader("apikey", apiKey)
@@ -224,9 +230,15 @@ class G3TrackingService : Service() {
       http.newCall(req).execute().use { res ->
         when {
           res.isSuccessful -> true
-          (res.code == 401 || res.code == 403) && !retried && refreshSession() -> post(rows, true)
+          res.code == 401 && !retried && refreshSession() -> post(rows, true)
           else -> {
-            Log.w(TAG, "insert falhou ${res.code}: ${res.body?.string()}")
+            val body = res.body?.string().orEmpty()
+            if (res.code == 403 && body.contains("row-level security", ignoreCase = true)) {
+              lastRejectPermanent = true
+              Log.w(TAG, "insert recusado por RLS — viagem provavelmente encerrada")
+            } else {
+              Log.w(TAG, "insert falhou ${res.code}: $body")
+            }
             false
           }
         }
@@ -236,6 +248,7 @@ class G3TrackingService : Service() {
       false
     }
   }
+
 
   private fun refreshSession(): Boolean {
     if (refreshToken.isEmpty()) return false
