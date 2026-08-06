@@ -345,6 +345,10 @@ export function useMotoristaAutoTracking() {
       { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
     );
 
-    return stop;
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.clearInterval(flushTimer);
+      stop();
+    };
   }, [isMotorista, viagensKey, qc]);
 }
