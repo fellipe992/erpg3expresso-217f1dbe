@@ -314,12 +314,15 @@ function MonitoramentoPage() {
     }
     root.appendChild(body);
 
-    const link = document.createElement("a");
-    link.href = `/app/viagens/${encodeURIComponent(v.id)}`;
-    link.style.cssText =
-      "display:inline-block; margin-top:8px; padding:6px 10px; background:#F15A24; color:white; border-radius:6px; font-size:12px; text-decoration:none;";
-    link.textContent = "Abrir detalhes";
-    root.appendChild(link);
+    if (!isMonitor) {
+      const link = document.createElement("a");
+      link.href = `/app/viagens/${encodeURIComponent(v.id)}`;
+      link.style.cssText =
+        "display:inline-block; margin-top:8px; padding:6px 10px; background:#F15A24; color:white; border-radius:6px; font-size:12px; text-decoration:none;";
+      link.textContent = "Abrir detalhes";
+      root.appendChild(link);
+    }
+
 
     info.setContent(root);
     info.open({ map, anchor: marker });
