@@ -56,7 +56,8 @@ function AuthenticatedLayout() {
               </div>
             </div>
             <ThemeToggle />
-            <NotificationsBell />
+            {/* Monitor (cliente externo): sem notificações — apenas mapa e motoristas em viagem */}
+            {role !== "monitor" && <NotificationsBell />}
             <UserMenu />
           </header>
           <main className="flex-1 bg-background">
