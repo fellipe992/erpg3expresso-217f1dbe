@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Role = "administrador" | "financeiro" | "gestor" | "motorista";
+type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 
 type CreateInput = {
   email: string;
@@ -10,6 +10,8 @@ type CreateInput = {
   telefone?: string | null;
   role: Role;
   motorista_id?: string | null;
+  // clientes monitorados (apenas para o perfil "monitor")
+  cliente_ids?: string[] | null;
 };
 
 type UpdateInput = {
@@ -21,7 +23,10 @@ type UpdateInput = {
   ativo?: boolean;
   // motorista vinculado: string = vincular a esse motorista; null = desvincular; undefined = não alterar
   motorista_id?: string | null;
+  // clientes monitorados: array = substitui os vínculos; undefined = não alterar
+  cliente_ids?: string[] | null;
 };
+
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   // has_role vive no schema `private` (não exposto no PostgREST), então a checagem
@@ -61,6 +66,9 @@ export const createUser = createServerFn({ method: "POST" })
     if (data.role === "motorista" && !data.motorista_id) {
       throw new Error("Selecione um motorista para vincular ao usuário.");
     }
+    if (data.role === "monitor" && (data.cliente_ids ?? []).length === 0) {
+      throw new Error("Selecione pelo menos um cliente para o usuário monitor.");
+    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -85,10 +93,21 @@ export const createUser = createServerFn({ method: "POST" })
       await supabaseAdmin.from("motoristas").update({ user_id: uid }).eq("id", data.motorista_id);
     }
 
+    if (data.role === "monitor" && data.cliente_ids?.length) {
+      const { error: mcErr } = await supabaseAdmin
+        .from("monitor_clientes")
+        .insert(data.cliente_ids.map((cliente_id) => ({ user_id: uid, cliente_id })));
+      if (mcErr) throw new Error(mcErr.message);
+    }
+
     const actor = { id: context.userId, email: context.claims?.email as string | undefined };
     await audit(supabaseAdmin, actor, uid, "criar_usuario", {
-      email: data.email, role: data.role, motorista_id: data.motorista_id ?? null,
+      email: data.email,
+      role: data.role,
+      motorista_id: data.motorista_id ?? null,
+      cliente_ids: data.cliente_ids ?? null,
     });
+
     return { id: uid };
   });
 
@@ -179,6 +198,24 @@ export const updateUser = createServerFn({ method: "POST" })
         }
       }
     }
+
+    // Vínculo de clientes monitorados (perfil monitor)
+    if (nextRole === "monitor" && data.cliente_ids !== undefined) {
+      const ids = data.cliente_ids ?? [];
+      if (ids.length === 0) throw new Error("Selecione pelo menos um cliente para o usuário monitor.");
+      await supabaseAdmin.from("monitor_clientes").delete().eq("user_id", data.user_id);
+      const { error } = await supabaseAdmin
+        .from("monitor_clientes")
+        .insert(ids.map((cliente_id) => ({ user_id: data.user_id, cliente_id })));
+      if (error) throw new Error(error.message);
+      await audit(supabaseAdmin, actor, data.user_id, "vincular_clientes_monitor", { cliente_ids: ids });
+    }
+    // Ao deixar de ser monitor, remove os vínculos de clientes
+    if (nextRole !== "monitor" && prevRole === "monitor") {
+      await supabaseAdmin.from("monitor_clientes").delete().eq("user_id", data.user_id);
+    }
+
+
 
     // Auditar status
     if (data.ativo !== undefined && data.ativo !== prevProfile.ativo) {

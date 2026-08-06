@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -35,6 +35,12 @@ function AuthenticatedLayout() {
   if (role === "motorista") {
     return <MobileMotoristaShell><Outlet /></MobileMotoristaShell>;
   }
+
+  // Monitor (cliente): acesso exclusivo à Central de Monitoramento
+  if (role === "monitor" && location.pathname !== "/app/monitoramento") {
+    return <Navigate to="/app/monitoramento" replace />;
+  }
+
 
   // Admin / Financeiro / Gestor: layout com sidebar
   return (

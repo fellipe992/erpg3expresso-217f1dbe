@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/app/usuarios")({
   component: UsuariosPage,
 });
 
-type Role = "administrador" | "financeiro" | "gestor" | "motorista";
+type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 type Filter = "todos" | "vinculados" | "nao_vinculados";
 
 type Row = {
@@ -103,14 +103,29 @@ function UsuariosPage() {
 
   // ------ Novo usuário
   const [form, setForm] = useState<{
-    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string;
-  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "" });
+    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string;
+  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+
+  const { data: clientesLista = [] } = useQuery({
+    queryKey: ["clientes-monitor-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clientes")
+        .select("id, razao_social")
+        .eq("ativo", true)
+        .order("razao_social");
+      if (error) throw error;
+      return (data ?? []) as { id: string; razao_social: string }[];
+    },
+  });
+
 
   const createMut = useMutation({
     mutationFn: async () => {
       if (!form.email || !form.password || !form.nome) throw new Error("Preencha nome, e-mail e senha");
       if (form.password.length < 6) throw new Error("Senha mínima de 6 caracteres");
       if (form.role === "motorista" && !form.motorista_id) throw new Error("Selecione um motorista para vincular");
+      if (form.role === "monitor" && !form.cliente_id) throw new Error("Selecione o cliente monitorado");
       return createFn({
         data: {
           email: form.email.trim(),
@@ -119,6 +134,7 @@ function UsuariosPage() {
           telefone: form.telefone || null,
           role: form.role,
           motorista_id: form.role === "motorista" ? form.motorista_id : null,
+          cliente_ids: form.role === "monitor" ? [form.cliente_id] : null,
         },
       });
     },
@@ -126,7 +142,8 @@ function UsuariosPage() {
       toast.success("Usuário criado");
       invalidateAll();
       setOpenNew(false);
-      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "" });
+      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -350,6 +367,8 @@ function UsuariosPage() {
                   <SelectItem value="financeiro">Financeiro</SelectItem>
                   <SelectItem value="gestor">Gestor</SelectItem>
                   <SelectItem value="motorista">Motorista</SelectItem>
+                  <SelectItem value="monitor">Monitor (cliente)</SelectItem>
+
                 </SelectContent>
               </Select>
             </F>
@@ -365,6 +384,19 @@ function UsuariosPage() {
                 </Select>
               </F>
             )}
+            {form.role === "monitor" && (
+              <F label="Cliente monitorado *">
+                <Select value={form.cliente_id} onValueChange={(v) => setForm({ ...form, cliente_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o cliente..." /></SelectTrigger>
+                  <SelectContent>
+                    {clientesLista.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </F>
+            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
@@ -397,6 +429,8 @@ function UsuariosPage() {
                     <SelectItem value="financeiro">Financeiro</SelectItem>
                     <SelectItem value="gestor">Gestor</SelectItem>
                     <SelectItem value="motorista">Motorista</SelectItem>
+                    <SelectItem value="monitor">Monitor (cliente)</SelectItem>
+
                   </SelectContent>
                 </Select>
               </F>

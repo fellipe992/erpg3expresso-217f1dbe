@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
-export type AppRole = "administrador" | "financeiro" | "gestor" | "motorista";
+export type AppRole = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 
 type AuthContextValue = {
   session: Session | null;
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .order("role");
       if (error) return null;
       if (!data || data.length === 0) return null;
-      const order: AppRole[] = ["administrador", "financeiro", "gestor", "motorista"];
+      const order: AppRole[] = ["administrador", "financeiro", "gestor", "motorista", "monitor"];
       const roles = data.map((r) => r.role as AppRole);
       for (const r of order) if (roles.includes(r)) return r;
       return roles[0] ?? null;
