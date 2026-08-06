@@ -96,6 +96,20 @@ function UsuariosPage() {
     },
   });
 
+  // Vínculos monitor → cliente (para pré-selecionar na edição)
+  const { data: vinculosMonitor = {} } = useQuery<Record<string, string>>({
+    queryKey: ["monitor-clientes-map"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("monitor_clientes").select("user_id, cliente_id");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      for (const v of data ?? []) if (!map[v.user_id]) map[v.user_id] = v.cliente_id;
+      return map;
+    },
+  });
+
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["usuarios-admin"] });
     qc.invalidateQueries({ queryKey: ["motoristas-livres"] });
