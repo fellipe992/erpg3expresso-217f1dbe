@@ -18,6 +18,9 @@ const WEB_MIN_INTERVAL_MS = 12_000;
 const WEB_MIN_DISTANCE_M = 25;
 /** Pausa após recusa por RLS (viagem já não está em andamento). */
 const RLS_BACKOFF_MS = 60_000;
+/** Fila local de posições capturadas sem internet. */
+const QUEUE_KEY = "g3:loc-queue";
+const QUEUE_MAX = 500;
 
 function distance(
   a: { latitude: number; longitude: number },
