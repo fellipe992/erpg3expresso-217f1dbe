@@ -1929,7 +1929,12 @@ export type Database = {
       marcar_atrasados: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "administrador" | "financeiro" | "gestor" | "motorista"
+      app_role:
+        | "administrador"
+        | "financeiro"
+        | "gestor"
+        | "motorista"
+        | "monitor"
       checklist_tipo: "saida" | "chegada"
       financeiro_status: "pendente" | "pago" | "atrasado" | "cancelado"
       financeiro_tipo: "receber" | "pagar"
@@ -2088,7 +2093,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["administrador", "financeiro", "gestor", "motorista"],
+      app_role: [
+        "administrador",
+        "financeiro",
+        "gestor",
+        "motorista",
+        "monitor",
+      ],
       checklist_tipo: ["saida", "chegada"],
       financeiro_status: ["pendente", "pago", "atrasado", "cancelado"],
       financeiro_tipo: ["receber", "pagar"],
