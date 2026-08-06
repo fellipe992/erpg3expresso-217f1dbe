@@ -314,16 +314,14 @@ export function useMotoristaAutoTracking() {
       void flushQueue();
       qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
       qc.invalidateQueries({ queryKey: ["rota-viagem"] });
-
-          toast.error("GPS não foi salvo", { description: error.message });
-        }
-        return;
-      }
-      insertWarnedRef.current = false;
-      qc.invalidateQueries({ queryKey: ["monitoramento-locs"] });
-      qc.invalidateQueries({ queryKey: ["rota-viagem"] });
-
     };
+
+    // Ao voltar a rede, reenvia imediatamente as posições guardadas.
+    const onOnline = () => void flushQueue();
+    window.addEventListener("online", onOnline);
+    void flushQueue();
+    const flushTimer = window.setInterval(() => void flushQueue(), 60_000);
+
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) =>
