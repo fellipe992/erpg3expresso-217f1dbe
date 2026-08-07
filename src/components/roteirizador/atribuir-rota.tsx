@@ -49,22 +49,36 @@ export function AtribuirRota({
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
           <Label className="text-[11px]">Motorista</Label>
-          <Select
-            value={motoristaId}
-            onValueChange={(id) => onChange({ motoristaId: id, dataPrevista })}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder={isLoading ? "Carregando…" : "Selecione"} />
-            </SelectTrigger>
-            <SelectContent>
-              {motoristas.map((m) => (
-                <SelectItem key={m.id} value={m.id} className="text-xs">
-                  {m.nome}
-                  {m.placa ? ` · ${m.placa}` : " · sem veículo"}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={motoristaId}
+              onValueChange={(id) => onChange({ motoristaId: id, dataPrevista })}
+            >
+              <SelectTrigger className="h-8 flex-1 text-xs">
+                <SelectValue placeholder={isLoading ? "Carregando…" : "Selecione"} />
+              </SelectTrigger>
+              <SelectContent>
+                {motoristas.map((m) => (
+                  <SelectItem key={m.id} value={m.id} className="text-xs">
+                    {m.nome}
+                    {m.placa ? ` · ${m.placa}` : " · sem veículo"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {motoristaId ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => onChange(undefined)}
+                title="Remover motorista"
+              >
+                <X className="size-4" />
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="space-y-1">
           <Label className="text-[11px]">Veículo vinculado</Label>
