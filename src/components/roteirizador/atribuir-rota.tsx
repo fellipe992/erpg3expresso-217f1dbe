@@ -1,8 +1,6 @@
-import { useMemo, useState } from "react";
-import { Loader2, Send, Truck } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo } from "react";
+import { CheckCircle2, Truck } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,66 +10,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  enviarRotaParaMotorista,
-  useMotoristasComVeiculo,
-} from "@/hooks/use-envio-rota";
+import { useMotoristasComVeiculo, type Atribuicao } from "@/hooks/use-envio-rota";
 import type { Rota } from "@/lib/roteirizacao/tipos";
 
 /**
  * Atribuição de uma rota gerada a um motorista cadastrado.
- * Ao escolher o motorista, placa e modelo do veículo vinculado são preenchidos.
- * "Enviar rota" cria uma viagem planejada com todas as paradas — o motorista
- * recebe a notificação e pode iniciar a viagem pelo aplicativo.
+ * Aqui apenas se define quem leva a rota e a saída prevista — o envio é feito
+ * de uma vez para todas as rotas pelo botão "Disparar rotas" no topo da tela,
+ * o que permite reorganizar motoristas quantas vezes for necessário antes.
  */
 export function AtribuirRota({
   rota,
-  rotulo,
-  projeto,
+  atribuicao,
+  onChange,
+  enviada,
 }: {
   rota: Rota;
-  rotulo: string;
-  projeto?: string;
+  atribuicao?: Atribuicao;
+  onChange: (a: Atribuicao | undefined) => void;
+  enviada?: string | null;
 }) {
   const { data: motoristas = [], isLoading } = useMotoristasComVeiculo();
-  const [motoristaId, setMotoristaId] = useState<string>("");
-  const [data, setData] = useState<string>(() => new Date().toISOString().slice(0, 16));
-  const [enviando, setEnviando] = useState(false);
-  const [enviada, setEnviada] = useState<string | null>(null);
+  const motoristaId = atribuicao?.motoristaId ?? "";
+  const dataPrevista =
+    atribuicao?.dataPrevista ?? new Date().toISOString().slice(0, 16);
 
   const motorista = useMemo(
     () => motoristas.find((m) => m.id === motoristaId) ?? null,
     [motoristas, motoristaId],
   );
-
-  const enviar = async () => {
-    if (!motorista) return toast.error("Selecione o motorista");
-    if (!motorista.veiculo_id) {
-      return toast.error("Motorista sem veículo vinculado", {
-        description: "Vincule um veículo ao motorista no cadastro antes de enviar a rota.",
-      });
-    }
-    setEnviando(true);
-    try {
-      const r = await enviarRotaParaMotorista({
-        rota,
-        rotuloRota: rotulo,
-        motorista,
-        dataPrevista: data,
-        projeto,
-      });
-      setEnviada(r.codigo ?? r.viagemId);
-      toast.success(`Rota enviada para ${motorista.nome}`, {
-        description: `Viagem ${r.codigo ?? ""} agendada com ${rota.paradas.length} paradas.`,
-      });
-    } catch (e) {
-      toast.error("Não foi possível enviar a rota", {
-        description: e instanceof Error ? e.message : undefined,
-      });
-    } finally {
-      setEnviando(false);
-    }
-  };
 
   return (
     <div className="space-y-2 border-t border-border px-3 py-3">
@@ -81,7 +48,10 @@ export function AtribuirRota({
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="space-y-1">
           <Label className="text-[11px]">Motorista</Label>
-          <Select value={motoristaId} onValueChange={setMotoristaId}>
+          <Select
+            value={motoristaId}
+            onValueChange={(id) => onChange({ motoristaId: id, dataPrevista })}
+          >
             <SelectTrigger className="h-8 text-xs">
               <SelectValue placeholder={isLoading ? "Carregando…" : "Selecione"} />
             </SelectTrigger>
@@ -114,28 +84,29 @@ export function AtribuirRota({
           <Label className="text-[11px]">Saída prevista</Label>
           <Input
             type="datetime-local"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
+            value={dataPrevista}
+            onChange={(e) =>
+              motoristaId
+                ? onChange({ motoristaId, dataPrevista: e.target.value })
+                : onChange({ motoristaId: "", dataPrevista: e.target.value })
+            }
             className="h-8 text-xs"
           />
         </div>
-        <div className="flex items-end">
-          <Button size="sm" className="w-full" onClick={enviar} disabled={enviando || !motoristaId}>
-            {enviando ? (
-              <Loader2 className="mr-2 size-3.5 animate-spin" />
-            ) : (
-              <Send className="mr-2 size-3.5" />
-            )}
-            Enviar rota
-          </Button>
+        <div className="flex items-end text-[11px] text-muted-foreground">
+          {enviada ? (
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="size-3.5" /> Enviada — viagem {enviada}
+            </span>
+          ) : motorista ? (
+            <span>
+              {rota.paradas.length} paradas prontas para disparo com {motorista.nome}.
+            </span>
+          ) : (
+            <span>Selecione o motorista e use “Disparar rotas” no topo da tela.</span>
+          )}
         </div>
       </div>
-      {enviada && (
-        <p className="text-[11px] text-muted-foreground">
-          Viagem <span className="font-semibold">{enviada}</span> agendada — o motorista foi
-          notificado e pode iniciá-la pelo aplicativo.
-        </p>
-      )}
     </div>
   );
 }
