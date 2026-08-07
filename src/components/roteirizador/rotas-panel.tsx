@@ -216,6 +216,8 @@ export function RotasPanel({
                     <Trash2 className="mr-1 size-3.5" /> Excluir
                   </Button>
                 </div>
+
+                <AtribuirRota rota={r} rotulo={r.rotulo ?? r.veiculo.nome} projeto={projeto} />
               </CollapsibleContent>
             </Collapsible>
           </Card>
