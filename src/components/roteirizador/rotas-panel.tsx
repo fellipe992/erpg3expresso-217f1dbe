@@ -10,6 +10,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { AtribuirRota } from "@/components/roteirizador/atribuir-rota";
 import { corDaRota } from "@/lib/roteirizacao/regioes";
 import { ROTULO_ORIGEM } from "@/lib/roteirizacao/frota";
 import { brl, duracao } from "@/lib/roteirizacao/format";
