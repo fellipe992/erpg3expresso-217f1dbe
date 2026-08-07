@@ -31,6 +31,7 @@ export function RotasPanel({
   onDividir,
   onMesclar,
   onExcluir,
+  projeto,
 }: {
   plano: Plano;
   ocultas: Set<string>;
@@ -42,6 +43,7 @@ export function RotasPanel({
   onDividir: (rotaId: string) => void;
   onMesclar: (origemId: string, destinoId: string) => void;
   onExcluir: (rotaId: string) => void;
+  projeto?: string;
 }) {
   const [arrasto, setArrasto] = useState<Arrasto>(null);
   const [alvo, setAlvo] = useState<string | null>(null);
