@@ -77,7 +77,7 @@ function VeiculosPage() {
         modelo,
         marca: form.marca || null,
         ano: form.ano ? Number(form.ano) : null,
-        tipo: (form.tipo ?? "outro") as "cavalo" | "carreta" | "truck" | "toco" | "van" | "utilitario" | "outro",
+        tipo: (form.tipo ?? "outro") as Veiculo["tipo"],
         renavam: form.renavam || null,
         chassi: form.chassi || null,
         capacidade_kg: form.capacidade_kg ? Number(form.capacidade_kg) : null,
