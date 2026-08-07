@@ -274,6 +274,10 @@ function ViagemDetalheePage() {
         })()}
       </Card>
 
+      {(viagem.status === "planejada" || viagem.status === "em_andamento") && (
+        <ParadasRotaCard viagemId={id} />
+      )}
+
       {/* Ação: Iniciar viagem */}
       {viagem.status === "planejada" && (
         <ChecklistSaidaDialog
