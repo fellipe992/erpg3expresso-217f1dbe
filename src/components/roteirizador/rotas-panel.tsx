@@ -11,6 +11,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { AtribuirRota } from "@/components/roteirizador/atribuir-rota";
+import type { Atribuicao } from "@/hooks/use-envio-rota";
 import { corDaRota } from "@/lib/roteirizacao/regioes";
 import { ROTULO_ORIGEM } from "@/lib/roteirizacao/frota";
 import { brl, duracao } from "@/lib/roteirizacao/format";
@@ -32,6 +33,9 @@ export function RotasPanel({
   onMesclar,
   onExcluir,
   projeto,
+  atribuicoes,
+  onAtribuir,
+  enviadas,
 }: {
   plano: Plano;
   ocultas: Set<string>;
@@ -44,6 +48,9 @@ export function RotasPanel({
   onMesclar: (origemId: string, destinoId: string) => void;
   onExcluir: (rotaId: string) => void;
   projeto?: string;
+  atribuicoes?: Record<string, Atribuicao | undefined>;
+  onAtribuir?: (rotaId: string, a: Atribuicao | undefined) => void;
+  enviadas?: Record<string, string>;
 }) {
   const [arrasto, setArrasto] = useState<Arrasto>(null);
   const [alvo, setAlvo] = useState<string | null>(null);
@@ -217,7 +224,13 @@ export function RotasPanel({
                   </Button>
                 </div>
 
-                <AtribuirRota rota={r} rotulo={r.rotulo ?? r.veiculo.nome} projeto={projeto} />
+                <AtribuirRota
+                  rota={r}
+                  atribuicao={atribuicoes?.[r.id]}
+                  onChange={(a) => onAtribuir?.(r.id, a)}
+                  enviada={enviadas?.[r.id] ?? null}
+                />
+
               </CollapsibleContent>
             </Collapsible>
           </Card>

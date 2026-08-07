@@ -52,6 +52,9 @@ export function cidadeUf(endereco?: string | null): { cidade: string | null; uf:
 
 export type ResultadoEnvio = { viagemId: string; codigo: string | null };
 
+/** Atribuição pendente de uma rota (definida antes do disparo em lote). */
+export type Atribuicao = { motoristaId: string; dataPrevista: string };
+
 /** Cria uma viagem planejada com as paradas da rota e vincula o motorista. */
 export async function enviarRotaParaMotorista(params: {
   rota: Rota;
