@@ -375,6 +375,7 @@ function RoteirizadorPage() {
             <TabsContent value="rotas" className="mt-3">
               <RotasPanel
                 plano={plano}
+                projeto={nomeProjeto}
                 ocultas={ocultas}
                 onToggleVisibilidade={toggleVisibilidade}
                 selecionada={selecionada}
