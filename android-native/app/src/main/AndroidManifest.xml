@@ -46,6 +46,20 @@
             android:foregroundServiceType="location"
             android:stopWithTask="false" />
 
+        <!-- Religa o rastreamento após reboot, atualização ou morte do processo -->
+        <receiver
+            android:name=".G3BootReceiver"
+            android:enabled="true"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="br.com.g3expresso.motorista.TRACK_REVIVE" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
