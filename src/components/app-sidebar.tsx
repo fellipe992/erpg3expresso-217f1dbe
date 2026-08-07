@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/logo";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtimeSync } from "@/hooks/use-realtime-sync";
 import { Badge } from "@/components/ui/badge";
 
 type NavItem = {
@@ -105,6 +106,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { role } = useAuth();
   const collapsed = state === "collapsed";
+  useRealtimeSync();
 
   const isAdmin = role === "administrador";
   const isFinance = role === "financeiro" || isAdmin;

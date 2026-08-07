@@ -46,7 +46,7 @@ type Veiculo = {
 
 
 
-const TIPOS = ["cavalo", "carreta", "truck", "toco", "van", "utilitario", "outro"];
+const TIPOS = ["cavalo", "carreta", "truck", "toco", "vuc", "van", "utilitario", "outro"];
 const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true, agregado: false };
 
 function VeiculosPage() {
@@ -77,7 +77,7 @@ function VeiculosPage() {
         modelo,
         marca: form.marca || null,
         ano: form.ano ? Number(form.ano) : null,
-        tipo: (form.tipo ?? "outro") as "cavalo" | "carreta" | "truck" | "toco" | "van" | "utilitario" | "outro",
+        tipo: (form.tipo ?? "outro") as "cavalo" | "carreta" | "truck" | "toco" | "vuc" | "van" | "utilitario" | "outro",
         renavam: form.renavam || null,
         chassi: form.chassi || null,
         capacidade_kg: form.capacidade_kg ? Number(form.capacidade_kg) : null,

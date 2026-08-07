@@ -2093,6 +2093,7 @@ export type Database = {
         | "van"
         | "utilitario"
         | "outro"
+        | "vuc"
       viagem_status: "planejada" | "em_andamento" | "concluida" | "cancelada"
     }
     CompositeTypes: {
@@ -2260,6 +2261,7 @@ export const Constants = {
         "van",
         "utilitario",
         "outro",
+        "vuc",
       ],
       viagem_status: ["planejada", "em_andamento", "concluida", "cancelada"],
     },
