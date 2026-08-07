@@ -1,5 +1,6 @@
 package br.com.g3expresso.motorista
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,11 +8,17 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -26,21 +33,28 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
  * Foreground Service 100% nativo de rastreamento.
  *
- * - Recebe posições do FusedLocationProviderClient (LocationCallback nativo).
- * - Envia CADA posição direto para o Supabase (REST) por OkHttp, sem depender
- *   do WebView / JavaScript, que o Android congela em segundo plano.
- * - Renova o access_token sozinho usando o refresh_token (o token do Supabase
- *   expira em ~1h e a viagem pode durar o dia inteiro).
- * - Guarda em fila local (SharedPreferences) o que falhar por falta de rede e
- *   reenvia na próxima posição.
- *
- * O React só chama start/stop. Nada mais.
+ * Regras de operação (nunca depender do WebView / do motorista abrir o app):
+ * - Posições vêm do FusedLocationProviderClient e vão direto ao banco (REST).
+ * - Cada posição carrega `created_at` do momento da captura: o que ficar em fila
+ *   offline é gravado com a hora real em que o motorista passou pelo ponto.
+ * - Sem internet: a posição vai para uma fila persistente (SharedPreferences).
+ * - Watchdog a cada 60s: reenvia a fila, reanexa o LocationCallback se o sistema
+ *   o matou e reagenda o alarme de auto-recuperação.
+ * - NetworkCallback: assim que qualquer rede volta, a fila é despejada na hora.
+ * - AlarmManager + BOOT_COMPLETED: se o processo for morto (bateria acabou,
+ *   celular reiniciou, sistema matou o app), o serviço volta sozinho enquanto
+ *   houver viagem em andamento salva.
+ * - O serviço só para de verdade em ACTION_STOP (motorista finalizou a viagem).
  */
 class G3TrackingService : Service() {
 
@@ -48,27 +62,59 @@ class G3TrackingService : Service() {
     const val ACTION_START = "br.com.g3expresso.motorista.TRACK_START"
     const val ACTION_STOP = "br.com.g3expresso.motorista.TRACK_STOP"
     const val ACTION_UPDATE_SESSION = "br.com.g3expresso.motorista.TRACK_SESSION"
+    /** Disparado pelo AlarmManager / BootReceiver para religar o serviço. */
+    const val ACTION_REVIVE = "br.com.g3expresso.motorista.TRACK_REVIVE"
 
     private const val TAG = "G3Tracking"
     private const val CHANNEL_ID = "g3_viagem_tracking"
     private const val NOTIF_ID = 4211
     private const val PREFS = "g3_tracking_prefs"
+    private const val WATCHDOG_MS = 60_000L
+    private const val REVIVE_MS = 5 * 60_000L
+    private const val QUEUE_MAX = 5000
 
     @Volatile
     var isRunning: Boolean = false
       private set
 
     fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    /** Existe viagem ativa salva? Usado pelo BootReceiver. */
+    fun hasActiveTrip(ctx: Context): Boolean {
+      val p = prefs(ctx)
+      val url = p.getString("supabaseUrl", "") ?: ""
+      val viagens = JSONArray(p.getString("viagens", "[]"))
+      return url.isNotEmpty() && viagens.length() > 0
+    }
+
+    fun reviveIntent(ctx: Context): Intent =
+      Intent(ctx, G3TrackingService::class.java).setAction(ACTION_REVIVE)
+
+    fun startIfActive(ctx: Context) {
+      if (!hasActiveTrip(ctx)) return
+      val intent = reviveIntent(ctx)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ctx.startForegroundService(intent)
+      } else {
+        ctx.startService(intent)
+      }
+    }
   }
 
   private lateinit var fused: FusedLocationProviderClient
   private var callback: LocationCallback? = null
   private var wakeLock: PowerManager.WakeLock? = null
+  private var netCallback: ConnectivityManager.NetworkCallback? = null
+  private val main = Handler(Looper.getMainLooper())
   private val io = Executors.newSingleThreadExecutor()
   private val http = OkHttpClient.Builder()
     .connectTimeout(20, TimeUnit.SECONDS)
     .readTimeout(30, TimeUnit.SECONDS)
+    .retryOnConnectionFailure(true)
     .build()
+  private val iso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+    timeZone = TimeZone.getTimeZone("UTC")
+  }
 
   // Configuração vinda do JS (persistida para sobreviver a restart do serviço).
   private var supabaseUrl = ""
@@ -88,7 +134,7 @@ class G3TrackingService : Service() {
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     when (intent?.action) {
       ACTION_STOP -> {
-        stopTracking()
+        stopTracking(clearState = true)
         return START_NOT_STICKY
       }
       ACTION_UPDATE_SESSION -> {
@@ -96,6 +142,8 @@ class G3TrackingService : Service() {
         intent.getStringExtra("refreshToken")?.let { if (it.isNotEmpty()) refreshToken = it }
         intent.getStringExtra("viagens")?.let { viagens = JSONArray(it) }
         persist()
+        // Sessão renovada é a hora ideal para tentar esvaziar a fila.
+        io.execute { flushQueue() }
         return START_STICKY
       }
       else -> {
@@ -109,7 +157,7 @@ class G3TrackingService : Service() {
           minDistanceM = intent.getFloatExtra("minDistanceM", 0f)
           persist()
         } else {
-          // Reinício pelo sistema (START_STICKY): recupera o estado salvo.
+          // Reinício pelo sistema / alarme / boot: recupera o estado salvo.
           restore()
           if (supabaseUrl.isEmpty() || viagens.length() == 0) {
             stopSelf()
@@ -126,10 +174,17 @@ class G3TrackingService : Service() {
   // ---------------------------------------------------------------- tracking
 
   private fun startTracking() {
-    if (callback != null) return
     isRunning = true
-
     acquireWakeLock()
+    registerNetworkCallback()
+    scheduleWatchdog()
+    scheduleRevive()
+    requestUpdates()
+    io.execute { flushQueue() }
+  }
+
+  private fun requestUpdates() {
+    if (callback != null) return
 
     val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, intervalMs)
       .setMinUpdateIntervalMillis(intervalMs / 2)
@@ -140,8 +195,10 @@ class G3TrackingService : Service() {
     val cb = object : LocationCallback() {
       override fun onLocationResult(result: LocationResult) {
         val loc = result.lastLocation ?: return
-        // Envio imediato, dentro do serviço, em thread própria.
-        io.execute { sendLocation(loc.latitude, loc.longitude, loc.accuracy, loc.speed, loc.bearing) }
+        val capturedAt = if (loc.time > 0) loc.time else System.currentTimeMillis()
+        io.execute {
+          sendLocation(loc.latitude, loc.longitude, loc.accuracy, loc.speed, loc.bearing, capturedAt)
+        }
       }
     }
     callback = cb
@@ -151,23 +208,127 @@ class G3TrackingService : Service() {
       Log.i(TAG, "requestLocationUpdates ativo (interval=${intervalMs}ms)")
     } catch (e: SecurityException) {
       Log.e(TAG, "sem permissão de localização", e)
-      stopTracking()
+      callback = null
     }
   }
 
-  private fun stopTracking() {
+  /**
+   * Watchdog: o Android pode remover silenciosamente as atualizações de
+   * localização (doze, troca de provider, GPS desligado e religado). A cada
+   * minuto reanexamos o callback e tentamos esvaziar a fila offline.
+   */
+  private val watchdog = object : Runnable {
+    override fun run() {
+      if (!isRunning) return
+      requestUpdates()
+      io.execute { flushQueue() }
+      scheduleRevive()
+      main.postDelayed(this, WATCHDOG_MS)
+    }
+  }
+
+  private fun scheduleWatchdog() {
+    main.removeCallbacks(watchdog)
+    main.postDelayed(watchdog, WATCHDOG_MS)
+  }
+
+  /** Alarme de auto-recuperação: se o processo morrer, o serviço volta sozinho. */
+  private fun scheduleRevive() {
+    val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val pi = PendingIntent.getBroadcast(
+      this,
+      991,
+      Intent(this, G3BootReceiver::class.java).setAction(ACTION_REVIVE),
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+    try {
+      am.setAndAllowWhileIdle(
+        AlarmManager.ELAPSED_REALTIME_WAKEUP,
+        SystemClock.elapsedRealtime() + REVIVE_MS,
+        pi,
+      )
+    } catch (e: Exception) {
+      Log.w(TAG, "não foi possível agendar alarme de recuperação", e)
+    }
+  }
+
+  /** Rede voltou → despeja a fila imediatamente. */
+  private fun registerNetworkCallback() {
+    if (netCallback != null) return
+    val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val cb = object : ConnectivityManager.NetworkCallback() {
+      override fun onAvailable(network: Network) {
+        Log.i(TAG, "rede disponível — reenviando fila")
+        io.execute { flushQueue() }
+      }
+    }
+    netCallback = cb
+    try {
+      cm.registerNetworkCallback(
+        NetworkRequest.Builder()
+          .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+          .build(),
+        cb,
+      )
+    } catch (e: Exception) {
+      netCallback = null
+      Log.w(TAG, "não foi possível observar a rede", e)
+    }
+  }
+
+  private fun stopTracking(clearState: Boolean) {
     callback?.let { fused.removeLocationUpdates(it) }
     callback = null
     isRunning = false
+    main.removeCallbacks(watchdog)
+    unregisterNetworkCallback()
     releaseWakeLock()
-    prefs(this).edit().clear().apply()
+    if (clearState) {
+      cancelRevive()
+      prefs(this).edit().clear().apply()
+    }
     stopForeground(true)
     stopSelf()
+  }
+
+  private fun cancelRevive() {
+    val am = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val pi = PendingIntent.getBroadcast(
+      this,
+      991,
+      Intent(this, G3BootReceiver::class.java).setAction(ACTION_REVIVE),
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+    try {
+      am.cancel(pi)
+    } catch (_: Exception) {
+    }
+  }
+
+  private fun unregisterNetworkCallback() {
+    netCallback?.let {
+      try {
+        (getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
+          .unregisterNetworkCallback(it)
+      } catch (_: Exception) {
+      }
+    }
+    netCallback = null
+  }
+
+  /** App fechado pelo motorista: o rastreamento continua e o serviço é religado. */
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    if (isRunning || hasActiveTrip(this)) startIfActive(this)
+    super.onTaskRemoved(rootIntent)
   }
 
   override fun onDestroy() {
     callback?.let { fused.removeLocationUpdates(it) }
     callback = null
+    main.removeCallbacks(watchdog)
+    unregisterNetworkCallback()
+    // Só encerra de vez quando não há mais viagem salva (ACTION_STOP limpa o estado).
+    if (isRunning && hasActiveTrip(this)) startIfActive(this)
     isRunning = false
     releaseWakeLock()
     super.onDestroy()
@@ -177,7 +338,14 @@ class G3TrackingService : Service() {
 
   // -------------------------------------------------------------- supabase
 
-  private fun sendLocation(lat: Double, lon: Double, acc: Float, speed: Float, bearing: Float) {
+  private fun sendLocation(
+    lat: Double,
+    lon: Double,
+    acc: Float,
+    speed: Float,
+    bearing: Float,
+    capturedAt: Long,
+  ) {
     if (supabaseUrl.isEmpty() || viagens.length() == 0) return
 
     val bateria = try {
@@ -186,6 +354,8 @@ class G3TrackingService : Service() {
     } catch (_: Exception) {
       null
     }
+    val online = isOnline()
+    val timestamp = iso.format(Date(capturedAt))
 
     val rows = JSONArray()
     for (i in 0 until viagens.length()) {
@@ -200,16 +370,53 @@ class G3TrackingService : Service() {
         put("velocidade", speed.toDouble())
         put("heading", bearing.toDouble())
         if (bateria != null && bateria >= 0) put("bateria", bateria)
-        put("online", true)
+        put("online", online)
+        put("created_at", timestamp)
       })
     }
+    if (rows.length() == 0) return
 
-    val pendentes = drainQueue()
-    for (i in 0 until pendentes.length()) rows.put(pendentes.get(i))
+    if (!online) {
+      enqueue(rows)
+      return
+    }
 
-    // Recusa definitiva (RLS: viagem já não está "em_andamento") não volta para a
-    // fila — reenviar apenas repetiria a violação indefinidamente.
     if (!post(rows) && !lastRejectPermanent) enqueue(rows)
+    flushQueue()
+  }
+
+  /**
+   * Reenvia tudo o que ficou pendente sem internet, em lotes, preservando a
+   * fila caso a rede ainda esteja instável.
+   */
+  private fun flushQueue() {
+    if (supabaseUrl.isEmpty()) return
+    var pending = JSONArray(prefs(this).getString("queue", "[]"))
+    if (pending.length() == 0) return
+    if (!isOnline()) return
+
+    while (pending.length() > 0) {
+      val batch = JSONArray()
+      val rest = JSONArray()
+      for (i in 0 until pending.length()) {
+        if (i < 100) batch.put(pending.get(i)) else rest.put(pending.get(i))
+      }
+      val ok = post(batch)
+      if (!ok && !lastRejectPermanent) return // continua offline: mantém a fila intacta
+      prefs(this).edit().putString("queue", rest.toString()).apply()
+      pending = rest
+    }
+    Log.i(TAG, "fila offline esvaziada")
+  }
+
+  private fun isOnline(): Boolean {
+    return try {
+      val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+      val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+      caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    } catch (_: Exception) {
+      true
+    }
   }
 
   /** true quando a última recusa do banco é definitiva (não deve ser reenfileirada). */
@@ -249,7 +456,6 @@ class G3TrackingService : Service() {
     }
   }
 
-
   private fun refreshSession(): Boolean {
     if (refreshToken.isEmpty()) return false
     val body = JSONObject().put("refresh_token", refreshToken).toString()
@@ -283,19 +489,12 @@ class G3TrackingService : Service() {
   private fun enqueue(rows: JSONArray) {
     val queue = JSONArray(prefs(this).getString("queue", "[]"))
     for (i in 0 until rows.length()) queue.put(rows.get(i))
-    // Limita a fila para não crescer sem controle (mantém as mais recentes).
-    val max = 2000
-    val trimmed = if (queue.length() > max) {
-      JSONArray().also { out -> for (i in queue.length() - max until queue.length()) out.put(queue.get(i)) }
+    val trimmed = if (queue.length() > QUEUE_MAX) {
+      JSONArray().also { out ->
+        for (i in queue.length() - QUEUE_MAX until queue.length()) out.put(queue.get(i))
+      }
     } else queue
     prefs(this).edit().putString("queue", trimmed.toString()).apply()
-  }
-
-  private fun drainQueue(): JSONArray {
-    val p = prefs(this)
-    val queue = JSONArray(p.getString("queue", "[]"))
-    if (queue.length() > 0) p.edit().putString("queue", "[]").apply()
-    return queue
   }
 
   // ------------------------------------------------------------ persistência
@@ -357,11 +556,7 @@ class G3TrackingService : Service() {
       .setPriority(NotificationCompat.PRIORITY_LOW)
       .build()
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      startForeground(NOTIF_ID, notif)
-    } else {
-      startForeground(NOTIF_ID, notif)
-    }
+    startForeground(NOTIF_ID, notif)
   }
 
   private fun acquireWakeLock() {
