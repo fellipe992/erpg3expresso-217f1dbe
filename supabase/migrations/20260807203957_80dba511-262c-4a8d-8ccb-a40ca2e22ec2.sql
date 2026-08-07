@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_viagem_protege_financeiro() FROM PUBLIC, anon, authenticated;
