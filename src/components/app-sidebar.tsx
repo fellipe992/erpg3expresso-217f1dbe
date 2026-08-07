@@ -105,6 +105,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const { role } = useAuth();
   const collapsed = state === "collapsed";
+  useRealtimeSync();
 
   const isAdmin = role === "administrador";
   const isFinance = role === "financeiro" || isAdmin;
