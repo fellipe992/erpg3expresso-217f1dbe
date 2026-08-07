@@ -1,0 +1,1 @@
+ALTER TYPE public.veiculo_tipo ADD VALUE IF NOT EXISTS 'vuc';
