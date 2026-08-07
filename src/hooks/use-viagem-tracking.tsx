@@ -351,28 +351,67 @@ export function useMotoristaAutoTracking() {
     void flushQueue();
     const flushTimer = window.setInterval(() => void flushQueue(), 60_000);
 
+    const arm = () => {
+      if (watchIdRef.current !== null) return;
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) =>
+          void send({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            speed: pos.coords.speed,
+            heading: pos.coords.heading,
+          }),
+        (err) => {
+          // Perda de sinal/timeout: solta o watch e rearma no próximo ciclo,
+          // em vez de ficar mudo até o motorista reabrir o app.
+          if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
+            stop();
+            return;
+          }
+          if (!warnedRef.current) {
+            warnedRef.current = true;
+            toast.error("Não foi possível acessar a localização", { description: err.message });
+          }
+        },
+        { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
+      );
+    };
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) =>
-        void send({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          speed: pos.coords.speed,
-          heading: pos.coords.heading,
-        }),
-      (err) => {
-        if (!warnedRef.current) {
-          warnedRef.current = true;
-          toast.error("Não foi possível acessar a localização", { description: err.message });
-        }
-      },
-      { enableHighAccuracy: true, maximumAge: 5_000, timeout: 20_000 },
-    );
+    arm();
+
+    // Vigia: rearma o watch e força uma leitura quando ficou muito tempo sem
+    // enviar posição (aba em segundo plano, GPS oscilando, rede caída).
+    const watchdog = window.setInterval(() => {
+      arm();
+      const last = lastSentRef.current;
+      if (last && Date.now() - last.t < 60_000) return;
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          void send({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            speed: pos.coords.speed,
+            heading: pos.coords.heading,
+          }),
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 25_000 },
+      );
+    }, 30_000);
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      arm();
+      void flushQueue();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisible);
       window.clearInterval(flushTimer);
+      window.clearInterval(watchdog);
       stop();
     };
   }, [isMotorista, viagensKey, qc]);
