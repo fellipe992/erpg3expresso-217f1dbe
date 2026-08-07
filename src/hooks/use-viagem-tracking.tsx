@@ -96,7 +96,16 @@ export function useMotoristaAutoTracking() {
 
     let cancelled = false;
 
-    (async () => {
+    /**
+     * Garante que o Foreground Service esteja no ar enquanto houver viagem em
+     * andamento. É chamado na montagem, quando o conjunto de viagens muda, a
+     * cada 2 minutos e sempre que o app volta ao primeiro plano — assim, mesmo
+     * que o sistema tenha matado o processo (bateria, limpeza de memória), o
+     * rastreamento volta sem o motorista precisar fazer nada.
+     */
+    const sync = async () => {
+      if (cancelled) return;
+
       if (viagensKey === "") {
         try {
           await G3Tracking.stop();
@@ -146,12 +155,28 @@ export function useMotoristaAutoTracking() {
           });
         }
       }
+    };
+
+    void sync();
+    const timer = window.setInterval(() => void sync(), 120_000);
+
+    let removeResume: (() => void) | undefined;
+    void (async () => {
+      const { App } = await import("@capacitor/app");
+      const handle = await App.addListener("appStateChange", ({ isActive }) => {
+        if (isActive) void sync();
+      });
+      if (cancelled) void handle.remove();
+      else removeResume = () => void handle.remove();
     })();
 
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
+      removeResume?.();
     };
   }, [isMotorista, viagensKey]);
+
 
   // Sempre que o token do Supabase é renovado com o app aberto, repassa ao
   // serviço para que ele nunca fique com credencial vencida.
