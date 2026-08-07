@@ -217,7 +217,13 @@ export function RotasPanel({
                   </Button>
                 </div>
 
-                <AtribuirRota rota={r} rotulo={r.rotulo ?? r.veiculo.nome} projeto={projeto} />
+                <AtribuirRota
+                  rota={r}
+                  atribuicao={atribuicoes?.[r.id]}
+                  onChange={(a) => onAtribuir?.(r.id, a)}
+                  enviada={enviadas?.[r.id] ?? null}
+                />
+
               </CollapsibleContent>
             </Collapsible>
           </Card>
