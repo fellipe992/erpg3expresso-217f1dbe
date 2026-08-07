@@ -11,6 +11,7 @@ import {
   Plus,
   Route as RouteIcon,
   Save,
+  Sparkles,
   Trash2,
   Truck,
   X,
@@ -42,6 +43,7 @@ import {
   num,
 } from "@/components/viagem/demonstrativo-viagem";
 import { cn } from "@/lib/utils";
+import { aplicarOrdem, otimizarParadas } from "@/lib/otimizar-paradas";
 
 export const Route = createFileRoute("/_authenticated/app/simulador")({
   head: () => ({
@@ -117,6 +119,7 @@ function PlanejadorPage() {
   const [manutKm, setManutKm] = useState("");
   const [pneusKm, setPneusKm] = useState("");
 
+  const [otimizando, setOtimizando] = useState(false);
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [converterOpen, setConverterOpen] = useState(false);
   const [clienteId, setClienteId] = useState("__none");
@@ -186,6 +189,22 @@ function PlanejadorPage() {
     () => [origem, ...paradas, destino].map((p) => p.trim()).filter(Boolean),
     [origem, paradas, destino],
   );
+
+  /** Reordena as paradas na melhor sequência (mesma otimização do roteirizador). */
+  const otimizarRota = async () => {
+    setOtimizando(true);
+    try {
+      const { ordem, km, minutos } = await otimizarParadas({ origem, destino, paradas });
+      setParadas(aplicarOrdem(paradas, ordem));
+      toast.success("Paradas otimizadas", {
+        description: `${km.toFixed(0)} km · ${formatarDuracao(minutos)} na melhor sequência.`,
+      });
+    } catch (e) {
+      toast.error("Não foi possível otimizar", { description: (e as Error).message });
+    } finally {
+      setOtimizando(false);
+    }
+  };
 
   const calcular = useMutation({
     mutationFn: async () => {
@@ -326,12 +345,23 @@ function PlanejadorPage() {
         .select("id")
         .single();
       if (error) throw error;
-      return data.id as string;
+      const viagemId = data.id as string;
+
+      // Gera o roteiro do motorista com as paradas na sequência planejada.
+      const roteiro = [...paradas.map((p) => p.trim()).filter(Boolean), destino.trim()].filter(Boolean);
+      if (roteiro.length) {
+        const { error: erroParadas } = await supabase.from("viagem_paradas").insert(
+          roteiro.map((endereco, i) => ({ viagem_id: viagemId, ordem: i + 1, endereco })),
+        );
+        if (erroParadas) throw erroParadas;
+      }
+      return viagemId;
     },
     onSuccess: () => {
       toast.success("Viagem criada com status planejada.");
       setConverterOpen(false);
       queryClient.invalidateQueries({ queryKey: ["viagens"] });
+      queryClient.invalidateQueries({ queryKey: ["viagem-paradas"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -388,14 +418,26 @@ function PlanejadorPage() {
               </div>
             ))}
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setParadas((atual) => [...atual, ""])}
-            >
-              <Plus className="mr-1 size-4" /> Adicionar parada
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setParadas((atual) => [...atual, ""])}
+              >
+                <Plus className="mr-1 size-4" /> Adicionar parada
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={otimizando || paradas.length < 2}
+                onClick={otimizarRota}
+              >
+                {otimizando ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Sparkles className="mr-1 size-4" />}
+                Otimizar rota
+              </Button>
+            </div>
 
             <div className="space-y-2">
               <Label className="text-xs">Destino</Label>
