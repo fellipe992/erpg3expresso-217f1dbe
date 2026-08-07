@@ -1836,6 +1836,68 @@ export type Database = {
           },
         ]
       }
+      viagem_paradas: {
+        Row: {
+          chegada_prevista: string | null
+          cliente: string | null
+          created_at: string
+          endereco: string
+          entregue_em: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nf: string | null
+          observacoes: string | null
+          ordem: number
+          peso_kg: number | null
+          tempo_descarga_min: number | null
+          updated_at: string
+          viagem_id: string
+        }
+        Insert: {
+          chegada_prevista?: string | null
+          cliente?: string | null
+          created_at?: string
+          endereco: string
+          entregue_em?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nf?: string | null
+          observacoes?: string | null
+          ordem: number
+          peso_kg?: number | null
+          tempo_descarga_min?: number | null
+          updated_at?: string
+          viagem_id: string
+        }
+        Update: {
+          chegada_prevista?: string | null
+          cliente?: string | null
+          created_at?: string
+          endereco?: string
+          entregue_em?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nf?: string | null
+          observacoes?: string | null
+          ordem?: number
+          peso_kg?: number | null
+          tempo_descarga_min?: number | null
+          updated_at?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_paradas_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagens: {
         Row: {
           cliente_id: string | null
