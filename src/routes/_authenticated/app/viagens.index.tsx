@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2 } from "lucide-react";
@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
+import { sincronizarParadas } from "@/lib/paradas-viagem";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
@@ -65,6 +67,29 @@ function ViagensPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Viagem>>(emptyForm);
+  const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
+
+  // Carrega o roteiro já cadastrado ao editar uma viagem existente.
+  const { data: paradasSalvas } = useQuery({
+    queryKey: ["viagem-paradas-form", form.id],
+    enabled: Boolean(open && form.id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagem_paradas")
+        .select("ordem, cliente, endereco, nf")
+        .eq("viagem_id", form.id!)
+        .order("ordem");
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        cliente: p.cliente ?? "",
+        endereco: p.endereco,
+        nf: p.nf ?? "",
+      })) as ParadaForm[];
+    },
+  });
+  useEffect(() => {
+    if (paradasSalvas) setParadasForm(paradasSalvas);
+  }, [paradasSalvas]);
 
   const { data: viagens = [], isLoading } = useQuery({
     queryKey: ["viagens"],
@@ -120,20 +145,28 @@ function ViagensPage() {
         status: (form.status ?? "planejada") as Viagem["status"],
         observacoes: form.observacoes?.trim() || null,
       };
+      let viagemId = form.id;
       if (form.id) {
         const { error } = await supabase.from("viagens").update(payload).eq("id", form.id);
         if (error) throw error;
       } else {
         const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase.from("viagens").insert({ ...payload, created_by: userData.user?.id });
+        const { data, error } = await supabase
+          .from("viagens")
+          .insert({ ...payload, created_by: userData.user?.id })
+          .select("id")
+          .single();
         if (error) throw error;
+        viagemId = data.id;
       }
+      if (viagemId) await sincronizarParadas(viagemId, paradasForm);
     },
     onSuccess: () => {
       toast.success(form.id ? "Viagem atualizada" : "Viagem criada");
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-paradas"] }); qc.invalidateQueries({ queryKey: ["viagem-paradas-form"] });
       setOpen(false);
       setForm(emptyForm);
+      setParadasForm([]);
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -180,6 +213,7 @@ function ViagensPage() {
       addLabel="Nova viagem"
       onAdd={() => {
         setForm(emptyForm);
+        setParadasForm([]);
         setOpen(true);
       }}
     >
@@ -233,7 +267,7 @@ function ViagensPage() {
                       </Link>
                     </Button>
                     {canWrite && (
-                      <Button variant="ghost" size="icon" onClick={() => { setForm(v); setOpen(true); }}>
+                      <Button variant="ghost" size="icon" onClick={() => { setForm(v); setParadasForm([]); setOpen(true); }}>
                         <Pencil className="size-4" />
                       </Button>
                     )}
@@ -311,6 +345,20 @@ function ViagensPage() {
 
             <div className="md:col-span-2">
               <F label="Observações"><Textarea rows={2} value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></F>
+            </div>
+
+            <div className="md:col-span-2">
+              <ParadasEditor
+                paradas={paradasForm}
+                onChange={setParadasForm}
+                origem={[form.origem_cidade, form.origem_uf].filter(Boolean).join(" - ")}
+                destino={[form.destino_cidade, form.destino_uf].filter(Boolean).join(" - ")}
+              />
+              {paradasForm.length === 0 && (
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setParadasForm([novaParada()])}>
+                  Adicionar endereços de destino
+                </Button>
+              )}
             </div>
           </div>
           <DialogFooter>
