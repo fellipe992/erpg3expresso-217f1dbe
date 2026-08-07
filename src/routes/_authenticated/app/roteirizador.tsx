@@ -16,6 +16,11 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useProjetosRoteirizacao, type DadosProjeto } from "@/hooks/use-projetos-roteirizacao";
+import {
+  enviarRotaParaMotorista,
+  useMotoristasComVeiculo,
+  type Atribuicao,
+} from "@/hooks/use-envio-rota";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -111,7 +116,63 @@ function RoteirizadorPage() {
   const [importando, setImportando] = useState(false);
   const [calculando, setCalculando] = useState(false);
   const [aba, setAba] = useState("entregas");
+  const [atribuicoes, setAtribuicoes] = useState<Record<string, Atribuicao | undefined>>({});
+  const [enviadas, setEnviadas] = useState<Record<string, string>>({});
+  const [disparando, setDisparando] = useState(false);
   const carregandoProjeto = useRef(false);
+
+  const { data: motoristas = [] } = useMotoristasComVeiculo();
+
+  const pendentes = useMemo(
+    () =>
+      plano.rotas.filter((r) => atribuicoes[r.id]?.motoristaId && !enviadas[r.id]),
+    [plano.rotas, atribuicoes, enviadas],
+  );
+
+  const dispararRotas = async () => {
+    if (!pendentes.length) return;
+    setDisparando(true);
+    let ok = 0;
+    const falhas: string[] = [];
+    for (const rota of pendentes) {
+      const a = atribuicoes[rota.id];
+      const motorista = motoristas.find((m) => m.id === a?.motoristaId);
+      const rotulo = rota.rotulo ?? rota.veiculo.nome;
+      if (!motorista) {
+        falhas.push(`${rotulo}: motorista não encontrado`);
+        continue;
+      }
+      if (!motorista.veiculo_id) {
+        falhas.push(`${rotulo}: ${motorista.nome} sem veículo vinculado`);
+        continue;
+      }
+      try {
+        const r = await enviarRotaParaMotorista({
+          rota,
+          rotuloRota: rotulo,
+          motorista,
+          dataPrevista: a?.dataPrevista,
+          projeto: nomeProjeto,
+        });
+        setEnviadas((prev) => ({ ...prev, [rota.id]: r.codigo ?? r.viagemId }));
+        ok += 1;
+      } catch (e) {
+        falhas.push(`${rotulo}: ${e instanceof Error ? e.message : "erro ao enviar"}`);
+      }
+    }
+    setDisparando(false);
+    if (ok) {
+      toast.success(`${ok} rota(s) disparada(s)`, {
+        description: "Os motoristas foram notificados e já podem iniciar a viagem.",
+      });
+    }
+    if (falhas.length) {
+      toast.error(`${falhas.length} rota(s) não enviada(s)`, {
+        description: falhas.slice(0, 3).join(" · "),
+      });
+    }
+  };
+
 
   const { projetos, projetoId, criar, salvar, autoSalvar, carregar, excluir, salvando, salvoEm } =
     useProjetosRoteirizacao();
