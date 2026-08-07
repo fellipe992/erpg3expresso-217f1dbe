@@ -7,6 +7,7 @@ import {
   Printer,
   Route as RouteIcon,
   Save,
+  Send,
   Settings2,
   Sparkles,
   Trash2,
@@ -385,6 +386,22 @@ function RoteirizadorPage() {
             )}
             Roteirizar
           </Button>
+
+          {plano.rotas.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => void dispararRotas()}
+              disabled={disparando || !pendentes.length}
+              title="Envia de uma vez todas as rotas com motorista atribuído"
+            >
+              {disparando ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 size-4" />
+              )}
+              Disparar rotas{pendentes.length ? ` (${pendentes.length})` : ""}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -448,6 +465,9 @@ function RoteirizadorPage() {
                 onDividir={(id) => setPlano((p) => dividirRota(p, id, jornada))}
                 onMesclar={(o, d) => setPlano((p) => mesclarRotas(p, o, d, jornada))}
                 onExcluir={(id) => setPlano((p) => excluirRota(p, id))}
+                atribuicoes={atribuicoes}
+                onAtribuir={(rotaId, a) => setAtribuicoes((prev) => ({ ...prev, [rotaId]: a }))}
+                enviadas={enviadas}
               />
             </TabsContent>
 
