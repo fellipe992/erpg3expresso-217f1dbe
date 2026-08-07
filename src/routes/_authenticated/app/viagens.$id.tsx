@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { RotaViagemButton } from "@/components/viagem/rota-viagem-dialog";
 import { NavegacaoButton } from "@/components/viagem/navegacao-dialog";
+import { ParadasRotaCard } from "@/components/viagem/paradas-rota";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
