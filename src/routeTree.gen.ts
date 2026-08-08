@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
+import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
@@ -73,6 +74,11 @@ const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
 const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
   id: '/api/planejador-rota',
   path: '/api/planejador-rota',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOtimizarRotaRoute = ApiOtimizarRotaRouteImport.update({
+  id: '/api/otimizar-rota',
+  path: '/api/otimizar-rota',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGoogleMapsConfigRoute = ApiGoogleMapsConfigRouteImport.update({
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -330,6 +338,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
+  '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/otimizar-rota'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/otimizar-rota'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
@@ -444,6 +455,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/api/assistente'
     | '/api/google-maps-config'
+    | '/api/otimizar-rota'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/_authenticated/app/abastecimentos'
@@ -483,6 +495,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiAssistenteRoute: typeof ApiAssistenteRoute
   ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
+  ApiOtimizarRotaRoute: typeof ApiOtimizarRotaRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
 }
@@ -529,6 +542,13 @@ declare module '@tanstack/react-router' {
       path: '/api/planejador-rota'
       fullPath: '/api/planejador-rota'
       preLoaderRoute: typeof ApiPlanejadorRotaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/otimizar-rota': {
+      id: '/api/otimizar-rota'
+      path: '/api/otimizar-rota'
+      fullPath: '/api/otimizar-rota'
+      preLoaderRoute: typeof ApiOtimizarRotaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/google-maps-config': {
@@ -816,6 +836,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiAssistenteRoute: ApiAssistenteRoute,
   ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
+  ApiOtimizarRotaRoute: ApiOtimizarRotaRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
 }
