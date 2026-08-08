@@ -70,7 +70,7 @@ function ViagensPage() {
   const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
-  const { data: paradasSalvas } = useQuery({
+  const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
     queryKey: ["viagem-paradas-form", form.id],
     enabled: Boolean(open && form.id),
     queryFn: async () => {
@@ -159,7 +159,10 @@ function ViagensPage() {
         if (error) throw error;
         viagemId = data.id;
       }
-      if (viagemId) await sincronizarParadas(viagemId, paradasForm);
+      // Só sincroniza paradas quando o roteiro salvo já foi carregado no formulário.
+      // Evita apagar as paradas existentes se o usuário salvar antes da consulta responder.
+      const paradasProntas = !form.id || (!paradasCarregando && paradasSalvas !== undefined);
+      if (viagemId && paradasProntas) await sincronizarParadas(viagemId, paradasForm);
     },
     onSuccess: () => {
       toast.success(form.id ? "Viagem atualizada" : "Viagem criada");
@@ -363,8 +366,8 @@ function ViagensPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar
+            <Button onClick={() => save.mutate()} disabled={save.isPending || paradasCarregando}>
+              {(save.isPending || paradasCarregando) && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar
             </Button>
           </DialogFooter>
         </DialogContent>
