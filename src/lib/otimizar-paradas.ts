@@ -1,9 +1,9 @@
-/// <reference types="google.maps" />
-import { loadGoogleMaps } from "@/lib/google-maps-loader";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Otimiza a sequência de pontos intermediários usando o Directions Service
- * do Google (`optimizeWaypoints`), o mesmo recurso usado pelo roteirizador.
+ * Otimiza a sequência de paradas usando a Routes API do Google
+ * (`optimizeWaypointOrder`) através do backend — a chave do navegador não
+ * tem permissão para roteirização, por isso a chamada é feita no servidor.
  * Retorna a nova ordem (índices do array original) e o resumo da rota.
  */
 export async function otimizarParadas(params: {
@@ -11,34 +11,30 @@ export async function otimizarParadas(params: {
   destino: string;
   paradas: string[];
 }): Promise<{ ordem: number[]; km: number; minutos: number }> {
-  const { origem, destino, paradas } = params;
-  const validas = paradas.map((p) => p.trim());
-  if (!origem.trim() || !destino.trim()) throw new Error("Informe origem e destino para otimizar.");
-  if (validas.filter(Boolean).length < 2) throw new Error("Adicione pelo menos 2 paradas para otimizar.");
-  if (validas.some((p) => !p)) throw new Error("Preencha todas as paradas antes de otimizar.");
+  const origem = params.origem.trim();
+  const destino = params.destino.trim();
+  const paradas = params.paradas.map((p) => p.trim());
 
-  await loadGoogleMaps();
-  const { DirectionsService } = (await google.maps.importLibrary(
-    "routes",
-  )) as google.maps.RoutesLibrary;
-  const service = new DirectionsService();
+  if (!origem || !destino) throw new Error("Informe origem e destino para otimizar.");
+  if (paradas.some((p) => !p)) throw new Error("Preencha todas as paradas antes de otimizar.");
+  if (paradas.length < 2) throw new Error("Adicione pelo menos 2 paradas para otimizar.");
 
-  const resposta = await service.route({
-    origin: origem,
-    destination: destino,
-    waypoints: validas.map((p) => ({ location: p, stopover: true })),
-    optimizeWaypoints: true,
-    travelMode: google.maps.TravelMode.DRIVING,
-    region: "br",
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error("Sessão expirada. Entre novamente para otimizar a rota.");
+
+  const response = await fetch("/api/otimizar-rota", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ origem, destino, paradas }),
   });
 
-  const rota = resposta.routes[0];
-  if (!rota) throw new Error("Não foi possível calcular a rota otimizada.");
+  if (!response.ok) {
+    const texto = await response.text().catch(() => "");
+    throw new Error(texto || "Não foi possível calcular a rota otimizada.");
+  }
 
-  const ordem = rota.waypoint_order ?? validas.map((_, i) => i);
-  const km = (rota.legs ?? []).reduce((s, l) => s + (l.distance?.value ?? 0), 0) / 1000;
-  const minutos = (rota.legs ?? []).reduce((s, l) => s + (l.duration?.value ?? 0), 0) / 60;
-  return { ordem, km, minutos };
+  return (await response.json()) as { ordem: number[]; km: number; minutos: number };
 }
 
 /** Reordena um array conforme a ordem devolvida pela otimização. */
