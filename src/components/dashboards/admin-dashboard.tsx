@@ -408,7 +408,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Consumo por veículo</CardTitle>
-              <CardDescription>Média km/L, gasto com combustível e custo por km — {cfg.label.toLowerCase()}</CardDescription>
+              <CardDescription>Média geral do período e média da última viagem concluída — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
               {consumoPorVeiculo.length === 0 ? (
@@ -420,23 +420,38 @@ export function AdminDashboard() {
                       <TableHead>Placa</TableHead>
                       <TableHead className="text-right">Litros</TableHead>
                       <TableHead className="text-right">KM</TableHead>
-                      <TableHead className="text-right">Consumo</TableHead>
+                      <TableHead className="text-right">Média geral</TableHead>
+                      <TableHead className="text-right">Última viagem</TableHead>
                       <TableHead className="text-right">R$/km</TableHead>
                       <TableHead className="text-right">Gasto</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {consumoPorVeiculo.map((v) => (
+                    {consumoPorVeiculo.map((v) => {
+                      const ult = ultimaMedia.get(v.veiculoId);
+                      return (
                       <TableRow key={v.placa}>
                         <TableCell className="font-mono text-xs">{v.placa}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.consumo > 0 ? `${v.consumo.toFixed(2)} km/L` : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {ult ? (
+                            <span title={`OS ${ult.codigo ?? "—"} · ${ult.km.toFixed(0)} km · ${ult.litros.toFixed(0)} L`}>
+                              {ult.media.toFixed(2)} km/L
+                              <span className="ml-1 text-[10px] text-muted-foreground">
+                                {ult.data ? new Date(ult.data).toLocaleDateString("pt-BR") : ""}
+                              </span>
+                            </span>
+                          ) : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">{v.custoKm > 0 ? brl(v.custoKm) : "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{mask(brl(v.gasto))}</TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
+
                 </Table>
               )}
             </CardContent>
