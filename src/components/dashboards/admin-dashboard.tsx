@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VeiculoDrilldownDialog, type VeiculoDrilldownState } from "@/components/dashboards/veiculo-drilldown-dialog";
+import { useMediasPorViagem, ultimaMediaPorVeiculo } from "@/lib/medias-viagem";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
