@@ -56,6 +56,8 @@ function AbastecimentosPage() {
   const isMotorista = role === "motorista";
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
 
