@@ -232,7 +232,37 @@ function ViagensPage() {
         setOpen(true);
       }}
     >
+      <Card className="p-3">
+        <div className="grid gap-2 md:grid-cols-4">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
+            <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="saida">Data da viagem (saída)</SelectItem>
+                <SelectItem value="prevista">Data prevista de saída</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">De</Label>
+            <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+            <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+          </div>
+          <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
+            <span>{filtered.length} viagem(ns)</span>
+            {(dataDe || dataAte) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <Card>
+
         {isLoading ? (
           <div className="grid place-items-center p-12">
             <Loader2 className="size-6 animate-spin text-brand" />
