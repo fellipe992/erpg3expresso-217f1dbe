@@ -46,6 +46,8 @@ function ManutencoesPage() {
   const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState<Partial<Manut>>(empty);
