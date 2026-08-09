@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VeiculoDrilldownDialog, type VeiculoDrilldownState } from "@/components/dashboards/veiculo-drilldown-dialog";
+import { useMediasPorViagem, ultimaMediaPorVeiculo } from "@/lib/medias-viagem";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
@@ -210,11 +211,11 @@ export function AdminDashboard() {
   const consumoPorVeiculo = (() => {
     if (!data) return [];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
-    const map = new Map<string, { placa: string; litros: number; km: number; gasto: number }>();
+    const map = new Map<string, { veiculoId: string; placa: string; litros: number; km: number; gasto: number }>();
     for (const a of data.abastecimentos) {
       if (!a.veiculo_id) continue;
       const placa = placas.get(a.veiculo_id) ?? "—";
-      const cur = map.get(a.veiculo_id) ?? { placa, litros: 0, km: 0, gasto: 0 };
+      const cur = map.get(a.veiculo_id) ?? { veiculoId: a.veiculo_id, placa, litros: 0, km: 0, gasto: 0 };
       cur.gasto += Number(a.valor_total ?? 0);
       if (Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0) {
         cur.litros += Number(a.litros);
@@ -230,6 +231,11 @@ export function AdminDashboard() {
       }))
       .sort((a, b) => b.gasto - a.gasto);
   })();
+
+  // Média da última viagem concluída de cada veículo (km rodado x litros do percurso)
+  const { data: mediasViagem = [] } = useMediasPorViagem({ de: desdeStr, ate: hoje });
+  const ultimaMedia = ultimaMediaPorVeiculo(mediasViagem);
+
 
   // Categorias fixas de despesa por veículo (empilhado)
   const CATEGORIAS_DESP = ["Combustível", "Manutenção", "Pedágio", "Outros"] as const;
@@ -402,7 +408,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Consumo por veículo</CardTitle>
-              <CardDescription>Média km/L, gasto com combustível e custo por km — {cfg.label.toLowerCase()}</CardDescription>
+              <CardDescription>Média geral do período e média da última viagem concluída — {cfg.label.toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
               {consumoPorVeiculo.length === 0 ? (
@@ -414,23 +420,38 @@ export function AdminDashboard() {
                       <TableHead>Placa</TableHead>
                       <TableHead className="text-right">Litros</TableHead>
                       <TableHead className="text-right">KM</TableHead>
-                      <TableHead className="text-right">Consumo</TableHead>
+                      <TableHead className="text-right">Média geral</TableHead>
+                      <TableHead className="text-right">Última viagem</TableHead>
                       <TableHead className="text-right">R$/km</TableHead>
                       <TableHead className="text-right">Gasto</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {consumoPorVeiculo.map((v) => (
+                    {consumoPorVeiculo.map((v) => {
+                      const ult = ultimaMedia.get(v.veiculoId);
+                      return (
                       <TableRow key={v.placa}>
                         <TableCell className="font-mono text-xs">{v.placa}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.litros.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.consumo > 0 ? `${v.consumo.toFixed(2)} km/L` : "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {ult ? (
+                            <span title={`OS ${ult.codigo ?? "—"} · ${ult.km.toFixed(0)} km · ${ult.litros.toFixed(0)} L`}>
+                              {ult.media.toFixed(2)} km/L
+                              <span className="ml-1 text-[10px] text-muted-foreground">
+                                {ult.data ? new Date(ult.data).toLocaleDateString("pt-BR") : ""}
+                              </span>
+                            </span>
+                          ) : "—"}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums">{v.custoKm > 0 ? brl(v.custoKm) : "—"}</TableCell>
                         <TableCell className="text-right tabular-nums">{mask(brl(v.gasto))}</TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
+
                 </Table>
               )}
             </CardContent>

@@ -68,6 +68,9 @@ function ViagensPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Viagem>>(emptyForm);
   const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
+  const [dataBase, setDataBase] = useState<"saida" | "prevista">("saida");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
   const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
@@ -187,6 +190,14 @@ function ViagensPage() {
   });
 
   const filtered = viagens.filter((v) => {
+    // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
+    if (dataDe || dataAte) {
+      const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
+      const ref = (bruto ?? "").slice(0, 10);
+      if (!ref) return false;
+      if (dataDe && ref < dataDe) return false;
+      if (dataAte && ref > dataAte) return false;
+    }
     const q = search.toLowerCase();
     if (!q) return true;
     return (
@@ -198,6 +209,7 @@ function ViagensPage() {
       (v.destino_cidade ?? "").toLowerCase().includes(q)
     );
   });
+
 
   if (isMotorista) {
     return <MotoristaViagensView viagens={filtered} isLoading={isLoading} search={search} setSearch={setSearch} />;
@@ -220,7 +232,37 @@ function ViagensPage() {
         setOpen(true);
       }}
     >
+      <Card className="p-3">
+        <div className="grid gap-2 md:grid-cols-4">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
+            <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="saida">Data da viagem (saída)</SelectItem>
+                <SelectItem value="prevista">Data prevista de saída</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">De</Label>
+            <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+            <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+          </div>
+          <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
+            <span>{filtered.length} viagem(ns)</span>
+            {(dataDe || dataAte) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <Card>
+
         {isLoading ? (
           <div className="grid place-items-center p-12">
             <Loader2 className="size-6 animate-spin text-brand" />

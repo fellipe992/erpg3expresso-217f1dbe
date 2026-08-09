@@ -97,6 +97,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [veiculoFilter, setVeiculoFilter] = useState<string>("todos");
   const [motoristaFilter, setMotoristaFilter] = useState<string>("todos");
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
+  // Base da data do filtro de período: o que o usuário quer de fato consultar.
+  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento">("emissao");
   const [dataDe, setDataDe] = useState<string>("");
   const [dataAte, setDataAte] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -286,9 +288,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       const pid = isReceber ? l.cliente_id : l.fornecedor_id;
       if (pid !== parceiroFilter) return false;
     }
-    const ref = l.data_vencimento ?? l.data_emissao;
-    if (dataDe && ref && ref < dataDe) return false;
-    if (dataAte && ref && ref > dataAte) return false;
+    // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
+    if (dataDe || dataAte) {
+      const ref =
+        dataBase === "pagamento" ? l.data_pagamento : dataBase === "vencimento" ? l.data_vencimento : l.data_emissao;
+      if (!ref) return false;
+      if (dataDe && ref < dataDe) return false;
+      if (dataAte && ref > dataAte) return false;
+    }
+
 
     const q = search.toLowerCase().trim();
     if (!q) return true;
@@ -345,6 +353,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     setVeiculoFilter("todos");
     setMotoristaFilter("todos");
     setParceiroFilter("todos");
+    setDataBase("emissao");
     setDataDe("");
     setDataAte("");
   };
@@ -450,6 +459,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             </Select>
           </div>
           <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
+            <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="emissao">Data do lançamento</SelectItem>
+                <SelectItem value="vencimento">Data de vencimento</SelectItem>
+                <SelectItem value="pagamento">Data de {isReceber ? "recebimento" : "pagamento"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Período de</Label>
             <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
           </div>
@@ -457,6 +477,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Período até</Label>
             <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
           </div>
+
           <div className="flex items-end text-xs text-muted-foreground">
             {filtered.length} lançamento(s) exibido(s)
           </div>

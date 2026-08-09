@@ -25,6 +25,7 @@ import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
+import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
 
 
 
@@ -317,6 +318,7 @@ function RelatoriosPage() {
           <Tabs defaultValue="veiculo">
             <TabsList className="flex-wrap">
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
+              <TabsTrigger value="medias">Médias por viagem</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
@@ -328,6 +330,11 @@ function RelatoriosPage() {
             <TabsContent value="veiculo">
               <RelatorioVeiculo />
             </TabsContent>
+
+            <TabsContent value="medias">
+              <RelatorioMedias />
+            </TabsContent>
+
 
             {canSeeFinance && (
               <>
