@@ -353,6 +353,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     setVeiculoFilter("todos");
     setMotoristaFilter("todos");
     setParceiroFilter("todos");
+    setDataBase("emissao");
     setDataDe("");
     setDataAte("");
   };
