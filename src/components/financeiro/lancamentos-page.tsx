@@ -458,6 +458,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             </Select>
           </div>
           <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
+            <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="emissao">Data do lançamento</SelectItem>
+                <SelectItem value="vencimento">Data de vencimento</SelectItem>
+                <SelectItem value="pagamento">Data de {isReceber ? "recebimento" : "pagamento"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Período de</Label>
             <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
           </div>
@@ -465,6 +476,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Período até</Label>
             <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
           </div>
+
           <div className="flex items-end text-xs text-muted-foreground">
             {filtered.length} lançamento(s) exibido(s)
           </div>
