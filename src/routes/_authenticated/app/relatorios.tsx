@@ -317,6 +317,7 @@ function RelatoriosPage() {
           <Tabs defaultValue="veiculo">
             <TabsList className="flex-wrap">
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
+              <TabsTrigger value="medias">Médias por viagem</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
@@ -328,6 +329,11 @@ function RelatoriosPage() {
             <TabsContent value="veiculo">
               <RelatorioVeiculo />
             </TabsContent>
+
+            <TabsContent value="medias">
+              <RelatorioMedias />
+            </TabsContent>
+
 
             {canSeeFinance && (
               <>
