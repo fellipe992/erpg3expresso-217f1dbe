@@ -53,7 +53,7 @@ export function RelatorioMedias() {
     exportarExcel(`medias-por-viagem-${de}-a-${ate}`, [
       {
         nome: "Médias por viagem",
-        cabecalho: ["OS", "Data", "Placa", "Motorista", "Cliente", "Rota", "KM", "Litros", "km/L", "Combustível", "R$/km"],
+        colunas: ["OS", "Data", "Placa", "Motorista", "Cliente", "Rota", "KM", "Litros", "km/L", "Combustível", "R$/km"],
         linhas: rows.map((r) => [
           r.codigo ?? r.viagemId.slice(0, 6).toUpperCase(),
           dtBR(r.data),
