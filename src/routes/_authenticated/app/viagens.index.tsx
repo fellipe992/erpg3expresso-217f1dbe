@@ -187,6 +187,14 @@ function ViagensPage() {
   });
 
   const filtered = viagens.filter((v) => {
+    // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
+    if (dataDe || dataAte) {
+      const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
+      const ref = (bruto ?? "").slice(0, 10);
+      if (!ref) return false;
+      if (dataDe && ref < dataDe) return false;
+      if (dataAte && ref > dataAte) return false;
+    }
     const q = search.toLowerCase();
     if (!q) return true;
     return (
@@ -198,6 +206,7 @@ function ViagensPage() {
       (v.destino_cidade ?? "").toLowerCase().includes(q)
     );
   });
+
 
   if (isMotorista) {
     return <MotoristaViagensView viagens={filtered} isLoading={isLoading} search={search} setSearch={setSearch} />;
