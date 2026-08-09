@@ -210,11 +210,11 @@ export function AdminDashboard() {
   const consumoPorVeiculo = (() => {
     if (!data) return [];
     const placas = new Map(data.veiculos.map((v) => [v.id, v.placa]));
-    const map = new Map<string, { placa: string; litros: number; km: number; gasto: number }>();
+    const map = new Map<string, { veiculoId: string; placa: string; litros: number; km: number; gasto: number }>();
     for (const a of data.abastecimentos) {
       if (!a.veiculo_id) continue;
       const placa = placas.get(a.veiculo_id) ?? "—";
-      const cur = map.get(a.veiculo_id) ?? { placa, litros: 0, km: 0, gasto: 0 };
+      const cur = map.get(a.veiculo_id) ?? { veiculoId: a.veiculo_id, placa, litros: 0, km: 0, gasto: 0 };
       cur.gasto += Number(a.valor_total ?? 0);
       if (Number(a.km_percorridos ?? 0) > 0 && Number(a.litros ?? 0) > 0) {
         cur.litros += Number(a.litros);
@@ -230,6 +230,11 @@ export function AdminDashboard() {
       }))
       .sort((a, b) => b.gasto - a.gasto);
   })();
+
+  // Média da última viagem concluída de cada veículo (km rodado x litros do percurso)
+  const { data: mediasViagem = [] } = useMediasPorViagem({ de: desdeStr, ate: hoje });
+  const ultimaMedia = ultimaMediaPorVeiculo(mediasViagem);
+
 
   // Categorias fixas de despesa por veículo (empilhado)
   const CATEGORIAS_DESP = ["Combustível", "Manutenção", "Pedágio", "Outros"] as const;
