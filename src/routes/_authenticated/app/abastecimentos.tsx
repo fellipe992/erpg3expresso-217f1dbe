@@ -222,7 +222,27 @@ function AbastecimentosPage() {
       addLabel="Novo abastecimento"
       onAdd={openNew}
     >
+      <Card className="p-3">
+        <div className="grid gap-2 md:grid-cols-4">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data do abastecimento — de</Label>
+            <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+            <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+          </div>
+          <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground md:col-span-2">
+            <span>{filtered.length} registro(s) · {filtered.reduce((s, a) => s + Number(a.litros ?? 0), 0).toFixed(0)} L</span>
+            {(dataDe || dataAte) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <Card>
+
         {isLoading ? (
           <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-brand" /></div>
         ) : filtered.length === 0 ? (
