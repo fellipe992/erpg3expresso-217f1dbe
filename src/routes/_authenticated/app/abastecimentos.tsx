@@ -185,6 +185,10 @@ function AbastecimentosPage() {
   });
 
   const filtered = data.filter((a) => {
+    // Período pela data do abastecimento (fato), não pela data de registro.
+    const ref = (a.data ?? "").slice(0, 10);
+    if (dataDe && (!ref || ref < dataDe)) return false;
+    if (dataAte && (!ref || ref > dataAte)) return false;
     const q = search.toLowerCase();
     if (!q) return true;
     return (
@@ -193,6 +197,7 @@ function AbastecimentosPage() {
       (a.motorista?.nome ?? "").toLowerCase().includes(q)
     );
   });
+
 
   const openNew = () => {
     setForm(emptyForm);
