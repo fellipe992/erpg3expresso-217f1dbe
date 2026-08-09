@@ -25,6 +25,7 @@ import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
+import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
 
 
 
