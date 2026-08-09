@@ -144,6 +144,10 @@ function ManutencoesPage() {
   });
 
   const filtered = data.filter((m) => {
+    // Período pela data da manutenção (fato).
+    const ref = (m.data ?? "").slice(0, 10);
+    if (dataDe && (!ref || ref < dataDe)) return false;
+    if (dataAte && (!ref || ref > dataAte)) return false;
     const q = search.toLowerCase();
     if (!q) return true;
     return (
@@ -164,7 +168,27 @@ function ManutencoesPage() {
       addLabel="Nova manutenção"
       onAdd={() => { setForm(empty); setFile(null); setOpen(true); }}
     >
+      <Card className="p-3">
+        <div className="grid gap-2 md:grid-cols-4">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Data da manutenção — de</Label>
+            <Input type="date" className="h-9" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+            <Input type="date" className="h-9" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+          </div>
+          <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground md:col-span-2">
+            <span>{filtered.length} registro(s)</span>
+            {(dataDe || dataAte) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <Card>
+
         {isLoading ? (
           <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-brand" /></div>
         ) : filtered.length === 0 ? (
