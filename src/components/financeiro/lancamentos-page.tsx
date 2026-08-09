@@ -288,9 +288,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       const pid = isReceber ? l.cliente_id : l.fornecedor_id;
       if (pid !== parceiroFilter) return false;
     }
-    const ref = l.data_vencimento ?? l.data_emissao;
-    if (dataDe && ref && ref < dataDe) return false;
-    if (dataAte && ref && ref > dataAte) return false;
+    // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
+    if (dataDe || dataAte) {
+      const ref =
+        dataBase === "pagamento" ? l.data_pagamento : dataBase === "vencimento" ? l.data_vencimento : l.data_emissao;
+      if (!ref) return false;
+      if (dataDe && ref < dataDe) return false;
+      if (dataAte && ref > dataAte) return false;
+    }
+
 
     const q = search.toLowerCase().trim();
     if (!q) return true;
