@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Fuel, CheckCircle2, Clock, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Fuel, CheckCircle2, Clock, TrendingUp, AlertCircle, Loader2, MessageSquarePlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
