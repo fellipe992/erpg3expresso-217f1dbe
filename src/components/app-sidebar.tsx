@@ -20,6 +20,7 @@ import {
   Gauge,
   KanbanSquare,
   Calculator,
+  MessagesSquare,
 
 
 } from "lucide-react";
