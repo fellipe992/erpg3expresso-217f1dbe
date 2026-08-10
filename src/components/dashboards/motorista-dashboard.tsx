@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Fuel, CheckCircle2, Clock, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Fuel, CheckCircle2, Clock, TrendingUp, AlertCircle, Loader2, MessageSquarePlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -182,15 +182,22 @@ export function MotoristaDashboard() {
         </Card>
       )}
 
-      <div className="flex gap-2 pb-4">
-        <Link to="/app/viagens" className="flex-1">
-          <Button size="sm" variant="outline" className="w-full">Minhas viagens</Button>
-        </Link>
-        <Link to="/app/abastecimentos" className="flex-1">
-          <Button size="sm" variant="outline" className="w-full">
-            <Fuel className="mr-1 size-4" /> Abastecer
+      <div className="space-y-2 pb-4">
+        <Link to="/app/avisos" className="block">
+          <Button size="sm" className="w-full bg-brand hover:bg-brand/90">
+            <MessageSquarePlus className="mr-1 size-4" /> Enviar aviso à operação
           </Button>
         </Link>
+        <div className="flex gap-2">
+          <Link to="/app/viagens" className="flex-1">
+            <Button size="sm" variant="outline" className="w-full">Minhas viagens</Button>
+          </Link>
+          <Link to="/app/abastecimentos" className="flex-1">
+            <Button size="sm" variant="outline" className="w-full">
+              <Fuel className="mr-1 size-4" /> Abastecer
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
