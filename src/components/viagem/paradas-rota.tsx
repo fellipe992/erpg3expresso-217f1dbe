@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ExternalLink, MapPin, Navigation2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, MapPin, Navigation2, RotateCcw } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,8 +43,8 @@ function trechos(paradas: Parada[], porTrecho = 10) {
     return {
       indice: i + 1,
       total: grupos.length,
-      inicio: grupo[0].ordem,
-      fim: destino.ordem,
+      inicio: i * porTrecho + 1,
+      fim: i * porTrecho + grupo.length,
       url: `https://www.google.com/maps/dir/?${params.toString()}`,
     };
   });
@@ -64,8 +64,31 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
     },
   });
 
-  const links = useMemo(() => trechos(paradas), [paradas]);
-  const primeira = paradas[0];
+  /**
+   * Sequência local usada apenas para gerar os links de navegação. A ordem
+   * otimizada pela operação continua salva no sistema — o motorista pode
+   * reordenar aqui para atender um ponto antes, sem alterar nada no banco.
+   */
+  const [sequencia, setSequencia] = useState<Parada[]>([]);
+  const [alterada, setAlterada] = useState(false);
+  const [arrastando, setArrastando] = useState<number | null>(null);
+
+  useEffect(() => {
+    setSequencia(paradas);
+    setAlterada(false);
+  }, [paradas]);
+
+  const mover = (de: number, para: number) => {
+    if (para < 0 || para >= sequencia.length || de === para) return;
+    const lista = [...sequencia];
+    const [item] = lista.splice(de, 1);
+    lista.splice(para, 0, item);
+    setSequencia(lista);
+    setAlterada(true);
+  };
+
+  const links = useMemo(() => trechos(sequencia), [sequencia]);
+  const primeira = sequencia[0];
 
   if (!paradas.length) return null;
 
@@ -75,10 +98,23 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
         <div>
           <h2 className="text-sm font-semibold">Roteiro programado</h2>
           <p className="text-xs text-muted-foreground">
-            {paradas.length} paradas na sequência definida pela operação
+            {sequencia.length} paradas ·{" "}
+            {alterada ? "sequência ajustada por você" : "sequência definida pela operação"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {alterada && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setSequencia(paradas);
+                setAlterada(false);
+              }}
+            >
+              <RotateCcw className="mr-2 size-4" /> Restaurar otimizada
+            </Button>
+          )}
           {links.map((l) => (
             <Button key={l.indice} asChild size="sm" className="bg-brand hover:bg-brand/90">
               <a href={l.url} target="_blank" rel="noopener noreferrer">
@@ -107,11 +143,28 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
         </div>
       </div>
 
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Use as setas (ou arraste no computador) para mudar a ordem das entregas. O Google Maps abre
+        exatamente na sequência mostrada abaixo.
+      </p>
+
       <ol className="space-y-1">
-        {paradas.map((p) => (
-          <li key={p.id} className="flex items-start gap-2 rounded-md border border-border p-2 text-xs">
+        {sequencia.map((p, i) => (
+          <li
+            key={p.id}
+            draggable
+            onDragStart={() => setArrastando(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => {
+              if (arrastando !== null) mover(arrastando, i);
+              setArrastando(null);
+            }}
+            className={`flex items-start gap-2 rounded-md border border-border p-2 text-xs ${
+              arrastando === i ? "opacity-60" : ""
+            }`}
+          >
             <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand text-[10px] font-bold text-white">
-              {p.ordem}
+              {i + 1}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate font-medium">
@@ -127,6 +180,30 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
                 {p.chegada_prevista}
               </Badge>
             )}
+            <span className="flex shrink-0 flex-col gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="size-6"
+                aria-label={`Subir parada ${i + 1}`}
+                disabled={i === 0}
+                onClick={() => mover(i, i - 1)}
+              >
+                <ArrowUp className="size-3" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="size-6"
+                aria-label={`Descer parada ${i + 1}`}
+                disabled={i === sequencia.length - 1}
+                onClick={() => mover(i, i + 1)}
+              >
+                <ArrowDown className="size-3" />
+              </Button>
+            </span>
           </li>
         ))}
       </ol>
