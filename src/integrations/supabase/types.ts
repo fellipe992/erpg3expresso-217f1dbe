@@ -108,6 +108,102 @@ export type Database = {
           },
         ]
       }
+      avisos: {
+        Row: {
+          assunto: string
+          categoria: string
+          created_at: string
+          created_by: string
+          id: string
+          mensagem: string
+          motorista_id: string | null
+          status: string
+          updated_at: string
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          assunto: string
+          categoria?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          mensagem: string
+          motorista_id?: string | null
+          status?: string
+          updated_at?: string
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          assunto?: string
+          categoria?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          mensagem?: string
+          motorista_id?: string | null
+          status?: string
+          updated_at?: string
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avisos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avisos_mensagens: {
+        Row: {
+          autor_id: string | null
+          aviso_id: string
+          created_at: string
+          id: string
+          mensagem: string
+        }
+        Insert: {
+          autor_id?: string | null
+          aviso_id: string
+          created_at?: string
+          id?: string
+          mensagem: string
+        }
+        Update: {
+          autor_id?: string | null
+          aviso_id?: string
+          created_at?: string
+          id?: string
+          mensagem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_mensagens_aviso_id_fkey"
+            columns: ["aviso_id"]
+            isOneToOne: false
+            referencedRelation: "avisos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       centros_custo: {
         Row: {
           ativo: boolean
