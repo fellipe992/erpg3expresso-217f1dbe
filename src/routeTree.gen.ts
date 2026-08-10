@@ -39,6 +39,7 @@ import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app/documentos'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
+import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
 import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authenticated/app/alertas'
@@ -212,6 +213,11 @@ const AuthenticatedAppClientesRoute =
     path: '/app/clientes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppAvisosRoute = AuthenticatedAppAvisosRouteImport.update({
+  id: '/app/avisos',
+  path: '/app/avisos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppAuditoriaRoute =
   AuthenticatedAppAuditoriaRouteImport.update({
     id: '/app/auditoria',
@@ -267,6 +273,7 @@ export interface FileRoutesByFullPath {
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
+  '/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
+  '/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
+  '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
@@ -385,6 +394,7 @@ export interface FileRouteTypes {
     | '/app/alertas'
     | '/app/assistente'
     | '/app/auditoria'
+    | '/app/avisos'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/documentos'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/app/alertas'
     | '/app/assistente'
     | '/app/auditoria'
+    | '/app/avisos'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/documentos'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/auditoria'
+    | '/_authenticated/app/avisos'
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/documentos'
@@ -712,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppClientesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/avisos': {
+      id: '/_authenticated/app/avisos'
+      path: '/app/avisos'
+      fullPath: '/app/avisos'
+      preLoaderRoute: typeof AuthenticatedAppAvisosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/auditoria': {
       id: '/_authenticated/app/auditoria'
       path: '/app/auditoria'
@@ -769,6 +788,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAlertasRoute: typeof AuthenticatedAppAlertasRoute
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
+  AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
@@ -800,6 +820,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAlertasRoute: AuthenticatedAppAlertasRoute,
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
+  AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
@@ -843,13 +864,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
