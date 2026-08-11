@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ExternalLink, MapPin, Navigation2, RotateCcw } from "lucide-react";
+import { ArrowDown, ArrowUp, ExternalLink, MapPin, Navigation2, RotateCcw, Warehouse } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
 type Parada = {
@@ -50,7 +52,24 @@ function trechos(paradas: Parada[], porTrecho = 10) {
   });
 }
 
+/** Reordena as paradas conforme uma lista de ids salva pelo motorista. */
+function aplicarOrdemSalva(paradas: Parada[], ids: string[]) {
+  const restantes = new Map(paradas.map((p) => [p.id, p]));
+  const saida: Parada[] = [];
+  for (const id of ids) {
+    const p = restantes.get(id);
+    if (p) {
+      saida.push(p);
+      restantes.delete(id);
+    }
+  }
+  return [...saida, ...restantes.values()];
+}
+
 export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
+  const chaveOrdem = `g3:roteiro-ordem:${viagemId}`;
+  const chaveCd = `g3:roteiro-cd:${viagemId}`;
+
   const { data: paradas = [] } = useQuery({
     queryKey: ["viagem-paradas", viagemId],
     queryFn: async () => {
@@ -67,16 +86,46 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
   /**
    * Sequência local usada apenas para gerar os links de navegação. A ordem
    * otimizada pela operação continua salva no sistema — o motorista pode
-   * reordenar aqui para atender um ponto antes, sem alterar nada no banco.
+   * reordenar aqui para atender um ponto antes, e o ajuste dele fica guardado
+   * no próprio aparelho (não é perdido ao recarregar a tela).
    */
   const [sequencia, setSequencia] = useState<Parada[]>([]);
   const [alterada, setAlterada] = useState(false);
   const [arrastando, setArrastando] = useState<number | null>(null);
+  /** Ponto final opcional: CD / base onde o motorista termina o roteiro. */
+  const [cd, setCd] = useState("");
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    setCd(window.localStorage.getItem(chaveCd) ?? "");
+  }, [chaveCd]);
+
+  useEffect(() => {
+    if (!paradas.length) {
+      setSequencia([]);
+      return;
+    }
+    const salvo =
+      typeof window !== "undefined" ? window.localStorage.getItem(chaveOrdem) : null;
+    if (salvo) {
+      try {
+        const ids = JSON.parse(salvo) as string[];
+        const ordenadas = aplicarOrdemSalva(paradas, ids);
+        setSequencia(ordenadas);
+        setAlterada(ordenadas.some((p, i) => p.id !== paradas[i]?.id));
+        return;
+      } catch {
+        /* ordem salva inválida — usa a otimizada */
+      }
+    }
     setSequencia(paradas);
     setAlterada(false);
-  }, [paradas]);
+  }, [paradas, chaveOrdem]);
+
+  const salvarOrdem = (lista: Parada[]) => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(chaveOrdem, JSON.stringify(lista.map((p) => p.id)));
+  };
 
   const mover = (de: number, para: number) => {
     if (para < 0 || para >= sequencia.length || de === para) return;
@@ -85,9 +134,42 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
     lista.splice(para, 0, item);
     setSequencia(lista);
     setAlterada(true);
+    salvarOrdem(lista);
   };
 
-  const links = useMemo(() => trechos(sequencia), [sequencia]);
+  const restaurar = () => {
+    setSequencia(paradas);
+    setAlterada(false);
+    if (typeof window !== "undefined") window.localStorage.removeItem(chaveOrdem);
+  };
+
+  const atualizarCd = (valor: string) => {
+    setCd(valor);
+    if (typeof window === "undefined") return;
+    if (valor.trim()) window.localStorage.setItem(chaveCd, valor);
+    else window.localStorage.removeItem(chaveCd);
+  };
+
+  /** Sequência efetivamente enviada ao Google Maps (paradas + CD final). */
+  const sequenciaNavegacao = useMemo<Parada[]>(() => {
+    if (!cd.trim()) return sequencia;
+    return [
+      ...sequencia,
+      {
+        id: "cd-final",
+        ordem: sequencia.length + 1,
+        cliente: "CD / ponto final",
+        endereco: cd.trim(),
+        nf: null,
+        peso_kg: null,
+        latitude: null,
+        longitude: null,
+        chegada_prevista: null,
+      },
+    ];
+  }, [sequencia, cd]);
+
+  const links = useMemo(() => trechos(sequenciaNavegacao), [sequenciaNavegacao]);
   const primeira = sequencia[0];
 
   if (!paradas.length) return null;
@@ -99,19 +181,12 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
           <h2 className="text-sm font-semibold">Roteiro programado</h2>
           <p className="text-xs text-muted-foreground">
             {sequencia.length} paradas ·{" "}
-            {alterada ? "sequência ajustada por você" : "sequência definida pela operação"}
+            {alterada ? "sequência ajustada por você (salva)" : "sequência definida pela operação"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {alterada && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setSequencia(paradas);
-                setAlterada(false);
-              }}
-            >
+            <Button size="sm" variant="ghost" onClick={restaurar}>
               <RotateCcw className="mr-2 size-4" /> Restaurar otimizada
             </Button>
           )}
@@ -144,8 +219,8 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
       </div>
 
       <p className="mb-2 text-[11px] text-muted-foreground">
-        Use as setas (ou arraste no computador) para mudar a ordem das entregas. O Google Maps abre
-        exatamente na sequência mostrada abaixo.
+        Use as setas (ou arraste no computador) para mudar a ordem das entregas. Sua sequência fica
+        salva neste aparelho e o Google Maps abre exatamente nela.
       </p>
 
       <ol className="space-y-1">
@@ -207,6 +282,24 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
           </li>
         ))}
       </ol>
+
+      <div className="mt-3 space-y-1 rounded-md border border-dashed border-border p-2">
+        <Label htmlFor={`cd-${viagemId}`} className="flex items-center gap-1 text-[11px]">
+          <Warehouse className="size-3 text-brand" /> Último ponto (CD / base de entrega) — opcional
+        </Label>
+        <Input
+          id={`cd-${viagemId}`}
+          value={cd}
+          onChange={(e) => atualizarCd(e.target.value)}
+          placeholder="Ex.: CD Superfrio, Av. das Nações 1000, Guarulhos/SP"
+          className="h-9 text-xs"
+        />
+        <p className="text-[11px] text-muted-foreground">
+          {cd.trim()
+            ? "Este endereço entra como destino final da rota no Google Maps."
+            : "Se você termina o dia entregando em um CD, informe o endereço para entrar no fim da rota."}
+        </p>
+      </div>
 
       {links.length > 1 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
