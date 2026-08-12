@@ -359,6 +359,54 @@ export type Database = {
         }
         Relationships: []
       }
+      companies: {
+        Row: {
+          cidade: string | null
+          created_at: string
+          created_by: string | null
+          endereco: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nome: string
+          place_id: string | null
+          segmento: string | null
+          telefone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          created_at?: string
+          created_by?: string | null
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome: string
+          place_id?: string | null
+          segmento?: string | null
+          telefone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          created_at?: string
+          created_by?: string | null
+          endereco?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome?: string
+          place_id?: string | null
+          segmento?: string | null
+          telefone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       company_settings: {
         Row: {
           cnpj: string | null
@@ -397,6 +445,66 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      contacts: {
+        Row: {
+          apollo_id: string | null
+          cargo: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          lead_id: string | null
+          linkedin_url: string | null
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          apollo_id?: string | null
+          cargo?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          lead_id?: string | null
+          linkedin_url?: string | null
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          apollo_id?: string | null
+          cargo?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          lead_id?: string | null
+          linkedin_url?: string | null
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_atividades: {
         Row: {
