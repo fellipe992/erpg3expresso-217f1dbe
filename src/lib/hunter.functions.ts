@@ -14,7 +14,8 @@ export const buscarEmpresas = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { buscarEmpresasPlaces } = await import("@/lib/hunter.server");
     const encontradas = await buscarEmpresasPlaces(data);
-    if (encontradas.length === 0) return { empresas: [] as Record<string, unknown>[] };
+    if (encontradas.length === 0) return { empresas: [] };
+
 
     const rows = encontradas.map((e) => ({
       ...e,
