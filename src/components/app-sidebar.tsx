@@ -21,6 +21,8 @@ import {
   KanbanSquare,
   Calculator,
   MessagesSquare,
+  Crosshair,
+
 
 
 } from "lucide-react";
