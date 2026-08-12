@@ -78,7 +78,9 @@ const operacional: NavItem[] = [
 
 const comercial: NavItem[] = [
   { label: "Funil de vendas", to: "/app/crm/funil", icon: KanbanSquare },
+  { label: "Hunter", to: "/app/crm/hunter", icon: Crosshair },
 ];
+
 
 const gestao: NavItem[] = [
   { label: "Relatórios", to: "/app/relatorios", icon: BarChart3 },
