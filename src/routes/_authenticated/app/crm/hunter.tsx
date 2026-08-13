@@ -152,6 +152,10 @@ function HunterPage() {
       setDecisores(res.decisores as Decisor[]);
       setDominio(res.dominio ?? null);
       setAviso(res.aviso ?? null);
+      setFontes((res.fontes as Fontes) ?? null);
+      setResumoEmpresa(res.empresaResumo ?? null);
+      setEmailsGerais((res.emailsGerais as string[]) ?? []);
+      setTelefonesGerais((res.telefonesGerais as string[]) ?? []);
     },
     onError: (e: Error) => {
       setDecisores([]);
@@ -170,6 +174,8 @@ function HunterPage() {
           telefone: d.telefone,
           linkedin_url: d.linkedin_url,
           apollo_id: d.apollo_id,
+          fonte: d.fonte ?? "manual",
+          observacoes: d.resumo ?? null,
         },
       }),
     onSuccess: (_res, d) => {
@@ -179,13 +185,39 @@ function HunterPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const salvarManual = () => {
+    if (!manual.nome.trim()) {
+      toast.error("Informe o nome do contato.");
+      return;
+    }
+    addCrm.mutate(
+      {
+        apollo_id: null,
+        nome: manual.nome.trim(),
+        cargo: manual.cargo.trim() || null,
+        email: manual.email.trim() || null,
+        telefone: manual.telefone.trim() || null,
+        linkedin_url: manual.linkedin_url.trim() || null,
+        fonte: "manual",
+        resumo: manual.observacoes.trim() || null,
+      },
+      { onSuccess: () => setManual({ ...vazioManual }) },
+    );
+  };
+
   const abrirDecisores = (empresa: Empresa) => {
     setSelecionada(empresa);
     setDecisores([]);
     setAviso(null);
     setDominio(null);
+    setFontes(null);
+    setResumoEmpresa(null);
+    setEmailsGerais([]);
+    setTelefonesGerais([]);
+    setManual({ ...vazioManual });
     decisoresMut.mutate(empresa);
   };
+
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
