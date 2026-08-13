@@ -75,8 +75,8 @@ export const buscarDecisores = createServerFn({ method: "POST" })
       return { dominio: null, decisores: [], aviso: "Esta empresa não possui site cadastrado no Google." };
     }
 
-    const decisores = await buscarDecisoresApollo(dominio);
-    return { dominio, decisores, aviso: null as string | null };
+    const { decisores, aviso } = await buscarDecisoresApollo(dominio);
+    return { dominio, decisores, aviso };
   });
 
 export const adicionarContatoCrm = createServerFn({ method: "POST" })
