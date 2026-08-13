@@ -80,7 +80,7 @@ const CARGOS_ALVO = [
 ];
 
 function HunterPage() {
-  const buscarEmpresasFn = useServerFn(buscarEmpresas);
+  const salvarEmpresasFn = useServerFn(salvarEmpresas);
   const buscarDecisoresFn = useServerFn(buscarDecisores);
   const adicionarFn = useServerFn(adicionarContatoCrm);
 
@@ -95,15 +95,29 @@ function HunterPage() {
   const [adicionados, setAdicionados] = useState<string[]>([]);
 
   const busca = useMutation({
-    mutationFn: () =>
-      buscarEmpresasFn({ data: { cidade, raioKm: Number(raio) || 25, keyword } }),
-    onSuccess: (res) => {
-      setEmpresas(res.empresas as Empresa[]);
-      if (res.empresas.length === 0) toast.info("Nenhuma empresa encontrada para esses filtros.");
-      else toast.success(`${res.empresas.length} empresa(s) encontrada(s).`);
+    mutationFn: async (): Promise<Empresa[]> => {
+      const cidadeLimpa = cidade.trim();
+      if (cidadeLimpa.length < 2) throw new Error("Informe a cidade ou região.");
+      const segmento = keyword.trim() || "distribuidora atacadista indústria";
+      const encontradas = await buscarEmpresasNoNavegador({
+        cidade: cidadeLimpa,
+        keyword: segmento,
+        raioKm: Number(raio) || 25,
+      });
+      if (encontradas.length === 0) return [];
+      const res = (await salvarEmpresasFn({
+        data: { cidade: cidadeLimpa, segmento, empresas: encontradas },
+      })) as { empresas: Empresa[] };
+      return res.empresas ?? [];
+    },
+    onSuccess: (lista) => {
+      setEmpresas(lista);
+      if (lista.length === 0) toast.info("Nenhuma empresa encontrada para esses filtros.");
+      else toast.success(`${lista.length} empresa(s) encontrada(s).`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const decisoresMut = useMutation({
     mutationFn: (empresa: Empresa) => buscarDecisoresFn({ data: { companyId: empresa.id } }),
