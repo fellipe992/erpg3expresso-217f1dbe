@@ -46,86 +46,9 @@ const APOLLO_TITLES = [
   "procurement manager",
 ];
 
-function googleKey(): string {
-  const key = process.env.GOOGLE_API_KEY;
-  if (!key) throw new Error("GOOGLE_API_KEY não configurada no backend.");
-  return key;
-}
+// A busca de empresas no Google Places é feita no navegador
+// (src/lib/hunter-places-browser.ts), pois a chave do Google é restrita por referer.
 
-/** Geocodifica a cidade/região informada para centrar a busca. */
-async function geocodar(cidade: string): Promise<{ lat: number; lng: number } | null> {
-  const url = new URL("https://maps.googleapis.com/maps/api/geocode/json");
-  url.searchParams.set("address", cidade);
-  url.searchParams.set("language", "pt-BR");
-  url.searchParams.set("region", "br");
-  url.searchParams.set("key", googleKey());
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Falha ao localizar a região (${res.status}).`);
-  const json = (await res.json()) as {
-    status: string;
-    results?: { geometry?: { location?: { lat: number; lng: number } } }[];
-  };
-  const loc = json.results?.[0]?.geometry?.location;
-  return loc ? { lat: loc.lat, lng: loc.lng } : null;
-}
-
-/** Busca empresas via Google Places API (Text Search v1). */
-export async function buscarEmpresasPlaces(input: {
-  cidade: string;
-  raioKm: number;
-  keyword: string;
-}): Promise<EmpresaEncontrada[]> {
-  const centro = await geocodar(input.cidade);
-  if (!centro) throw new Error("Não foi possível localizar a cidade/região informada.");
-
-  const raio = Math.min(Math.max(input.raioKm || 25, 1), 50) * 1000;
-  const res = await fetch("https://places.googleapis.com/v1/places:searchText", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": googleKey(),
-      "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.location",
-    },
-    body: JSON.stringify({
-      textQuery: `${input.keyword} em ${input.cidade}`,
-      languageCode: "pt-BR",
-      regionCode: "BR",
-      maxResultCount: 20,
-      locationBias: { circle: { center: { latitude: centro.lat, longitude: centro.lng }, radius: raio } },
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[hunter] Places falhou [${res.status}]: ${body}`);
-    throw new Error(`Busca no Google Places falhou [${res.status}]: ${body}`);
-  }
-
-  const json = (await res.json()) as {
-    places?: {
-      id: string;
-      displayName?: { text?: string };
-      formattedAddress?: string;
-      nationalPhoneNumber?: string;
-      internationalPhoneNumber?: string;
-      websiteUri?: string;
-      location?: { latitude?: number; longitude?: number };
-    }[];
-  };
-
-  return (json.places ?? [])
-    .filter((p) => p.id && p.displayName?.text)
-    .map((p) => ({
-      place_id: p.id,
-      nome: p.displayName!.text!,
-      endereco: p.formattedAddress ?? null,
-      telefone: p.nationalPhoneNumber ?? p.internationalPhoneNumber ?? null,
-      website: p.websiteUri ?? null,
-      latitude: p.location?.latitude ?? null,
-      longitude: p.location?.longitude ?? null,
-    }));
-}
 
 /** Extrai o domínio a partir de uma URL de site. */
 export function extrairDominio(website: string | null | undefined): string | null {

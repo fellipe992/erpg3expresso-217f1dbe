@@ -1,26 +1,47 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const buscarEmpresas = createServerFn({ method: "POST" })
+type EmpresaEntrada = {
+  place_id: string;
+  nome: string;
+  endereco?: string | null;
+  telefone?: string | null;
+  website?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+/**
+ * Persiste as empresas encontradas no navegador (Maps JS API).
+ * A busca é feita no cliente porque a chave do Google é restrita por referer.
+ */
+export const salvarEmpresas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { cidade: string; raioKm: number; keyword: string }) => {
+  .inputValidator((data: { cidade: string; segmento: string; empresas: EmpresaEntrada[] }) => {
     const cidade = (data?.cidade ?? "").trim();
-    const keyword = (data?.keyword ?? "").trim();
     if (cidade.length < 2) throw new Error("Informe a cidade ou região.");
-    const raioKm = Number(data?.raioKm) || 25;
-    // Sem palavra-chave, busca os perfis padrão de embarcador/distribuidor.
-    return { cidade, keyword: keyword.length >= 2 ? keyword : "distribuidora atacadista indústria", raioKm };
+    const segmento = (data?.segmento ?? "").trim().slice(0, 120);
+    const empresas = (Array.isArray(data?.empresas) ? data.empresas : [])
+      .filter((e) => e?.place_id && e?.nome)
+      .slice(0, 40)
+      .map((e) => ({
+        place_id: String(e.place_id).slice(0, 200),
+        nome: String(e.nome).slice(0, 200),
+        endereco: e.endereco ? String(e.endereco).slice(0, 300) : null,
+        telefone: e.telefone ? String(e.telefone).slice(0, 60) : null,
+        website: e.website ? String(e.website).slice(0, 300) : null,
+        latitude: typeof e.latitude === "number" ? e.latitude : null,
+        longitude: typeof e.longitude === "number" ? e.longitude : null,
+      }));
+    return { cidade, segmento, empresas };
   })
   .handler(async ({ data, context }) => {
-    const { buscarEmpresasPlaces } = await import("@/lib/hunter.server");
-    const encontradas = await buscarEmpresasPlaces(data);
-    if (encontradas.length === 0) return { empresas: [] };
+    if (data.empresas.length === 0) return { empresas: [] };
 
-
-    const rows = encontradas.map((e) => ({
+    const rows = data.empresas.map((e) => ({
       ...e,
       cidade: data.cidade,
-      segmento: data.keyword,
+      segmento: data.segmento || null,
       created_by: context.userId,
     }));
 
@@ -31,6 +52,7 @@ export const buscarEmpresas = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { empresas: salvas ?? [] };
   });
+
 
 export const buscarDecisores = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
