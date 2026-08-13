@@ -61,8 +61,10 @@ export function extrairDominio(website: string | null | undefined): string | nul
   }
 }
 
+export type ResultadoDecisores = { decisores: DecisorEncontrado[]; aviso: string | null };
+
 /** Busca decisores no Apollo.io filtrando pelos cargos-alvo de logística/compras. */
-export async function buscarDecisoresApollo(dominio: string): Promise<DecisorEncontrado[]> {
+export async function buscarDecisoresApollo(dominio: string): Promise<ResultadoDecisores> {
   const lovableKey = process.env.LOVABLE_API_KEY;
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!lovableKey) throw new Error("LOVABLE_API_KEY não configurada.");
@@ -87,6 +89,28 @@ export async function buscarDecisoresApollo(dominio: string): Promise<DecisorEnc
   if (!res.ok) {
     const body = await res.text();
     console.error(`[hunter] Apollo falhou [${res.status}]: ${body}`);
+
+    if (res.status === 403 && body.includes("API_INACCESSIBLE")) {
+      return {
+        decisores: [],
+        aviso:
+          "A busca automática de decisores não está disponível: o plano gratuito do Apollo.io não libera o endpoint de busca de pessoas. " +
+          "Para ativar, contrate um plano pago do Apollo (ou use uma chave master) em Configurações → Integrações → API. " +
+          "Enquanto isso, cadastre o contato manualmente pelo botão abaixo.",
+      };
+    }
+    if (res.status === 401) {
+      return {
+        decisores: [],
+        aviso: "A chave do Apollo.io é inválida ou foi revogada. Reconecte a integração para voltar a buscar decisores.",
+      };
+    }
+    if (res.status === 429) {
+      return {
+        decisores: [],
+        aviso: "Limite de requisições do Apollo.io atingido. Aguarde alguns minutos e tente novamente.",
+      };
+    }
     throw new Error(`Busca de decisores falhou [${res.status}]: ${body}`);
   }
 
@@ -105,7 +129,7 @@ export async function buscarDecisoresApollo(dominio: string): Promise<DecisorEnc
     contacts?: unknown[];
   };
 
-  return (json.people ?? [])
+  const decisores = (json.people ?? [])
     .map((p) => ({
       apollo_id: p.id ?? null,
       nome: p.name ?? [p.first_name, p.last_name].filter(Boolean).join(" "),
@@ -119,4 +143,9 @@ export async function buscarDecisoresApollo(dominio: string): Promise<DecisorEnc
       linkedin_url: p.linkedin_url ?? null,
     }))
     .filter((p) => p.nome);
+
+  return {
+    decisores,
+    aviso: decisores.length === 0 ? "Nenhum decisor de logística ou suprimentos encontrado para este domínio." : null,
+  };
 }
