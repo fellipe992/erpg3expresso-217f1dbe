@@ -146,6 +146,8 @@ export const adicionarContatoCrm = createServerFn({ method: "POST" })
       telefone?: string | null;
       linkedin_url?: string | null;
       apollo_id?: string | null;
+      fonte?: string | null;
+      observacoes?: string | null;
     }) => {
       if (!data?.companyId) throw new Error("Empresa inválida.");
       if (!data?.nome?.trim()) throw new Error("Contato sem nome.");
