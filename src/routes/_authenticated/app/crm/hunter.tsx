@@ -13,6 +13,7 @@ import {
   Phone,
   Plus,
   Search,
+  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -66,6 +67,17 @@ type Decisor = {
   email: string | null;
   telefone: string | null;
   linkedin_url: string | null;
+  fonte?: string;
+  confianca?: string;
+  resumo?: string | null;
+};
+
+type Fontes = {
+  apollo: boolean;
+  linkedin: boolean;
+  site: boolean;
+  ia: boolean;
+  linkedinConectado: boolean;
 };
 
 const SUGESTOES = ["Indústria", "Distribuidora", "Centro de Distribuição", "Atacadista", "Alimentos"];
@@ -78,6 +90,16 @@ const CARGOS_ALVO = [
   "Comprador",
   "Gerente de Suprimentos",
 ];
+
+const ROTULO_FONTE: Record<string, string> = {
+  apollo: "Apollo.io",
+  linkedin: "LinkedIn",
+  site: "Site da empresa",
+  ia: "IA + web",
+  manual: "Manual",
+};
+
+const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
 
 function HunterPage() {
   const salvarEmpresasFn = useServerFn(salvarEmpresas);
@@ -93,6 +115,12 @@ function HunterPage() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [dominio, setDominio] = useState<string | null>(null);
   const [adicionados, setAdicionados] = useState<string[]>([]);
+  const [fontes, setFontes] = useState<Fontes | null>(null);
+  const [resumoEmpresa, setResumoEmpresa] = useState<string | null>(null);
+  const [emailsGerais, setEmailsGerais] = useState<string[]>([]);
+  const [telefonesGerais, setTelefonesGerais] = useState<string[]>([]);
+  const [manual, setManual] = useState({ ...vazioManual });
+
 
   const busca = useMutation({
     mutationFn: async (): Promise<Empresa[]> => {
@@ -125,6 +153,10 @@ function HunterPage() {
       setDecisores(res.decisores as Decisor[]);
       setDominio(res.dominio ?? null);
       setAviso(res.aviso ?? null);
+      setFontes((res.fontes as Fontes) ?? null);
+      setResumoEmpresa(res.empresaResumo ?? null);
+      setEmailsGerais((res.emailsGerais as string[]) ?? []);
+      setTelefonesGerais((res.telefonesGerais as string[]) ?? []);
     },
     onError: (e: Error) => {
       setDecisores([]);
@@ -143,6 +175,8 @@ function HunterPage() {
           telefone: d.telefone,
           linkedin_url: d.linkedin_url,
           apollo_id: d.apollo_id,
+          fonte: d.fonte ?? "manual",
+          observacoes: d.resumo ?? null,
         },
       }),
     onSuccess: (_res, d) => {
@@ -152,13 +186,39 @@ function HunterPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const salvarManual = () => {
+    if (!manual.nome.trim()) {
+      toast.error("Informe o nome do contato.");
+      return;
+    }
+    addCrm.mutate(
+      {
+        apollo_id: null,
+        nome: manual.nome.trim(),
+        cargo: manual.cargo.trim() || null,
+        email: manual.email.trim() || null,
+        telefone: manual.telefone.trim() || null,
+        linkedin_url: manual.linkedin_url.trim() || null,
+        fonte: "manual",
+        resumo: manual.observacoes.trim() || null,
+      },
+      { onSuccess: () => setManual({ ...vazioManual }) },
+    );
+  };
+
   const abrirDecisores = (empresa: Empresa) => {
     setSelecionada(empresa);
     setDecisores([]);
     setAviso(null);
     setDominio(null);
+    setFontes(null);
+    setResumoEmpresa(null);
+    setEmailsGerais([]);
+    setTelefonesGerais([]);
+    setManual({ ...vazioManual });
     decisoresMut.mutate(empresa);
   };
+
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
@@ -311,7 +371,7 @@ function HunterPage() {
         </div>
       )}
 
-      {/* Etapa 2 — decisores (Apollo.io) */}
+      {/* Etapa 2 — decisores (LinkedIn público + site da empresa + IA + Apollo) */}
       <Sheet
         open={!!selecionada}
         onOpenChange={(o) => {
@@ -338,6 +398,25 @@ function HunterPage() {
               ))}
             </div>
 
+            {fontes && (
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  ["LinkedIn público", fontes.linkedin],
+                  ["Site da empresa", fontes.site],
+                  ["IA + web", fontes.ia],
+                  ["Apollo.io", fontes.apollo],
+                ].map(([rotulo, ok]) => (
+                  <Badge
+                    key={rotulo as string}
+                    variant={ok ? "default" : "outline"}
+                    className="text-[10px] font-normal"
+                  >
+                    {rotulo as string}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
             {decisoresMut.isPending && (
               <div className="space-y-3">
                 {[0, 1, 2].map((i) => (
@@ -350,25 +429,72 @@ function HunterPage() {
               </div>
             )}
 
-            {!decisoresMut.isPending && aviso && (
-              <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">{aviso}</p>
+            {!decisoresMut.isPending && resumoEmpresa && (
+              <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+                <div className="mb-1 flex items-center gap-1.5 font-medium">
+                  <Sparkles className="size-3.5 text-brand" /> Sobre a empresa
+                </div>
+                <p className="text-muted-foreground">{resumoEmpresa}</p>
+              </div>
             )}
 
-            {!decisoresMut.isPending && !aviso && decisores.length === 0 && (
-              <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                Nenhum decisor encontrado com os cargos-alvo para esta empresa.
-              </p>
+            {!decisoresMut.isPending && (emailsGerais.length > 0 || telefonesGerais.length > 0) && (
+              <div className="space-y-2 rounded-lg border border-border p-4 text-sm">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <Globe className="size-3.5 text-brand" /> Canais gerais do site
+                </div>
+                {emailsGerais.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {emailsGerais.map((e) => (
+                      <a key={e} href={`mailto:${e}`} className="rounded-full bg-muted px-2 py-0.5 text-xs text-brand">
+                        {e}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {telefonesGerais.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {telefonesGerais.map((t) => (
+                      <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!decisoresMut.isPending && aviso && (
+              <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">{aviso}</p>
             )}
 
             {decisores.map((d, i) => {
               const jaAdicionado = adicionados.includes(d.nome);
               return (
                 <div key={`${d.apollo_id ?? d.nome}-${i}`} className="space-y-2 rounded-lg border border-border p-4">
-                  <div className="font-medium">{d.nome}</div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="font-medium">{d.nome}</div>
+                    <div className="flex shrink-0 gap-1">
+                      {d.fonte && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          {ROTULO_FONTE[d.fonte] ?? d.fonte}
+                        </Badge>
+                      )}
+                      {d.confianca && (
+                        <Badge
+                          variant={d.confianca === "alta" ? "default" : "outline"}
+                          className="text-[10px] font-normal"
+                        >
+                          {d.confianca}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                   {d.cargo && <div className="text-sm text-muted-foreground">{d.cargo}</div>}
                   <div className="space-y-1 text-sm">
                     <div className="text-muted-foreground">E-mail: {d.email ?? "não disponível"}</div>
                     <div className="text-muted-foreground">Telefone: {d.telefone ?? "não disponível"}</div>
+                    {d.resumo && <div className="text-xs text-muted-foreground">{d.resumo}</div>}
                     {d.linkedin_url && (
                       <a
                         href={d.linkedin_url}
@@ -380,11 +506,7 @@ function HunterPage() {
                       </a>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    disabled={jaAdicionado || addCrm.isPending}
-                    onClick={() => addCrm.mutate(d)}
-                  >
+                  <Button size="sm" disabled={jaAdicionado || addCrm.isPending} onClick={() => addCrm.mutate(d)}>
                     {addCrm.isPending && addCrm.variables?.nome === d.nome ? (
                       <Loader2 className="mr-2 size-4 animate-spin" />
                     ) : (
@@ -395,9 +517,77 @@ function HunterPage() {
                 </div>
               );
             })}
+
+            {/* Cadastro manual */}
+            {!decisoresMut.isPending && (
+              <div className="space-y-3 rounded-lg border border-dashed border-border p-4">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Etapa 3</Badge>
+                  <span className="text-sm font-medium">Cadastro manual do contato</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-nome">Nome *</Label>
+                    <Input
+                      id="man-nome"
+                      value={manual.nome}
+                      onChange={(e) => setManual((m) => ({ ...m, nome: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-cargo">Cargo</Label>
+                    <Input
+                      id="man-cargo"
+                      value={manual.cargo}
+                      onChange={(e) => setManual((m) => ({ ...m, cargo: e.target.value }))}
+                      placeholder="Gerente de Logística"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-email">E-mail</Label>
+                    <Input
+                      id="man-email"
+                      type="email"
+                      value={manual.email}
+                      onChange={(e) => setManual((m) => ({ ...m, email: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-tel">Telefone</Label>
+                    <Input
+                      id="man-tel"
+                      value={manual.telefone}
+                      onChange={(e) => setManual((m) => ({ ...m, telefone: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="man-li">LinkedIn</Label>
+                    <Input
+                      id="man-li"
+                      value={manual.linkedin_url}
+                      onChange={(e) => setManual((m) => ({ ...m, linkedin_url: e.target.value }))}
+                      placeholder="https://linkedin.com/in/..."
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label htmlFor="man-obs">Observações</Label>
+                    <Input
+                      id="man-obs"
+                      value={manual.observacoes}
+                      onChange={(e) => setManual((m) => ({ ...m, observacoes: e.target.value }))}
+                      placeholder="Como chegou até o contato, melhor horário, etc."
+                    />
+                  </div>
+                </div>
+                <Button variant="secondary" size="sm" onClick={salvarManual} disabled={addCrm.isPending}>
+                  <Plus className="mr-2 size-4" /> Cadastrar contato no CRM
+                </Button>
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
+
     </div>
   );
 }

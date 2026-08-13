@@ -1,0 +1,2 @@
+ALTER TABLE public.contacts ADD COLUMN IF NOT EXISTS fonte TEXT, ADD COLUMN IF NOT EXISTS observacoes TEXT;
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS resumo TEXT, ADD COLUMN IF NOT EXISTS emails_gerais TEXT[], ADD COLUMN IF NOT EXISTS telefones_gerais TEXT[];

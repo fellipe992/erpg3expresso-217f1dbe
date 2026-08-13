@@ -364,14 +364,17 @@ export type Database = {
           cidade: string | null
           created_at: string
           created_by: string | null
+          emails_gerais: string[] | null
           endereco: string | null
           id: string
           latitude: number | null
           longitude: number | null
           nome: string
           place_id: string | null
+          resumo: string | null
           segmento: string | null
           telefone: string | null
+          telefones_gerais: string[] | null
           updated_at: string
           website: string | null
         }
@@ -379,14 +382,17 @@ export type Database = {
           cidade?: string | null
           created_at?: string
           created_by?: string | null
+          emails_gerais?: string[] | null
           endereco?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nome: string
           place_id?: string | null
+          resumo?: string | null
           segmento?: string | null
           telefone?: string | null
+          telefones_gerais?: string[] | null
           updated_at?: string
           website?: string | null
         }
@@ -394,14 +400,17 @@ export type Database = {
           cidade?: string | null
           created_at?: string
           created_by?: string | null
+          emails_gerais?: string[] | null
           endereco?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
           nome?: string
           place_id?: string | null
+          resumo?: string | null
           segmento?: string | null
           telefone?: string | null
+          telefones_gerais?: string[] | null
           updated_at?: string
           website?: string | null
         }
@@ -454,10 +463,12 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string | null
+          fonte: string | null
           id: string
           lead_id: string | null
           linkedin_url: string | null
           nome: string
+          observacoes: string | null
           telefone: string | null
           updated_at: string
         }
@@ -468,10 +479,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          fonte?: string | null
           id?: string
           lead_id?: string | null
           linkedin_url?: string | null
           nome: string
+          observacoes?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -482,10 +495,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          fonte?: string | null
           id?: string
           lead_id?: string | null
           linkedin_url?: string | null
           nome?: string
+          observacoes?: string | null
           telefone?: string | null
           updated_at?: string
         }

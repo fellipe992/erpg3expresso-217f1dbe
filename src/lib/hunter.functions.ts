@@ -62,6 +62,10 @@ export const buscarDecisores = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { buscarDecisoresApollo, extrairDominio } = await import("@/lib/hunter.server");
+    const { buscarPerfisLinkedIn, raspagemSite, consolidarComIa, mesclarDecisores, linkedinStatus } = await import(
+      "@/lib/hunter-sources.server"
+    );
+
     const { data: empresa, error } = await context.supabase
       .from("companies")
       .select("id, nome, website")
@@ -71,13 +75,65 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     if (!empresa) throw new Error("Empresa não encontrada.");
 
     const dominio = extrairDominio(empresa.website as string | null);
-    if (!dominio) {
-      return { dominio: null, decisores: [], aviso: "Esta empresa não possui site cadastrado no Google." };
+    const nomeEmpresa = empresa.nome as string;
+
+    // Fontes em paralelo — cada uma degrada de forma isolada.
+    const [apollo, linkedin, site, li] = await Promise.all([
+      dominio
+        ? buscarDecisoresApollo(dominio).catch((e: Error) => ({ decisores: [], aviso: e.message }))
+        : Promise.resolve({ decisores: [], aviso: null as string | null }),
+      buscarPerfisLinkedIn(nomeEmpresa, dominio),
+      dominio ? raspagemSite(dominio) : Promise.resolve(null),
+      linkedinStatus(),
+    ]);
+
+    const ia = await consolidarComIa({ empresa: nomeEmpresa, dominio, linkedin, site });
+
+    const decisores = mesclarDecisores([
+      apollo.decisores.map((d) => ({ ...d, fonte: "apollo" as const, confianca: "alta" as const })),
+      linkedin,
+      ia.decisores,
+    ]);
+
+    // Persiste o enriquecimento da empresa (resumo e canais gerais).
+    if (site || ia.resumoEmpresa) {
+      await context.supabase
+        .from("companies")
+        .update({
+          resumo: ia.resumoEmpresa ?? site?.resumo ?? null,
+          emails_gerais: site?.emails ?? null,
+          telefones_gerais: site?.telefones ?? null,
+        })
+        .eq("id", empresa.id as string);
     }
 
-    const { decisores, aviso } = await buscarDecisoresApollo(dominio);
-    return { dominio, decisores, aviso };
+    const fontes = {
+      apollo: apollo.decisores.length > 0,
+      linkedin: linkedin.length > 0,
+      site: !!site,
+      ia: ia.decisores.length > 0,
+      linkedinConectado: li.conectado,
+    };
+
+    const aviso =
+      decisores.length === 0
+        ? dominio
+          ? "Nenhum decisor identificado nas fontes públicas (LinkedIn, site da empresa e Apollo). Cadastre o contato manualmente abaixo."
+          : "Esta empresa não possui site cadastrado no Google — a busca ficou limitada. Cadastre o contato manualmente abaixo."
+        : (apollo.aviso ?? null);
+
+    return {
+      dominio,
+      decisores,
+      aviso,
+      fontes,
+      empresaResumo: ia.resumoEmpresa ?? site?.resumo ?? null,
+      emailsGerais: site?.emails ?? [],
+      telefonesGerais: site?.telefones ?? [],
+      paginasAnalisadas: site?.paginas ?? [],
+    };
   });
+
 
 export const adicionarContatoCrm = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -90,6 +146,8 @@ export const adicionarContatoCrm = createServerFn({ method: "POST" })
       telefone?: string | null;
       linkedin_url?: string | null;
       apollo_id?: string | null;
+      fonte?: string | null;
+      observacoes?: string | null;
     }) => {
       if (!data?.companyId) throw new Error("Empresa inválida.");
       if (!data?.nome?.trim()) throw new Error("Contato sem nome.");
@@ -166,6 +224,8 @@ export const adicionarContatoCrm = createServerFn({ method: "POST" })
       telefone: data.telefone ?? null,
       linkedin_url: data.linkedin_url ?? null,
       apollo_id: data.apollo_id ?? null,
+      fonte: data.fonte ?? "manual",
+      observacoes: data.observacoes ?? null,
       created_by: context.userId,
     });
     if (errContato) throw new Error(errContato.message);
