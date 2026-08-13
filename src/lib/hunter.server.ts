@@ -129,7 +129,7 @@ export async function buscarDecisoresApollo(dominio: string): Promise<ResultadoD
     contacts?: unknown[];
   };
 
-  return (json.people ?? [])
+  const decisores = (json.people ?? [])
     .map((p) => ({
       apollo_id: p.id ?? null,
       nome: p.name ?? [p.first_name, p.last_name].filter(Boolean).join(" "),
@@ -143,4 +143,9 @@ export async function buscarDecisoresApollo(dominio: string): Promise<ResultadoD
       linkedin_url: p.linkedin_url ?? null,
     }))
     .filter((p) => p.nome);
+
+  return {
+    decisores,
+    aviso: decisores.length === 0 ? "Nenhum decisor de logística ou suprimentos encontrado para este domínio." : null,
+  };
 }
