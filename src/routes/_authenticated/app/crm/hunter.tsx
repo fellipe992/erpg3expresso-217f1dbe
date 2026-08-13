@@ -13,6 +13,7 @@ import {
   Phone,
   Plus,
   Search,
+  Sparkles,
   Users,
 } from "lucide-react";
 
