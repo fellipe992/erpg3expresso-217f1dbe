@@ -7,9 +7,9 @@ export const buscarEmpresas = createServerFn({ method: "POST" })
     const cidade = (data?.cidade ?? "").trim();
     const keyword = (data?.keyword ?? "").trim();
     if (cidade.length < 2) throw new Error("Informe a cidade ou região.");
-    if (keyword.length < 2) throw new Error("Informe o segmento ou palavra-chave.");
     const raioKm = Number(data?.raioKm) || 25;
-    return { cidade, keyword, raioKm };
+    // Sem palavra-chave, busca os perfis padrão de embarcador/distribuidor.
+    return { cidade, keyword: keyword.length >= 2 ? keyword : "distribuidora atacadista indústria", raioKm };
   })
   .handler(async ({ data, context }) => {
     const { buscarEmpresasPlaces } = await import("@/lib/hunter.server");

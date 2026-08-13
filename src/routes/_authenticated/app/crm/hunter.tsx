@@ -174,12 +174,7 @@ function HunterPage() {
           >
             <div className="space-y-1.5">
               <Label htmlFor="hunter-cidade">Cidade / Região</Label>
-              <Input
-                id="hunter-cidade"
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                placeholder="Ex.: Campinas, SP"
-              />
+              <LocalInput value={cidade} onChange={setCidade} placeholder="Ex.: Campinas, SP" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="hunter-raio">Raio (km)</Label>
