@@ -224,6 +224,8 @@ export const adicionarContatoCrm = createServerFn({ method: "POST" })
       telefone: data.telefone ?? null,
       linkedin_url: data.linkedin_url ?? null,
       apollo_id: data.apollo_id ?? null,
+      fonte: data.fonte ?? "manual",
+      observacoes: data.observacoes ?? null,
       created_by: context.userId,
     });
     if (errContato) throw new Error(errContato.message);
