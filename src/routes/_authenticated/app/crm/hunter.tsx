@@ -66,6 +66,17 @@ type Decisor = {
   email: string | null;
   telefone: string | null;
   linkedin_url: string | null;
+  fonte?: string;
+  confianca?: string;
+  resumo?: string | null;
+};
+
+type Fontes = {
+  apollo: boolean;
+  linkedin: boolean;
+  site: boolean;
+  ia: boolean;
+  linkedinConectado: boolean;
 };
 
 const SUGESTOES = ["Indústria", "Distribuidora", "Centro de Distribuição", "Atacadista", "Alimentos"];
@@ -78,6 +89,16 @@ const CARGOS_ALVO = [
   "Comprador",
   "Gerente de Suprimentos",
 ];
+
+const ROTULO_FONTE: Record<string, string> = {
+  apollo: "Apollo.io",
+  linkedin: "LinkedIn",
+  site: "Site da empresa",
+  ia: "IA + web",
+  manual: "Manual",
+};
+
+const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
 
 function HunterPage() {
   const salvarEmpresasFn = useServerFn(salvarEmpresas);
@@ -93,6 +114,12 @@ function HunterPage() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [dominio, setDominio] = useState<string | null>(null);
   const [adicionados, setAdicionados] = useState<string[]>([]);
+  const [fontes, setFontes] = useState<Fontes | null>(null);
+  const [resumoEmpresa, setResumoEmpresa] = useState<string | null>(null);
+  const [emailsGerais, setEmailsGerais] = useState<string[]>([]);
+  const [telefonesGerais, setTelefonesGerais] = useState<string[]>([]);
+  const [manual, setManual] = useState({ ...vazioManual });
+
 
   const busca = useMutation({
     mutationFn: async (): Promise<Empresa[]> => {
