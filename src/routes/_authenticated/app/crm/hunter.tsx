@@ -16,7 +16,9 @@ import {
   Users,
 } from "lucide-react";
 
-import { adicionarContatoCrm, buscarDecisores, buscarEmpresas } from "@/lib/hunter.functions";
+import { adicionarContatoCrm, buscarDecisores, salvarEmpresas } from "@/lib/hunter.functions";
+import { buscarEmpresasNoNavegador } from "@/lib/hunter-places-browser";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LocalInput } from "@/components/planejador/local-input";
