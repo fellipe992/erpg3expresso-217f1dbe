@@ -205,6 +205,9 @@ export function RelatorioCliente() {
     "Recebido",
     "Pendente",
     "Em atraso",
+    "Despesas da operação",
+    "Resultado",
+    "Margem %",
     "Ticket médio",
     "Frete médio",
     "Receita mensal",
@@ -218,11 +221,15 @@ export function RelatorioCliente() {
       r.recebido,
       r.pendente,
       r.atrasado,
+      r.despesas,
+      r.resultado,
+      r.margem,
       r.ticketMedio,
       r.freteMedio,
       r.receitaMensal,
       r.receitaAnual,
     ]);
+
   const descricaoFiltros = [
     `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
     `Cliente: ${filtros.clienteId === "todos" ? "Todos" : data?.nomeCliente(filtros.clienteId) ?? "—"}`,
