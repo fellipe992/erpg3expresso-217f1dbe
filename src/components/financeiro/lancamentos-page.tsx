@@ -97,6 +97,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [veiculoFilter, setVeiculoFilter] = useState<string>("todos");
   const [motoristaFilter, setMotoristaFilter] = useState<string>("todos");
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
+  const [clienteOperacaoFilter, setClienteOperacaoFilter] = useState<string>("todos"); // rateio de despesa por cliente
   // Base da data do filtro de período: o que o usuário quer de fato consultar.
   const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento">("emissao");
   const [dataDe, setDataDe] = useState<string>("");
