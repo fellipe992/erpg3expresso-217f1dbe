@@ -214,8 +214,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         data_pagamento: form.data_pagamento || null,
         forma_pagamento: (form.forma_pagamento as Lancamento["forma_pagamento"]) || null,
         status: (form.status ?? "pendente") as Lancamento["status"],
-        cliente_id: isReceber ? form.cliente_id || null : null,
-        fornecedor_id: !isReceber ? form.fornecedor_id || null : null,
+        // Cliente e fornecedor são livres nos dois tipos: permite ratear uma
+        // despesa (frete de terceiro, pedágio, salário) na operação de um cliente.
+        cliente_id: form.cliente_id || null,
+        fornecedor_id: form.fornecedor_id || null,
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
