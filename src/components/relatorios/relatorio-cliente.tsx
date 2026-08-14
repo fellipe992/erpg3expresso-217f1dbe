@@ -32,12 +32,17 @@ type LinhaCliente = {
   recebido: number;
   pendente: number;
   atrasado: number;
+  /** Custos da operação: despesas das viagens + despesas rateadas ao cliente */
+  despesas: number;
+  resultado: number;
+  margem: number;
   viagens: number;
   ticketMedio: number;
   freteMedio: number;
   receitaMensal: number;
   receitaAnual: number;
 };
+
 
 export function RelatorioCliente() {
   const [filtros, setFiltros] = useState<FiltrosFin>(() => filtrosIniciais(90));
