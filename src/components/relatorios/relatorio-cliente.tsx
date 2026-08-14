@@ -151,6 +151,9 @@ export function RelatorioCliente() {
     recebido: (r: LinhaCliente) => r.recebido,
     pendente: (r: LinhaCliente) => r.pendente,
     atrasado: (r: LinhaCliente) => r.atrasado,
+    despesas: (r: LinhaCliente) => r.despesas,
+    resultado: (r: LinhaCliente) => r.resultado,
+    margem: (r: LinhaCliente) => r.margem,
     ticket: (r: LinhaCliente) => r.ticketMedio,
     frete: (r: LinhaCliente) => r.freteMedio,
     mensal: (r: LinhaCliente) => r.receitaMensal,
@@ -166,12 +169,15 @@ export function RelatorioCliente() {
           recebido: a.recebido + r.recebido,
           pendente: a.pendente + r.pendente,
           atrasado: a.atrasado + r.atrasado,
+          despesas: a.despesas + r.despesas,
+          resultado: a.resultado + r.resultado,
           viagens: a.viagens + r.viagens,
         }),
-        { faturado: 0, recebido: 0, pendente: 0, atrasado: 0, viagens: 0 },
+        { faturado: 0, recebido: 0, pendente: 0, atrasado: 0, despesas: 0, resultado: 0, viagens: 0 },
       ),
     [linhas],
   );
+
 
   const serieMensal = useMemo(() => {
     if (!data) return [];
