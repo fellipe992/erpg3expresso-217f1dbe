@@ -460,6 +460,19 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </SelectContent>
             </Select>
           </div>
+          {!isReceber && (
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Cliente (operação)</Label>
+              <Select value={clienteOperacaoFilter} onValueChange={setClienteOperacaoFilter}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
             <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
