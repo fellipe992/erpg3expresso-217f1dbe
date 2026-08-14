@@ -109,24 +109,39 @@ export function RelatorioCliente() {
       if (filtros.status !== "todos" && !map.has(v.cliente_id)) continue;
       const row = get(v.cliente_id, v.cliente);
       row.viagens += 1;
+      row.despesas += v.despesas;
       const arr = fretes.get(v.cliente_id) ?? [];
       arr.push(v.valor_frete);
       fretes.set(v.cliente_id, arr);
     }
 
+    // Despesas rateadas diretamente ao cliente (frete de terceiro, ajudante, taxas…)
+    // sem viagem vinculada — evita dupla contagem das despesas já somadas por viagem.
+    for (const l of data.lancamentos) {
+      if (l.tipo !== "pagar" || !l.cliente_id || l.viagem_id) continue;
+      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
+      const nome = data.nomeCliente(l.cliente_id);
+      if (q && !nome.toLowerCase().includes(q)) continue;
+      get(l.cliente_id, nome).despesas += l.valor;
+    }
+
     return Array.from(map.values())
       .map((r) => {
         const f = fretes.get(r.clienteId) ?? [];
+        const resultado = r.faturado - r.despesas;
         return {
           ...r,
+          resultado,
+          margem: r.faturado > 0 ? (resultado / r.faturado) * 100 : 0,
           ticketMedio: r.viagens > 0 ? r.faturado / r.viagens : 0,
           freteMedio: f.length ? f.reduce((s, x) => s + x, 0) / f.length : 0,
           receitaMensal: r.faturado / meses,
           receitaAnual: (r.faturado / meses) * 12,
         };
       })
-      .filter((r) => r.faturado > 0 || r.viagens > 0)
+      .filter((r) => r.faturado > 0 || r.viagens > 0 || r.despesas > 0)
       .sort((a, b) => b.faturado - a.faturado);
+
   }, [data, filtros, meses]);
 
   const acc = {
