@@ -606,33 +606,55 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label={isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
-            {isReceber ? (
-              <F label="Cliente">
-                <Select
-                  value={form.cliente_id ?? "__none"}
-                  onValueChange={(v) => setForm({ ...form, cliente_id: v === "__none" ? null : v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Sem cliente</SelectItem>
-                    {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </F>
-            ) : (
-              <F label="Fornecedor">
-                <Select
-                  value={form.fornecedor_id ?? "__none"}
-                  onValueChange={(v) => setForm({ ...form, fornecedor_id: v === "__none" ? null : v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Sem fornecedor</SelectItem>
-                    {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.razao_social}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </F>
-            )}
+            <F label={isReceber ? "Cliente" : "Cliente (operação vinculada)"}>
+              <Select
+                value={form.cliente_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, cliente_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem cliente</SelectItem>
+                  {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label={isReceber ? "Fornecedor (opcional)" : "Fornecedor"}>
+              <Select
+                value={form.fornecedor_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, fornecedor_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem fornecedor</SelectItem>
+                  {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label="Veículo (rateio por carro)">
+              <Select
+                value={form.veiculo_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, veiculo_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem veículo</SelectItem>
+                  {veiculosList.map((v) => <SelectItem key={v.id} value={v.id}>{v.placa}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label="Motorista">
+              <Select
+                value={form.motorista_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, motorista_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o motorista" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem motorista</SelectItem>
+                  {motoristasList.map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+
             <F label="Nº documento / Nota">
               <Input value={form.numero_documento ?? ""} onChange={(e) => setForm({ ...form, numero_documento: e.target.value })} />
             </F>
