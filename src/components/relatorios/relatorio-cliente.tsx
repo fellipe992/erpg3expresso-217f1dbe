@@ -360,6 +360,9 @@ export function RelatorioCliente() {
                   <SortHead sortKey="recebido" sort={sort} onToggle={toggle} align="right">Recebido</SortHead>
                   <SortHead sortKey="pendente" sort={sort} onToggle={toggle} align="right">Pendente</SortHead>
                   <SortHead sortKey="atrasado" sort={sort} onToggle={toggle} align="right">Em atraso</SortHead>
+                  <SortHead sortKey="despesas" sort={sort} onToggle={toggle} align="right">Despesas</SortHead>
+                  <SortHead sortKey="resultado" sort={sort} onToggle={toggle} align="right">Resultado</SortHead>
+                  <SortHead sortKey="margem" sort={sort} onToggle={toggle} align="right">Margem</SortHead>
                   <SortHead sortKey="ticket" sort={sort} onToggle={toggle} align="right">Ticket médio</SortHead>
                   <SortHead sortKey="frete" sort={sort} onToggle={toggle} align="right">Frete médio</SortHead>
                   <SortHead sortKey="mensal" sort={sort} onToggle={toggle} align="right">Receita mensal</SortHead>
@@ -375,6 +378,13 @@ export function RelatorioCliente() {
                     <TableCell className="text-right font-mono text-brand">{brl(r.recebido)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.pendente)}</TableCell>
                     <TableCell className="text-right font-mono text-destructive">{brl(r.atrasado)}</TableCell>
+                    <TableCell className="text-right font-mono text-destructive">{brl(r.despesas)}</TableCell>
+                    <TableCell
+                      className={`text-right font-mono font-semibold ${r.resultado >= 0 ? "text-brand" : "text-destructive"}`}
+                    >
+                      {brl(r.resultado)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{num(r.margem, 1)}%</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.ticketMedio)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.freteMedio)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.receitaMensal)}</TableCell>
@@ -388,8 +398,15 @@ export function RelatorioCliente() {
                   <TableCell className="text-right font-mono text-brand">{brl(totais.recebido)}</TableCell>
                   <TableCell className="text-right font-mono">{brl(totais.pendente)}</TableCell>
                   <TableCell className="text-right font-mono text-destructive">{brl(totais.atrasado)}</TableCell>
-                  <TableCell colSpan={4} />
+                  <TableCell className="text-right font-mono text-destructive">{brl(totais.despesas)}</TableCell>
+                  <TableCell
+                    className={`text-right font-mono ${totais.resultado >= 0 ? "text-brand" : "text-destructive"}`}
+                  >
+                    {brl(totais.resultado)}
+                  </TableCell>
+                  <TableCell colSpan={5} />
                 </TableRow>
+
               </TableBody>
             </Table>
           </div>
