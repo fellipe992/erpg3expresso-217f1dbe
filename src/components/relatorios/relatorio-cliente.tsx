@@ -246,17 +246,20 @@ export function RelatorioCliente() {
         buscaPlaceholder="Cliente ou nota fiscal…"
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <KpiCard label="Total faturado" value={brl(totais.faturado)} tone="brand" icon={Users} />
         <KpiCard label="Recebido" value={brl(totais.recebido)} tone="success" />
         <KpiCard label="Pendente" value={brl(totais.pendente)} />
         <KpiCard label="Em atraso" value={brl(totais.atrasado)} tone="danger" />
+        <KpiCard label="Despesas da operação" value={brl(totais.despesas)} tone="danger" />
         <KpiCard
-          label="Viagens / ticket médio"
-          value={String(totais.viagens)}
-          sub={totais.viagens ? `${brl(totais.faturado / totais.viagens)} por viagem` : undefined}
+          label="Resultado"
+          value={brl(totais.resultado)}
+          tone={totais.resultado >= 0 ? "success" : "danger"}
+          sub={totais.faturado ? `margem ${num((totais.resultado / totais.faturado) * 100, 1)}%` : undefined}
         />
       </div>
+
 
       <div className="flex flex-wrap gap-2">
         <Button
