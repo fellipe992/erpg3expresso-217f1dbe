@@ -32,12 +32,17 @@ type LinhaCliente = {
   recebido: number;
   pendente: number;
   atrasado: number;
+  /** Custos da operação: despesas das viagens + despesas rateadas ao cliente */
+  despesas: number;
+  resultado: number;
+  margem: number;
   viagens: number;
   ticketMedio: number;
   freteMedio: number;
   receitaMensal: number;
   receitaAnual: number;
 };
+
 
 export function RelatorioCliente() {
   const [filtros, setFiltros] = useState<FiltrosFin>(() => filtrosIniciais(90));
@@ -55,7 +60,7 @@ export function RelatorioCliente() {
     const q = filtros.busca.trim().toLowerCase();
     const map = new Map<string, LinhaCliente>();
 
-    const get = (id: string, nome: string) => {
+    const get = (id: string, nome: string): LinhaCliente => {
       let l = map.get(id);
       if (!l) {
         l = {
@@ -65,6 +70,9 @@ export function RelatorioCliente() {
           recebido: 0,
           pendente: 0,
           atrasado: 0,
+          despesas: 0,
+          resultado: 0,
+          margem: 0,
           viagens: 0,
           ticketMedio: 0,
           freteMedio: 0,
@@ -75,6 +83,7 @@ export function RelatorioCliente() {
       }
       return l;
     };
+
 
     for (const l of data.lancamentos) {
       if (l.tipo !== "receber" || !l.cliente_id) continue;
@@ -100,24 +109,39 @@ export function RelatorioCliente() {
       if (filtros.status !== "todos" && !map.has(v.cliente_id)) continue;
       const row = get(v.cliente_id, v.cliente);
       row.viagens += 1;
+      row.despesas += v.despesas;
       const arr = fretes.get(v.cliente_id) ?? [];
       arr.push(v.valor_frete);
       fretes.set(v.cliente_id, arr);
     }
 
+    // Despesas rateadas diretamente ao cliente (frete de terceiro, ajudante, taxas…)
+    // sem viagem vinculada — evita dupla contagem das despesas já somadas por viagem.
+    for (const l of data.lancamentos) {
+      if (l.tipo !== "pagar" || !l.cliente_id || l.viagem_id) continue;
+      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
+      const nome = data.nomeCliente(l.cliente_id);
+      if (q && !nome.toLowerCase().includes(q)) continue;
+      get(l.cliente_id, nome).despesas += l.valor;
+    }
+
     return Array.from(map.values())
       .map((r) => {
         const f = fretes.get(r.clienteId) ?? [];
+        const resultado = r.faturado - r.despesas;
         return {
           ...r,
+          resultado,
+          margem: r.faturado > 0 ? (resultado / r.faturado) * 100 : 0,
           ticketMedio: r.viagens > 0 ? r.faturado / r.viagens : 0,
           freteMedio: f.length ? f.reduce((s, x) => s + x, 0) / f.length : 0,
           receitaMensal: r.faturado / meses,
           receitaAnual: (r.faturado / meses) * 12,
         };
       })
-      .filter((r) => r.faturado > 0 || r.viagens > 0)
+      .filter((r) => r.faturado > 0 || r.viagens > 0 || r.despesas > 0)
       .sort((a, b) => b.faturado - a.faturado);
+
   }, [data, filtros, meses]);
 
   const acc = {
@@ -127,6 +151,9 @@ export function RelatorioCliente() {
     recebido: (r: LinhaCliente) => r.recebido,
     pendente: (r: LinhaCliente) => r.pendente,
     atrasado: (r: LinhaCliente) => r.atrasado,
+    despesas: (r: LinhaCliente) => r.despesas,
+    resultado: (r: LinhaCliente) => r.resultado,
+    margem: (r: LinhaCliente) => r.margem,
     ticket: (r: LinhaCliente) => r.ticketMedio,
     frete: (r: LinhaCliente) => r.freteMedio,
     mensal: (r: LinhaCliente) => r.receitaMensal,
@@ -142,12 +169,15 @@ export function RelatorioCliente() {
           recebido: a.recebido + r.recebido,
           pendente: a.pendente + r.pendente,
           atrasado: a.atrasado + r.atrasado,
+          despesas: a.despesas + r.despesas,
+          resultado: a.resultado + r.resultado,
           viagens: a.viagens + r.viagens,
         }),
-        { faturado: 0, recebido: 0, pendente: 0, atrasado: 0, viagens: 0 },
+        { faturado: 0, recebido: 0, pendente: 0, atrasado: 0, despesas: 0, resultado: 0, viagens: 0 },
       ),
     [linhas],
   );
+
 
   const serieMensal = useMemo(() => {
     if (!data) return [];
@@ -175,6 +205,9 @@ export function RelatorioCliente() {
     "Recebido",
     "Pendente",
     "Em atraso",
+    "Despesas da operação",
+    "Resultado",
+    "Margem %",
     "Ticket médio",
     "Frete médio",
     "Receita mensal",
@@ -188,11 +221,15 @@ export function RelatorioCliente() {
       r.recebido,
       r.pendente,
       r.atrasado,
+      r.despesas,
+      r.resultado,
+      r.margem,
       r.ticketMedio,
       r.freteMedio,
       r.receitaMensal,
       r.receitaAnual,
     ]);
+
   const descricaoFiltros = [
     `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
     `Cliente: ${filtros.clienteId === "todos" ? "Todos" : data?.nomeCliente(filtros.clienteId) ?? "—"}`,
@@ -209,17 +246,20 @@ export function RelatorioCliente() {
         buscaPlaceholder="Cliente ou nota fiscal…"
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <KpiCard label="Total faturado" value={brl(totais.faturado)} tone="brand" icon={Users} />
         <KpiCard label="Recebido" value={brl(totais.recebido)} tone="success" />
         <KpiCard label="Pendente" value={brl(totais.pendente)} />
         <KpiCard label="Em atraso" value={brl(totais.atrasado)} tone="danger" />
+        <KpiCard label="Despesas da operação" value={brl(totais.despesas)} tone="danger" />
         <KpiCard
-          label="Viagens / ticket médio"
-          value={String(totais.viagens)}
-          sub={totais.viagens ? `${brl(totais.faturado / totais.viagens)} por viagem` : undefined}
+          label="Resultado"
+          value={brl(totais.resultado)}
+          tone={totais.resultado >= 0 ? "success" : "danger"}
+          sub={totais.faturado ? `margem ${num((totais.resultado / totais.faturado) * 100, 1)}%` : undefined}
         />
       </div>
+
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -259,11 +299,15 @@ export function RelatorioCliente() {
                     brl(r.recebido),
                     brl(r.pendente),
                     brl(r.atrasado),
+                    brl(r.despesas),
+                    brl(r.resultado),
+                    `${num(r.margem, 1)}%`,
                     brl(r.ticketMedio),
                     brl(r.freteMedio),
                     brl(r.receitaMensal),
                     brl(r.receitaAnual),
                   ]),
+
                 },
               ],
             })
@@ -316,6 +360,9 @@ export function RelatorioCliente() {
                   <SortHead sortKey="recebido" sort={sort} onToggle={toggle} align="right">Recebido</SortHead>
                   <SortHead sortKey="pendente" sort={sort} onToggle={toggle} align="right">Pendente</SortHead>
                   <SortHead sortKey="atrasado" sort={sort} onToggle={toggle} align="right">Em atraso</SortHead>
+                  <SortHead sortKey="despesas" sort={sort} onToggle={toggle} align="right">Despesas</SortHead>
+                  <SortHead sortKey="resultado" sort={sort} onToggle={toggle} align="right">Resultado</SortHead>
+                  <SortHead sortKey="margem" sort={sort} onToggle={toggle} align="right">Margem</SortHead>
                   <SortHead sortKey="ticket" sort={sort} onToggle={toggle} align="right">Ticket médio</SortHead>
                   <SortHead sortKey="frete" sort={sort} onToggle={toggle} align="right">Frete médio</SortHead>
                   <SortHead sortKey="mensal" sort={sort} onToggle={toggle} align="right">Receita mensal</SortHead>
@@ -331,6 +378,13 @@ export function RelatorioCliente() {
                     <TableCell className="text-right font-mono text-brand">{brl(r.recebido)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.pendente)}</TableCell>
                     <TableCell className="text-right font-mono text-destructive">{brl(r.atrasado)}</TableCell>
+                    <TableCell className="text-right font-mono text-destructive">{brl(r.despesas)}</TableCell>
+                    <TableCell
+                      className={`text-right font-mono font-semibold ${r.resultado >= 0 ? "text-brand" : "text-destructive"}`}
+                    >
+                      {brl(r.resultado)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{num(r.margem, 1)}%</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.ticketMedio)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.freteMedio)}</TableCell>
                     <TableCell className="text-right font-mono">{brl(r.receitaMensal)}</TableCell>
@@ -344,8 +398,15 @@ export function RelatorioCliente() {
                   <TableCell className="text-right font-mono text-brand">{brl(totais.recebido)}</TableCell>
                   <TableCell className="text-right font-mono">{brl(totais.pendente)}</TableCell>
                   <TableCell className="text-right font-mono text-destructive">{brl(totais.atrasado)}</TableCell>
-                  <TableCell colSpan={4} />
+                  <TableCell className="text-right font-mono text-destructive">{brl(totais.despesas)}</TableCell>
+                  <TableCell
+                    className={`text-right font-mono ${totais.resultado >= 0 ? "text-brand" : "text-destructive"}`}
+                  >
+                    {brl(totais.resultado)}
+                  </TableCell>
+                  <TableCell colSpan={5} />
                 </TableRow>
+
               </TableBody>
             </Table>
           </div>

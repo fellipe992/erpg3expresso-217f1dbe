@@ -73,13 +73,34 @@ export function RelatorioFinanceiroVeiculo() {
       map.set(v.veiculo_id, cur);
     }
 
-    // Despesas do veículo sem viagem vinculada
+    // Despesas rateadas diretamente ao veículo (salário, pedágio, taxas…) sem viagem vinculada.
+    // Cria a linha mesmo quando o veículo não teve viagem no período.
     for (const l of data.lancamentos) {
       if (l.tipo !== "pagar" || !l.veiculo_id || l.viagem_id) continue;
       if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) continue;
-      const cur = map.get(l.veiculo_id);
-      if (cur) cur.despesas += l.valor;
+      const label = data.nomeVeiculo(l.veiculo_id);
+      if (q && !label.toLowerCase().includes(q)) continue;
+      const cur =
+        map.get(l.veiculo_id) ??
+        ({
+          veiculoId: l.veiculo_id,
+          veiculo: label,
+          placa: label.split(" · ")[0] ?? label,
+          viagens: 0,
+          receita: 0,
+          recebido: 0,
+          pendente: 0,
+          atrasado: 0,
+          despesas: 0,
+          km: 0,
+          mediaPorViagem: 0,
+          receitaMensal: 0,
+          receitaAnual: 0,
+        } as LinhaVeiculo);
+      cur.despesas += l.valor;
+      map.set(l.veiculo_id, cur);
     }
+
 
     return Array.from(map.values())
       .map((r) => ({

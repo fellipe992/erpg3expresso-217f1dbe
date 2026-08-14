@@ -97,6 +97,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [veiculoFilter, setVeiculoFilter] = useState<string>("todos");
   const [motoristaFilter, setMotoristaFilter] = useState<string>("todos");
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
+  const [clienteOperacaoFilter, setClienteOperacaoFilter] = useState<string>("todos"); // rateio de despesa por cliente
   // Base da data do filtro de período: o que o usuário quer de fato consultar.
   const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento">("emissao");
   const [dataDe, setDataDe] = useState<string>("");
@@ -214,8 +215,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         data_pagamento: form.data_pagamento || null,
         forma_pagamento: (form.forma_pagamento as Lancamento["forma_pagamento"]) || null,
         status: (form.status ?? "pendente") as Lancamento["status"],
-        cliente_id: isReceber ? form.cliente_id || null : null,
-        fornecedor_id: !isReceber ? form.fornecedor_id || null : null,
+        // Cliente e fornecedor são livres nos dois tipos: permite ratear uma
+        // despesa (frete de terceiro, pedágio, salário) na operação de um cliente.
+        cliente_id: form.cliente_id || null,
+        fornecedor_id: form.fornecedor_id || null,
         viagem_id: form.viagem_id || null,
         numero_documento: form.numero_documento?.trim() || null,
         observacoes: form.observacoes?.trim() || null,
@@ -288,6 +291,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       const pid = isReceber ? l.cliente_id : l.fornecedor_id;
       if (pid !== parceiroFilter) return false;
     }
+    if (!isReceber && clienteOperacaoFilter !== "todos" && l.cliente_id !== clienteOperacaoFilter) return false;
+
     // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
     if (dataDe || dataAte) {
       const ref =
@@ -458,6 +463,19 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               </SelectContent>
             </Select>
           </div>
+          {!isReceber && (
+            <div className="space-y-1">
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Cliente (operação)</Label>
+              <Select value={clienteOperacaoFilter} onValueChange={setClienteOperacaoFilter}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
             <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
@@ -518,8 +536,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
+                    <div>{isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}</div>
+                    {!isReceber && l.cliente?.razao_social && (
+                      <div className="text-xs text-muted-foreground">Operação: {l.cliente.razao_social}</div>
+                    )}
                   </TableCell>
+
                   <TableCell className="text-xs">
                     {l.categoria ?? "—"}
                     {l.plano_conta && (
@@ -606,33 +628,55 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label={isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
-            {isReceber ? (
-              <F label="Cliente">
-                <Select
-                  value={form.cliente_id ?? "__none"}
-                  onValueChange={(v) => setForm({ ...form, cliente_id: v === "__none" ? null : v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Sem cliente</SelectItem>
-                    {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </F>
-            ) : (
-              <F label="Fornecedor">
-                <Select
-                  value={form.fornecedor_id ?? "__none"}
-                  onValueChange={(v) => setForm({ ...form, fornecedor_id: v === "__none" ? null : v })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">Sem fornecedor</SelectItem>
-                    {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.razao_social}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </F>
-            )}
+            <F label={isReceber ? "Cliente" : "Cliente (operação vinculada)"}>
+              <Select
+                value={form.cliente_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, cliente_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem cliente</SelectItem>
+                  {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label={isReceber ? "Fornecedor (opcional)" : "Fornecedor"}>
+              <Select
+                value={form.fornecedor_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, fornecedor_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem fornecedor</SelectItem>
+                  {fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.razao_social}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label="Veículo (rateio por carro)">
+              <Select
+                value={form.veiculo_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, veiculo_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o veículo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem veículo</SelectItem>
+                  {veiculosList.map((v) => <SelectItem key={v.id} value={v.id}>{v.placa}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+            <F label="Motorista">
+              <Select
+                value={form.motorista_id ?? "__none"}
+                onValueChange={(v) => setForm({ ...form, motorista_id: v === "__none" ? null : v })}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o motorista" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">Sem motorista</SelectItem>
+                  {motoristasList.map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </F>
+
             <F label="Nº documento / Nota">
               <Input value={form.numero_documento ?? ""} onChange={(e) => setForm({ ...form, numero_documento: e.target.value })} />
             </F>
