@@ -291,6 +291,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       const pid = isReceber ? l.cliente_id : l.fornecedor_id;
       if (pid !== parceiroFilter) return false;
     }
+    if (!isReceber && clienteOperacaoFilter !== "todos" && l.cliente_id !== clienteOperacaoFilter) return false;
+
     // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
     if (dataDe || dataAte) {
       const ref =
