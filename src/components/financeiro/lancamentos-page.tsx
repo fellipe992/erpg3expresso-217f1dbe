@@ -536,8 +536,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
-                    {isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}
+                    <div>{isReceber ? l.cliente?.razao_social ?? "—" : l.fornecedor?.razao_social ?? "—"}</div>
+                    {!isReceber && l.cliente?.razao_social && (
+                      <div className="text-xs text-muted-foreground">Operação: {l.cliente.razao_social}</div>
+                    )}
                   </TableCell>
+
                   <TableCell className="text-xs">
                     {l.categoria ?? "—"}
                     {l.plano_conta && (
