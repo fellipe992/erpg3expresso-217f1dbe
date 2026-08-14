@@ -296,11 +296,15 @@ export function RelatorioCliente() {
                     brl(r.recebido),
                     brl(r.pendente),
                     brl(r.atrasado),
+                    brl(r.despesas),
+                    brl(r.resultado),
+                    `${num(r.margem, 1)}%`,
                     brl(r.ticketMedio),
                     brl(r.freteMedio),
                     brl(r.receitaMensal),
                     brl(r.receitaAnual),
                   ]),
+
                 },
               ],
             })
