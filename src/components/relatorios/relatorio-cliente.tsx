@@ -60,7 +60,7 @@ export function RelatorioCliente() {
     const q = filtros.busca.trim().toLowerCase();
     const map = new Map<string, LinhaCliente>();
 
-    const get = (id: string, nome: string) => {
+    const get = (id: string, nome: string): LinhaCliente => {
       let l = map.get(id);
       if (!l) {
         l = {
@@ -70,6 +70,9 @@ export function RelatorioCliente() {
           recebido: 0,
           pendente: 0,
           atrasado: 0,
+          despesas: 0,
+          resultado: 0,
+          margem: 0,
           viagens: 0,
           ticketMedio: 0,
           freteMedio: 0,
@@ -80,6 +83,7 @@ export function RelatorioCliente() {
       }
       return l;
     };
+
 
     for (const l of data.lancamentos) {
       if (l.tipo !== "receber" || !l.cliente_id) continue;
