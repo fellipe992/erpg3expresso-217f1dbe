@@ -144,7 +144,7 @@ export function useBiDados(de: string, ate: string) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
         // Receita de frete pertence ao mês da viagem; despesas pertencem ao mês do fato (data_emissao).
         const competencia =
-          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? "";
+          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? l.data_pagamento ?? "";
         const dataCaixa = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao ?? competencia;
         mapLanc.set(l.id, {
           ...l,

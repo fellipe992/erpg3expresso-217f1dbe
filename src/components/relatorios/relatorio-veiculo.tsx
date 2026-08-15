@@ -114,7 +114,10 @@ export function RelatorioVeiculo() {
     // Receita de frete pela COMPETÊNCIA da viagem (data da viagem), não pelo faturamento/recebimento.
     const receitaFrete = data.viagens
       .filter((v) => v.status !== "cancelada")
-      .reduce((s, v) => s + Number(v.valor_frete ?? 0), 0);
+      .reduce((s, v) => s + Number(v.valor_frete ?? 0), 0)
+      + data.lancamentos
+        .filter((l) => l.tipo === "receber" && !l.viagem_id)
+        .reduce((s, l) => s + Number(l.valor ?? 0), 0);
 
     const kmTotal = kmViagens > 0 ? kmViagens : kmAbast;
     const custoKm = kmTotal > 0 ? totalDespesas / kmTotal : 0;
@@ -319,12 +322,13 @@ export function RelatorioVeiculo() {
 
     if (canSeeFinance) {
       const lancRows: (string | number)[][] = [
-        ["Tipo", "Categoria", "Descrição", "Valor", "Vencimento", "Pagamento", "Status"],
+        ["Tipo", "Categoria", "Descrição", "Valor", "Data do custo/receita", "Vencimento", "Pagamento", "Status"],
         ...data.lancamentos.map((l) => [
           l.tipo,
           l.categoria ?? "",
           l.descricao ?? "",
           Number(l.valor ?? 0),
+          l.data_emissao ?? "",
           l.data_vencimento ?? "",
           l.data_pagamento ?? "",
           l.status,
@@ -473,6 +477,40 @@ export function RelatorioVeiculo() {
               </div>
             )}
           </Card>
+
+          {canSeeFinance && (
+            <Card className="p-4 md:p-6">
+              <h3 className="mb-3 font-display font-bold">Custos e receitas vinculados à placa</h3>
+              {data && data.lancamentos.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">Nenhum lançamento vinculado no período.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data do custo/receita</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data?.lancamentos.map((l) => (
+                        <TableRow key={l.id}>
+                          <TableCell className="text-xs">{l.data_emissao ?? l.data_vencimento ?? l.data_pagamento ?? "—"}</TableCell>
+                          <TableCell className="text-xs">{l.tipo === "pagar" ? "Despesa" : "Receita"}</TableCell>
+                          <TableCell className="text-xs">{l.categoria ?? "—"}</TableCell>
+                          <TableCell className="text-xs">{l.descricao ?? "—"}</TableCell>
+                          <TableCell className="text-right text-xs tabular-nums">{brl(Number(l.valor ?? 0))}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          )}
         </>
       )}
     </div>
