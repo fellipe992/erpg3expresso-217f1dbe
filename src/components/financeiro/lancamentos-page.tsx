@@ -127,9 +127,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     },
   });
 
+  // Clientes e fornecedores são usados nos dois tipos (rateio de despesa por
+  // cliente da operação e receita com fornecedor), além dos filtros da lista.
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-lite"],
-    enabled: canWrite && isReceber,
     queryFn: async () => {
       const { data } = await supabase.from("clientes").select("id, razao_social").eq("ativo", true).order("razao_social");
       return data ?? [];
@@ -137,7 +138,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   });
   const { data: fornecedores = [] } = useQuery({
     queryKey: ["fornecedores-lite"],
-    enabled: canWrite && !isReceber,
     queryFn: async () => {
       const { data } = await supabase.from("fornecedores").select("id, razao_social").eq("ativo", true).order("razao_social");
       return data ?? [];
