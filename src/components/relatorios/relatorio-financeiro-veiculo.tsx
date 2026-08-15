@@ -73,10 +73,12 @@ export function RelatorioFinanceiroVeiculo() {
       map.set(v.veiculo_id, cur);
     }
 
-    // Despesas rateadas diretamente ao veículo (salário, pedágio, taxas…) sem viagem vinculada.
-    // Cria a linha mesmo quando o veículo não teve viagem no período.
+    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+
+    // Lançamentos vinculados ao veículo que ainda não foram absorvidos por uma viagem do
+    // período. Inclui custos avulsos e custos de uma OS antiga lançados no período atual.
     for (const l of data.lancamentos) {
-      if (l.tipo !== "pagar" || !l.veiculo_id || l.viagem_id) continue;
+      if (!l.veiculo_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
       if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) continue;
       const label = data.nomeVeiculo(l.veiculo_id);
       if (q && !label.toLowerCase().includes(q)) continue;
@@ -97,7 +99,13 @@ export function RelatorioFinanceiroVeiculo() {
           receitaMensal: 0,
           receitaAnual: 0,
         } as LinhaVeiculo);
-      cur.despesas += l.valor;
+      if (l.tipo === "pagar") cur.despesas += l.valor;
+      else {
+        cur.receita += l.valor;
+        if (l.status === "pago") cur.recebido += l.valor;
+        else if (l.status === "atrasado") cur.atrasado += l.valor;
+        else cur.pendente += l.valor;
+      }
       map.set(l.veiculo_id, cur);
     }
 
@@ -151,6 +159,17 @@ export function RelatorioFinanceiroVeiculo() {
       const b = map.get(key) ?? { mes: rotuloMes(key), receita: 0, despesas: 0 };
       b.receita += v.receita;
       b.despesas += v.despesas;
+      map.set(key, b);
+    }
+    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+    for (const l of data.lancamentos) {
+      if (!l.veiculo_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
+      if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) continue;
+      const key = l.competencia.slice(0, 7);
+      if (!key) continue;
+      const b = map.get(key) ?? { mes: rotuloMes(key), receita: 0, despesas: 0 };
+      if (l.tipo === "pagar") b.despesas += l.valor;
+      else b.receita += l.valor;
       map.set(key, b);
     }
     return Array.from(map.entries())

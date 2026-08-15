@@ -144,7 +144,7 @@ export function useBiDados(de: string, ate: string) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
         // Receita de frete pertence ao mês da viagem; despesas pertencem ao mês do fato (data_emissao).
         const competencia =
-          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? "";
+          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? l.data_pagamento ?? "";
         const dataCaixa = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao ?? competencia;
         mapLanc.set(l.id, {
           ...l,
@@ -174,10 +174,11 @@ export function useBiDados(de: string, ate: string) {
       const veiMap = new Map(veiculos.map((v) => [v.id, v]));
       const motMap = new Map(motoristas.map((m) => [m.id, m.nome]));
 
-      // Totais por viagem usam TODOS os lançamentos vinculados, independentemente de quando
-      // foram emitidos/pagos — a viagem já está no período pela sua data operacional.
+      // Totais por viagem respeitam a competência do filtro. Assim, uma despesa vinculada
+      // à placa/OS só afeta o resultado quando a data do custo (data_emissao) está no período.
+      // Receitas de frete continuam reconhecidas na data operacional da viagem.
       const porViagem = new Map<string, LancBi[]>();
-      for (const l of todosLanc) {
+      for (const l of lancamentos) {
 
         if (!l.viagem_id) continue;
         const arr = porViagem.get(l.viagem_id) ?? [];

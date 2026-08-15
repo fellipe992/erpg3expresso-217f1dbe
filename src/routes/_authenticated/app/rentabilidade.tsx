@@ -73,6 +73,16 @@ type Agregado = {
   receitaPorKm: number;
 };
 
+type AjusteFinanceiro = {
+  id: string;
+  clienteId: string | null;
+  veiculoId: string | null;
+  motoristaId: string | null;
+  competencia: string;
+  receita: number;
+  despesas: number;
+};
+
 function agregar(viagens: ViagemBi[], chave: (v: ViagemBi) => { id: string; nome: string } | null): Agregado[] {
   const map = new Map<string, Agregado>();
   for (const v of viagens) {
@@ -131,25 +141,91 @@ function RentabilidadePage() {
     });
   }, [data, filtros]);
 
+  const ajustes = useMemo<AjusteFinanceiro[]>(() => {
+    if (!data) return [];
+    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+    const q = filtros.busca.trim().toLowerCase();
+    return data.lancamentos
+      .filter((l) => !l.viagem_id || !viagensDoPeriodo.has(l.viagem_id))
+      .filter((l) => filtros.clienteId === "todos" || l.cliente_id === filtros.clienteId)
+      .filter((l) => filtros.veiculoId === "todos" || l.veiculo_id === filtros.veiculoId)
+      .filter((l) => filtros.motoristaId === "todos" || l.motorista_id === filtros.motoristaId)
+      .filter((l) => {
+        if (!q) return true;
+        return [
+          l.numero_documento ?? "",
+          l.descricao,
+          data.nomeCliente(l.cliente_id),
+          data.nomeVeiculo(l.veiculo_id),
+          data.nomeMotorista(l.motorista_id),
+        ].join(" ").toLowerCase().includes(q);
+      })
+      .map((l) => ({
+        id: l.id,
+        clienteId: l.cliente_id,
+        veiculoId: l.veiculo_id,
+        motoristaId: l.motorista_id,
+        competencia: l.competencia,
+        receita: l.tipo === "receber" ? l.valor : 0,
+        despesas: l.tipo === "pagar" ? l.valor : 0,
+      }));
+  }, [data, filtros]);
+
+  const aplicarAjustes = (
+    base: Agregado[],
+    id: (a: AjusteFinanceiro) => string | null,
+    nome: (id: string) => string,
+  ) => {
+    const map = new Map(base.map((r) => [r.id, { ...r }]));
+    for (const a of ajustes) {
+      const chave = id(a);
+      if (!chave) continue;
+      const cur = map.get(chave) ?? {
+        id: chave, nome: nome(chave), viagens: 0, receita: 0, despesas: 0, lucro: 0,
+        margem: 0, emAberto: 0, atrasado: 0, km: 0, receitaPorViagem: 0, receitaPorKm: 0,
+      };
+      cur.receita += a.receita;
+      cur.despesas += a.despesas;
+      cur.lucro = cur.receita - cur.despesas;
+      cur.margem = cur.receita > 0 ? (cur.lucro / cur.receita) * 100 : 0;
+      cur.receitaPorViagem = cur.viagens ? cur.receita / cur.viagens : 0;
+      cur.receitaPorKm = cur.km ? cur.receita / cur.km : 0;
+      map.set(chave, cur);
+    }
+    return Array.from(map.values());
+  };
+
   const clientes = useMemo(
-    () => agregar(viagens, (v) => (v.cliente_id ? { id: v.cliente_id, nome: v.cliente } : null)),
-    [viagens],
+    () => aplicarAjustes(
+      agregar(viagens, (v) => (v.cliente_id ? { id: v.cliente_id, nome: v.cliente } : null)),
+      (a) => a.clienteId,
+      (id) => data?.nomeCliente(id) ?? "—",
+    ),
+    [viagens, ajustes, data],
   );
   const veiculos = useMemo(
-    () => agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
-    [viagens],
+    () => aplicarAjustes(
+      agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
+      (a) => a.veiculoId,
+      (id) => data?.nomeVeiculo(id) ?? "—",
+    ),
+    [viagens, ajustes, data],
   );
   const motoristas = useMemo(
-    () => agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
-    [viagens],
+    () => aplicarAjustes(
+      agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
+      (a) => a.motoristaId,
+      (id) => data?.nomeMotorista(id) ?? "—",
+    ),
+    [viagens, ajustes, data],
   );
   const rotas = useMemo(() => agregar(viagens, (v) => ({ id: v.rota, nome: v.rota })), [viagens]);
   const origens = useMemo(() => agregar(viagens, (v) => ({ id: v.origem, nome: v.origem })), [viagens]);
   const destinos = useMemo(() => agregar(viagens, (v) => ({ id: v.destino, nome: v.destino })), [viagens]);
 
   const totais = useMemo(() => {
-    const receita = viagens.reduce((s, v) => s + v.receita, 0);
-    const despesas = viagens.reduce((s, v) => s + v.despesas, 0);
+    const receita = viagens.reduce((s, v) => s + v.receita, 0) + ajustes.reduce((s, a) => s + a.receita, 0);
+    const despesas = viagens.reduce((s, v) => s + v.despesas, 0) + ajustes.reduce((s, a) => s + a.despesas, 0);
     return {
       receita,
       despesas,
@@ -158,7 +234,7 @@ function RentabilidadePage() {
       viagens: viagens.length,
       km: viagens.reduce((s, v) => s + v.km, 0),
     };
-  }, [viagens]);
+  }, [viagens, ajustes]);
 
   const serie = useMemo(() => {
     const map = new Map<string, { chave: string; mes: string; receita: number; despesas: number; lucro: number; margem: number }>();
@@ -169,10 +245,18 @@ function RentabilidadePage() {
       b.despesas += v.despesas;
       map.set(key, b);
     }
+    for (const a of ajustes) {
+      const key = a.competencia.slice(0, 7);
+      if (!key) continue;
+      const b = map.get(key) ?? { chave: key, mes: rotuloMes(key), receita: 0, despesas: 0, lucro: 0, margem: 0 };
+      b.receita += a.receita;
+      b.despesas += a.despesas;
+      map.set(key, b);
+    }
     return Array.from(map.values())
       .sort((a, b) => a.chave.localeCompare(b.chave))
       .map((b) => ({ ...b, lucro: b.receita - b.despesas, margem: b.receita ? ((b.receita - b.despesas) / b.receita) * 100 : 0 }));
-  }, [viagens]);
+  }, [viagens, ajustes]);
 
   const serieAnual = useMemo(() => {
     const map = new Map<string, { ano: string; receita: number; despesas: number; lucro: number }>();
@@ -183,10 +267,18 @@ function RentabilidadePage() {
       b.despesas += v.despesas;
       map.set(ano, b);
     }
+    for (const a of ajustes) {
+      const ano = a.competencia.slice(0, 4);
+      if (!ano) continue;
+      const b = map.get(ano) ?? { ano, receita: 0, despesas: 0, lucro: 0 };
+      b.receita += a.receita;
+      b.despesas += a.despesas;
+      map.set(ano, b);
+    }
     return Array.from(map.values())
       .sort((a, b) => a.ano.localeCompare(b.ano))
       .map((b) => ({ ...b, lucro: b.receita - b.despesas }));
-  }, [viagens]);
+  }, [viagens, ajustes]);
 
   const comparativos = useMemo(() => {
     const hoje = new Date();
