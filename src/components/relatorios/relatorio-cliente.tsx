@@ -115,10 +115,12 @@ export function RelatorioCliente() {
       fretes.set(v.cliente_id, arr);
     }
 
-    // Despesas rateadas diretamente ao cliente (frete de terceiro, ajudante, taxas…)
-    // sem viagem vinculada — evita dupla contagem das despesas já somadas por viagem.
+    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+
+    // Custos vinculados ao cliente ainda não absorvidos por uma viagem do período.
+    // Também contempla uma OS antiga cujo custo foi lançado dentro do período filtrado.
     for (const l of data.lancamentos) {
-      if (l.tipo !== "pagar" || !l.cliente_id || l.viagem_id) continue;
+      if (l.tipo !== "pagar" || !l.cliente_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
       if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
       const nome = data.nomeCliente(l.cliente_id);
       if (q && !nome.toLowerCase().includes(q)) continue;
