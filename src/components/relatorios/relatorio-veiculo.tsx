@@ -71,7 +71,7 @@ export function RelatorioVeiculo() {
       // e não por vencimento/pagamento.
       const lancQ = supabase
         .from("financeiro_lancamentos")
-        .select("id, tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, descricao, veiculo_id")
+        .select("id, tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, descricao, veiculo_id, viagem_id")
         .gte("data_emissao", dataInicio)
         .lte("data_emissao", dataFim);
       if (filtroVeic) lancQ.eq("veiculo_id", filtroVeic);
