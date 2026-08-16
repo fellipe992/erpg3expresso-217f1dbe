@@ -45,6 +45,23 @@ export type PdfSecao = {
   linhas: Celula[][];
 };
 
+export type PdfImagem = { titulo?: string; dataUrl: string };
+
+/** Converte um elemento da tela (ex.: gráfico) em PNG para embutir no PDF/relatório. */
+export async function capturarElemento(el: HTMLElement | null | undefined): Promise<string | null> {
+  if (!el) return null;
+  try {
+    const { toPng } = await import("html-to-image");
+    return await toPng(el, {
+      pixelRatio: 2,
+      backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+      filter: (node) => !(node instanceof HTMLElement && node.dataset.exportIgnore === "true"),
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Exporta um relatório em PDF (A4 paisagem) respeitando os filtros aplicados */
 export function exportarPdf(opts: {
   nomeArquivo: string;
@@ -52,6 +69,7 @@ export function exportarPdf(opts: {
   subtitulo?: string;
   filtros?: string[];
   kpis?: [string, string][];
+  imagens?: PdfImagem[];
   secoes: PdfSecao[];
   orientacao?: "portrait" | "landscape";
 }) {
