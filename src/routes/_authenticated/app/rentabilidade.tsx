@@ -592,6 +592,39 @@ function RentabilidadePage() {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Área fora da tela usada apenas para gerar as imagens dos gráficos no PDF */}
+      <div className="pointer-events-none fixed -left-[10000px] top-0" aria-hidden>
+        <div ref={graficosRef} className="w-[900px] space-y-4 bg-card p-4">
+          <GraficoExport titulo="Evolução mensal — receita × despesas × lucro">
+            <BarChart width={860} height={240} data={serie}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="mes" fontSize={11} />
+              <YAxis fontSize={11} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <Legend />
+              <Bar dataKey="receita" name="Receita" fill="#f15a24" />
+              <Bar dataKey="despesas" name="Despesas" fill="#b42318" />
+              <Bar dataKey="lucro" name="Lucro" fill="#137d55" />
+            </BarChart>
+          </GraficoExport>
+          <GraficoExport titulo="Top 10 clientes por lucro">
+            <BarChart width={860} height={260} data={topo(clientes, "lucro")} layout="vertical" margin={{ left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" fontSize={10} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="nome" width={180} fontSize={10} />
+              <Bar dataKey="lucro" name="Lucro" fill="#f15a24" />
+            </BarChart>
+          </GraficoExport>
+          <GraficoExport titulo="Top 10 veículos por lucro">
+            <BarChart width={860} height={260} data={topo(veiculos, "lucro")} layout="vertical" margin={{ left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" fontSize={10} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="nome" width={180} fontSize={10} />
+              <Bar dataKey="lucro" name="Lucro" fill="#137d55" />
+            </BarChart>
+          </GraficoExport>
+        </div>
+      </div>
     </div>
   );
 }
