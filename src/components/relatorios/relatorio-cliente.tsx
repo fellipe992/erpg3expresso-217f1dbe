@@ -117,12 +117,17 @@ export function RelatorioCliente() {
       fretes.set(v.cliente_id, arr);
     }
 
-    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+    // Cliente da viagem: usado para não contar duas vezes o custo já somado via v.despesas.
+    const clienteDaViagem = new Map(
+      data.viagens.filter((v) => v.status !== "cancelada").map((v) => [v.id, v.cliente_id]),
+    );
 
-    // Custos vinculados ao cliente ainda não absorvidos por uma viagem do período.
-    // Também contempla uma OS antiga cujo custo foi lançado dentro do período filtrado.
+    // Todo custo vinculado ao cliente entra no resultado dele (pagamento de motorista,
+    // posto, pedágio, salário etc.), inclusive quando a despesa está amarrada a uma OS
+    // de outro cliente ou a uma OS antiga lançada dentro do período filtrado.
     for (const l of data.lancamentos) {
-      if (l.tipo !== "pagar" || !l.cliente_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
+      if (l.tipo !== "pagar" || !l.cliente_id) continue;
+      if (l.viagem_id && clienteDaViagem.get(l.viagem_id) === l.cliente_id) continue;
       if (!selecionado(filtros.clienteIds, l.cliente_id)) continue;
       const nome = data.nomeCliente(l.cliente_id);
       if (q && !nome.toLowerCase().includes(q)) continue;
