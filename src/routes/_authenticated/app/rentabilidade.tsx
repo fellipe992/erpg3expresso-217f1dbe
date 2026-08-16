@@ -435,6 +435,16 @@ function RentabilidadePage() {
         <KpiCard label="Viagens" value={String(totais.viagens)} sub={`${num(totais.km, 0)} km rodados`} />
       </div>
 
+      <div className="flex flex-wrap gap-2" data-export-ignore="true">
+        <Button variant="outline" size="sm" onClick={exportarExcelRentabilidade}>
+          <FileSpreadsheet className="mr-2 size-4" /> Excel
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportarPdfRentabilidade} disabled={exportando}>
+          {exportando ? <Loader2 className="mr-2 size-4 animate-spin" /> : <FileText className="mr-2 size-4" />} PDF com gráficos
+        </Button>
+      </div>
+
+
       {isLoading ? (
         <div className="grid min-h-[40vh] place-items-center">
           <Loader2 className="size-6 animate-spin text-brand" />
@@ -735,6 +745,8 @@ const tooltipStyle = {
 } as const;
 
 function topo(linhas: Agregado[], chave: keyof Agregado, n = 10) {
+
+
   return [...linhas].sort((a, b) => Number(b[chave]) - Number(a[chave])).slice(0, n);
 }
 
