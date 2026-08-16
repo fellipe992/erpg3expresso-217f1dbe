@@ -18,6 +18,8 @@ import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import {
   FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao,
   filtrosIniciais,
   statusCombina,
   type FiltrosFin,
@@ -87,7 +89,7 @@ export function RelatorioCliente() {
 
     for (const l of data.lancamentos) {
       if (l.tipo !== "receber" || !l.cliente_id) continue;
-      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
+      if (!selecionado(filtros.clienteIds, l.cliente_id)) continue;
       if (!statusCombina(l, filtros.status)) continue;
       const ref = l.competencia;
       if (ref && (ref < filtros.de || ref > filtros.ate)) continue;
@@ -104,7 +106,7 @@ export function RelatorioCliente() {
     const fretes = new Map<string, number[]>();
     for (const v of data.viagens) {
       if (!v.cliente_id || v.status === "cancelada") continue;
-      if (filtros.clienteId !== "todos" && v.cliente_id !== filtros.clienteId) continue;
+      if (!selecionado(filtros.clienteIds, v.cliente_id)) continue;
       if (q && !v.cliente.toLowerCase().includes(q) && !(v.codigo ?? "").toLowerCase().includes(q)) continue;
       if (filtros.status !== "todos" && !map.has(v.cliente_id)) continue;
       const row = get(v.cliente_id, v.cliente);
@@ -115,13 +117,18 @@ export function RelatorioCliente() {
       fretes.set(v.cliente_id, arr);
     }
 
-    const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
+    // Cliente da viagem: usado para não contar duas vezes o custo já somado via v.despesas.
+    const clienteDaViagem = new Map(
+      data.viagens.filter((v) => v.status !== "cancelada").map((v) => [v.id, v.cliente_id]),
+    );
 
-    // Custos vinculados ao cliente ainda não absorvidos por uma viagem do período.
-    // Também contempla uma OS antiga cujo custo foi lançado dentro do período filtrado.
+    // Todo custo vinculado ao cliente entra no resultado dele (pagamento de motorista,
+    // posto, pedágio, salário etc.), inclusive quando a despesa está amarrada a uma OS
+    // de outro cliente ou a uma OS antiga lançada dentro do período filtrado.
     for (const l of data.lancamentos) {
-      if (l.tipo !== "pagar" || !l.cliente_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
-      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
+      if (l.tipo !== "pagar" || !l.cliente_id) continue;
+      if (l.viagem_id && clienteDaViagem.get(l.viagem_id) === l.cliente_id) continue;
+      if (!selecionado(filtros.clienteIds, l.cliente_id)) continue;
       const nome = data.nomeCliente(l.cliente_id);
       if (q && !nome.toLowerCase().includes(q)) continue;
       get(l.cliente_id, nome).despesas += l.valor;
@@ -186,7 +193,7 @@ export function RelatorioCliente() {
     const map = new Map<string, { mes: string; faturado: number; recebido: number }>();
     for (const l of data.lancamentos) {
       if (l.tipo !== "receber" || !l.cliente_id) continue;
-      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) continue;
+      if (!selecionado(filtros.clienteIds, l.cliente_id)) continue;
       if (!statusCombina(l, filtros.status)) continue;
       const ref = l.competencia.slice(0, 7);
       if (!ref) continue;
@@ -234,7 +241,7 @@ export function RelatorioCliente() {
 
   const descricaoFiltros = [
     `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
-    `Cliente: ${filtros.clienteId === "todos" ? "Todos" : data?.nomeCliente(filtros.clienteId) ?? "—"}`,
+    `Cliente: ${rotuloSelecao(filtros.clienteIds, (id) => data?.nomeCliente(id) ?? "—")}`,
     `Status: ${filtros.status}`,
   ];
 

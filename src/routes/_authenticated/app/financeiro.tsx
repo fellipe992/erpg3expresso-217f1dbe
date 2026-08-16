@@ -35,6 +35,8 @@ import { useHideValues, HideValuesToggle } from "@/hooks/use-hide-values";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import {
   FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao,
   filtrosIniciais,
   statusCombina,
   type FiltrosFin,
@@ -87,9 +89,9 @@ function FinanceiroPage() {
   const filtrarComuns = useMemo(() => {
     const q = filtros.busca.trim().toLowerCase();
     return (l: LancBi) => {
-      if (filtros.clienteId !== "todos" && l.cliente_id !== filtros.clienteId) return false;
-      if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) return false;
-      if (filtros.motoristaId !== "todos" && l.motorista_id !== filtros.motoristaId) return false;
+      if (!selecionado(filtros.clienteIds, l.cliente_id)) return false;
+      if (!selecionado(filtros.veiculoIds, l.veiculo_id)) return false;
+      if (!selecionado(filtros.motoristaIds, l.motorista_id)) return false;
       if (!statusCombina(l, filtros.status)) return false;
       if (!q) return true;
       const v = l.viagem_id ? viagemInfo.get(l.viagem_id) : undefined;

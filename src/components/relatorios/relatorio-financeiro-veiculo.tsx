@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
-import { FiltrosFinanceiros, filtrosIniciais, type FiltrosFin } from "@/components/relatorios/filtros-financeiros";
+import { FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao, filtrosIniciais, type FiltrosFin } from "@/components/relatorios/filtros-financeiros";
 import { useBiDados, rotuloMes } from "@/hooks/use-bi-dados";
 import { brl, dt, exportarExcel, exportarPdf, num } from "@/lib/export-utils";
 
@@ -44,7 +46,7 @@ export function RelatorioFinanceiroVeiculo() {
 
     for (const v of data.viagens) {
       if (!v.veiculo_id || v.status === "cancelada") continue;
-      if (filtros.veiculoId !== "todos" && v.veiculo_id !== filtros.veiculoId) continue;
+      if (!selecionado(filtros.veiculoIds, v.veiculo_id)) continue;
       if (q && !v.veiculo.toLowerCase().includes(q) && !v.placa.toLowerCase().includes(q)) continue;
       const cur =
         map.get(v.veiculo_id) ??
@@ -79,7 +81,7 @@ export function RelatorioFinanceiroVeiculo() {
     // período. Inclui custos avulsos e custos de uma OS antiga lançados no período atual.
     for (const l of data.lancamentos) {
       if (!l.veiculo_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
-      if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) continue;
+      if (!selecionado(filtros.veiculoIds, l.veiculo_id)) continue;
       const label = data.nomeVeiculo(l.veiculo_id);
       if (q && !label.toLowerCase().includes(q)) continue;
       const cur =
@@ -154,7 +156,7 @@ export function RelatorioFinanceiroVeiculo() {
     const map = new Map<string, { mes: string; receita: number; despesas: number }>();
     for (const v of data.viagens) {
       if (!v.veiculo_id || v.status === "cancelada") continue;
-      if (filtros.veiculoId !== "todos" && v.veiculo_id !== filtros.veiculoId) continue;
+      if (!selecionado(filtros.veiculoIds, v.veiculo_id)) continue;
       const key = v.ref.slice(0, 7);
       const b = map.get(key) ?? { mes: rotuloMes(key), receita: 0, despesas: 0 };
       b.receita += v.receita;
@@ -164,7 +166,7 @@ export function RelatorioFinanceiroVeiculo() {
     const viagensDoPeriodo = new Set(data.viagens.map((v) => v.id));
     for (const l of data.lancamentos) {
       if (!l.veiculo_id || (l.viagem_id && viagensDoPeriodo.has(l.viagem_id))) continue;
-      if (filtros.veiculoId !== "todos" && l.veiculo_id !== filtros.veiculoId) continue;
+      if (!selecionado(filtros.veiculoIds, l.veiculo_id)) continue;
       const key = l.competencia.slice(0, 7);
       if (!key) continue;
       const b = map.get(key) ?? { mes: rotuloMes(key), receita: 0, despesas: 0 };
@@ -175,7 +177,7 @@ export function RelatorioFinanceiroVeiculo() {
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([, v]) => v);
-  }, [data, filtros.veiculoId]);
+  }, [data, filtros.veiculoIds]);
 
   const colunas = [
     "Veículo",
@@ -250,7 +252,7 @@ export function RelatorioFinanceiroVeiculo() {
               subtitulo: "G3 Expresso",
               filtros: [
                 `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
-                `Veículo: ${filtros.veiculoId === "todos" ? "Todos" : data?.nomeVeiculo(filtros.veiculoId) ?? "—"}`,
+                `Veículo: ${rotuloSelecao(filtros.veiculoIds, (id) => data?.nomeVeiculo(id) ?? "—")}`,
               ],
               kpis: [
                 ["Receita", brl(totais.receita)],

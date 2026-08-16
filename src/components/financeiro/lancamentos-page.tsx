@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX } from "lucide-react";
+import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX, FileSpreadsheet, FileText } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PlanoContaSelector, type PlanoContaSelection } from "@/components/financeiro/plano-conta-selector";
 import { SortHead, useSort } from "@/components/ui/sortable";
+import { exportarExcel, exportarPdf } from "@/lib/export-utils";
 
 
 type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
@@ -365,6 +366,66 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const parceiroLista = isReceber ? clientes : fornecedores;
 
+  const colunasExport = [
+    "Descrição",
+    isReceber ? "Cliente" : "Fornecedor",
+    "Cliente (operação)",
+    "Categoria",
+    "Centro de custo",
+    "Veículo",
+    "Motorista",
+    "OS/Doc",
+    "Emissão",
+    "Vencimento",
+    isReceber ? "Recebimento" : "Pagamento",
+    "Valor",
+    "Status",
+  ];
+  const linhaExport = (l: Lancamento) => [
+    l.descricao,
+    (isReceber ? l.cliente?.razao_social : l.fornecedor?.razao_social) ?? "—",
+    l.cliente?.razao_social ?? "—",
+    l.categoria ?? "—",
+    l.centro_custo ?? "—",
+    l.veiculo?.placa ?? "—",
+    l.motorista?.nome ?? "—",
+    l.numero_documento ?? "—",
+    fmtDate(l.data_emissao),
+    fmtDate(l.data_vencimento),
+    fmtDate(l.data_pagamento),
+    Number(l.valor),
+    STATUS_META[displayStatus(l)].label,
+  ];
+
+  const exportarListaExcel = () =>
+    exportarExcel(`${isReceber ? "contas-a-receber" : "contas-a-pagar"}-${new Date().toISOString().slice(0, 10)}.xlsx`, [
+      { nome: label.slice(0, 31), colunas: colunasExport, linhas: sorted.map(linhaExport) },
+    ]);
+
+  const exportarListaPdf = () =>
+    exportarPdf({
+      nomeArquivo: `${isReceber ? "contas-a-receber" : "contas-a-pagar"}-${new Date().toISOString().slice(0, 10)}.pdf`,
+      titulo: label,
+      subtitulo: "G3 Expresso",
+      filtros: [
+        `Status: ${statusFilter}`,
+        dataDe || dataAte ? `Período (${dataBase}): ${dataDe || "…"} a ${dataAte || "…"}` : "Período: todos",
+        `${filtered.length} lançamento(s)`,
+      ],
+      kpis: [
+        ["Total", fmtBRL(totais.total)],
+        [isReceber ? "Recebido" : "Pago", fmtBRL(totais.pago)],
+        ["Pendente", fmtBRL(totais.pendente)],
+        ["Atrasado", fmtBRL(totais.atrasado)],
+      ],
+      secoes: [
+        {
+          colunas: colunasExport,
+          linhas: sorted.map((l) => linhaExport(l).map((c, i) => (i === 11 ? fmtBRL(Number(c)) : c))),
+        },
+      ],
+    });
+
   return (
     <PageShell
       icon={Icon}
@@ -406,9 +467,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               {s}
             </Button>
           ))}
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
-            <FilterX className="mr-1 size-3.5" /> Limpar
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportarListaExcel}>
+              <FileSpreadsheet className="mr-1 size-3.5" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportarListaPdf}>
+              <FileText className="mr-1 size-3.5" /> PDF
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <FilterX className="mr-1 size-3.5" /> Limpar
+            </Button>
+          </div>
         </div>
         <div className="grid gap-2 md:grid-cols-4">
           <div className="space-y-1">

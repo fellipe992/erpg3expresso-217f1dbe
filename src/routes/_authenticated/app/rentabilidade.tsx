@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Building2, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Building2, FileSpreadsheet, FileText, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -20,19 +20,22 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import {
   FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao,
   filtrosIniciais,
   useEmpresas,
   type FiltrosFin,
 } from "@/components/relatorios/filtros-financeiros";
 
 import { useBiDados, rotuloMes, type ViagemBi } from "@/hooks/use-bi-dados";
-import { brl, num, pct } from "@/lib/export-utils";
+import { brl, capturarElemento, dt, exportarExcel, exportarPdf, num, pct, type PdfImagem } from "@/lib/export-utils";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/app/rentabilidade")({
@@ -133,9 +136,9 @@ function RentabilidadePage() {
     const q = filtros.busca.trim().toLowerCase();
     return data.viagens.filter((v) => {
       if (v.status === "cancelada") return false;
-      if (filtros.clienteId !== "todos" && v.cliente_id !== filtros.clienteId) return false;
-      if (filtros.veiculoId !== "todos" && v.veiculo_id !== filtros.veiculoId) return false;
-      if (filtros.motoristaId !== "todos" && v.motorista_id !== filtros.motoristaId) return false;
+      if (!selecionado(filtros.clienteIds, v.cliente_id)) return false;
+      if (!selecionado(filtros.veiculoIds, v.veiculo_id)) return false;
+      if (!selecionado(filtros.motoristaIds, v.motorista_id)) return false;
       if (!q) return true;
       return [v.codigo ?? "", v.cliente, v.motorista, v.placa, v.rota].join(" ").toLowerCase().includes(q);
     });
@@ -147,9 +150,9 @@ function RentabilidadePage() {
     const q = filtros.busca.trim().toLowerCase();
     return data.lancamentos
       .filter((l) => !l.viagem_id || !viagensDoPeriodo.has(l.viagem_id))
-      .filter((l) => filtros.clienteId === "todos" || l.cliente_id === filtros.clienteId)
-      .filter((l) => filtros.veiculoId === "todos" || l.veiculo_id === filtros.veiculoId)
-      .filter((l) => filtros.motoristaId === "todos" || l.motorista_id === filtros.motoristaId)
+      .filter((l) => selecionado(filtros.clienteIds, l.cliente_id))
+      .filter((l) => selecionado(filtros.veiculoIds, l.veiculo_id))
+      .filter((l) => selecionado(filtros.motoristaIds, l.motorista_id))
       .filter((l) => {
         if (!q) return true;
         return [
@@ -296,6 +299,104 @@ function RentabilidadePage() {
     };
   }, [serie, serieAnual]);
 
+  const graficosRef = useRef<HTMLDivElement>(null);
+  const [exportando, setExportando] = useState(false);
+
+  const rotuloFiltros = () => [
+    `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
+    `Clientes: ${rotuloSelecao(filtros.clienteIds, (id) => data?.nomeCliente(id) ?? "—", "Todos")}`,
+    `Veículos: ${rotuloSelecao(filtros.veiculoIds, (id) => data?.nomeVeiculo(id) ?? "—", "Todos")}`,
+    `Motoristas: ${rotuloSelecao(filtros.motoristaIds, (id) => data?.nomeMotorista(id) ?? "—", "Todos")}`,
+  ];
+
+  const COLS_RANK = ["Nome", "Viagens", "Receita", "Despesas", "Lucro", "Margem", "KM", "Receita/viagem", "Receita/KM"];
+  const linhasRank = (l: Agregado[]) =>
+    [...l]
+      .sort((a, b) => b.receita - a.receita)
+      .map((r) => [r.nome, r.viagens, r.receita, r.despesas, r.lucro, r.margem, r.km, r.receitaPorViagem, r.receitaPorKm]);
+  const linhasRankPdf = (l: Agregado[]) =>
+    [...l]
+      .sort((a, b) => b.receita - a.receita)
+      .map((r) => [
+        r.nome,
+        String(r.viagens),
+        brl(r.receita),
+        brl(r.despesas),
+        brl(r.lucro),
+        pct(r.margem),
+        num(r.km, 0),
+        brl(r.receitaPorViagem),
+        brl(r.receitaPorKm),
+      ]);
+
+  const exportarExcelRentabilidade = () =>
+    exportarExcel(`rentabilidade-${filtros.de}_${filtros.ate}.xlsx`, [
+      {
+        nome: "Resumo",
+        colunas: ["Indicador", "Valor"],
+        linhas: [
+          ["Período", `${dt(filtros.de)} a ${dt(filtros.ate)}`],
+          ["Receita", totais.receita],
+          ["Despesas", totais.despesas],
+          ["Lucro", totais.lucro],
+          ["Margem (%)", totais.margem],
+          ["Viagens", totais.viagens],
+          ["KM", totais.km],
+        ],
+      },
+      { nome: "Clientes", colunas: COLS_RANK, linhas: linhasRank(clientes) },
+      { nome: "Veículos", colunas: COLS_RANK, linhas: linhasRank(veiculos) },
+      { nome: "Motoristas", colunas: COLS_RANK, linhas: linhasRank(motoristas) },
+      { nome: "Rotas", colunas: COLS_RANK, linhas: linhasRank(rotas) },
+      {
+        nome: "Evolução mensal",
+        colunas: ["Mês", "Receita", "Despesas", "Lucro", "Margem (%)"],
+        linhas: serie.map((s) => [s.mes, s.receita, s.despesas, s.lucro, s.margem]),
+      },
+      {
+        nome: "Evolução anual",
+        colunas: ["Ano", "Receita", "Despesas", "Lucro"],
+        linhas: serieAnual.map((s) => [s.ano, s.receita, s.despesas, s.lucro]),
+      },
+    ]);
+
+  const exportarPdfRentabilidade = async () => {
+    setExportando(true);
+    try {
+      const png = await capturarElemento(graficosRef.current);
+      const imagens: PdfImagem[] = png ? [{ titulo: "Gráficos de rentabilidade", dataUrl: png }] : [];
+      exportarPdf({
+        nomeArquivo: `rentabilidade-${filtros.de}_${filtros.ate}.pdf`,
+        titulo: "Relatório de rentabilidade",
+        subtitulo: "G3 Expresso",
+        filtros: rotuloFiltros(),
+        kpis: [
+          ["Receita", brl(totais.receita)],
+          ["Despesas", brl(totais.despesas)],
+          ["Lucro", brl(totais.lucro)],
+          ["Margem média", pct(totais.margem)],
+          ["Viagens", String(totais.viagens)],
+          ["KM rodados", num(totais.km, 0)],
+        ],
+        imagens,
+        secoes: [
+          { titulo: "Clientes", colunas: COLS_RANK, linhas: linhasRankPdf(clientes) },
+          { titulo: "Veículos", colunas: COLS_RANK, linhas: linhasRankPdf(veiculos) },
+          { titulo: "Motoristas", colunas: COLS_RANK, linhas: linhasRankPdf(motoristas) },
+          { titulo: "Rotas", colunas: COLS_RANK, linhas: linhasRankPdf(rotas) },
+          {
+            titulo: "Evolução mensal",
+            colunas: ["Mês", "Receita", "Despesas", "Lucro", "Margem"],
+            linhas: serie.map((s) => [s.mes, brl(s.receita), brl(s.despesas), brl(s.lucro), pct(s.margem)]),
+          },
+        ],
+      });
+    } finally {
+      setExportando(false);
+    }
+  };
+
+
   if (!podeVer) {
     return (
       <div className="mx-auto max-w-3xl p-8">
@@ -333,6 +434,16 @@ function RentabilidadePage() {
         <KpiCard label="Margem média" value={pct(totais.margem)} />
         <KpiCard label="Viagens" value={String(totais.viagens)} sub={`${num(totais.km, 0)} km rodados`} />
       </div>
+
+      <div className="flex flex-wrap gap-2" data-export-ignore="true">
+        <Button variant="outline" size="sm" onClick={exportarExcelRentabilidade}>
+          <FileSpreadsheet className="mr-2 size-4" /> Excel
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportarPdfRentabilidade} disabled={exportando}>
+          {exportando ? <Loader2 className="mr-2 size-4 animate-spin" /> : <FileText className="mr-2 size-4" />} PDF com gráficos
+        </Button>
+      </div>
+
 
       {isLoading ? (
         <div className="grid min-h-[40vh] place-items-center">
@@ -590,6 +701,39 @@ function RentabilidadePage() {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Área fora da tela usada apenas para gerar as imagens dos gráficos no PDF */}
+      <div className="pointer-events-none fixed -left-[10000px] top-0" aria-hidden>
+        <div ref={graficosRef} className="w-[900px] space-y-4 bg-card p-4">
+          <GraficoExport titulo="Evolução mensal — receita × despesas × lucro">
+            <BarChart width={860} height={240} data={serie}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis dataKey="mes" fontSize={11} />
+              <YAxis fontSize={11} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <Legend />
+              <Bar dataKey="receita" name="Receita" fill="#f15a24" />
+              <Bar dataKey="despesas" name="Despesas" fill="#b42318" />
+              <Bar dataKey="lucro" name="Lucro" fill="#137d55" />
+            </BarChart>
+          </GraficoExport>
+          <GraficoExport titulo="Top 10 clientes por lucro">
+            <BarChart width={860} height={260} data={topo(clientes, "lucro")} layout="vertical" margin={{ left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" fontSize={10} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="nome" width={180} fontSize={10} />
+              <Bar dataKey="lucro" name="Lucro" fill="#f15a24" />
+            </BarChart>
+          </GraficoExport>
+          <GraficoExport titulo="Top 10 veículos por lucro">
+            <BarChart width={860} height={260} data={topo(veiculos, "lucro")} layout="vertical" margin={{ left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+              <XAxis type="number" fontSize={10} tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`} />
+              <YAxis type="category" dataKey="nome" width={180} fontSize={10} />
+              <Bar dataKey="lucro" name="Lucro" fill="#137d55" />
+            </BarChart>
+          </GraficoExport>
+        </div>
+      </div>
     </div>
   );
 }
@@ -602,6 +746,15 @@ const tooltipStyle = {
 
 function topo(linhas: Agregado[], chave: keyof Agregado, n = 10) {
   return [...linhas].sort((a, b) => Number(b[chave]) - Number(a[chave])).slice(0, n);
+}
+
+function GraficoExport({ titulo, children }: { titulo: string; children: React.ReactElement }) {
+  return (
+    <div className="rounded-lg border border-border/60 p-3">
+      <h3 className="mb-2 text-sm font-bold">{titulo}</h3>
+      {children}
+    </div>
+  );
 }
 
 function GraficoBarras({ titulo, dados, chave }: { titulo: string; dados: Agregado[]; chave: "receita" | "lucro" }) {

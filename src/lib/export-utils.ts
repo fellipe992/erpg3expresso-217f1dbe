@@ -45,6 +45,23 @@ export type PdfSecao = {
   linhas: Celula[][];
 };
 
+export type PdfImagem = { titulo?: string; dataUrl: string };
+
+/** Converte um elemento da tela (ex.: gráfico) em PNG para embutir no PDF/relatório. */
+export async function capturarElemento(el: HTMLElement | null | undefined): Promise<string | null> {
+  if (!el) return null;
+  try {
+    const { toPng } = await import("html-to-image");
+    return await toPng(el, {
+      pixelRatio: 2,
+      backgroundColor: getComputedStyle(document.body).backgroundColor || "#ffffff",
+      filter: (node) => !(node instanceof HTMLElement && node.dataset.exportIgnore === "true"),
+    });
+  } catch {
+    return null;
+  }
+}
+
 /** Exporta um relatório em PDF (A4 paisagem) respeitando os filtros aplicados */
 export function exportarPdf(opts: {
   nomeArquivo: string;
@@ -52,6 +69,7 @@ export function exportarPdf(opts: {
   subtitulo?: string;
   filtros?: string[];
   kpis?: [string, string][];
+  imagens?: PdfImagem[];
   secoes: PdfSecao[];
   orientacao?: "portrait" | "landscape";
 }) {
@@ -87,6 +105,25 @@ export function exportarPdf(opts: {
     });
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   }
+
+  const alturaPagina = doc.internal.pageSize.getHeight();
+  for (const img of opts.imagens ?? []) {
+    const props = doc.getImageProperties(img.dataUrl);
+    const larguraImg = largura - 28;
+    const alturaImg = (props.height / props.width) * larguraImg;
+    if (y + alturaImg + 12 > alturaPagina) {
+      doc.addPage();
+      y = 15;
+    }
+    if (img.titulo) {
+      doc.setFontSize(10);
+      doc.text(img.titulo, 14, y + 4);
+      y += 7;
+    }
+    doc.addImage(img.dataUrl, "PNG", 14, y, larguraImg, alturaImg);
+    y += alturaImg + 8;
+  }
+
 
   for (const s of opts.secoes) {
     if (s.titulo) {

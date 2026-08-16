@@ -1,11 +1,16 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FilterX } from "lucide-react";
+import { Check, ChevronsUpDown, FilterX } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BiDados, LancBi } from "@/hooks/use-bi-dados";
 
@@ -13,9 +18,10 @@ export type FiltrosFin = {
   de: string;
   ate: string;
   empresaId: string;
-  clienteId: string;
-  veiculoId: string;
-  motoristaId: string;
+  /** Vazio = todos. Suporta múltipla seleção. */
+  clienteIds: string[];
+  veiculoIds: string[];
+  motoristaIds: string[];
   status: string;
   busca: string;
 };
@@ -36,13 +42,21 @@ export function filtrosIniciais(diasAtras = 90): FiltrosFin {
     de: inicio.toISOString().slice(0, 10),
     ate: hoje.toISOString().slice(0, 10),
     empresaId: "todas",
-    clienteId: "todos",
-    veiculoId: "todos",
-    motoristaId: "todos",
+    clienteIds: [],
+    veiculoIds: [],
+    motoristaIds: [],
     status: "todos",
     busca: "",
   };
 }
+
+/** Seleção múltipla: lista vazia = sem restrição. */
+export const selecionado = (ids: string[], valor: string | null | undefined) =>
+  ids.length === 0 || (!!valor && ids.includes(valor));
+
+/** Rótulo legível da seleção, para cabeçalhos de PDF/Excel. */
+export const rotuloSelecao = (ids: string[], nome: (id: string) => string, todos = "Todos") =>
+  ids.length === 0 ? todos : ids.map((id) => nome(id)).join(", ");
 
 /** Regra única de status usada por todos os relatórios e telas financeiras. */
 export function statusCombina(l: Pick<LancBi, "status" | "data_vencimento">, filtro: string) {
@@ -64,6 +78,95 @@ export function useEmpresas() {
       }));
     },
   });
+}
+
+export function MultiSelect({
+  opcoes,
+  value,
+  onChange,
+  placeholder,
+  vazioLabel = "Todos",
+}: {
+  opcoes: { id: string; nome: string }[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  placeholder?: string;
+  vazioLabel?: string;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [q, setQ] = useState("");
+  const filtradas = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    return t ? opcoes.filter((o) => o.nome.toLowerCase().includes(t)) : opcoes;
+  }, [opcoes, q]);
+
+  const alternar = (id: string) =>
+    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+
+  const resumo =
+    value.length === 0
+      ? vazioLabel
+      : value.length === 1
+        ? opcoes.find((o) => o.id === value[0])?.nome ?? "1 selecionado"
+        : `${value.length} selecionados`;
+
+  return (
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" role="combobox" className="h-9 w-full justify-between font-normal">
+          <span className="truncate">{resumo}</span>
+          <span className="flex items-center gap-1">
+            {value.length > 1 && <Badge variant="secondary" className="px-1 text-[10px]">{value.length}</Badge>}
+            <ChevronsUpDown className="size-3.5 opacity-50" />
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[260px] p-2" align="start">
+        <Input
+          className="mb-2 h-8"
+          placeholder={placeholder ?? "Buscar…"}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <ScrollArea className="max-h-64">
+          <div className="space-y-0.5 pr-1">
+            {filtradas.length === 0 && (
+              <p className="px-2 py-4 text-center text-xs text-muted-foreground">Nenhum resultado.</p>
+            )}
+            {filtradas.map((o) => {
+              const ativo = value.includes(o.id);
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => alternar(o.id)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
+                    ativo && "bg-accent/60",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "grid size-4 shrink-0 place-items-center rounded border",
+                      ativo ? "border-brand bg-brand text-brand-foreground" : "border-muted-foreground/40",
+                    )}
+                  >
+                    {ativo && <Check className="size-3" />}
+                  </span>
+                  <span className="truncate">{o.nome}</span>
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+        {value.length > 0 && (
+          <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => onChange([])}>
+            Limpar seleção
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function FiltrosFinanceiros({
@@ -114,44 +217,38 @@ export function FiltrosFinanceiros({
         )}
 
         {show("cliente") && (
-          <Field label="Cliente">
-            <Select value={value.clienteId} onValueChange={(v) => set({ clienteId: v })}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os clientes</SelectItem>
-                {(dados?.clientes ?? []).map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Clientes">
+            <MultiSelect
+              opcoes={dados?.clientes ?? []}
+              value={value.clienteIds}
+              onChange={(v) => set({ clienteIds: v })}
+              placeholder="Buscar cliente…"
+              vazioLabel="Todos os clientes"
+            />
           </Field>
         )}
 
         {show("veiculo") && (
-          <Field label="Veículo / Placa">
-            <Select value={value.veiculoId} onValueChange={(v) => set({ veiculoId: v })}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os veículos</SelectItem>
-                {(dados?.veiculos ?? []).map((v) => (
-                  <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Veículos / Placas">
+            <MultiSelect
+              opcoes={(dados?.veiculos ?? []).map((v) => ({ id: v.id, nome: v.label }))}
+              value={value.veiculoIds}
+              onChange={(v) => set({ veiculoIds: v })}
+              placeholder="Buscar placa…"
+              vazioLabel="Todos os veículos"
+            />
           </Field>
         )}
 
         {show("motorista") && (
-          <Field label="Motorista">
-            <Select value={value.motoristaId} onValueChange={(v) => set({ motoristaId: v })}>
-              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os motoristas</SelectItem>
-                {(dados?.motoristas ?? []).map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Field label="Motoristas">
+            <MultiSelect
+              opcoes={dados?.motoristas ?? []}
+              value={value.motoristaIds}
+              onChange={(v) => set({ motoristaIds: v })}
+              placeholder="Buscar motorista…"
+              vazioLabel="Todos os motoristas"
+            />
           </Field>
         )}
 
