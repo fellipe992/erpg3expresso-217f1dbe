@@ -26,6 +26,8 @@ import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import {
   FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao,
   filtrosIniciais,
   useEmpresas,
   type FiltrosFin,
@@ -133,9 +135,9 @@ function RentabilidadePage() {
     const q = filtros.busca.trim().toLowerCase();
     return data.viagens.filter((v) => {
       if (v.status === "cancelada") return false;
-      if (filtros.clienteId !== "todos" && v.cliente_id !== filtros.clienteId) return false;
-      if (filtros.veiculoId !== "todos" && v.veiculo_id !== filtros.veiculoId) return false;
-      if (filtros.motoristaId !== "todos" && v.motorista_id !== filtros.motoristaId) return false;
+      if (!selecionado(filtros.clienteIds, v.cliente_id)) return false;
+      if (!selecionado(filtros.veiculoIds, v.veiculo_id)) return false;
+      if (!selecionado(filtros.motoristaIds, v.motorista_id)) return false;
       if (!q) return true;
       return [v.codigo ?? "", v.cliente, v.motorista, v.placa, v.rota].join(" ").toLowerCase().includes(q);
     });
@@ -147,9 +149,9 @@ function RentabilidadePage() {
     const q = filtros.busca.trim().toLowerCase();
     return data.lancamentos
       .filter((l) => !l.viagem_id || !viagensDoPeriodo.has(l.viagem_id))
-      .filter((l) => filtros.clienteId === "todos" || l.cliente_id === filtros.clienteId)
-      .filter((l) => filtros.veiculoId === "todos" || l.veiculo_id === filtros.veiculoId)
-      .filter((l) => filtros.motoristaId === "todos" || l.motorista_id === filtros.motoristaId)
+      .filter((l) => selecionado(filtros.clienteIds, l.cliente_id))
+      .filter((l) => selecionado(filtros.veiculoIds, l.veiculo_id))
+      .filter((l) => selecionado(filtros.motoristaIds, l.motorista_id))
       .filter((l) => {
         if (!q) return true;
         return [

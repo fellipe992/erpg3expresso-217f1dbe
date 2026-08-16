@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { SortHead, useSort } from "@/components/ui/sortable";
 import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
-import { FiltrosFinanceiros, filtrosIniciais, type FiltrosFin } from "@/components/relatorios/filtros-financeiros";
+import { FiltrosFinanceiros,
+  selecionado,
+  rotuloSelecao, filtrosIniciais, type FiltrosFin } from "@/components/relatorios/filtros-financeiros";
 import { useBiDados, type ViagemBi } from "@/hooks/use-bi-dados";
 import { brl, dt, exportarExcel, exportarPdf, pct } from "@/lib/export-utils";
 
@@ -20,9 +22,9 @@ export function RelatorioLucratividade() {
     const q = filtros.busca.trim().toLowerCase();
     return data.viagens.filter((v) => {
       if (v.status === "cancelada") return false;
-      if (filtros.clienteId !== "todos" && v.cliente_id !== filtros.clienteId) return false;
-      if (filtros.veiculoId !== "todos" && v.veiculo_id !== filtros.veiculoId) return false;
-      if (filtros.motoristaId !== "todos" && v.motorista_id !== filtros.motoristaId) return false;
+      if (!selecionado(filtros.clienteIds, v.cliente_id)) return false;
+      if (!selecionado(filtros.veiculoIds, v.veiculo_id)) return false;
+      if (!selecionado(filtros.motoristaIds, v.motorista_id)) return false;
       if (filtros.status === "pago" && v.recebido <= 0) return false;
       if (filtros.status === "atrasado" && v.atrasado <= 0) return false;
       if ((filtros.status === "pendente" || filtros.status === "a_vencer") && v.pendente <= 0) return false;
