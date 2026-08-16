@@ -106,6 +106,25 @@ export function exportarPdf(opts: {
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   }
 
+  const alturaPagina = doc.internal.pageSize.getHeight();
+  for (const img of opts.imagens ?? []) {
+    const props = doc.getImageProperties(img.dataUrl);
+    const larguraImg = largura - 28;
+    const alturaImg = (props.height / props.width) * larguraImg;
+    if (y + alturaImg + 12 > alturaPagina) {
+      doc.addPage();
+      y = 15;
+    }
+    if (img.titulo) {
+      doc.setFontSize(10);
+      doc.text(img.titulo, 14, y + 4);
+      y += 7;
+    }
+    doc.addImage(img.dataUrl, "PNG", 14, y, larguraImg, alturaImg);
+    y += alturaImg + 8;
+  }
+
+
   for (const s of opts.secoes) {
     if (s.titulo) {
       doc.setFontSize(10);
