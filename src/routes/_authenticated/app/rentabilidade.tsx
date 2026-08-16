@@ -299,6 +299,104 @@ function RentabilidadePage() {
     };
   }, [serie, serieAnual]);
 
+  const graficosRef = useRef<HTMLDivElement>(null);
+  const [exportando, setExportando] = useState(false);
+
+  const rotuloFiltros = () => [
+    `Período ${dt(filtros.de)} a ${dt(filtros.ate)}`,
+    `Clientes: ${rotuloSelecao(filtros.clienteIds, (id) => data?.nomeCliente(id) ?? "—", "Todos")}`,
+    `Veículos: ${rotuloSelecao(filtros.veiculoIds, (id) => data?.nomeVeiculo(id) ?? "—", "Todos")}`,
+    `Motoristas: ${rotuloSelecao(filtros.motoristaIds, (id) => data?.nomeMotorista(id) ?? "—", "Todos")}`,
+  ];
+
+  const COLS_RANK = ["Nome", "Viagens", "Receita", "Despesas", "Lucro", "Margem", "KM", "Receita/viagem", "Receita/KM"];
+  const linhasRank = (l: Agregado[]) =>
+    [...l]
+      .sort((a, b) => b.receita - a.receita)
+      .map((r) => [r.nome, r.viagens, r.receita, r.despesas, r.lucro, r.margem, r.km, r.receitaPorViagem, r.receitaPorKm]);
+  const linhasRankPdf = (l: Agregado[]) =>
+    [...l]
+      .sort((a, b) => b.receita - a.receita)
+      .map((r) => [
+        r.nome,
+        String(r.viagens),
+        brl(r.receita),
+        brl(r.despesas),
+        brl(r.lucro),
+        pct(r.margem),
+        num(r.km, 0),
+        brl(r.receitaPorViagem),
+        brl(r.receitaPorKm),
+      ]);
+
+  const exportarExcelRentabilidade = () =>
+    exportarExcel(`rentabilidade-${filtros.de}_${filtros.ate}.xlsx`, [
+      {
+        nome: "Resumo",
+        colunas: ["Indicador", "Valor"],
+        linhas: [
+          ["Período", `${dt(filtros.de)} a ${dt(filtros.ate)}`],
+          ["Receita", totais.receita],
+          ["Despesas", totais.despesas],
+          ["Lucro", totais.lucro],
+          ["Margem (%)", totais.margem],
+          ["Viagens", totais.viagens],
+          ["KM", totais.km],
+        ],
+      },
+      { nome: "Clientes", colunas: COLS_RANK, linhas: linhasRank(clientes) },
+      { nome: "Veículos", colunas: COLS_RANK, linhas: linhasRank(veiculos) },
+      { nome: "Motoristas", colunas: COLS_RANK, linhas: linhasRank(motoristas) },
+      { nome: "Rotas", colunas: COLS_RANK, linhas: linhasRank(rotas) },
+      {
+        nome: "Evolução mensal",
+        colunas: ["Mês", "Receita", "Despesas", "Lucro", "Margem (%)"],
+        linhas: serie.map((s) => [s.mes, s.receita, s.despesas, s.lucro, s.margem]),
+      },
+      {
+        nome: "Evolução anual",
+        colunas: ["Ano", "Receita", "Despesas", "Lucro"],
+        linhas: serieAnual.map((s) => [s.ano, s.receita, s.despesas, s.lucro]),
+      },
+    ]);
+
+  const exportarPdfRentabilidade = async () => {
+    setExportando(true);
+    try {
+      const png = await capturarElemento(graficosRef.current);
+      const imagens: PdfImagem[] = png ? [{ titulo: "Gráficos de rentabilidade", dataUrl: png }] : [];
+      exportarPdf({
+        nomeArquivo: `rentabilidade-${filtros.de}_${filtros.ate}.pdf`,
+        titulo: "Relatório de rentabilidade",
+        subtitulo: "G3 Expresso",
+        filtros: rotuloFiltros(),
+        kpis: [
+          ["Receita", brl(totais.receita)],
+          ["Despesas", brl(totais.despesas)],
+          ["Lucro", brl(totais.lucro)],
+          ["Margem média", pct(totais.margem)],
+          ["Viagens", String(totais.viagens)],
+          ["KM rodados", num(totais.km, 0)],
+        ],
+        imagens,
+        secoes: [
+          { titulo: "Clientes", colunas: COLS_RANK, linhas: linhasRankPdf(clientes) },
+          { titulo: "Veículos", colunas: COLS_RANK, linhas: linhasRankPdf(veiculos) },
+          { titulo: "Motoristas", colunas: COLS_RANK, linhas: linhasRankPdf(motoristas) },
+          { titulo: "Rotas", colunas: COLS_RANK, linhas: linhasRankPdf(rotas) },
+          {
+            titulo: "Evolução mensal",
+            colunas: ["Mês", "Receita", "Despesas", "Lucro", "Margem"],
+            linhas: serie.map((s) => [s.mes, brl(s.receita), brl(s.despesas), brl(s.lucro), pct(s.margem)]),
+          },
+        ],
+      });
+    } finally {
+      setExportando(false);
+    }
+  };
+
+
   if (!podeVer) {
     return (
       <div className="mx-auto max-w-3xl p-8">
