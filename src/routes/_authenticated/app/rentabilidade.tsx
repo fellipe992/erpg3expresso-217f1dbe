@@ -745,9 +745,16 @@ const tooltipStyle = {
 } as const;
 
 function topo(linhas: Agregado[], chave: keyof Agregado, n = 10) {
-
-
   return [...linhas].sort((a, b) => Number(b[chave]) - Number(a[chave])).slice(0, n);
+}
+
+function GraficoExport({ titulo, children }: { titulo: string; children: React.ReactElement }) {
+  return (
+    <div className="rounded-lg border border-border/60 p-3">
+      <h3 className="mb-2 text-sm font-bold">{titulo}</h3>
+      {children}
+    </div>
+  );
 }
 
 function GraficoBarras({ titulo, dados, chave }: { titulo: string; dados: Agregado[]; chave: "receita" | "lucro" }) {
