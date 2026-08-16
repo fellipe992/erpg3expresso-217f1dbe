@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Building2, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
+import { Building2, FileSpreadsheet, FileText, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
 import {
   Area,
   AreaChart,
