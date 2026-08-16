@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PlanoContaSelector, type PlanoContaSelection } from "@/components/financeiro/plano-conta-selector";
 import { SortHead, useSort } from "@/components/ui/sortable";
+import { exportarExcel, exportarPdf } from "@/lib/export-utils";
 
 
 type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
