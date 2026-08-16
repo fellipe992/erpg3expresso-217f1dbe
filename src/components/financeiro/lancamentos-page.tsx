@@ -406,9 +406,17 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               {s}
             </Button>
           ))}
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
-            <FilterX className="mr-1 size-3.5" /> Limpar
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportarListaExcel}>
+              <FileSpreadsheet className="mr-1 size-3.5" /> Excel
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportarListaPdf}>
+              <FileText className="mr-1 size-3.5" /> PDF
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <FilterX className="mr-1 size-3.5" /> Limpar
+            </Button>
+          </div>
         </div>
         <div className="grid gap-2 md:grid-cols-4">
           <div className="space-y-1">
