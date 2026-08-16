@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Building2, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
 import {
   Area,
@@ -20,6 +20,7 @@ import {
 } from "recharts";
 
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SortHead, useSort } from "@/components/ui/sortable";
@@ -34,7 +35,7 @@ import {
 } from "@/components/relatorios/filtros-financeiros";
 
 import { useBiDados, rotuloMes, type ViagemBi } from "@/hooks/use-bi-dados";
-import { brl, num, pct } from "@/lib/export-utils";
+import { brl, capturarElemento, dt, exportarExcel, exportarPdf, num, pct, type PdfImagem } from "@/lib/export-utils";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_authenticated/app/rentabilidade")({
