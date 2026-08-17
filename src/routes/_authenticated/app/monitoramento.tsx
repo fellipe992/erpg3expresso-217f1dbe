@@ -344,9 +344,34 @@ function MonitoramentoPage() {
   }
 
 
+  async function pedirPosicao(v: ViagemAtiva, silencioso = false) {
+    if (pedindoId) return;
+    setPedindoId(v.id);
+    try {
+      await criarPedidoPosicao({
+        viagemId: v.id,
+        motoristaId: v.motorista?.id ?? null,
+        veiculoId: v.veiculo?.id ?? null,
+        placa: v.veiculo?.placa ?? null,
+      });
+      if (!silencioso) {
+        toast.success("Pedido de posição enviado", {
+          description: "O app do motorista responde em instantes.",
+        });
+      }
+    } catch (e) {
+      toast.error("Não foi possível pedir a posição", { description: (e as Error).message });
+    } finally {
+      setPedindoId(null);
+    }
+  }
+
   function centralizar(v: ViagemAtiva) {
     const l = locsByViagem[v.id];
     const map = mapRef.current;
+    // Posição ausente ou velha: pede uma atualização ao app do motorista.
+    const velha = !l || Date.now() - new Date(l.created_at).getTime() > POSICAO_OBSOLETA_MS;
+    if (velha) void pedirPosicao(v, true);
     if (!l || !map) return;
     map.panTo({ lat: l.latitude, lng: l.longitude });
     map.setZoom(15);
