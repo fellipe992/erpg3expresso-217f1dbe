@@ -517,9 +517,30 @@ function HunterPage() {
                 {emailsGerais.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {emailsGerais.map((e) => (
-                      <a key={e} href={`mailto:${e}`} className="rounded-full bg-muted px-2 py-0.5 text-xs text-brand">
-                        {e}
-                      </a>
+                      <span key={e} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+                        <a href={`mailto:${e}`} className="text-brand">
+                          {e}
+                        </a>
+                        <button
+                          type="button"
+                          className="text-muted-foreground transition hover:text-brand disabled:opacity-50"
+                          title="Enviar apresentação para este e-mail"
+                          disabled={enviados.includes(e) || enviarMut.isPending}
+                          onClick={() =>
+                            enviarMut.mutate({
+                              apollo_id: null,
+                              nome: "",
+                              cargo: null,
+                              email: e,
+                              telefone: null,
+                              linkedin_url: null,
+                              fonte: "site",
+                            })
+                          }
+                        >
+                          {enviados.includes(e) ? <MailCheck className="size-3.5" /> : <Mail className="size-3.5" />}
+                        </button>
+                      </span>
                     ))}
                   </div>
                 )}
