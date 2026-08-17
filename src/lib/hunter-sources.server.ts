@@ -74,14 +74,18 @@ type SearchPayload = {
 
 /** O Firecrawl v2 pode devolver `data` como array ou como objeto por canal (web/news). */
 function normalizarBusca(json: SearchPayload | null): SearchResult[] {
-  if (!json) return [];
-  const d = json.data;
-  if (Array.isArray(d)) return d;
+  if (!json || typeof json !== "object") return [];
+  const arr = (v: unknown): SearchResult[] => (Array.isArray(v) ? (v as SearchResult[]) : []);
+  const d = json.data as unknown;
+  if (Array.isArray(d)) return d as SearchResult[];
   if (d && typeof d === "object") {
-    return [...(d.web ?? []), ...(d.news ?? [])];
+    const o = d as Record<string, unknown>;
+    const canais = [...arr(o.web), ...arr(o.news), ...arr(o.results)];
+    if (canais.length > 0) return canais;
   }
-  return json.results ?? json.web ?? [];
+  return [...arr(json.results), ...arr(json.web)];
 }
+
 
 /** Busca perfis públicos do LinkedIn ligados à empresa (via web search do Firecrawl). */
 export async function buscarPerfisLinkedIn(empresa: string, dominio: string | null): Promise<DecisorRico[]> {
@@ -144,7 +148,7 @@ export async function raspagemSite(dominio: string): Promise<DadosSite | null> {
 
   const doc = home.data ?? home;
   const paginas: string[] = [];
-  const candidatas = (doc.links ?? [])
+  const candidatas = (Array.isArray(doc.links) ? doc.links : [])
     .filter((l) => /contato|contact|quem-somos|sobre|equipe|team|institucional|fale/i.test(l))
     .filter((l) => l.includes(dominio))
     .slice(0, 3);
@@ -289,7 +293,9 @@ export function mesclarDecisores(listas: DecisorRico[][]): DecisorRico[] {
     (d.email ? 3 : 0) + (d.telefone ? 2 : 0) + (d.linkedin_url ? 2 : 0) + (d.cargo ? 1 : 0);
 
   for (const lista of listas) {
+    if (!Array.isArray(lista)) continue;
     for (const d of lista) {
+
       const chave = d.nome.toLowerCase().replace(/[^a-zà-ú\s]/gi, "").trim();
       const atual = mapa.get(chave);
       if (!atual) {
