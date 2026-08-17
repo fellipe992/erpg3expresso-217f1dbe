@@ -35,7 +35,7 @@ function PerfilPage() {
   });
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     toast.success("Você saiu do sistema");
     navigate({ to: "/auth" });
   };
