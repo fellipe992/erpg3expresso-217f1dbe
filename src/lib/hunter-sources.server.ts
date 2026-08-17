@@ -39,36 +39,59 @@ function firecrawlHeaders() {
   } as Record<string, string>;
 }
 
-async function firecrawl<T>(path: string, body: unknown): Promise<T | null> {
+async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promise<T | null> {
   const headers = firecrawlHeaders();
   if (!headers) return null;
-  try {
-    const res = await fetch(`${FIRECRAWL_V2}${path}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      console.error(`[hunter] Firecrawl ${path} falhou [${res.status}]: ${await res.text()}`);
-      return null;
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      const res = await fetch(`${FIRECRAWL_V2}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return (await res.json()) as T;
+      const texto = await res.text();
+      const recuperavel = res.status === 429 || res.status >= 500;
+      console.error(`[hunter] Firecrawl ${path} falhou [${res.status}]: ${texto}`);
+      if (!recuperavel || i === tentativas - 1) return null;
+    } catch (e) {
+      console.error(`[hunter] Firecrawl ${path} erro:`, e);
+      if (i === tentativas - 1) return null;
     }
-    return (await res.json()) as T;
-  } catch (e) {
-    console.error(`[hunter] Firecrawl ${path} erro:`, e);
-    return null;
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
   }
+  return null;
 }
 
+
 type SearchResult = { url?: string; title?: string; description?: string; markdown?: string };
+
+type SearchPayload = {
+  data?: SearchResult[] | { web?: SearchResult[]; news?: SearchResult[]; images?: SearchResult[] };
+  results?: SearchResult[];
+  web?: SearchResult[];
+};
+
+/** O Firecrawl v2 pode devolver `data` como array ou como objeto por canal (web/news). */
+function normalizarBusca(json: SearchPayload | null): SearchResult[] {
+  if (!json) return [];
+  const d = json.data;
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === "object") {
+    return [...(d.web ?? []), ...(d.news ?? [])];
+  }
+  return json.results ?? json.web ?? [];
+}
 
 /** Busca perfis públicos do LinkedIn ligados à empresa (via web search do Firecrawl). */
 export async function buscarPerfisLinkedIn(empresa: string, dominio: string | null): Promise<DecisorRico[]> {
   const alvo = dominio ? `"${empresa}" OR "${dominio}"` : `"${empresa}"`;
-  const json = await firecrawl<{ data?: SearchResult[]; results?: SearchResult[] }>("/search", {
+  const json = await firecrawl<SearchPayload>("/search", {
     query: `site:linkedin.com/in ${alvo} ${CARGOS_QUERY}`,
     limit: 10,
   });
-  const itens = json?.data ?? json?.results ?? [];
+  const itens = normalizarBusca(json);
+
 
   return itens
     .filter((r) => (r.url ?? "").includes("linkedin.com/in"))
@@ -144,7 +167,23 @@ export async function raspagemSite(dominio: string): Promise<DadosSite | null> {
     .filter((e) => !/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(e))
     .filter((e) => !/(example|sentry|wixpress|godaddy|no-?reply)/i.test(e))
     .slice(0, 12);
-  const telefones = Array.from(new Set(markdown.match(TEL_RE) ?? [])).slice(0, 8);
+  const telefones = Array.from(
+    new Set(
+      (markdown.match(TEL_RE) ?? [])
+        .map((t) => t.replace(/\D/g, ""))
+        // 10 ou 11 dígitos (DDD + número) ou com o 55 na frente
+        .map((d) => (d.length > 11 && d.startsWith("55") ? d.slice(2) : d))
+        .filter((d) => d.length === 10 || d.length === 11)
+        // DDD brasileiro válido e número que não começa em 0/1
+        .filter((d) => Number(d.slice(0, 2)) >= 11 && !/^[01]/.test(d.slice(2)))
+        .map((d) =>
+          d.length === 11
+            ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+            : `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`,
+        ),
+    ),
+  ).slice(0, 8);
+
 
   return {
     emails,
