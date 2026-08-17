@@ -370,7 +370,7 @@ export const enviarApresentacao = createServerFn({ method: "POST" })
 
       await context.supabase
         .from("crm_leads")
-        .update({ ultimo_contato: new Date().toISOString(), status: "em_contato" })
+        .update({ ultimo_contato: new Date().toISOString() })
         .eq("id", leadId);
     }
 
