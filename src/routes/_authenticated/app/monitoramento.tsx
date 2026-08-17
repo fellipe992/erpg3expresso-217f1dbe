@@ -516,7 +516,7 @@ function MonitoramentoPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -525,10 +525,28 @@ function MonitoramentoPage() {
                       e.stopPropagation();
                       centralizar(v);
                     }}
-                    disabled={!l}
                   >
                     <Locate className="mr-1 size-3" /> Centralizar
                   </Button>
+                  {!isMonitor && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 flex-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void pedirPosicao(v);
+                      }}
+                      disabled={pedindoId === v.id}
+                    >
+                      {pedindoId === v.id ? (
+                        <Loader2 className="mr-1 size-3 animate-spin" />
+                      ) : (
+                        <Crosshair className="mr-1 size-3" />
+                      )}
+                      Pedir posição
+                    </Button>
+                  )}
                   {!isMonitor && (
                     <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
                       <Link
