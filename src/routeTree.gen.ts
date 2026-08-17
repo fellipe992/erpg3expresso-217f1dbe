@@ -49,6 +49,7 @@ import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_au
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
+import { Route as AuthenticatedAppCrmLeadsRouteImport } from './routes/_authenticated/app/crm/leads'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
 import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
 
@@ -274,6 +275,12 @@ const AuthenticatedAppViagensIdRoute =
     path: '/app/viagens/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppCrmLeadsRoute =
+  AuthenticatedAppCrmLeadsRouteImport.update({
+    id: '/app/crm/leads',
+    path: '/app/crm/leads',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppCrmHunterRoute =
   AuthenticatedAppCrmHunterRouteImport.update({
     id: '/app/crm/hunter',
@@ -326,6 +333,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
+  '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
@@ -369,6 +377,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
+  '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
@@ -414,6 +423,7 @@ export interface FileRoutesById {
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
+  '/_authenticated/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/crm/funil'
     | '/app/crm/hunter'
+    | '/app/crm/leads'
     | '/app/viagens/$id'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/crm/funil'
     | '/app/crm/hunter'
+    | '/app/crm/leads'
     | '/app/viagens/$id'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
@@ -546,6 +558,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/'
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
+    | '/_authenticated/app/crm/leads'
     | '/_authenticated/app/viagens/$id'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
@@ -847,6 +860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppViagensIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/crm/leads': {
+      id: '/_authenticated/app/crm/leads'
+      path: '/app/crm/leads'
+      fullPath: '/app/crm/leads'
+      preLoaderRoute: typeof AuthenticatedAppCrmLeadsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/crm/hunter': {
       id: '/_authenticated/app/crm/hunter'
       path: '/app/crm/hunter'
@@ -894,6 +914,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppCrmFunilRoute: typeof AuthenticatedAppCrmFunilRoute
   AuthenticatedAppCrmHunterRoute: typeof AuthenticatedAppCrmHunterRoute
+  AuthenticatedAppCrmLeadsRoute: typeof AuthenticatedAppCrmLeadsRoute
   AuthenticatedAppViagensIdRoute: typeof AuthenticatedAppViagensIdRoute
   AuthenticatedAppViagensIndexRoute: typeof AuthenticatedAppViagensIndexRoute
 }
@@ -928,6 +949,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppCrmFunilRoute: AuthenticatedAppCrmFunilRoute,
   AuthenticatedAppCrmHunterRoute: AuthenticatedAppCrmHunterRoute,
+  AuthenticatedAppCrmLeadsRoute: AuthenticatedAppCrmLeadsRoute,
   AuthenticatedAppViagensIdRoute: AuthenticatedAppViagensIdRoute,
   AuthenticatedAppViagensIndexRoute: AuthenticatedAppViagensIndexRoute,
 }
