@@ -1,4 +1,6 @@
 import type { ComponentType } from 'react'
+import { template as apresentacaoG3 } from './apresentacao-g3'
+
 
 export interface TemplateEntry {
   component: ComponentType<any>
