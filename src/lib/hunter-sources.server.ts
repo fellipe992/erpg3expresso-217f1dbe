@@ -348,45 +348,31 @@ export async function linkedinStatus(): Promise<{ conectado: boolean; nome: stri
 }
 
 /**
- * Enriquecimento profundo dos perfis do LinkedIn: raspa a página pública de cada
- * perfil (via Firecrawl) para extrair cargo real, e-mail/telefone quando o próprio
- * profissional os publica no perfil (seção "Contato"/"Sobre").
+ * Enriquecimento dos perfis do LinkedIn a partir do snippet público da busca.
  *
- * Observação importante: a API oficial do LinkedIn NÃO expõe e-mail ou telefone de
- * terceiros — só do usuário conectado. Portanto os dados vêm de conteúdo público.
+ * O LinkedIn bloqueia raspagem de páginas de perfil (o Firecrawl responde 403
+ * "site não suportado"), por isso NÃO fazemos scrape de /in/ — usamos apenas o
+ * título e a descrição já retornados pela busca. E-mail/telefone de terceiros
+ * também não são expostos pela API oficial do LinkedIn.
  */
 export async function enriquecerPerfisLinkedIn(perfis: DecisorRico[]): Promise<DecisorRico[]> {
-  const alvos = perfis.filter((p) => p.linkedin_url).slice(0, 6);
-  if (alvos.length === 0) return perfis;
+  if (!Array.isArray(perfis) || perfis.length === 0) return [];
 
-  const enriquecidos = await Promise.all(
-    alvos.map(async (p) => {
-      const res = await firecrawl<{ markdown?: string; data?: { markdown?: string } }>("/scrape", {
-        url: p.linkedin_url,
-        formats: ["markdown"],
-        onlyMainContent: true,
-      });
-      const md = res?.data?.markdown ?? res?.markdown;
-      if (!md) return p;
-
-      const email = (md.match(EMAIL_RE) ?? [])
-        .map((e) => e.toLowerCase())
-        .find((e) => !/(linkedin|licdn|example|no-?reply)/i.test(e));
-      const telefone = (md.match(TEL_RE) ?? [])[0] ?? null;
-
-      return {
-        ...p,
-        email: p.email ?? email ?? null,
-        telefone: p.telefone ?? telefone,
-        resumo: p.resumo ?? md.slice(0, 400),
-        confianca: email || telefone ? ("alta" as const) : p.confianca,
-      };
-    }),
-  );
-
-  const mapa = new Map(enriquecidos.map((d) => [d.linkedin_url, d]));
-  return perfis.map((p) => (p.linkedin_url && mapa.get(p.linkedin_url)) || p);
+  return perfis.map((p) => {
+    const texto = p.resumo ?? "";
+    const email = (texto.match(EMAIL_RE) ?? [])
+      .map((e) => e.toLowerCase())
+      .find((e) => !/(linkedin|licdn|example|no-?reply)/i.test(e));
+    const telefone = (texto.match(TEL_RE) ?? [])[0] ?? null;
+    return {
+      ...p,
+      email: p.email ?? email ?? null,
+      telefone: p.telefone ?? telefone,
+      confianca: email || telefone ? ("alta" as const) : p.confianca,
+    };
+  });
 }
+
 
 /** Padrões corporativos mais comuns no Brasil, usados como e-mail provável. */
 export function inferirEmailProvavel(nome: string, dominio: string | null, exemplos: string[]): string | null {
