@@ -61,14 +61,32 @@ async function firecrawl<T>(path: string, body: unknown): Promise<T | null> {
 
 type SearchResult = { url?: string; title?: string; description?: string; markdown?: string };
 
+type SearchPayload = {
+  data?: SearchResult[] | { web?: SearchResult[]; news?: SearchResult[]; images?: SearchResult[] };
+  results?: SearchResult[];
+  web?: SearchResult[];
+};
+
+/** O Firecrawl v2 pode devolver `data` como array ou como objeto por canal (web/news). */
+function normalizarBusca(json: SearchPayload | null): SearchResult[] {
+  if (!json) return [];
+  const d = json.data;
+  if (Array.isArray(d)) return d;
+  if (d && typeof d === "object") {
+    return [...(d.web ?? []), ...(d.news ?? [])];
+  }
+  return json.results ?? json.web ?? [];
+}
+
 /** Busca perfis públicos do LinkedIn ligados à empresa (via web search do Firecrawl). */
 export async function buscarPerfisLinkedIn(empresa: string, dominio: string | null): Promise<DecisorRico[]> {
   const alvo = dominio ? `"${empresa}" OR "${dominio}"` : `"${empresa}"`;
-  const json = await firecrawl<{ data?: SearchResult[]; results?: SearchResult[] }>("/search", {
+  const json = await firecrawl<SearchPayload>("/search", {
     query: `site:linkedin.com/in ${alvo} ${CARGOS_QUERY}`,
     limit: 10,
   });
-  const itens = json?.data ?? json?.results ?? [];
+  const itens = normalizarBusca(json);
+
 
   return itens
     .filter((r) => (r.url ?? "").includes("linkedin.com/in"))
