@@ -371,7 +371,7 @@ function HunterPage() {
         </div>
       )}
 
-      {/* Etapa 2 — decisores (LinkedIn público + site da empresa + IA + Apollo) */}
+      {/* Etapa 2 — decisores (LinkedIn público + site da empresa + IA) */}
       <Sheet
         open={!!selecionada}
         onOpenChange={(o) => {
