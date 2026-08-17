@@ -99,6 +99,13 @@ const ROTULO_FONTE: Record<string, string> = {
   manual: "Manual",
 };
 
+/** LinkedIn recusa a conexão em subdomínios (br.linkedin.com) e com query params. */
+function linkLinkedin(url: string) {
+  const limpo = url.split("?")[0]!.split("#")[0]!;
+  const m = limpo.match(/linkedin\.com\/(in|company)\/([^/]+)/i);
+  return m ? `https://www.linkedin.com/${m[1]!.toLowerCase()}/${m[2]}` : limpo;
+}
+
 const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
 
 function HunterPage() {

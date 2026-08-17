@@ -122,13 +122,23 @@ export async function buscarPerfisLinkedIn(empresa: string, dominio: string | nu
         cargo,
         email: null,
         telefone: null,
-        linkedin_url: (r.url ?? "").split("?")[0] ?? null,
+        linkedin_url: normalizarLinkedin(r.url),
         fonte: "linkedin" as const,
         confianca: "media" as const,
         resumo: r.description ?? null,
       };
     })
     .filter((d) => d.nome.length > 2 && d.nome.split(" ").length >= 2);
+}
+
+/** Normaliza para o domínio canônico (www) sem query — subdomínios como br. e
+ * parâmetros como originalSubdomain fazem o LinkedIn recusar a conexão. */
+export function normalizarLinkedin(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const limpo = url.split("?")[0]!.split("#")[0]!;
+  const m = limpo.match(/linkedin\.com\/(in|company)\/([^/]+)/i);
+  if (!m) return limpo.startsWith("http") ? limpo : `https://${limpo}`;
+  return `https://www.linkedin.com/${m[1]!.toLowerCase()}/${m[2]}`;
 }
 
 const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
