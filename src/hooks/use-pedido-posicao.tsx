@@ -197,8 +197,12 @@ export function usePedidoPosicaoMotorista() {
       .subscribe();
 
     const onVisible = () => {
-      if (document.visibilityState === "visible") void verificar();
+      if (document.visibilityState === "visible") {
+        void verificar();
+        void confirmarPosicaoAbertura().catch(() => undefined);
+      }
     };
+
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", onVisible);
 
