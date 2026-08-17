@@ -11,6 +11,8 @@ import {
   Wifi,
   WifiOff,
   Locate,
+  Loader2,
+  Crosshair,
   ExternalLink,
   Radar,
 } from "lucide-react";
