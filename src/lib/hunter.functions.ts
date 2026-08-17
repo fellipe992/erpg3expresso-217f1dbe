@@ -61,10 +61,16 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     return { companyId: data.companyId };
   })
   .handler(async ({ data, context }) => {
-    const { buscarDecisoresApollo, extrairDominio } = await import("@/lib/hunter.server");
-    const { buscarPerfisLinkedIn, raspagemSite, consolidarComIa, mesclarDecisores, linkedinStatus } = await import(
-      "@/lib/hunter-sources.server"
-    );
+    const { extrairDominio } = await import("@/lib/hunter.server");
+    const {
+      buscarPerfisLinkedIn,
+      enriquecerPerfisLinkedIn,
+      inferirEmailProvavel,
+      raspagemSite,
+      consolidarComIa,
+      mesclarDecisores,
+      linkedinStatus,
+    } = await import("@/lib/hunter-sources.server");
 
     const { data: empresa, error } = await context.supabase
       .from("companies")
@@ -77,23 +83,32 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     const dominio = extrairDominio(empresa.website as string | null);
     const nomeEmpresa = empresa.nome as string;
 
-    // Fontes em paralelo — cada uma degrada de forma isolada.
-    const [apollo, linkedin, site, li] = await Promise.all([
-      dominio
-        ? buscarDecisoresApollo(dominio).catch((e: Error) => ({ decisores: [], aviso: e.message }))
-        : Promise.resolve({ decisores: [], aviso: null as string | null }),
+    // Fontes gratuitas em paralelo — cada uma degrada de forma isolada.
+    const [perfis, site, li] = await Promise.all([
       buscarPerfisLinkedIn(nomeEmpresa, dominio),
       dominio ? raspagemSite(dominio) : Promise.resolve(null),
       linkedinStatus(),
     ]);
 
+    const linkedin = await enriquecerPerfisLinkedIn(perfis);
     const ia = await consolidarComIa({ empresa: nomeEmpresa, dominio, linkedin, site });
 
-    const decisores = mesclarDecisores([
-      apollo.decisores.map((d) => ({ ...d, fonte: "apollo" as const, confianca: "alta" as const })),
-      linkedin,
-      ia.decisores,
-    ]);
+    const mesclados = mesclarDecisores([linkedin, ia.decisores]);
+
+    // Sem e-mail público? sugere o e-mail corporativo provável (marcado como baixa confiança).
+    const decisores = mesclados.map((d) => {
+      if (d.email) return d;
+      const provavel = inferirEmailProvavel(d.nome, dominio, site?.emails ?? []);
+      if (!provavel) return d;
+      return {
+        ...d,
+        email: provavel,
+        confianca: "baixa" as const,
+        resumo: [d.resumo, "E-mail sugerido pelo padrão corporativo — confirme antes de enviar."]
+          .filter(Boolean)
+          .join(" · "),
+      };
+    });
 
     // Persiste o enriquecimento da empresa (resumo e canais gerais).
     if (site || ia.resumoEmpresa) {
@@ -108,7 +123,7 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     }
 
     const fontes = {
-      apollo: apollo.decisores.length > 0,
+      apollo: false,
       linkedin: linkedin.length > 0,
       site: !!site,
       ia: ia.decisores.length > 0,
@@ -118,9 +133,10 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     const aviso =
       decisores.length === 0
         ? dominio
-          ? "Nenhum decisor identificado nas fontes públicas (LinkedIn, site da empresa e Apollo). Cadastre o contato manualmente abaixo."
+          ? "Nenhum decisor identificado nas fontes públicas (LinkedIn e site da empresa). Cadastre o contato manualmente abaixo."
           : "Esta empresa não possui site cadastrado no Google — a busca ficou limitada. Cadastre o contato manualmente abaixo."
-        : (apollo.aviso ?? null);
+        : null;
+
 
     return {
       dominio,
