@@ -20,6 +20,7 @@ const tabs = [
 export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
   useMotoristaAutoTracking();
+  usePedidoPosicaoMotorista();
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
