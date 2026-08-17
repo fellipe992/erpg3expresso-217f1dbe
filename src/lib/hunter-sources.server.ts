@@ -162,7 +162,7 @@ export async function raspagemSite(dominio: string): Promise<DadosSite | null> {
   const candidatas = (Array.isArray(doc.links) ? doc.links : [])
     .filter((l) => /contato|contact|quem-somos|sobre|equipe|team|institucional|fale/i.test(l))
     .filter((l) => l.includes(dominio))
-    .slice(0, 3);
+    .slice(0, 2);
 
   let markdown = doc.markdown ?? "";
   for (const url of candidatas) {
@@ -268,6 +268,7 @@ export async function consolidarComIa(params: {
         ],
         response_format: { type: "json_object" },
       }),
+      signal: AbortSignal.timeout(45000),
     });
     if (!res.ok) {
       console.error(`[hunter] IA falhou [${res.status}]: ${await res.text()}`);
