@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -9,6 +9,8 @@ import {
   ExternalLink,
   Globe,
   Loader2,
+  Mail,
+  MailCheck,
   MapPin,
   Phone,
   Plus,
@@ -17,7 +19,8 @@ import {
   Users,
 } from "lucide-react";
 
-import { adicionarContatoCrm, buscarDecisores, salvarEmpresas } from "@/lib/hunter.functions";
+import { adicionarContatoCrm, buscarDecisores, enviarApresentacao, salvarEmpresas } from "@/lib/hunter.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { buscarEmpresasNoNavegador } from "@/lib/hunter-places-browser";
 
 import { Button } from "@/components/ui/button";
@@ -70,6 +73,17 @@ type Decisor = {
   fonte?: string;
   confianca?: string;
   resumo?: string | null;
+};
+
+type EmailEnviado = {
+  id: string;
+  empresa: string;
+  contato_nome: string | null;
+  destinatario: string;
+  assunto: string;
+  status: string;
+  detalhe: string | null;
+  created_at: string;
 };
 
 type Fontes = {
@@ -131,10 +145,51 @@ function HunterPage() {
   const [dominio, setDominio] = useState<string | null>(null);
   const [adicionados, setAdicionados] = useState<string[]>([]);
   const [fontes, setFontes] = useState<Fontes | null>(null);
+  const [enviados, setEnviados] = useState<string[]>([]);
   const [resumoEmpresa, setResumoEmpresa] = useState<string | null>(null);
   const [emailsGerais, setEmailsGerais] = useState<string[]>([]);
   const [telefonesGerais, setTelefonesGerais] = useState<string[]>([]);
   const [manual, setManual] = useState({ ...vazioManual });
+  const queryClient = useQueryClient();
+  const enviarFn = useServerFn(enviarApresentacao);
+
+  const historico = useQuery({
+    queryKey: ["hunter-emails-enviados"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_emails_enviados")
+        .select("id, empresa, contato_nome, destinatario, assunto, status, detalhe, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as EmailEnviado[];
+    },
+  });
+
+  const enviarMut = useMutation({
+    mutationFn: (d: Decisor) =>
+      enviarFn({
+        data: {
+          companyId: selecionada!.id,
+          nome: d.nome,
+          cargo: d.cargo,
+          email: d.email!,
+          telefone: d.telefone,
+          linkedin_url: d.linkedin_url,
+        },
+      }),
+    onSuccess: (res, d) => {
+      queryClient.invalidateQueries({ queryKey: ["hunter-emails-enviados"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-leads"] });
+      if (res.status === "enviado") {
+        setEnviados((prev) => [...prev, d.email!]);
+        toast.success(`Apresentação enviada para ${d.email}. Registrado no funil como primeiro contato.`);
+      } else {
+        toast.error(res.detalhe ?? "Não foi possível enviar o e-mail.");
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
 
   const busca = useMutation({
@@ -523,14 +578,33 @@ function HunterPage() {
                       </Button>
                     )}
                   </div>
-                  <Button size="sm" disabled={jaAdicionado || addCrm.isPending} onClick={() => addCrm.mutate(d)}>
-                    {addCrm.isPending && addCrm.variables?.nome === d.nome ? (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    ) : (
-                      <Plus className="mr-2 size-4" />
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" disabled={jaAdicionado || addCrm.isPending} onClick={() => addCrm.mutate(d)}>
+                      {addCrm.isPending && addCrm.variables?.nome === d.nome ? (
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                      ) : (
+                        <Plus className="mr-2 size-4" />
+                      )}
+                      {jaAdicionado ? "No CRM" : "Adicionar ao CRM"}
+                    </Button>
+                    {d.email && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={enviados.includes(d.email) || enviarMut.isPending}
+                        onClick={() => enviarMut.mutate(d)}
+                      >
+                        {enviarMut.isPending && enviarMut.variables?.email === d.email ? (
+                          <Loader2 className="mr-2 size-4 animate-spin" />
+                        ) : enviados.includes(d.email) ? (
+                          <MailCheck className="mr-2 size-4" />
+                        ) : (
+                          <Mail className="mr-2 size-4" />
+                        )}
+                        {enviados.includes(d.email) ? "Apresentação enviada" : "Enviar apresentação"}
+                      </Button>
                     )}
-                    {jaAdicionado ? "No CRM" : "Adicionar ao CRM"}
-                  </Button>
+                  </div>
                 </div>
               );
             })}
@@ -605,6 +679,49 @@ function HunterPage() {
         </SheetContent>
       </Sheet>
 
+      {/* Histórico de e-mails de apresentação */}
+      <Card>
+        <CardContent className="space-y-4 p-5">
+          <div className="flex items-center gap-2">
+            <MailCheck className="size-4 text-brand" />
+            <span className="text-sm font-medium">E-mails de apresentação enviados</span>
+            <Badge variant="outline">{historico.data?.length ?? 0}</Badge>
+          </div>
+
+          {historico.isPending && <Skeleton className="h-20 w-full" />}
+
+          {!historico.isPending && (historico.data?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Nenhum e-mail enviado ainda. Busque uma empresa, abra os decisores e clique em “Enviar apresentação”.
+            </p>
+          )}
+
+          {(historico.data ?? []).length > 0 && (
+            <div className="divide-y divide-border rounded-lg border border-border">
+              {(historico.data ?? []).map((h) => (
+                <div key={h.id} className="flex flex-wrap items-start justify-between gap-2 p-3 text-sm">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{h.empresa}</div>
+                    <div className="truncate text-muted-foreground">
+                      {h.contato_nome ? `${h.contato_nome} · ` : ""}
+                      {h.destinatario}
+                    </div>
+                    {h.detalhe && <div className="text-xs text-muted-foreground">{h.detalhe}</div>}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant={h.status === "enviado" ? "default" : "outline"} className="text-[10px] font-normal">
+                      {h.status}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(h.created_at).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
