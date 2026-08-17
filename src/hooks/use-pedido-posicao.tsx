@@ -60,15 +60,16 @@ async function capturarPosicao(): Promise<GeolocationCoordinates | null> {
  * (com conferência periódica de 60 s), captura o GPS na hora, grava o ponto,
  * responde o pedido e avisa o motorista por notificação no aparelho.
  */
+/** Evita repetir a confirmação de abertura em recargas seguidas. */
+const CONFIRMA_ABERTURA_MS = 2 * 60_000;
+
 export function usePedidoPosicaoMotorista() {
   const { user, role } = useAuth();
   const isMotorista = role === "motorista";
   const motoristaIdRef = useRef<string | null>(null);
   const busyRef = useRef(false);
+  const ultimaConfirmacaoRef = useRef(0);
 
-  useEffect(() => {
-    if (!isMotorista || !user?.id) return;
-    let cancelled = false;
 
     const atender = async (pedido: PedidoPosicao) => {
       if (readHandled().includes(pedido.id)) return;
