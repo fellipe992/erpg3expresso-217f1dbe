@@ -39,15 +39,25 @@ function firecrawlHeaders() {
   } as Record<string, string>;
 }
 
-async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promise<T | null> {
+/** Espaça as chamadas ao Firecrawl (plano gratuito: ~10 req/min) e evita travar a requisição. */
+let ultimaChamada = 0;
+async function aguardarVez() {
+  const espera = Math.max(0, 900 - (Date.now() - ultimaChamada));
+  if (espera > 0) await new Promise((r) => setTimeout(r, espera));
+  ultimaChamada = Date.now();
+}
+
+async function firecrawl<T>(path: string, body: unknown, tentativas = 2): Promise<T | null> {
   const headers = firecrawlHeaders();
   if (!headers) return null;
   for (let i = 0; i < tentativas; i++) {
+    await aguardarVez();
     try {
       const res = await fetch(`${FIRECRAWL_V2}${path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25000),
       });
       if (res.ok) return (await res.json()) as T;
       const texto = await res.text();
@@ -58,10 +68,11 @@ async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promis
       console.error(`[hunter] Firecrawl ${path} erro:`, e);
       if (i === tentativas - 1) return null;
     }
-    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
   }
   return null;
 }
+
 
 
 type SearchResult = { url?: string; title?: string; description?: string; markdown?: string };
