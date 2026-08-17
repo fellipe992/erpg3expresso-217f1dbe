@@ -317,62 +317,73 @@ export const enviarApresentacao = createServerFn({ method: "POST" })
       leadId = lead.id as string;
     }
 
-    // 2) Envio individual do e-mail de apresentação.
-    const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
-    let status = "enviado";
-    let detalhe: string | null = null;
-    try {
-      const res = await sendTemplateEmail("apresentacao-g3", data.email, {
-        templateData: { nome: primeiroNome, empresa: nomeEmpresa },
-        idempotencyKey: `apresentacao-g3-${data.companyId}-${data.email}`,
-      });
-      if (!res.sent) {
-        status = "bloqueado";
-        detalhe = "Destinatário está na lista de bloqueio (bounce, reclamação ou descadastro).";
-      }
-    } catch (e) {
-      const err = e as { code?: string; status?: number; message?: string };
-      status = "falhou";
-      detalhe =
-        err.code === "domain_not_verified"
-          ? "O domínio de envio ainda não foi verificado no DNS."
-          : err.status === 429
-            ? "Limite de envios por hora atingido. Tente novamente em alguns minutos."
-            : (err.message ?? "Falha no envio.");
-    }
-
-    const assunto = "Como está a entrega dos seus produtos até o cliente final?";
-
-    // 3) Histórico de disparos.
-    await context.supabase.from("crm_emails_enviados").insert({
-      company_id: empresa.id as string,
-      lead_id: leadId,
+    // 2-4) Envio + histórico + timeline do CRM.
+    const { enviarApresentacaoRegistrando } = await import("@/lib/hunter-email.server");
+    const { status, detalhe } = await enviarApresentacaoRegistrando({
+      supabase: context.supabase as never,
+      userId: context.userId,
+      leadId,
+      email: data.email,
+      nome: data.nome ?? null,
       empresa: nomeEmpresa,
-      contato_nome: data.nome ?? null,
-      destinatario: data.email,
-      assunto,
-      template: "apresentacao-g3",
-      status,
-      detalhe,
-      enviado_por: context.userId,
+      companyId: empresa.id as string,
     });
-
-    if (status === "enviado") {
-      // 4) Timeline do CRM + último contato do lead.
-      await context.supabase.from("crm_atividades").insert({
-        tipo: "email",
-        titulo: "E-mail de apresentação enviado",
-        descricao: `Apresentação da G3 Expresso enviada para ${data.email}${data.nome ? ` (${data.nome})` : ""}.`,
-        lead_id: leadId,
-        usuario_id: context.userId,
-        metadata: { template: "apresentacao-g3", assunto, destinatario: data.email },
-      });
-
-      await context.supabase
-        .from("crm_leads")
-        .update({ ultimo_contato: new Date().toISOString() })
-        .eq("id", leadId);
-    }
 
     return { status, detalhe, leadId };
   });
+
+/**
+ * Disparo em lote do mesmo texto de apresentação, um e-mail por lead,
+ * ignorando quem já recebeu (sem repetição).
+ */
+export const enviarLoteApresentacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { leadIds: string[] }) => {
+    const leadIds = (Array.isArray(data?.leadIds) ? data.leadIds : []).filter(Boolean).slice(0, 50);
+    if (leadIds.length === 0) throw new Error("Selecione ao menos um lead.");
+    return { leadIds };
+  })
+  .handler(async ({ data, context }) => {
+    const { enviarApresentacaoRegistrando } = await import("@/lib/hunter-email.server");
+
+    const { data: leads, error } = await context.supabase
+      .from("crm_leads")
+      .select("id, empresa, contato_nome, email")
+      .in("id", data.leadIds);
+    if (error) throw new Error(error.message);
+
+    const emails = (leads ?? []).map((l) => l.email).filter(Boolean) as string[];
+    const { data: jaEnviados } = await context.supabase
+      .from("crm_emails_enviados")
+      .select("destinatario")
+      .eq("template", "apresentacao-g3")
+      .eq("status", "enviado")
+      .in("destinatario", emails.length > 0 ? emails : ["-"]);
+    const bloqueados = new Set((jaEnviados ?? []).map((r) => (r.destinatario as string).toLowerCase()));
+
+    let enviados = 0;
+    let ignorados = 0;
+    let falhas = 0;
+
+    for (const lead of leads ?? []) {
+      const email = (lead.email ?? "").trim().toLowerCase();
+      if (!email || bloqueados.has(email)) {
+        ignorados++;
+        continue;
+      }
+      bloqueados.add(email);
+      const { status } = await enviarApresentacaoRegistrando({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        leadId: lead.id as string,
+        email,
+        nome: lead.contato_nome as string | null,
+        empresa: lead.empresa as string,
+      });
+      if (status === "enviado") enviados++;
+      else falhas++;
+    }
+
+    return { enviados, ignorados, falhas };
+  });
+
