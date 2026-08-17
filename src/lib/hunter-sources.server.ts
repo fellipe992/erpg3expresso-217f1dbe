@@ -167,7 +167,23 @@ export async function raspagemSite(dominio: string): Promise<DadosSite | null> {
     .filter((e) => !/\.(png|jpg|jpeg|gif|svg|webp)$/i.test(e))
     .filter((e) => !/(example|sentry|wixpress|godaddy|no-?reply)/i.test(e))
     .slice(0, 12);
-  const telefones = Array.from(new Set(markdown.match(TEL_RE) ?? [])).slice(0, 8);
+  const telefones = Array.from(
+    new Set(
+      (markdown.match(TEL_RE) ?? [])
+        .map((t) => t.replace(/\D/g, ""))
+        // 10 ou 11 dígitos (DDD + número) ou com o 55 na frente
+        .map((d) => (d.length > 11 && d.startsWith("55") ? d.slice(2) : d))
+        .filter((d) => d.length === 10 || d.length === 11)
+        // DDD brasileiro válido e número que não começa em 0/1
+        .filter((d) => Number(d.slice(0, 2)) >= 11 && !/^[01]/.test(d.slice(2)))
+        .map((d) =>
+          d.length === 11
+            ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+            : `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`,
+        ),
+    ),
+  ).slice(0, 8);
+
 
   return {
     emails,
