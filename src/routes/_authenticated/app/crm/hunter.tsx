@@ -106,6 +106,14 @@ function linkLinkedin(url: string) {
   return m ? `https://www.linkedin.com/${m[1]!.toLowerCase()}/${m[2]}` : limpo;
 }
 
+/** O preview roda dentro de um iframe, que o LinkedIn bloqueia. Nesse caso,
+ * abre no nível superior do navegador; no app publicado, mantém uma nova aba. */
+function abrirLinkedinForaDoIframe(url: string) {
+  const destino = linkLinkedin(url);
+  const dentroDeIframe = window.self !== window.top;
+  window.open(destino, dentroDeIframe ? "_top" : "_blank", "noopener,noreferrer");
+}
+
 const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
 
 function HunterPage() {
@@ -504,14 +512,15 @@ function HunterPage() {
                     <div className="text-muted-foreground">Telefone: {d.telefone ?? "não disponível"}</div>
                     {d.resumo && <div className="text-xs text-muted-foreground">{d.resumo}</div>}
                     {d.linkedin_url && (
-                      <a
-                        href={linkLinkedin(d.linkedin_url)}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="inline-flex items-center gap-1.5 text-brand hover:underline"
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="h-auto p-0 text-brand"
+                        onClick={() => abrirLinkedinForaDoIframe(d.linkedin_url ?? "")}
                       >
                         <ExternalLink className="size-3.5" /> LinkedIn
-                      </a>
+                      </Button>
                     )}
                   </div>
                   <Button size="sm" disabled={jaAdicionado || addCrm.isPending} onClick={() => addCrm.mutate(d)}>
