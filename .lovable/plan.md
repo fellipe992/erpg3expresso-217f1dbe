@@ -1,52 +1,96 @@
-## Módulo CRM G3 — plano de execução
+# Plano: Integrar site HostGator com API de Captação de Parceiros do ERP
 
-O escopo pedido equivale a um produto inteiro (Agendor). Vou entregar em 5 fases, cada uma funcionando de ponta a ponta, sem quebrar nada do ERP atual. Começo pela Fase 1 assim que você aprovar.
+## Resumo
+O ERP G3 Expresso já possui a API pública `POST /api/public/parceiros` pronta para receber os dados do formulário "Seja Parceiro" do site institucional. Como o site está na HostGator, a integração é feita adicionando um snippet JavaScript na página que dispara o envio para o ERP antes (ou junto) de abrir o WhatsApp.
 
-### Princípio de integração
-Nada de cadastro duplicado: `clientes`, `financeiro_lancamentos`, `viagens`, `veiculos`, `motoristas` e `profiles/user_roles` continuam sendo a fonte da verdade. O CRM adiciona apenas as tabelas que hoje não existem e referencia as atuais por FK.
+## Pergunta do usuário: ficaria mais fácil se o site estivesse no Lovable?
+Sim. Se o site institucional também estiver no Lovable, a conexão fica mais simples porque:
+- Conseguimos editar o formulário diretamente no código do projeto.
+- Não precisa inserir snippet manualmente na HostGator.
+- O domínio customizado pode ser conectado ao projeto do site e tudo continua centralizado.
 
----
-
-### Fase 1 — Base do CRM: Leads, Funil e Oportunidades
-- Novas tabelas: `crm_leads`, `crm_oportunidades`, `crm_etapas` (funil configurável com as 10 etapas pedidas), `crm_atividades` (timeline), `crm_etiquetas`.
-- Kanban arrastável com as etapas Lead → Fechado Perdido; toda movimentação grava histórico automático.
-- Cadastro de Lead com todos os campos listados (empresa, contato, cargo, telefones, WhatsApp, origem, potencial, classificação, prioridade, etiquetas, próximo contato…).
-- Conversão de Lead → Cliente reaproveitando a tabela `clientes` (checagem de CNPJ/CPF para evitar duplicidade).
-- Ficha da oportunidade com timeline cronológica.
-- Menu "Comercial" na sidebar, seguindo o visual atual (laranja #F15A24, claro/escuro, responsivo).
-
-### Fase 2 — Dashboard Comercial e Relatórios
-- Dashboard com os 13 KPIs pedidos (oportunidades abertas, em negociação, receita prevista/fechada, meta, % da meta, ticket médio, conversão, tempo médio de fechamento, ganhos, perdidos, clientes ativos/inativos).
-- Gráficos: funil, receita por mês/cliente/vendedor, origem dos leads, conversão por etapa, evolução mensal.
-- Tabela `crm_metas` (meta mensal por vendedor/equipe).
-- 14 relatórios com exportação PDF e Excel, reutilizando `export-utils.ts` e a ordenação estilo Excel já existente.
-
-### Fase 3 — Agenda, Tarefas e Notificações
-- `crm_compromissos` (ligação, reunião, visita, follow-up, cobrança, retorno) e `crm_tarefas`.
-- Agenda integrada com visão por dia/semana/mês e lista.
-- Notificações no sino/central e push mobile: novo lead, nova oportunidade, follow-up vencido, tarefa vencida, proposta aprovada/recusada, cliente sem contato há 30 dias, contrato vencendo (via rotina agendada já existente).
-
-### Fase 4 — Propostas, Contratos e integração Financeira/Operacional
-- `crm_propostas` (rascunho → enviada → em negociação → aprovada → recusada) com anexos e histórico; PDF da proposta.
-- Ao marcar "Fechado Ganho": cria o Cliente se não existir, gera contas a receber, contrato e permite abrir viagem/frete já preenchidos.
-- Ficha 360º do cliente: viagens (quantidade, KM, última viagem/motorista/veículo), receita por período/veículo/motorista, faturado/recebido/em aberto/atrasado, margem, últimos recebimentos e histórico único cronológico.
-
-### Fase 5 — IA comercial, WhatsApp, E-mail e Permissões finais
-- Assistente comercial com IA (resumo do histórico e de reuniões, sugestão de próximo contato, geração de mensagem de WhatsApp e e-mail, probabilidade de fechamento, alertas de inatividade e de proposta vencendo).
-- Botão de WhatsApp em todas as telas, com registro automático na timeline.
-- Registro de e-mails enviados/recebidos vinculados ao cliente.
-- Papéis comerciais (Diretor, Gerente Comercial, Comercial, Assistente) e RLS: cada usuário vê apenas seus próprios registros; administrador e diretor veem tudo.
+Porém, **não é obrigatório**: a API pública já permite requisições de qualquer domínio (CORS aberto), então a HostGator funciona normalmente.
 
 ---
 
-### Detalhes técnicos
-- Banco: novas tabelas em `public` com GRANTs explícitos, RLS por responsável + função `is_staff`/papéis, triggers de auditoria e timeline automática (mesmo padrão de `tg_plano_auditoria`).
-- Papéis novos entram no enum `app_role`; regras atuais de administrador/financeiro/gestor/motorista permanecem intactas.
-- Frontend: rotas em `src/routes/_authenticated/app/crm/*`, componentes reutilizáveis em `src/components/crm/`, drag-and-drop com `@dnd-kit`, tabelas com o `sortable.tsx` atual, exportação com jsPDF/xlsx já instalados.
-- IA via Lovable AI (sem chave nova), em server function protegida.
-- Nenhuma tabela ou tela existente é alterada de forma destrutiva.
+## Opção A: manter site na HostGator (mais rápido)
 
-### Antes de começar
-Duas definições rápidas (posso assumir o padrão se preferir):
-1. Meta mensal: por vendedor, por equipe, ou ambos? (padrão: ambos)
-2. Vendedor responsável: qualquer usuário do sistema ou apenas quem tiver papel comercial? (padrão: apenas papéis comerciais + administrador)
+1. Localizar no site o formulário/JS que abre o WhatsApp na página `Seja Parceiro`.
+2. Adicionar o snippet abaixo para que, ao clicar em enviar, os dados também sejam enviados ao ERP.
+3. O snippet envia um `POST` para o endpoint do ERP em produção e, em seguida, pode abrir o WhatsApp normalmente.
+
+### Endpoint de destino
+```
+https://erpg3expresso.lovable.app/api/public/parceiros
+```
+
+### Snippet para colar na HostGator
+```javascript
+async function enviarParaERP(dados) {
+  try {
+    await fetch('https://erpg3expresso.lovable.app/api/public/parceiros', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados)
+    });
+  } catch (e) {
+    // falha silenciosa: não bloqueia o envio do WhatsApp
+    console.error('Falha ao enviar para ERP', e);
+  }
+}
+
+// Exemplo de uso no submit do formulário
+const dados = {
+  nome: document.getElementById('nome').value,
+  documento: document.getElementById('documento').value,
+  telefone: document.getElementById('telefone').value,
+  whatsapp: document.getElementById('whatsapp').value,
+  email: document.getElementById('email').value,
+  cidade: document.getElementById('cidade').value,
+  estado: document.getElementById('estado').value,
+  uf: document.getElementById('uf').value,
+  tipoVeiculo: document.getElementById('tipoVeiculo').value,
+  modelo: document.getElementById('modelo').value,
+  ano: document.getElementById('ano').value,
+  placa: document.getElementById('placa').value,
+  capacidade: document.getElementById('capacidade').value,
+  carroceria: document.getElementById('carroceria').value,
+  temAntt: document.getElementById('temAntt').value,
+  numeroAntt: document.getElementById('numeroAntt').value,
+  regioes: document.getElementById('regioes').value,
+  tiposCarga: document.getElementById('tiposCarga').value,
+  experiencia: document.getElementById('experiencia').value,
+  sobre: document.getElementById('sobre').value
+};
+
+await enviarParaERP(dados);
+// continua abrindo o WhatsApp...
+```
+
+> O endpoint já aceita valores vazios/nulos para campos opcionais. Não precisa preencher todos.
+
+---
+
+## Opção B: migrar o site para o Lovable (recomendado no médio prazo)
+
+1. Criar ou usar o projeto do site institucional no Lovable.
+2. Conectar o domínio da HostGator ao projeto do site em **Project Settings → Domains**:
+   - Apontar `A` records `@` e `www` para `185.158.133.1`.
+   - Adicionar `TXT` record `_lovable` com o valor de verificação fornecido.
+3. Publicar o site no Lovable.
+4. Editar a página `Seja Parceiro` no projeto do site para enviar o `POST` diretamente para o ERP, usando a mesma URL do endpoint.
+5. Vantagem: manutenção, versionamento e integração futura ficam centralizados na mesma plataforma.
+
+---
+
+## Próximo passo imediato
+
+Validar a integração ponta a ponta:
+1. Enviar uma candidatura de teste pelo site.
+2. Verificar se o registro aparece na tela **Comercial → Captação de Parceiros** no ERP.
+3. Aprovar a candidatura de teste para confirmar que Motorista e Veículo agregado são criados corretamente.
+
+## Entregáveis deste plano
+- Snippet pronto para copiar e colar na HostGator (Opção A).
+- Instruções de como migrar o site para Lovable com domínio customizado (Opção B).
+- Confirmação de que a API pública já está protegida por CORS e validação de dados.
