@@ -371,7 +371,7 @@ function HunterPage() {
         </div>
       )}
 
-      {/* Etapa 2 — decisores (LinkedIn público + site da empresa + IA + Apollo) */}
+      {/* Etapa 2 — decisores (LinkedIn público + site da empresa + IA) */}
       <Sheet
         open={!!selecionada}
         onOpenChange={(o) => {
@@ -402,9 +402,10 @@ function HunterPage() {
               <div className="flex flex-wrap gap-1.5">
                 {[
                   ["LinkedIn público", fontes.linkedin],
+                  ["Perfis enriquecidos", fontes.linkedinConectado],
                   ["Site da empresa", fontes.site],
                   ["IA + web", fontes.ia],
-                  ["Apollo.io", fontes.apollo],
+
                 ].map(([rotulo, ok]) => (
                   <Badge
                     key={rotulo as string}

@@ -290,3 +290,68 @@ export async function linkedinStatus(): Promise<{ conectado: boolean; nome: stri
     return { conectado: false, nome: null };
   }
 }
+
+/**
+ * Enriquecimento profundo dos perfis do LinkedIn: raspa a página pública de cada
+ * perfil (via Firecrawl) para extrair cargo real, e-mail/telefone quando o próprio
+ * profissional os publica no perfil (seção "Contato"/"Sobre").
+ *
+ * Observação importante: a API oficial do LinkedIn NÃO expõe e-mail ou telefone de
+ * terceiros — só do usuário conectado. Portanto os dados vêm de conteúdo público.
+ */
+export async function enriquecerPerfisLinkedIn(perfis: DecisorRico[]): Promise<DecisorRico[]> {
+  const alvos = perfis.filter((p) => p.linkedin_url).slice(0, 6);
+  if (alvos.length === 0) return perfis;
+
+  const enriquecidos = await Promise.all(
+    alvos.map(async (p) => {
+      const res = await firecrawl<{ markdown?: string; data?: { markdown?: string } }>("/scrape", {
+        url: p.linkedin_url,
+        formats: ["markdown"],
+        onlyMainContent: true,
+      });
+      const md = res?.data?.markdown ?? res?.markdown;
+      if (!md) return p;
+
+      const email = (md.match(EMAIL_RE) ?? [])
+        .map((e) => e.toLowerCase())
+        .find((e) => !/(linkedin|licdn|example|no-?reply)/i.test(e));
+      const telefone = (md.match(TEL_RE) ?? [])[0] ?? null;
+
+      return {
+        ...p,
+        email: p.email ?? email ?? null,
+        telefone: p.telefone ?? telefone,
+        resumo: p.resumo ?? md.slice(0, 400),
+        confianca: email || telefone ? ("alta" as const) : p.confianca,
+      };
+    }),
+  );
+
+  const mapa = new Map(enriquecidos.map((d) => [d.linkedin_url, d]));
+  return perfis.map((p) => (p.linkedin_url && mapa.get(p.linkedin_url)) || p);
+}
+
+/** Padrões corporativos mais comuns no Brasil, usados como e-mail provável. */
+export function inferirEmailProvavel(nome: string, dominio: string | null, exemplos: string[]): string | null {
+  if (!dominio) return null;
+  const partes = nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 1 && !["de", "da", "do", "dos", "das"].includes(p));
+  if (partes.length < 2) return null;
+  const primeiro = partes[0]!;
+  const ultimo = partes[partes.length - 1]!;
+
+  // Detecta o padrão a partir de e-mails reais do site (ex.: nome.sobrenome@)
+  const amostra = exemplos.find((e) => e.endsWith(`@${dominio}`) && /[a-z]+[._][a-z]+@/.test(e));
+  if (amostra) {
+    const sep = amostra.split("@")[0]!.includes(".") ? "." : "_";
+    return `${primeiro}${sep}${ultimo}@${dominio}`;
+  }
+  return `${primeiro}.${ultimo}@${dominio}`;
+}
