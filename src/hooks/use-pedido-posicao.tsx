@@ -55,20 +55,63 @@ async function capturarPosicao(): Promise<GeolocationCoordinates | null> {
   });
 }
 
+/** Evita repetir a confirmação de abertura em recargas seguidas. */
+const CONFIRMA_ABERTURA_MS = 2 * 60_000;
+
 /**
  * App do motorista: escuta pedidos de posição da operação em tempo real
  * (com conferência periódica de 60 s), captura o GPS na hora, grava o ponto,
  * responde o pedido e avisa o motorista por notificação no aparelho.
+ *
+ * Além disso, ao abrir o app (e ao voltar ao primeiro plano) o app confirma a
+ * posição atual das viagens em andamento — assim o botão "Centralizar" da
+ * operação nunca falha por falta de dados.
  */
-/** Evita repetir a confirmação de abertura em recargas seguidas. */
-const CONFIRMA_ABERTURA_MS = 2 * 60_000;
-
 export function usePedidoPosicaoMotorista() {
   const { user, role } = useAuth();
   const isMotorista = role === "motorista";
   const motoristaIdRef = useRef<string | null>(null);
   const busyRef = useRef(false);
   const ultimaConfirmacaoRef = useRef(0);
+
+  useEffect(() => {
+    if (!isMotorista || !user?.id) return;
+    let cancelled = false;
+
+    /** Grava um ponto imediato para cada viagem em andamento. */
+    const confirmarPosicaoAbertura = async () => {
+      if (cancelled) return;
+      if (Date.now() - ultimaConfirmacaoRef.current < CONFIRMA_ABERTURA_MS) return;
+      const mid = motoristaIdRef.current;
+      if (!mid) return;
+
+      const { data: viagens } = await supabase
+        .from("viagens")
+        .select("id, motorista_id, veiculo_id")
+        .eq("motorista_id", mid)
+        .eq("status", "em_andamento");
+      if (cancelled || !viagens?.length) return;
+
+      const coords = await capturarPosicao();
+      if (cancelled || !coords) return;
+      ultimaConfirmacaoRef.current = Date.now();
+
+      await supabase.from("viagem_localizacoes").insert(
+        viagens.map((v) => ({
+          viagem_id: v.id,
+          motorista_id: v.motorista_id,
+          veiculo_id: v.veiculo_id,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          precisao: coords.accuracy ?? null,
+          velocidade: coords.speed ?? null,
+          heading: coords.heading ?? null,
+          online: typeof navigator !== "undefined" ? navigator.onLine : true,
+        })),
+      );
+    };
+
+
 
 
     const atender = async (pedido: PedidoPosicao) => {
