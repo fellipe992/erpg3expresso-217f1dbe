@@ -22,6 +22,7 @@ import {
   Calculator,
   MessagesSquare,
   Crosshair,
+  Handshake,
 
 
 
@@ -81,6 +82,7 @@ const operacional: NavItem[] = [
 const comercial: NavItem[] = [
   { label: "Funil de vendas", to: "/app/crm/funil", icon: KanbanSquare },
   { label: "Hunter", to: "/app/crm/hunter", icon: Crosshair },
+  { label: "Captação de parceiros", to: "/app/parceiros", icon: Handshake },
 ];
 
 
