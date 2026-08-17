@@ -293,7 +293,9 @@ export function mesclarDecisores(listas: DecisorRico[][]): DecisorRico[] {
     (d.email ? 3 : 0) + (d.telefone ? 2 : 0) + (d.linkedin_url ? 2 : 0) + (d.cargo ? 1 : 0);
 
   for (const lista of listas) {
+    if (!Array.isArray(lista)) continue;
     for (const d of lista) {
+
       const chave = d.nome.toLowerCase().replace(/[^a-zà-ú\s]/gi, "").trim();
       const atual = mapa.get(chave);
       if (!atual) {
