@@ -39,25 +39,30 @@ function firecrawlHeaders() {
   } as Record<string, string>;
 }
 
-async function firecrawl<T>(path: string, body: unknown): Promise<T | null> {
+async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promise<T | null> {
   const headers = firecrawlHeaders();
   if (!headers) return null;
-  try {
-    const res = await fetch(`${FIRECRAWL_V2}${path}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      console.error(`[hunter] Firecrawl ${path} falhou [${res.status}]: ${await res.text()}`);
-      return null;
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      const res = await fetch(`${FIRECRAWL_V2}${path}`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (res.ok) return (await res.json()) as T;
+      const texto = await res.text();
+      const recuperavel = res.status === 429 || res.status >= 500;
+      console.error(`[hunter] Firecrawl ${path} falhou [${res.status}]: ${texto}`);
+      if (!recuperavel || i === tentativas - 1) return null;
+    } catch (e) {
+      console.error(`[hunter] Firecrawl ${path} erro:`, e);
+      if (i === tentativas - 1) return null;
     }
-    return (await res.json()) as T;
-  } catch (e) {
-    console.error(`[hunter] Firecrawl ${path} erro:`, e);
-    return null;
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
   }
+  return null;
 }
+
 
 type SearchResult = { url?: string; title?: string; description?: string; markdown?: string };
 
