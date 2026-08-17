@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
+import { usePedidoPosicaoMotorista } from "@/hooks/use-pedido-posicao";
 import type { ReactNode } from "react";
 
 const tabs = [
