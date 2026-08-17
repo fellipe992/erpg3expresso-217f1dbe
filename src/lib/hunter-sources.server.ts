@@ -39,15 +39,25 @@ function firecrawlHeaders() {
   } as Record<string, string>;
 }
 
-async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promise<T | null> {
+/** Espaça as chamadas ao Firecrawl (plano gratuito: ~10 req/min) e evita travar a requisição. */
+let ultimaChamada = 0;
+async function aguardarVez() {
+  const espera = Math.max(0, 900 - (Date.now() - ultimaChamada));
+  if (espera > 0) await new Promise((r) => setTimeout(r, espera));
+  ultimaChamada = Date.now();
+}
+
+async function firecrawl<T>(path: string, body: unknown, tentativas = 2): Promise<T | null> {
   const headers = firecrawlHeaders();
   if (!headers) return null;
   for (let i = 0; i < tentativas; i++) {
+    await aguardarVez();
     try {
       const res = await fetch(`${FIRECRAWL_V2}${path}`, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25000),
       });
       if (res.ok) return (await res.json()) as T;
       const texto = await res.text();
@@ -58,10 +68,11 @@ async function firecrawl<T>(path: string, body: unknown, tentativas = 3): Promis
       console.error(`[hunter] Firecrawl ${path} erro:`, e);
       if (i === tentativas - 1) return null;
     }
-    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+    await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
   }
   return null;
 }
+
 
 
 type SearchResult = { url?: string; title?: string; description?: string; markdown?: string };
@@ -151,7 +162,7 @@ export async function raspagemSite(dominio: string): Promise<DadosSite | null> {
   const candidatas = (Array.isArray(doc.links) ? doc.links : [])
     .filter((l) => /contato|contact|quem-somos|sobre|equipe|team|institucional|fale/i.test(l))
     .filter((l) => l.includes(dominio))
-    .slice(0, 3);
+    .slice(0, 2);
 
   let markdown = doc.markdown ?? "";
   for (const url of candidatas) {
@@ -257,6 +268,7 @@ export async function consolidarComIa(params: {
         ],
         response_format: { type: "json_object" },
       }),
+      signal: AbortSignal.timeout(45000),
     });
     if (!res.ok) {
       console.error(`[hunter] IA falhou [${res.status}]: ${await res.text()}`);
@@ -337,45 +349,31 @@ export async function linkedinStatus(): Promise<{ conectado: boolean; nome: stri
 }
 
 /**
- * Enriquecimento profundo dos perfis do LinkedIn: raspa a página pública de cada
- * perfil (via Firecrawl) para extrair cargo real, e-mail/telefone quando o próprio
- * profissional os publica no perfil (seção "Contato"/"Sobre").
+ * Enriquecimento dos perfis do LinkedIn a partir do snippet público da busca.
  *
- * Observação importante: a API oficial do LinkedIn NÃO expõe e-mail ou telefone de
- * terceiros — só do usuário conectado. Portanto os dados vêm de conteúdo público.
+ * O LinkedIn bloqueia raspagem de páginas de perfil (o Firecrawl responde 403
+ * "site não suportado"), por isso NÃO fazemos scrape de /in/ — usamos apenas o
+ * título e a descrição já retornados pela busca. E-mail/telefone de terceiros
+ * também não são expostos pela API oficial do LinkedIn.
  */
 export async function enriquecerPerfisLinkedIn(perfis: DecisorRico[]): Promise<DecisorRico[]> {
-  const alvos = perfis.filter((p) => p.linkedin_url).slice(0, 6);
-  if (alvos.length === 0) return perfis;
+  if (!Array.isArray(perfis) || perfis.length === 0) return [];
 
-  const enriquecidos = await Promise.all(
-    alvos.map(async (p) => {
-      const res = await firecrawl<{ markdown?: string; data?: { markdown?: string } }>("/scrape", {
-        url: p.linkedin_url,
-        formats: ["markdown"],
-        onlyMainContent: true,
-      });
-      const md = res?.data?.markdown ?? res?.markdown;
-      if (!md) return p;
-
-      const email = (md.match(EMAIL_RE) ?? [])
-        .map((e) => e.toLowerCase())
-        .find((e) => !/(linkedin|licdn|example|no-?reply)/i.test(e));
-      const telefone = (md.match(TEL_RE) ?? [])[0] ?? null;
-
-      return {
-        ...p,
-        email: p.email ?? email ?? null,
-        telefone: p.telefone ?? telefone,
-        resumo: p.resumo ?? md.slice(0, 400),
-        confianca: email || telefone ? ("alta" as const) : p.confianca,
-      };
-    }),
-  );
-
-  const mapa = new Map(enriquecidos.map((d) => [d.linkedin_url, d]));
-  return perfis.map((p) => (p.linkedin_url && mapa.get(p.linkedin_url)) || p);
+  return perfis.map((p) => {
+    const texto = p.resumo ?? "";
+    const email = (texto.match(EMAIL_RE) ?? [])
+      .map((e) => e.toLowerCase())
+      .find((e) => !/(linkedin|licdn|example|no-?reply)/i.test(e));
+    const telefone = (texto.match(TEL_RE) ?? [])[0] ?? null;
+    return {
+      ...p,
+      email: p.email ?? email ?? null,
+      telefone: p.telefone ?? telefone,
+      confianca: email || telefone ? ("alta" as const) : p.confianca,
+    };
+  });
 }
+
 
 /** Padrões corporativos mais comuns no Brasil, usados como e-mail provável. */
 export function inferirEmailProvavel(nome: string, dominio: string | null, exemplos: string[]): string | null {
