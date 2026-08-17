@@ -175,8 +175,12 @@ export function usePedidoPosicaoMotorista() {
       }
     };
 
-    void verificar();
+    void (async () => {
+      await verificar();
+      await confirmarPosicaoAbertura().catch(() => undefined);
+    })();
     const timer = window.setInterval(() => void verificar(), CHECK_INTERVAL_MS);
+
 
     const channel = supabase
       .channel("pedidos-posicao-motorista")
