@@ -505,7 +505,7 @@ function HunterPage() {
                     {d.resumo && <div className="text-xs text-muted-foreground">{d.resumo}</div>}
                     {d.linkedin_url && (
                       <a
-                        href={d.linkedin_url}
+                        href={linkLinkedin(d.linkedin_url)}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="inline-flex items-center gap-1.5 text-brand hover:underline"
