@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { BiDados, LancBi } from "@/hooks/use-bi-dados";
 
@@ -128,7 +128,10 @@ export function MultiSelect({
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <ScrollArea className="max-h-64">
+        <div
+          className="max-h-64 overflow-y-auto overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+        >
           <div className="space-y-0.5 pr-1">
             {filtradas.length === 0 && (
               <p className="px-2 py-4 text-center text-xs text-muted-foreground">Nenhum resultado.</p>
@@ -158,7 +161,8 @@ export function MultiSelect({
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
+
         {value.length > 0 && (
           <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => onChange([])}>
             Limpar seleção
