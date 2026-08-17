@@ -1,0 +1,1 @@
+DELETE FROM public.parceiros_candidaturas WHERE nome = 'Teste Parceiro QA';
