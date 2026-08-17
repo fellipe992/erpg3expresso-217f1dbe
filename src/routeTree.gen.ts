@@ -19,6 +19,7 @@ import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
+import { Route as ApiPublicParceirosRouteImport } from './routes/api/public/parceiros'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
@@ -97,6 +98,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiPublicParceirosRoute = ApiPublicParceirosRouteImport.update({
+  id: '/api/public/parceiros',
+  path: '/api/public/parceiros',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppVeiculosRoute =
   AuthenticatedAppVeiculosRouteImport.update({
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -425,6 +434,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/api/public/parceiros'
     | '/app/'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/api/public/parceiros'
     | '/app'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -506,6 +517,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
+    | '/api/public/parceiros'
     | '/_authenticated/app/'
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
@@ -523,6 +535,7 @@ export interface RootRouteChildren {
   ApiOtimizarRotaRoute: typeof ApiOtimizarRotaRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
+  ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/parceiros': {
+      id: '/api/public/parceiros'
+      path: '/api/public/parceiros'
+      fullPath: '/api/public/parceiros'
+      preLoaderRoute: typeof ApiPublicParceirosRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/veiculos': {
       id: '/_authenticated/app/veiculos'
@@ -882,6 +902,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOtimizarRotaRoute: ApiOtimizarRotaRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
+  ApiPublicParceirosRoute: ApiPublicParceirosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

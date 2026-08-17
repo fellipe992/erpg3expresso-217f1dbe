@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/public/parceiros")({
           experiencia: clean(parsed.experiencia),
           sobre: clean(parsed.sobre),
           origem: "site",
-          payload: parsed as unknown as Record<string, unknown>,
+          payload: JSON.parse(JSON.stringify(parsed)),
         };
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
