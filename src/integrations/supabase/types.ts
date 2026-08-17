@@ -1304,6 +1304,120 @@ export type Database = {
         }
         Relationships: []
       }
+      parceiros_candidaturas: {
+        Row: {
+          ano: number | null
+          aprovado_em: string | null
+          aprovado_por: string | null
+          capacidade_kg: number | null
+          carroceria: string | null
+          cidade: string | null
+          created_at: string
+          documento: string | null
+          email: string | null
+          experiencia: string | null
+          id: string
+          marca_modelo: string | null
+          motivo_rejeicao: string | null
+          motorista_id: string | null
+          nome: string
+          numero_antt: string | null
+          origem: string
+          payload: Json
+          placa: string | null
+          regioes: string | null
+          sobre: string | null
+          status: string
+          telefone: string | null
+          tem_antt: boolean | null
+          tipo_veiculo: string | null
+          tipos_carga: string | null
+          uf: string | null
+          updated_at: string
+          veiculo_id: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          ano?: number | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          capacidade_kg?: number | null
+          carroceria?: string | null
+          cidade?: string | null
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          experiencia?: string | null
+          id?: string
+          marca_modelo?: string | null
+          motivo_rejeicao?: string | null
+          motorista_id?: string | null
+          nome: string
+          numero_antt?: string | null
+          origem?: string
+          payload?: Json
+          placa?: string | null
+          regioes?: string | null
+          sobre?: string | null
+          status?: string
+          telefone?: string | null
+          tem_antt?: boolean | null
+          tipo_veiculo?: string | null
+          tipos_carga?: string | null
+          uf?: string | null
+          updated_at?: string
+          veiculo_id?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          ano?: number | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          capacidade_kg?: number | null
+          carroceria?: string | null
+          cidade?: string | null
+          created_at?: string
+          documento?: string | null
+          email?: string | null
+          experiencia?: string | null
+          id?: string
+          marca_modelo?: string | null
+          motivo_rejeicao?: string | null
+          motorista_id?: string | null
+          nome?: string
+          numero_antt?: string | null
+          origem?: string
+          payload?: Json
+          placa?: string | null
+          regioes?: string | null
+          sobre?: string | null
+          status?: string
+          telefone?: string | null
+          tem_antt?: boolean | null
+          tipo_veiculo?: string | null
+          tipos_carga?: string | null
+          uf?: string | null
+          updated_at?: string
+          veiculo_id?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parceiros_candidaturas_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parceiros_candidaturas_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plano_auditoria: {
         Row: {
           acao: string

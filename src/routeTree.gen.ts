@@ -19,6 +19,7 @@ import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
+import { Route as ApiPublicParceirosRouteImport } from './routes/api/public/parceiros'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
@@ -28,6 +29,7 @@ import { Route as AuthenticatedAppRelatoriosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
 import { Route as AuthenticatedAppPlanoContasRouteImport } from './routes/_authenticated/app/plano-contas'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app/perfil'
+import { Route as AuthenticatedAppParceirosRouteImport } from './routes/_authenticated/app/parceiros'
 import { Route as AuthenticatedAppPagarRouteImport } from './routes/_authenticated/app/pagar'
 import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_authenticated/app/notificacoes'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
@@ -98,6 +100,11 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicParceirosRoute = ApiPublicParceirosRouteImport.update({
+  id: '/api/public/parceiros',
+  path: '/api/public/parceiros',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppVeiculosRoute =
   AuthenticatedAppVeiculosRouteImport.update({
     id: '/app/veiculos',
@@ -150,6 +157,12 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/app/perfil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppParceirosRoute =
+  AuthenticatedAppParceirosRouteImport.update({
+    id: '/app/parceiros',
+    path: '/app/parceiros',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppPagarRoute = AuthenticatedAppPagarRouteImport.update({
   id: '/app/pagar',
   path: '/app/pagar',
@@ -292,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
+  '/app/parceiros': typeof AuthenticatedAppParceirosRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
@@ -301,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -332,6 +347,7 @@ export interface FileRoutesByTo {
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
+  '/app/parceiros': typeof AuthenticatedAppParceirosRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
@@ -341,6 +357,7 @@ export interface FileRoutesByTo {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -374,6 +391,7 @@ export interface FileRoutesById {
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/_authenticated/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
   '/_authenticated/app/pagar': typeof AuthenticatedAppPagarRoute
+  '/_authenticated/app/parceiros': typeof AuthenticatedAppParceirosRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
@@ -383,6 +401,7 @@ export interface FileRoutesById {
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -416,6 +435,7 @@ export interface FileRouteTypes {
     | '/app/motoristas'
     | '/app/notificacoes'
     | '/app/pagar'
+    | '/app/parceiros'
     | '/app/perfil'
     | '/app/plano-contas'
     | '/app/receber'
@@ -425,6 +445,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/api/public/parceiros'
     | '/app/'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -456,6 +477,7 @@ export interface FileRouteTypes {
     | '/app/motoristas'
     | '/app/notificacoes'
     | '/app/pagar'
+    | '/app/parceiros'
     | '/app/perfil'
     | '/app/plano-contas'
     | '/app/receber'
@@ -465,6 +487,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/api/public/parceiros'
     | '/app'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -497,6 +520,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/motoristas'
     | '/_authenticated/app/notificacoes'
     | '/_authenticated/app/pagar'
+    | '/_authenticated/app/parceiros'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plano-contas'
     | '/_authenticated/app/receber'
@@ -506,6 +530,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
+    | '/api/public/parceiros'
     | '/_authenticated/app/'
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
@@ -523,6 +548,7 @@ export interface RootRouteChildren {
   ApiOtimizarRotaRoute: typeof ApiOtimizarRotaRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
+  ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -597,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/parceiros': {
+      id: '/api/public/parceiros'
+      path: '/api/public/parceiros'
+      fullPath: '/api/public/parceiros'
+      preLoaderRoute: typeof ApiPublicParceirosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/veiculos': {
       id: '/_authenticated/app/veiculos'
       path: '/app/veiculos'
@@ -658,6 +691,13 @@ declare module '@tanstack/react-router' {
       path: '/app/perfil'
       fullPath: '/app/perfil'
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/parceiros': {
+      id: '/_authenticated/app/parceiros'
+      path: '/app/parceiros'
+      fullPath: '/app/parceiros'
+      preLoaderRoute: typeof AuthenticatedAppParceirosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/pagar': {
@@ -820,6 +860,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
   AuthenticatedAppNotificacoesRoute: typeof AuthenticatedAppNotificacoesRoute
   AuthenticatedAppPagarRoute: typeof AuthenticatedAppPagarRoute
+  AuthenticatedAppParceirosRoute: typeof AuthenticatedAppParceirosRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppPlanoContasRoute: typeof AuthenticatedAppPlanoContasRoute
   AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
@@ -853,6 +894,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
   AuthenticatedAppNotificacoesRoute: AuthenticatedAppNotificacoesRoute,
   AuthenticatedAppPagarRoute: AuthenticatedAppPagarRoute,
+  AuthenticatedAppParceirosRoute: AuthenticatedAppParceirosRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppPlanoContasRoute: AuthenticatedAppPlanoContasRoute,
   AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,
@@ -882,6 +924,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOtimizarRotaRoute: ApiOtimizarRotaRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
+  ApiPublicParceirosRoute: ApiPublicParceirosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
