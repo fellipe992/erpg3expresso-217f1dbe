@@ -582,6 +582,66 @@ export type Database = {
           },
         ]
       }
+      crm_emails_enviados: {
+        Row: {
+          assunto: string
+          company_id: string | null
+          contato_nome: string | null
+          created_at: string
+          destinatario: string
+          detalhe: string | null
+          empresa: string
+          enviado_por: string | null
+          id: string
+          lead_id: string | null
+          status: string
+          template: string
+        }
+        Insert: {
+          assunto: string
+          company_id?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          destinatario: string
+          detalhe?: string | null
+          empresa: string
+          enviado_por?: string | null
+          id?: string
+          lead_id?: string | null
+          status?: string
+          template?: string
+        }
+        Update: {
+          assunto?: string
+          company_id?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          destinatario?: string
+          detalhe?: string | null
+          empresa?: string
+          enviado_por?: string | null
+          id?: string
+          lead_id?: string | null
+          status?: string
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_emails_enviados_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_emails_enviados_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_etapas: {
         Row: {
           ativo: boolean
