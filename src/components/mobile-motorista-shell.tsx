@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
+import { usePedidoPosicaoMotorista } from "@/hooks/use-pedido-posicao";
 import type { ReactNode } from "react";
 
 const tabs = [
@@ -19,6 +20,7 @@ const tabs = [
 export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
   useMotoristaAutoTracking();
+  usePedidoPosicaoMotorista();
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">

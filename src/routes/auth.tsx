@@ -67,7 +67,7 @@ function AuthPage() {
       const { data: profile } = await supabase
         .from("profiles").select("ativo").eq("id", uid).maybeSingle();
       if (profile && profile.ativo === false) {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         setLoading(false);
         toast.error("Acesso bloqueado", {
           description: "Seu acesso está desativado. Entre em contato com o administrador.",

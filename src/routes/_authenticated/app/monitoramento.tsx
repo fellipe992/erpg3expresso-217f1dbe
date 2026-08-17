@@ -11,6 +11,8 @@ import {
   Wifi,
   WifiOff,
   Locate,
+  Loader2,
+  Crosshair,
   ExternalLink,
   Radar,
 } from "lucide-react";
@@ -22,6 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
 
 export const Route = createFileRoute("/_authenticated/app/monitoramento")({
   head: () => ({
@@ -101,6 +105,7 @@ function MonitoramentoPage() {
 
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [pedindoId, setPedindoId] = useState<string | null>(null);
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -344,9 +349,34 @@ function MonitoramentoPage() {
   }
 
 
+  async function pedirPosicao(v: ViagemAtiva, silencioso = false) {
+    if (pedindoId) return;
+    setPedindoId(v.id);
+    try {
+      await criarPedidoPosicao({
+        viagemId: v.id,
+        motoristaId: v.motorista?.id ?? null,
+        veiculoId: v.veiculo?.id ?? null,
+        placa: v.veiculo?.placa ?? null,
+      });
+      if (!silencioso) {
+        toast.success("Pedido de posição enviado", {
+          description: "O app do motorista responde em instantes.",
+        });
+      }
+    } catch (e) {
+      toast.error("Não foi possível pedir a posição", { description: (e as Error).message });
+    } finally {
+      setPedindoId(null);
+    }
+  }
+
   function centralizar(v: ViagemAtiva) {
     const l = locsByViagem[v.id];
     const map = mapRef.current;
+    // Posição ausente ou velha: pede uma atualização ao app do motorista.
+    const velha = !l || Date.now() - new Date(l.created_at).getTime() > POSICAO_OBSOLETA_MS;
+    if (velha) void pedirPosicao(v, true);
     if (!l || !map) return;
     map.panTo({ lat: l.latitude, lng: l.longitude });
     map.setZoom(15);
@@ -488,7 +518,7 @@ function MonitoramentoPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -497,10 +527,28 @@ function MonitoramentoPage() {
                       e.stopPropagation();
                       centralizar(v);
                     }}
-                    disabled={!l}
                   >
                     <Locate className="mr-1 size-3" /> Centralizar
                   </Button>
+                  {!isMonitor && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 flex-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void pedirPosicao(v);
+                      }}
+                      disabled={pedindoId === v.id}
+                    >
+                      {pedindoId === v.id ? (
+                        <Loader2 className="mr-1 size-3 animate-spin" />
+                      ) : (
+                        <Crosshair className="mr-1 size-3" />
+                      )}
+                      Pedir posição
+                    </Button>
+                  )}
                   {!isMonitor && (
                     <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
                       <Link
