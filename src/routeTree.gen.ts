@@ -47,6 +47,7 @@ import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authenticated/app/alertas'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
 import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
@@ -261,6 +262,12 @@ const AuthenticatedAppViagensIndexRoute =
     path: '/app/viagens/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAppViagensIdRoute =
   AuthenticatedAppViagensIdRouteImport.update({
     id: '/app/viagens/$id',
@@ -320,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
 export interface FileRoutesByTo {
@@ -362,6 +370,7 @@ export interface FileRoutesByTo {
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
 export interface FileRoutesById {
@@ -406,6 +415,7 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
 export interface FileRouteTypes {
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/viagens/$id'
+    | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -492,6 +503,7 @@ export interface FileRouteTypes {
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/viagens/$id'
+    | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
     | '__root__'
@@ -535,6 +547,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
     | '/_authenticated/app/viagens/$id'
+    | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
 }
@@ -549,6 +562,7 @@ export interface RootRouteChildren {
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -819,6 +833,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppViagensIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/viagens/$id': {
       id: '/_authenticated/app/viagens/$id'
       path: '/app/viagens/$id'
@@ -925,6 +946,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
