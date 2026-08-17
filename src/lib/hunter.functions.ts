@@ -248,3 +248,131 @@ export const adicionarContatoCrm = createServerFn({ method: "POST" })
 
     return { ok: true, leadId: lead.id as string };
   });
+
+
+/**
+ * Envia o e-mail de apresentação da G3 para um decisor específico (1 clique = 1 destinatário),
+ * registra o primeiro contato no funil (lead + atividade) e grava o histórico de envios.
+ */
+export const enviarApresentacao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      companyId: string;
+      nome?: string | null;
+      cargo?: string | null;
+      email: string;
+      telefone?: string | null;
+      linkedin_url?: string | null;
+    }) => {
+      if (!data?.companyId) throw new Error("Empresa inválida.");
+      const email = (data?.email ?? "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) throw new Error("E-mail do contato inválido.");
+      return { ...data, email };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { data: empresa, error: errEmpresa } = await context.supabase
+      .from("companies")
+      .select("id, nome, cidade, segmento, telefone, website, endereco")
+      .eq("id", data.companyId)
+      .maybeSingle();
+    if (errEmpresa) throw new Error(errEmpresa.message);
+    if (!empresa) throw new Error("Empresa não encontrada.");
+
+    const nomeEmpresa = empresa.nome as string;
+    const primeiroNome = (data.nome ?? "").trim().split(/\s+/)[0] ?? "";
+
+    // 1) Lead no funil — reaproveita se o e-mail já existir.
+    const { data: existente } = await context.supabase
+      .from("crm_leads")
+      .select("id")
+      .eq("email", data.email)
+      .limit(1)
+      .maybeSingle();
+
+    let leadId = existente?.id as string | undefined;
+    if (!leadId) {
+      const { data: lead, error: errLead } = await context.supabase
+        .from("crm_leads")
+        .insert({
+          empresa: nomeEmpresa,
+          contato_nome: data.nome ?? null,
+          cargo: data.cargo ?? null,
+          email: data.email,
+          telefone: data.telefone ?? (empresa.telefone as string | null),
+          cidade: (empresa.cidade as string | null) ?? null,
+          segmento: (empresa.segmento as string | null) ?? null,
+          origem: "Prospecção ativa",
+          classificacao: "C",
+          prioridade: "baixa",
+          status: "aberto",
+          etiquetas: ["Hunter", "E-mail enviado"],
+          observacoes: [empresa.endereco, empresa.website, data.linkedin_url].filter(Boolean).join(" · ") || null,
+          created_by: context.userId,
+        })
+        .select("id")
+        .single();
+      if (errLead) throw new Error(errLead.message);
+      leadId = lead.id as string;
+    }
+
+    // 2) Envio individual do e-mail de apresentação.
+    const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+    let status = "enviado";
+    let detalhe: string | null = null;
+    try {
+      const res = await sendTemplateEmail("apresentacao-g3", data.email, {
+        templateData: { nome: primeiroNome, empresa: nomeEmpresa },
+        idempotencyKey: `apresentacao-g3-${data.companyId}-${data.email}`,
+      });
+      if (!res.sent) {
+        status = "bloqueado";
+        detalhe = "Destinatário está na lista de bloqueio (bounce, reclamação ou descadastro).";
+      }
+    } catch (e) {
+      const err = e as { code?: string; status?: number; message?: string };
+      status = "falhou";
+      detalhe =
+        err.code === "domain_not_verified"
+          ? "O domínio de envio ainda não foi verificado no DNS."
+          : err.status === 429
+            ? "Limite de envios por hora atingido. Tente novamente em alguns minutos."
+            : (err.message ?? "Falha no envio.");
+    }
+
+    const assunto = "Como está a entrega dos seus produtos até o cliente final?";
+
+    // 3) Histórico de disparos.
+    await context.supabase.from("crm_emails_enviados").insert({
+      company_id: empresa.id as string,
+      lead_id: leadId,
+      empresa: nomeEmpresa,
+      contato_nome: data.nome ?? null,
+      destinatario: data.email,
+      assunto,
+      template: "apresentacao-g3",
+      status,
+      detalhe,
+      enviado_por: context.userId,
+    });
+
+    if (status === "enviado") {
+      // 4) Timeline do CRM + último contato do lead.
+      await context.supabase.from("crm_atividades").insert({
+        tipo: "email",
+        titulo: "E-mail de apresentação enviado",
+        descricao: `Apresentação da G3 Expresso enviada para ${data.email}${data.nome ? ` (${data.nome})` : ""}.`,
+        lead_id: leadId,
+        usuario_id: context.userId,
+        metadata: { template: "apresentacao-g3", assunto, destinatario: data.email },
+      });
+
+      await context.supabase
+        .from("crm_leads")
+        .update({ ultimo_contato: new Date().toISOString(), status: "em_contato" })
+        .eq("id", leadId);
+    }
+
+    return { status, detalhe, leadId };
+  });
