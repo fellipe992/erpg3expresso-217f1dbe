@@ -81,7 +81,7 @@ export function UploadFotos({
 }: Props) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
-  const aceitaImagem = accept.includes("image");
+  const aceitaImagem = accept.trim() === "image/*";
   const usarCameraNativa = isNative() && aceitaImagem;
 
   const enviar = async (list: File[]) => {
