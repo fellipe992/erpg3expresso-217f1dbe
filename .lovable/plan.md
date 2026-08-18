@@ -1,28 +1,38 @@
-# Liberar o envio de e-mails: corrigir a delegação DNS
+# Liberar o envio de e-mails: alternativas de DNS
 
-## O que a verificação mostrou
+## O que aconteceu
 
-Consultei o DNS público agora:
+Você confirmou que o Zone Editor do cPanel não oferece o tipo de registro **NS**. Sem registros NS no subdomínio `notify.g3expresso.com.br`, a Lovable não consegue assumir essa zona e gerenciar SPF/DKIM/MX, então o domínio fica preso em "Pendente" e nenhum e-mail sai.
 
-- TXT `_lovable-email.g3expresso.com.br` → **correto**, já publicado com o valor esperado.
-- `notify.g3expresso.com.br` → **errado**: foi criado como um registro **CNAME** apontando para `ns5.lovable.cloud`, e não como dois registros **NS**. Também falta o segundo servidor (`ns6.lovable.cloud`).
+Isso é uma limitação do painel DNS que você está usando hoje — não dá para contornar com outros tipos de registro (A, CNAME, TXT etc.).
 
-Por isso o domínio continua em "Pendente": sem os registros NS, a Lovable não consegue assumir a zona `notify.g3expresso.com.br` e nenhum e-mail sai.
+## Alternativas viáveis
 
-## O que precisa ser feito no cPanel (Zone Editor)
+### Opção 1 — Migrar o DNS para Cloudflare (recomendada, mais rápida)
 
-1. **Remover** o registro atual `notify` do tipo **CNAME** (valor `ns5.lovable.cloud`).
-2. **Adicionar** dois registros do tipo **NS**:
-   - Nome: `notify` — Valor: `ns5.lovable.cloud`
-   - Nome: `notify` — Valor: `ns6.lovable.cloud`
-3. Manter o TXT `_lovable-email` como está (já está certo).
-4. Não alterar A, MX ou CNAME existentes do domínio principal.
+Cloudflare tem plano gratuito e suporta registros NS para subdomínios.
 
-Se o Zone Editor do cPanel não oferecer o tipo NS na tela simples, use a opção de edição avançada da zona; caso o painel realmente não permita NS, as alternativas são mover o DNS para um provedor que permita (ex.: Cloudflare, plano gratuito) mantendo o registrador atual.
+1. Crie uma conta gratuita em Cloudflare.
+2. Adicione o domínio `g3expresso.com.br`.
+3. Cloudflare fará uma varredura dos seus registros DNS atuais — revise e confirme para não quebrar site/e-mail existente.
+4. No registrador (Registro.br), troque os nameservers do domínio para os que o Cloudflare indicar.
+5. No Cloudflare, adicione os registros exatos para a Lovable:
+   - TXT `_lovable-email.g3expresso.com.br` → `lovable_email_verify=b0fae125892e925fb64d4b7eb15e94447ee547ebc592e5090ee21acd154e8470`
+   - NS `notify.g3expresso.com.br` → `ns5.lovable.cloud`
+   - NS `notify.g3expresso.com.br` → `ns6.lovable.cloud`
+6. Aguarde a propagação (pode levar até 72h, mas geralmente é minutos).
 
-## Depois disso
+### Opção 2 — Transferir o domínio para a Lovable
 
-Assim que os NS estiverem publicados, eu:
+Se você preferir não gerenciar DNS, pode transferir o domínio para a Lovable (Workspace settings → Workspace domains). Com o domínio na Lovable, a delegação de e-mail é criada automaticamente sem precisar adicionar NS manualmente.
+
+### Opção 3 — Manter cPanel e usar outro subdomínio/delegação
+
+Não é possível com a infraestrutura atual da Lovable: o envio de e-mails exige delegação por NS. Outros tipos de registro não substituem isso.
+
+## Depois que a DNS for ajustada
+
+Assim que os registros NS estiverem publicados, eu:
 
 1. Verifico novamente o status do domínio.
 2. Disparo o e-mail de teste pelo Hunter para o endereço que você indicar.
