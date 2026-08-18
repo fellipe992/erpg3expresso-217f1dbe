@@ -142,7 +142,7 @@ function AuthPage() {
                     <Input id="email" name="email" type="email" autoComplete="email" placeholder="voce@g3expresso.com" required />
                   </Field>
                   <Field id="password" label="Senha" icon={<Lock className="size-4" />}>
-                    <Input id="password" name="password" type="password" autoComplete="current-password" required />
+                    <PasswordInput id="password" name="password" autoComplete="current-password" required />
                   </Field>
                   <div className="flex justify-end">
                     <button
