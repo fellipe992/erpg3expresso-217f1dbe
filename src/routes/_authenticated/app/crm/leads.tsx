@@ -94,7 +94,7 @@ function LeadsPendentesPage() {
       qc.invalidateQueries({ queryKey: ["crm-oportunidades"] });
       qc.invalidateQueries({ queryKey: ["crm-timeline"] });
       toast.success(`${r.enviados} e-mail(s) enviado(s)`, {
-        description: `${r.ignorados} ignorado(s) por duplicidade · ${r.falhas} falha(s).`,
+        description: `${r.ignorados} ignorado(s) por duplicidade · ${r.invalidos ?? 0} e-mail(s) inválido(s) bloqueado(s) · ${r.falhas} falha(s).`,
       });
     },
     onError: (e: Error) => toast.error(e.message),
