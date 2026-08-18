@@ -53,6 +53,7 @@ function LeadsPendentesPage() {
 
   const [busca, setBusca] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [aba, setAba] = useState<"pendentes" | "contatados">("pendentes");
 
   const enviados = useQuery({
     queryKey: ["crm-emails-enviados-destinatarios"],
@@ -67,16 +68,21 @@ function LeadsPendentesPage() {
     },
   });
 
-  const pendentes = useMemo(() => {
+  const { pendentes, contatados } = useMemo(() => {
     const jaEnviados = enviados.data ?? new Set<string>();
     const q = busca.trim().toLowerCase();
-    return leads.filter((l) => {
+    const base = leads.filter((l) => {
       if (!l.email) return false;
-      if (jaEnviados.has(l.email.toLowerCase())) return false;
       if (!q) return true;
       return [l.empresa, l.contato_nome, l.email, l.cidade].some((v) => (v ?? "").toLowerCase().includes(q));
     });
+    return {
+      pendentes: base.filter((l) => !jaEnviados.has((l.email as string).toLowerCase())),
+      contatados: base.filter((l) => jaEnviados.has((l.email as string).toLowerCase())),
+    };
   }, [leads, enviados.data, busca]);
+
+  const visiveis = aba === "pendentes" ? pendentes : contatados;
 
   const lote = useMutation({
     mutationFn: (leadIds: string[]) => enviarLoteFn({ data: { leadIds } }),
@@ -85,6 +91,8 @@ function LeadsPendentesPage() {
       qc.invalidateQueries({ queryKey: ["crm-emails-enviados-destinatarios"] });
       qc.invalidateQueries({ queryKey: ["crm-emails-enviados"] });
       qc.invalidateQueries({ queryKey: ["crm-leads"] });
+      qc.invalidateQueries({ queryKey: ["crm-oportunidades"] });
+      qc.invalidateQueries({ queryKey: ["crm-timeline"] });
       toast.success(`${r.enviados} e-mail(s) enviado(s)`, {
         description: `${r.ignorados} ignorado(s) por duplicidade · ${r.falhas} falha(s).`,
       });
@@ -101,12 +109,32 @@ function LeadsPendentesPage() {
           <MailPlus className="size-5 text-brand" />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-bold">Leads pendentes</h1>
+          <h1 className="font-display text-2xl font-bold">Leads e prospecção</h1>
           <p className="text-sm text-muted-foreground">
-            Leads com e-mail cadastrado que ainda não receberam a apresentação da G3. O disparo em lote nunca repete um
-            destinatário já contatado.
+            Pendentes = ainda sem a apresentação. Contatados = já receberam o e-mail e continuam disponíveis para
+            WhatsApp. Todo envio move o lead para "contatado" e cria a oportunidade no funil de vendas.
           </p>
         </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant={aba === "pendentes" ? "default" : "outline"}
+          onClick={() => setAba("pendentes")}
+        >
+          Pendentes ({pendentes.length})
+        </Button>
+        <Button
+          size="sm"
+          variant={aba === "contatados" ? "default" : "outline"}
+          onClick={() => {
+            setAba("contatados");
+            setSelecionados([]);
+          }}
+        >
+          Já contatados ({contatados.length})
+        </Button>
       </div>
 
       <Card>
@@ -117,55 +145,68 @@ function LeadsPendentesPage() {
             placeholder="Buscar por empresa, contato, e-mail ou cidade"
             className="max-w-sm"
           />
-          <Badge variant="outline">{pendentes.length} pendente(s)</Badge>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelecionados(todosMarcados ? [] : pendentes.map((l) => l.id))}
-              disabled={pendentes.length === 0}
-            >
-              {todosMarcados ? "Limpar seleção" : "Selecionar todos"}
-            </Button>
-            <Button
-              size="sm"
-              disabled={selecionados.length === 0 || lote.isPending}
-              onClick={() => lote.mutate(selecionados)}
-            >
-              {lote.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
-              Enviar lote ({selecionados.length})
-            </Button>
-          </div>
+          {aba === "pendentes" && (
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelecionados(todosMarcados ? [] : pendentes.map((l) => l.id))}
+                disabled={pendentes.length === 0}
+              >
+                {todosMarcados ? "Limpar seleção" : "Selecionar todos"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={selecionados.length === 0 || lote.isPending}
+                onClick={() => lote.mutate(selecionados)}
+              >
+                {lote.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
+                Enviar lote ({selecionados.length})
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {(isPending || enviados.isPending) && <Skeleton className="h-40 w-full" />}
 
-      {!isPending && !enviados.isPending && pendentes.length === 0 && (
+      {!isPending && !enviados.isPending && visiveis.length === 0 && (
         <Card>
           <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
             <MailCheck className="size-4 text-brand" />
-            Nenhum lead pendente — todos os contatos com e-mail já receberam a apresentação.
+            {aba === "pendentes"
+              ? "Nenhum lead pendente — todos os contatos com e-mail já receberam a apresentação."
+              : "Nenhum lead contatado por e-mail ainda."}
           </CardContent>
         </Card>
       )}
 
-      {pendentes.length > 0 && (
+      {visiveis.length > 0 && (
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-          {pendentes.map((l) => {
+          {visiveis.map((l) => {
             const wa = linkWhatsapp(l);
             const marcado = selecionados.includes(l.id);
+            const contatado = aba === "contatados";
             return (
               <div key={l.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-                <Checkbox
-                  checked={marcado}
-                  onCheckedChange={(v) =>
-                    setSelecionados((prev) => (v ? [...prev, l.id] : prev.filter((id) => id !== l.id)))
-                  }
-                  aria-label={`Selecionar ${l.empresa}`}
-                />
+                {!contatado && (
+                  <Checkbox
+                    checked={marcado}
+                    onCheckedChange={(v) =>
+                      setSelecionados((prev) => (v ? [...prev, l.id] : prev.filter((id) => id !== l.id)))
+                    }
+                    aria-label={`Selecionar ${l.empresa}`}
+                  />
+                )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{l.empresa}</div>
+                  <div className="flex items-center gap-2 truncate font-medium">
+                    {l.empresa}
+                    {contatado && (
+                      <Badge variant="outline" className="shrink-0 text-[10px] font-normal text-brand">
+                        e-mail enviado
+                      </Badge>
+                    )}
+                  </div>
                   <div className="truncate text-muted-foreground">
                     {l.contato_nome ? `${l.contato_nome}${l.cargo ? ` · ${l.cargo}` : ""} · ` : ""}
                     {l.email}
@@ -184,14 +225,16 @@ function LeadsPendentesPage() {
                       sem telefone
                     </Badge>
                   )}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={lote.isPending}
-                    onClick={() => lote.mutate([l.id])}
-                  >
-                    <Mail className="mr-2 size-4" /> Enviar
-                  </Button>
+                  {!contatado && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={lote.isPending}
+                      onClick={() => lote.mutate([l.id])}
+                    >
+                      <Mail className="mr-2 size-4" /> Enviar
+                    </Button>
+                  )}
                 </div>
               </div>
             );
