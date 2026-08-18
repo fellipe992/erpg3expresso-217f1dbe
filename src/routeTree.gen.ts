@@ -52,6 +52,7 @@ import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppCrmLeadsRouteImport } from './routes/_authenticated/app/crm/leads'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
 import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
+import { Route as AuthenticatedAppCrmEnviosRouteImport } from './routes/_authenticated/app/crm/envios'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -293,6 +294,12 @@ const AuthenticatedAppCrmFunilRoute =
     path: '/app/crm/funil',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppCrmEnviosRoute =
+  AuthenticatedAppCrmEnviosRouteImport.update({
+    id: '/app/crm/envios',
+    path: '/app/crm/envios',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
@@ -375,6 +383,7 @@ export interface FileRoutesByTo {
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
@@ -421,6 +430,7 @@ export interface FileRoutesById {
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/_authenticated/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/app/veiculos'
     | '/api/public/parceiros'
     | '/app/'
+    | '/app/crm/envios'
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/crm/leads'
@@ -511,6 +522,7 @@ export interface FileRouteTypes {
     | '/app/veiculos'
     | '/api/public/parceiros'
     | '/app'
+    | '/app/crm/envios'
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/crm/leads'
@@ -556,6 +568,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/veiculos'
     | '/api/public/parceiros'
     | '/_authenticated/app/'
+    | '/_authenticated/app/crm/envios'
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
     | '/_authenticated/app/crm/leads'
@@ -881,6 +894,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCrmFunilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/crm/envios': {
+      id: '/_authenticated/app/crm/envios'
+      path: '/app/crm/envios'
+      fullPath: '/app/crm/envios'
+      preLoaderRoute: typeof AuthenticatedAppCrmEnviosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -912,6 +932,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppCrmEnviosRoute: typeof AuthenticatedAppCrmEnviosRoute
   AuthenticatedAppCrmFunilRoute: typeof AuthenticatedAppCrmFunilRoute
   AuthenticatedAppCrmHunterRoute: typeof AuthenticatedAppCrmHunterRoute
   AuthenticatedAppCrmLeadsRoute: typeof AuthenticatedAppCrmLeadsRoute
@@ -947,6 +968,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppCrmEnviosRoute: AuthenticatedAppCrmEnviosRoute,
   AuthenticatedAppCrmFunilRoute: AuthenticatedAppCrmFunilRoute,
   AuthenticatedAppCrmHunterRoute: AuthenticatedAppCrmHunterRoute,
   AuthenticatedAppCrmLeadsRoute: AuthenticatedAppCrmLeadsRoute,
