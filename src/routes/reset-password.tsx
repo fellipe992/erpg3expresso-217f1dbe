@@ -63,14 +63,14 @@ function ResetPage() {
               </Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" name="password" type="password" required minLength={6} className="pl-9" />
+                <PasswordInput id="password" name="password" required minLength={6} className="pl-9" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="confirm" className="text-xs">
                 Confirmar senha
               </Label>
-              <Input id="confirm" name="confirm" type="password" required minLength={6} />
+              <PasswordInput id="confirm" name="confirm" required minLength={6} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
