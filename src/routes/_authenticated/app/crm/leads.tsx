@@ -107,12 +107,32 @@ function LeadsPendentesPage() {
           <MailPlus className="size-5 text-brand" />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-bold">Leads pendentes</h1>
+          <h1 className="font-display text-2xl font-bold">Leads e prospecção</h1>
           <p className="text-sm text-muted-foreground">
-            Leads com e-mail cadastrado que ainda não receberam a apresentação da G3. O disparo em lote nunca repete um
-            destinatário já contatado.
+            Pendentes = ainda sem a apresentação. Contatados = já receberam o e-mail e continuam disponíveis para
+            WhatsApp. Todo envio move o lead para "contatado" e cria a oportunidade no funil de vendas.
           </p>
         </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant={aba === "pendentes" ? "default" : "outline"}
+          onClick={() => setAba("pendentes")}
+        >
+          Pendentes ({pendentes.length})
+        </Button>
+        <Button
+          size="sm"
+          variant={aba === "contatados" ? "default" : "outline"}
+          onClick={() => {
+            setAba("contatados");
+            setSelecionados([]);
+          }}
+        >
+          Já contatados ({contatados.length})
+        </Button>
       </div>
 
       <Card>
@@ -123,25 +143,26 @@ function LeadsPendentesPage() {
             placeholder="Buscar por empresa, contato, e-mail ou cidade"
             className="max-w-sm"
           />
-          <Badge variant="outline">{pendentes.length} pendente(s)</Badge>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelecionados(todosMarcados ? [] : pendentes.map((l) => l.id))}
-              disabled={pendentes.length === 0}
-            >
-              {todosMarcados ? "Limpar seleção" : "Selecionar todos"}
-            </Button>
-            <Button
-              size="sm"
-              disabled={selecionados.length === 0 || lote.isPending}
-              onClick={() => lote.mutate(selecionados)}
-            >
-              {lote.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
-              Enviar lote ({selecionados.length})
-            </Button>
-          </div>
+          {aba === "pendentes" && (
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelecionados(todosMarcados ? [] : pendentes.map((l) => l.id))}
+                disabled={pendentes.length === 0}
+              >
+                {todosMarcados ? "Limpar seleção" : "Selecionar todos"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={selecionados.length === 0 || lote.isPending}
+                onClick={() => lote.mutate(selecionados)}
+              >
+                {lote.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Send className="mr-2 size-4" />}
+                Enviar lote ({selecionados.length})
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
