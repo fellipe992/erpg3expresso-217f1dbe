@@ -53,6 +53,7 @@ function LeadsPendentesPage() {
 
   const [busca, setBusca] = useState("");
   const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [aba, setAba] = useState<"pendentes" | "contatados">("pendentes");
 
   const enviados = useQuery({
     queryKey: ["crm-emails-enviados-destinatarios"],
