@@ -3,6 +3,10 @@
  * Server-only: usado pelas server functions do Hunter / Leads pendentes.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as React from "react";
+import { render } from "@react-email/render";
+import { template as apresentacaoG3 } from "@/lib/email-templates/apresentacao-g3";
+import { sendGoogleMail } from "@/lib/google-mail.server";
 
 export const ASSUNTO_APRESENTACAO = "Como está a entrega dos seus produtos até o cliente final?";
 
@@ -25,29 +29,28 @@ export async function enviarApresentacaoRegistrando({
   empresa,
   companyId,
 }: Args): Promise<{ status: string; detalhe: string | null }> {
-  const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
   const primeiroNome = (nome ?? "").trim().split(/\s+/)[0] ?? "";
 
   let status = "enviado";
   let detalhe: string | null = null;
   try {
-    const res = await sendTemplateEmail("apresentacao-g3", email, {
-      templateData: { nome: primeiroNome, empresa },
-      idempotencyKey: `apresentacao-g3-${leadId}-${email}`,
+    const element = React.createElement(apresentacaoG3.component, {
+      nome: primeiroNome,
+      empresa,
     });
-    if (!res.sent) {
-      status = "bloqueado";
-      detalhe = "Destinatário está na lista de bloqueio (bounce, reclamação ou descadastro).";
-    }
+    const [html, text] = await Promise.all([
+      render(element),
+      render(element, { plainText: true }),
+    ]);
+    const subject =
+      typeof apresentacaoG3.subject === "function"
+        ? apresentacaoG3.subject({ nome: primeiroNome, empresa })
+        : apresentacaoG3.subject;
+    await sendGoogleMail({ to: email, subject, html, text });
   } catch (e) {
-    const err = e as { code?: string; status?: number; message?: string };
+    const err = e as { message?: string };
     status = "falhou";
-    detalhe =
-      err.code === "domain_not_verified"
-        ? "O domínio de envio ainda não foi verificado no DNS."
-        : err.status === 429
-          ? "Limite de envios por hora atingido. Tente novamente em alguns minutos."
-          : (err.message ?? "Falha no envio.");
+    detalhe = err.message ?? "Falha no envio pelo Gmail.";
   }
 
   await supabase.from("crm_emails_enviados").insert({
