@@ -67,16 +67,21 @@ function LeadsPendentesPage() {
     },
   });
 
-  const pendentes = useMemo(() => {
+  const { pendentes, contatados } = useMemo(() => {
     const jaEnviados = enviados.data ?? new Set<string>();
     const q = busca.trim().toLowerCase();
-    return leads.filter((l) => {
+    const base = leads.filter((l) => {
       if (!l.email) return false;
-      if (jaEnviados.has(l.email.toLowerCase())) return false;
       if (!q) return true;
       return [l.empresa, l.contato_nome, l.email, l.cidade].some((v) => (v ?? "").toLowerCase().includes(q));
     });
+    return {
+      pendentes: base.filter((l) => !jaEnviados.has((l.email as string).toLowerCase())),
+      contatados: base.filter((l) => jaEnviados.has((l.email as string).toLowerCase())),
+    };
   }, [leads, enviados.data, busca]);
+
+  const visiveis = aba === "pendentes" ? pendentes : contatados;
 
   const lote = useMutation({
     mutationFn: (leadIds: string[]) => enviarLoteFn({ data: { leadIds } }),
