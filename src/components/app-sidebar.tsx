@@ -27,6 +27,7 @@ import {
 
 
   MailPlus,
+  CalendarDays,
 } from "lucide-react";
 
 import {
@@ -83,6 +84,7 @@ const operacional: NavItem[] = [
 const comercial: NavItem[] = [
   { label: "Funil de vendas", to: "/app/crm/funil", icon: KanbanSquare },
   { label: "Leads pendentes", to: "/app/crm/leads", icon: MailPlus },
+  { label: "Envios por dia", to: "/app/crm/envios", icon: CalendarDays },
   { label: "Hunter", to: "/app/crm/hunter", icon: Crosshair },
   { label: "Captação de parceiros", to: "/app/parceiros", icon: Handshake },
 ];
