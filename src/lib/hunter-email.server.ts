@@ -42,11 +42,7 @@ export async function enviarApresentacaoRegistrando({
       render(element),
       render(element, { plainText: true }),
     ]);
-    const subject =
-      typeof apresentacaoG3.subject === "function"
-        ? apresentacaoG3.subject({ nome: primeiroNome, empresa })
-        : apresentacaoG3.subject;
-    await sendGoogleMail({ to: email, subject, html, text });
+    await sendGoogleMail({ to: email, subject: ASSUNTO_APRESENTACAO, html, text });
   } catch (e) {
     const err = e as { message?: string };
     status = "falhou";
