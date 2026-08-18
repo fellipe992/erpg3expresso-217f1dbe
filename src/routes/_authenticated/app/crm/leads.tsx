@@ -91,6 +91,8 @@ function LeadsPendentesPage() {
       qc.invalidateQueries({ queryKey: ["crm-emails-enviados-destinatarios"] });
       qc.invalidateQueries({ queryKey: ["crm-emails-enviados"] });
       qc.invalidateQueries({ queryKey: ["crm-leads"] });
+      qc.invalidateQueries({ queryKey: ["crm-oportunidades"] });
+      qc.invalidateQueries({ queryKey: ["crm-timeline"] });
       toast.success(`${r.enviados} e-mail(s) enviado(s)`, {
         description: `${r.ignorados} ignorado(s) por duplicidade · ${r.falhas} falha(s).`,
       });
