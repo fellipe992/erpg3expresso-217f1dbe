@@ -7,6 +7,7 @@ import { Loader2, Mail, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,7 +143,7 @@ function AuthPage() {
                     <Input id="email" name="email" type="email" autoComplete="email" placeholder="voce@g3expresso.com" required />
                   </Field>
                   <Field id="password" label="Senha" icon={<Lock className="size-4" />}>
-                    <Input id="password" name="password" type="password" autoComplete="current-password" required />
+                    <PasswordInput id="password" name="password" autoComplete="current-password" required />
                   </Field>
                   <div className="flex justify-end">
                     <button

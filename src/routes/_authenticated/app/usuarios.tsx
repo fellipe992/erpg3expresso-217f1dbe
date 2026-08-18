@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -382,7 +383,7 @@ function UsuariosPage() {
             <F label="Nome *"><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></F>
             <F label="E-mail *"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></F>
             <F label="Telefone"><Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></F>
-            <F label="Senha *"><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></F>
+            <F label="Senha *"><PasswordInput value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></F>
             <F label="Perfil *">
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as Role })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -528,7 +529,7 @@ function UsuariosPage() {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Redefinir senha — {openPwd?.nome}</DialogTitle></DialogHeader>
           <F label="Nova senha *">
-            <Input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} />
+            <PasswordInput value={newPwd} onChange={(e) => setNewPwd(e.target.value)} />
           </F>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenPwd(null)}>Cancelar</Button>
