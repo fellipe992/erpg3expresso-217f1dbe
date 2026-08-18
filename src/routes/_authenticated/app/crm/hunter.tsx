@@ -73,6 +73,8 @@ type Decisor = {
   fonte?: string;
   confianca?: string;
   resumo?: string | null;
+  email_status?: "valido" | "nao_confirmado" | "invalido";
+  email_motivo?: string | null;
 };
 
 type EmailEnviado = {
@@ -572,6 +574,19 @@ function HunterPage() {
                           {ROTULO_FONTE[d.fonte] ?? d.fonte}
                         </Badge>
                       )}
+                      {d.email_status && (
+                        <Badge
+                          variant={d.email_status === "valido" ? "default" : "outline"}
+                          className="text-[10px] font-normal"
+                          title={d.email_motivo ?? undefined}
+                        >
+                          {d.email_status === "valido"
+                            ? "e-mail verificado"
+                            : d.email_status === "nao_confirmado"
+                              ? "e-mail provável"
+                              : "e-mail inválido"}
+                        </Badge>
+                      )}
                       {d.confianca && (
                         <Badge
                           variant={d.confianca === "alta" ? "default" : "outline"}
@@ -584,7 +599,12 @@ function HunterPage() {
                   </div>
                   {d.cargo && <div className="text-sm text-muted-foreground">{d.cargo}</div>}
                   <div className="space-y-1 text-sm">
-                    <div className="text-muted-foreground">E-mail: {d.email ?? "não disponível"}</div>
+                    <div className="text-muted-foreground">
+                      E-mail: {d.email ?? "não disponível"}
+                    </div>
+                    {d.email_motivo && (
+                      <div className="text-xs text-muted-foreground">{d.email_motivo}</div>
+                    )}
                     <div className="text-muted-foreground">Telefone: {d.telefone ?? "não disponível"}</div>
                     {d.resumo && <div className="text-xs text-muted-foreground">{d.resumo}</div>}
                     {d.linkedin_url && (
