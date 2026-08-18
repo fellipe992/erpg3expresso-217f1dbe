@@ -168,31 +168,43 @@ function LeadsPendentesPage() {
 
       {(isPending || enviados.isPending) && <Skeleton className="h-40 w-full" />}
 
-      {!isPending && !enviados.isPending && pendentes.length === 0 && (
+      {!isPending && !enviados.isPending && visiveis.length === 0 && (
         <Card>
           <CardContent className="flex items-center gap-3 p-6 text-sm text-muted-foreground">
             <MailCheck className="size-4 text-brand" />
-            Nenhum lead pendente — todos os contatos com e-mail já receberam a apresentação.
+            {aba === "pendentes"
+              ? "Nenhum lead pendente — todos os contatos com e-mail já receberam a apresentação."
+              : "Nenhum lead contatado por e-mail ainda."}
           </CardContent>
         </Card>
       )}
 
-      {pendentes.length > 0 && (
+      {visiveis.length > 0 && (
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-          {pendentes.map((l) => {
+          {visiveis.map((l) => {
             const wa = linkWhatsapp(l);
             const marcado = selecionados.includes(l.id);
+            const contatado = aba === "contatados";
             return (
               <div key={l.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
-                <Checkbox
-                  checked={marcado}
-                  onCheckedChange={(v) =>
-                    setSelecionados((prev) => (v ? [...prev, l.id] : prev.filter((id) => id !== l.id)))
-                  }
-                  aria-label={`Selecionar ${l.empresa}`}
-                />
+                {!contatado && (
+                  <Checkbox
+                    checked={marcado}
+                    onCheckedChange={(v) =>
+                      setSelecionados((prev) => (v ? [...prev, l.id] : prev.filter((id) => id !== l.id)))
+                    }
+                    aria-label={`Selecionar ${l.empresa}`}
+                  />
+                )}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{l.empresa}</div>
+                  <div className="flex items-center gap-2 truncate font-medium">
+                    {l.empresa}
+                    {contatado && (
+                      <Badge variant="outline" className="shrink-0 text-[10px] font-normal text-brand">
+                        e-mail enviado
+                      </Badge>
+                    )}
+                  </div>
                   <div className="truncate text-muted-foreground">
                     {l.contato_nome ? `${l.contato_nome}${l.cargo ? ` · ${l.cargo}` : ""} · ` : ""}
                     {l.email}
@@ -211,14 +223,16 @@ function LeadsPendentesPage() {
                       sem telefone
                     </Badge>
                   )}
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    disabled={lote.isPending}
-                    onClick={() => lote.mutate([l.id])}
-                  >
-                    <Mail className="mr-2 size-4" /> Enviar
-                  </Button>
+                  {!contatado && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={lote.isPending}
+                      onClick={() => lote.mutate([l.id])}
+                    >
+                      <Mail className="mr-2 size-4" /> Enviar
+                    </Button>
+                  )}
                 </div>
               </div>
             );
