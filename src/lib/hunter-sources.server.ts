@@ -19,6 +19,9 @@ export type DecisorRico = {
   fonte: FonteDecisor;
   confianca: "alta" | "media" | "baixa";
   resumo?: string | null;
+  /** Resultado da verificação do e-mail (MX + origem). */
+  email_status?: "valido" | "nao_confirmado" | "invalido";
+  email_motivo?: string | null;
 };
 
 const GATEWAY = "https://connector-gateway.lovable.dev";

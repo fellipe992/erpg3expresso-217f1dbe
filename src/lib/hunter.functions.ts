@@ -95,20 +95,44 @@ export const buscarDecisores = createServerFn({ method: "POST" })
 
     const mesclados = mesclarDecisores([linkedin, ia.decisores]);
 
-    // Sem e-mail público? sugere o e-mail corporativo provável (marcado como baixa confiança).
-    const decisores = mesclados.map((d) => {
-      if (d.email) return d;
-      const provavel = inferirEmailProvavel(d.nome, dominio, site?.emails ?? []);
-      if (!provavel) return d;
-      return {
-        ...d,
-        email: provavel,
-        confianca: "baixa" as const,
-        resumo: [d.resumo, "E-mail sugerido pelo padrão corporativo — confirme antes de enviar."]
-          .filter(Boolean)
-          .join(" · "),
-      };
-    });
+    const { verificarEmail } = await import("@/lib/email-verify.server");
+
+    // Valida os e-mails encontrados e, quando não houver nenhum, sugere o
+    // padrão corporativo — sempre marcando o que foi apenas deduzido.
+    const decisores = await Promise.all(
+      mesclados.map(async (d) => {
+        if (d.email) {
+          const v = await verificarEmail(d.email, "fonte");
+          if (v.status === "invalido") {
+            return {
+              ...d,
+              email: null,
+              email_status: "invalido" as const,
+              email_motivo: v.motivo,
+              confianca: "baixa" as const,
+            };
+          }
+          return { ...d, email: v.email, email_status: v.status, email_motivo: v.motivo };
+        }
+
+        const provavel = inferirEmailProvavel(d.nome, dominio, site?.emails ?? []);
+        if (!provavel) return d;
+        const v = await verificarEmail(provavel, "inferido");
+        if (v.status === "invalido") {
+          return { ...d, email_status: "invalido" as const, email_motivo: v.motivo };
+        }
+        return {
+          ...d,
+          email: v.email,
+          email_status: v.status,
+          email_motivo: v.motivo,
+          confianca: "baixa" as const,
+          resumo: [d.resumo, "E-mail sugerido pelo padrão corporativo — confirme antes de enviar."]
+            .filter(Boolean)
+            .join(" · "),
+        };
+      }),
+    );
 
     // Persiste o enriquecimento da empresa (resumo e canais gerais).
     if (site || ia.resumoEmpresa) {
@@ -280,6 +304,12 @@ export const enviarApresentacao = createServerFn({ method: "POST" })
     if (errEmpresa) throw new Error(errEmpresa.message);
     if (!empresa) throw new Error("Empresa não encontrada.");
 
+    const { verificarEmail } = await import("@/lib/email-verify.server");
+    const check = await verificarEmail(data.email, "fonte");
+    if (check.status === "invalido") {
+      throw new Error(`E-mail não entregável: ${check.motivo}`);
+    }
+
     const nomeEmpresa = empresa.nome as string;
     const primeiroNome = (data.nome ?? "").trim().split(/\s+/)[0] ?? "";
 
@@ -361,9 +391,12 @@ export const enviarLoteApresentacao = createServerFn({ method: "POST" })
       .in("destinatario", emails.length > 0 ? emails : ["-"]);
     const bloqueados = new Set((jaEnviados ?? []).map((r) => (r.destinatario as string).toLowerCase()));
 
+    const { verificarEmail } = await import("@/lib/email-verify.server");
+
     let enviados = 0;
     let ignorados = 0;
     let falhas = 0;
+    let invalidos = 0;
 
     for (const lead of leads ?? []) {
       const email = (lead.email ?? "").trim().toLowerCase();
@@ -372,6 +405,11 @@ export const enviarLoteApresentacao = createServerFn({ method: "POST" })
         continue;
       }
       bloqueados.add(email);
+      const check = await verificarEmail(email, "fonte");
+      if (check.status === "invalido") {
+        invalidos++;
+        continue;
+      }
       const { status } = await enviarApresentacaoRegistrando({
         supabase: context.supabase as never,
         userId: context.userId,
@@ -384,6 +422,6 @@ export const enviarLoteApresentacao = createServerFn({ method: "POST" })
       else falhas++;
     }
 
-    return { enviados, ignorados, falhas };
+    return { enviados, ignorados, falhas, invalidos };
   });
 
