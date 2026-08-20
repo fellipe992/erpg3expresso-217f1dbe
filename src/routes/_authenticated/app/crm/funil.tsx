@@ -206,6 +206,7 @@ function FunilPage() {
                 <Info label="Origem" value={detalhe.origem ?? "—"} />
               </div>
               {detalhe.descricao && <p className="text-sm text-muted-foreground">{detalhe.descricao}</p>}
+              <ContatosEmpresa empresa={detalhe.titulo} />
               <CrmTimeline oportunidadeId={detalhe.id} />
             </div>
           )}
