@@ -34,13 +34,15 @@ export const STATUS_OPCOES: { value: string; label: string }[] = [
   { value: "atrasado", label: "Em atraso" },
 ];
 
+/** Data de hoje no calendário da operação (nunca em UTC, que "vira o dia" às 21h). */
+export const hojeLocal = () => diaLocal(new Date().toISOString());
+
 export function filtrosIniciais(diasAtras = 90): FiltrosFin {
-  const hoje = new Date();
   const inicio = new Date();
   inicio.setDate(inicio.getDate() - diasAtras);
   return {
-    de: inicio.toISOString().slice(0, 10),
-    ate: hoje.toISOString().slice(0, 10),
+    de: diaLocal(inicio.toISOString()),
+    ate: hojeLocal(),
     empresaId: "todas",
     clienteIds: [],
     veiculoIds: [],
