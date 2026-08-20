@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { BiDados, LancBi } from "@/hooks/use-bi-dados";
+import { diaLocal, type BiDados, type LancBi } from "@/hooks/use-bi-dados";
 
 export type FiltrosFin = {
   de: string;
@@ -34,13 +34,15 @@ export const STATUS_OPCOES: { value: string; label: string }[] = [
   { value: "atrasado", label: "Em atraso" },
 ];
 
+/** Data de hoje no calendário da operação (nunca em UTC, que "vira o dia" às 21h). */
+export const hojeLocal = () => diaLocal(new Date().toISOString());
+
 export function filtrosIniciais(diasAtras = 90): FiltrosFin {
-  const hoje = new Date();
   const inicio = new Date();
   inicio.setDate(inicio.getDate() - diasAtras);
   return {
-    de: inicio.toISOString().slice(0, 10),
-    ate: hoje.toISOString().slice(0, 10),
+    de: diaLocal(inicio.toISOString()),
+    ate: hojeLocal(),
     empresaId: "todas",
     clienteIds: [],
     veiculoIds: [],
@@ -61,7 +63,7 @@ export const rotuloSelecao = (ids: string[], nome: (id: string) => string, todos
 /** Regra única de status usada por todos os relatórios e telas financeiras. */
 export function statusCombina(l: Pick<LancBi, "status" | "data_vencimento">, filtro: string) {
   if (filtro === "todos") return true;
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
   if (filtro === "a_vencer") return l.status === "pendente" && !!l.data_vencimento && l.data_vencimento >= hoje;
   return l.status === filtro;
 }

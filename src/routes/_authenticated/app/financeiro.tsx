@@ -39,6 +39,7 @@ import {
   rotuloSelecao,
   filtrosIniciais,
   statusCombina,
+  hojeLocal,
   type FiltrosFin,
 } from "@/components/relatorios/filtros-financeiros";
 import { categoriaDespesa, rotuloMes, useBiDados, type LancBi } from "@/hooks/use-bi-dados";
@@ -123,7 +124,7 @@ function FinanceiroPage() {
   );
 
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
 
   const stats = useMemo(() => {
     let faturamento = 0;

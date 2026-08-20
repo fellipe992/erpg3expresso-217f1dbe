@@ -85,6 +85,33 @@ export function categoriaDespesa(c: string | null | undefined) {
   return "Outros";
 }
 
+/**
+ * Data-calendário (AAAA-MM-DD) de um timestamp, no fuso da operação.
+ * Cortar a string ISO usaria UTC e jogaria, por exemplo, uma viagem de
+ * 31/07 às 22h para 01/08 — foi o que fazia períodos de um mês somarem o mês anterior.
+ */
+const FUSO = "America/Sao_Paulo";
+export function diaLocal(valor: string | null | undefined): string {
+  if (!valor) return "";
+  // Datas puras (colunas `date`) não têm fuso: usar como estão.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return String(valor).slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/** Desloca uma data AAAA-MM-DD em dias (usado só para a margem da consulta). */
+const deslocarDia = (dia: string, dias: number) => {
+  const d = new Date(`${dia}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
+
 /** Fonte única de dados para relatórios financeiros e BI (cacheada pelo React Query). */
 export function useBiDados(de: string, ate: string) {
   return useQuery({
@@ -92,7 +119,10 @@ export function useBiDados(de: string, ate: string) {
     enabled: !!de && !!ate,
     staleTime: 60_000,
     queryFn: async (): Promise<BiDados> => {
-      const fim = `${ate}T23:59:59`;
+      // Margem de 1 dia em cada ponta na consulta (fuso UTC do banco); o corte
+      // exato do período é feito depois, pela data-calendário local.
+      const inicioBusca = deslocarDia(de, -1);
+      const fim = `${deslocarDia(ate, 1)}T23:59:59`;
 
       const COLS_LANC =
         "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao";
@@ -105,7 +135,7 @@ export function useBiDados(de: string, ate: string) {
             "id, codigo, status, created_at, data_saida, data_chegada, km_inicial, km_final, valor_frete, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf",
           )
           .or(
-            `and(data_saida.gte.${de},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${de},created_at.lte.${fim})`,
+            `and(data_saida.gte.${inicioBusca},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${inicioBusca},created_at.lte.${fim})`,
           ),
         // Superset: cobre competência (emissão) e caixa (vencimento/pagamento)
         supabase
@@ -119,7 +149,16 @@ export function useBiDados(de: string, ate: string) {
         supabase.from("motoristas").select("id, nome").order("nome"),
       ]);
 
-      const viagensRaw = (viagRes.data ?? []) as Array<Record<string, unknown>>;
+      // Falhas de consulta não podem passar como "período vazio": os totais ficariam errados.
+      for (const r of [viagRes, lancRes, cliRes, veiRes, motRes]) {
+        if (r.error) throw r.error;
+      }
+
+      // Corte rigoroso pelo dia-calendário local (a consulta traz 1 dia de margem)
+      const viagensRaw = ((viagRes.data ?? []) as Array<Record<string, unknown>>).filter((v) => {
+        const dia = diaLocal((v.data_saida as string) ?? (v.created_at as string));
+        return !!dia && dia >= de && dia <= ate;
+      });
       const viagemIds = viagensRaw.map((v) => String(v.id));
 
       // Lançamentos vinculados às viagens do período mas emitidos/pagos fora dele
@@ -136,7 +175,7 @@ export function useBiDados(de: string, ate: string) {
       // Data de competência operacional de cada viagem (data_saida > created_at)
       const refViagem = new Map<string, string>();
       for (const raw of viagensRaw) {
-        refViagem.set(String(raw.id), String((raw.data_saida as string) ?? raw.created_at).slice(0, 10));
+        refViagem.set(String(raw.id), diaLocal((raw.data_saida as string) ?? (raw.created_at as string)));
       }
 
       const mapLanc = new Map<string, LancBi>();
@@ -149,8 +188,8 @@ export function useBiDados(de: string, ate: string) {
         mapLanc.set(l.id, {
           ...l,
           valor: Number(l.valor),
-          competencia: competencia.slice(0, 10),
-          dataCaixa: (dataCaixa ?? "").slice(0, 10),
+          competencia: diaLocal(competencia),
+          dataCaixa: diaLocal(dataCaixa),
         });
       }
       const todosLanc = Array.from(mapLanc.values()).filter((l) => l.status !== "cancelado");
@@ -255,7 +294,7 @@ export function useBiDados(de: string, ate: string) {
           despesas,
           lucro,
           margem: receita > 0 ? (lucro / receita) * 100 : 0,
-          ref: String((raw.data_saida as string) ?? raw.created_at).slice(0, 10),
+          ref: diaLocal((raw.data_saida as string) ?? (raw.created_at as string)),
         };
       });
 
