@@ -294,7 +294,7 @@ export function useBiDados(de: string, ate: string) {
           despesas,
           lucro,
           margem: receita > 0 ? (lucro / receita) * 100 : 0,
-          ref: String((raw.data_saida as string) ?? raw.created_at).slice(0, 10),
+          ref: diaLocal((raw.data_saida as string) ?? (raw.created_at as string)),
         };
       });
 
