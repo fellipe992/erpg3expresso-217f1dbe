@@ -188,8 +188,8 @@ export function useBiDados(de: string, ate: string) {
         mapLanc.set(l.id, {
           ...l,
           valor: Number(l.valor),
-          competencia: competencia.slice(0, 10),
-          dataCaixa: (dataCaixa ?? "").slice(0, 10),
+          competencia: diaLocal(competencia),
+          dataCaixa: diaLocal(dataCaixa),
         });
       }
       const todosLanc = Array.from(mapLanc.values()).filter((l) => l.status !== "cancelado");
