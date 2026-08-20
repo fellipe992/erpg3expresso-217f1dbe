@@ -39,6 +39,7 @@ import {
   rotuloSelecao,
   filtrosIniciais,
   statusCombina,
+  hojeLocal,
   type FiltrosFin,
 } from "@/components/relatorios/filtros-financeiros";
 import { categoriaDespesa, rotuloMes, useBiDados, type LancBi } from "@/hooks/use-bi-dados";
