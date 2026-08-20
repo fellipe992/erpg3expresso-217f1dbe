@@ -149,7 +149,16 @@ export function useBiDados(de: string, ate: string) {
         supabase.from("motoristas").select("id, nome").order("nome"),
       ]);
 
-      const viagensRaw = (viagRes.data ?? []) as Array<Record<string, unknown>>;
+      // Falhas de consulta não podem passar como "período vazio": os totais ficariam errados.
+      for (const r of [viagRes, lancRes, cliRes, veiRes, motRes]) {
+        if (r.error) throw r.error;
+      }
+
+      // Corte rigoroso pelo dia-calendário local (a consulta traz 1 dia de margem)
+      const viagensRaw = ((viagRes.data ?? []) as Array<Record<string, unknown>>).filter((v) => {
+        const dia = diaLocal((v.data_saida as string) ?? (v.created_at as string));
+        return !!dia && dia >= de && dia <= ate;
+      });
       const viagemIds = viagensRaw.map((v) => String(v.id));
 
       // Lançamentos vinculados às viagens do período mas emitidos/pagos fora dele
