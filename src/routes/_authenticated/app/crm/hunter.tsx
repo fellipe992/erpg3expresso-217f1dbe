@@ -132,6 +132,15 @@ function abrirLinkedinForaDoIframe(url: string) {
 
 const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
 
+/** Link de WhatsApp da empresa (DDI 55 quando vem só com DDD). */
+function linkWhatsappEmpresa(telefone: string, empresa: string) {
+  const bruto = telefone.replace(/\D/g, "");
+  if (bruto.length < 10) return null;
+  const numero = bruto.length <= 11 ? `55${bruto}` : bruto;
+  const texto = `Olá! Aqui é a G3 Expresso, transportadora rodoviária de cargas. Podemos falar sobre a operação de transporte da ${empresa}?`;
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+}
+
 function HunterPage() {
   const salvarEmpresasFn = useServerFn(salvarEmpresas);
   const buscarDecisoresFn = useServerFn(buscarDecisores);
@@ -149,11 +158,40 @@ function HunterPage() {
   const [fontes, setFontes] = useState<Fontes | null>(null);
   const [enviados, setEnviados] = useState<string[]>([]);
   const [resumoEmpresa, setResumoEmpresa] = useState<string | null>(null);
-  const [emailsGerais, setEmailsGerais] = useState<string[]>([]);
+  const [emailsGerais, setEmailsGerais] = useState<EmailGeral[]>([]);
   const [telefonesGerais, setTelefonesGerais] = useState<string[]>([]);
   const [manual, setManual] = useState({ ...vazioManual });
   const queryClient = useQueryClient();
   const enviarFn = useServerFn(enviarApresentacao);
+  const loteEmpresaFn = useServerFn(enviarLoteEmpresa);
+
+  /** Todos os e-mails REAIS da empresa: decisores + canais institucionais. */
+  const alvosEmail = [
+    ...decisores
+      .filter((d) => !!d.email)
+      .map((d) => ({ email: d.email as string, nome: d.nome, cargo: d.cargo, telefone: d.telefone })),
+    ...emailsGerais.map((e) => ({
+      email: e.email,
+      nome: null as string | null,
+      cargo: null as string | null,
+      telefone: null as string | null,
+    })),
+  ].filter((c, i, arr) => arr.findIndex((x) => x.email === c.email) === i && !enviados.includes(c.email));
+
+  const loteEmpresa = useMutation({
+    mutationFn: () => loteEmpresaFn({ data: { companyId: selecionada!.id, contatos: alvosEmail } }),
+    onSuccess: (r) => {
+      setEnviados((prev) => [...prev, ...alvosEmail.map((c) => c.email)]);
+      queryClient.invalidateQueries({ queryKey: ["hunter-emails-enviados"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-leads"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-oportunidades"] });
+      queryClient.invalidateQueries({ queryKey: ["crm-timeline"] });
+      toast.success(`${r.enviados} e-mail(s) enviado(s)`, {
+        description: `${r.ignorados} já contatado(s) · ${r.invalidos} inválido(s) · ${r.falhas} falha(s). A empresa aparece no funil de vendas.`,
+      });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const historico = useQuery({
     queryKey: ["hunter-emails-enviados"],
