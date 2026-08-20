@@ -11,15 +11,23 @@ import {
   Loader2,
   Mail,
   MailCheck,
+  MessageCircle,
   MapPin,
   Phone,
   Plus,
   Search,
+  Send,
   Sparkles,
   Users,
 } from "lucide-react";
 
-import { adicionarContatoCrm, buscarDecisores, enviarApresentacao, salvarEmpresas } from "@/lib/hunter.functions";
+import {
+  adicionarContatoCrm,
+  buscarDecisores,
+  enviarApresentacao,
+  enviarLoteEmpresa,
+  salvarEmpresas,
+} from "@/lib/hunter.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { buscarEmpresasNoNavegador } from "@/lib/hunter-places-browser";
 
@@ -76,6 +84,8 @@ type Decisor = {
   email_status?: "valido" | "nao_confirmado" | "invalido";
   email_motivo?: string | null;
 };
+
+type EmailGeral = { email: string; motivo: string };
 
 type EmailEnviado = {
   id: string;
@@ -265,7 +275,7 @@ function HunterPage() {
       setAviso(res.aviso ?? null);
       setFontes((res.fontes as Fontes) ?? null);
       setResumoEmpresa(res.empresaResumo ?? null);
-      setEmailsGerais((res.emailsGerais as string[]) ?? []);
+      setEmailsGerais((res.emailsGerais as EmailGeral[]) ?? []);
       setTelefonesGerais((res.telefonesGerais as string[]) ?? []);
     },
     onError: (e: Error) => {
