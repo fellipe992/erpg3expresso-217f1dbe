@@ -421,3 +421,99 @@ export const enviarLoteApresentacao = createServerFn({ method: "POST" })
     return { enviados, ignorados, falhas, invalidos };
   });
 
+
+/**
+ * Disparo em lote de TODOS os e-mails reais encontrados para uma empresa
+ * (decisores com e-mail publicado + e-mails institucionais do site).
+ * Cada endereço recebe um e-mail individual, sem repetir quem já recebeu.
+ */
+export const enviarLoteEmpresa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      companyId: string;
+      contatos: { email: string; nome?: string | null; cargo?: string | null; telefone?: string | null }[];
+    }) => {
+      if (!data?.companyId) throw new Error("Empresa inválida.");
+      const contatos = (Array.isArray(data?.contatos) ? data.contatos : [])
+        .map((c) => ({
+          email: (c?.email ?? "").trim().toLowerCase(),
+          nome: c?.nome?.trim() || null,
+          cargo: c?.cargo?.trim() || null,
+          telefone: c?.telefone?.trim() || null,
+        }))
+        .filter((c) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email))
+        .slice(0, 30);
+      if (contatos.length === 0) throw new Error("Nenhum e-mail válido para disparar.");
+      return { companyId: data.companyId, contatos };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { data: empresa, error } = await context.supabase
+      .from("companies")
+      .select("id, nome, cidade, segmento, telefone, website, endereco")
+      .eq("id", data.companyId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!empresa) throw new Error("Empresa não encontrada.");
+
+    const { enviarApresentacaoRegistrando, garantirLead } = await import("@/lib/hunter-email.server");
+    const { verificarEmail } = await import("@/lib/email-verify.server");
+
+    const alvos = Array.from(new Map(data.contatos.map((c) => [c.email, c])).values());
+
+    const { data: jaEnviados } = await context.supabase
+      .from("crm_emails_enviados")
+      .select("destinatario")
+      .eq("template", "apresentacao-g3")
+      .eq("status", "enviado")
+      .in("destinatario", alvos.map((c) => c.email));
+    const bloqueados = new Set((jaEnviados ?? []).map((r) => (r.destinatario as string).toLowerCase()));
+
+    const nomeEmpresa = empresa.nome as string;
+    let enviados = 0;
+    let ignorados = 0;
+    let invalidos = 0;
+    let falhas = 0;
+
+    for (const c of alvos) {
+      if (bloqueados.has(c.email)) {
+        ignorados++;
+        continue;
+      }
+      bloqueados.add(c.email);
+
+      const check = await verificarEmail(c.email, "fonte");
+      if (check.status === "invalido") {
+        invalidos++;
+        continue;
+      }
+
+      const leadId = await garantirLead({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        empresa: nomeEmpresa,
+        email: c.email,
+        nome: c.nome,
+        cargo: c.cargo,
+        telefone: c.telefone ?? (empresa.telefone as string | null),
+        cidade: (empresa.cidade as string | null) ?? null,
+        segmento: (empresa.segmento as string | null) ?? null,
+        observacoes: [empresa.endereco, empresa.website].filter(Boolean).join(" · ") || null,
+      });
+
+      const { status } = await enviarApresentacaoRegistrando({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        leadId,
+        email: c.email,
+        nome: c.nome,
+        empresa: nomeEmpresa,
+        companyId: empresa.id as string,
+      });
+      if (status === "enviado") enviados++;
+      else falhas++;
+    }
+
+    return { enviados, ignorados, invalidos, falhas };
+  });
