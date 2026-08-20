@@ -85,6 +85,33 @@ export function categoriaDespesa(c: string | null | undefined) {
   return "Outros";
 }
 
+/**
+ * Data-calendário (AAAA-MM-DD) de um timestamp, no fuso da operação.
+ * Cortar a string ISO usaria UTC e jogaria, por exemplo, uma viagem de
+ * 31/07 às 22h para 01/08 — foi o que fazia períodos de um mês somarem o mês anterior.
+ */
+const FUSO = "America/Sao_Paulo";
+export function diaLocal(valor: string | null | undefined): string {
+  if (!valor) return "";
+  // Datas puras (colunas `date`) não têm fuso: usar como estão.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  const d = new Date(valor);
+  if (Number.isNaN(d.getTime())) return String(valor).slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: FUSO,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+/** Desloca uma data AAAA-MM-DD em dias (usado só para a margem da consulta). */
+const deslocarDia = (dia: string, dias: number) => {
+  const d = new Date(`${dia}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
+
 /** Fonte única de dados para relatórios financeiros e BI (cacheada pelo React Query). */
 export function useBiDados(de: string, ate: string) {
   return useQuery({
@@ -92,7 +119,10 @@ export function useBiDados(de: string, ate: string) {
     enabled: !!de && !!ate,
     staleTime: 60_000,
     queryFn: async (): Promise<BiDados> => {
-      const fim = `${ate}T23:59:59`;
+      // Margem de 1 dia em cada ponta na consulta (fuso UTC do banco); o corte
+      // exato do período é feito depois, pela data-calendário local.
+      const inicioBusca = deslocarDia(de, -1);
+      const fim = `${deslocarDia(ate, 1)}T23:59:59`;
 
       const COLS_LANC =
         "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao";
