@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -342,10 +343,10 @@ function AbastecimentosPage() {
               </Select>
             </F>
 
-            <F label="Litros *"><Input type="number" step="0.001" value={form.litros ?? ""} onChange={(e) => setForm({ ...form, litros: Number(e.target.value) })} /></F>
-            <F label="R$ por litro *"><Input type="number" step="0.001" value={form.valor_litro ?? ""} onChange={(e) => setForm({ ...form, valor_litro: Number(e.target.value) })} /></F>
-            <F label="Total (R$)"><Input type="number" step="0.01" value={String(total)} onChange={(e) => setForm({ ...form, valor_total: Number(e.target.value) })} placeholder="Auto" /></F>
-            <F label="KM atual *"><Input type="number" step="0.1" value={form.km_atual ?? ""} onChange={(e) => setForm({ ...form, km_atual: Number(e.target.value) })} /></F>
+            <F label="Litros *"><DecimalInput decimais={3} value={form.litros ?? ""} onChange={(v) => setForm({ ...form, litros: v === "" ? undefined : Number(v) })} /></F>
+            <F label="R$ por litro *"><DecimalInput decimais={3} value={form.valor_litro ?? ""} onChange={(v) => setForm({ ...form, valor_litro: v === "" ? undefined : Number(v) })} /></F>
+            <F label="Total (R$)"><DecimalInput decimais={2} value={String(total)} onChange={(v) => setForm({ ...form, valor_total: v === "" ? undefined : Number(v) })} placeholder="Auto" /></F>
+            <F label="KM atual *"><DecimalInput decimais={1} value={form.km_atual ?? ""} onChange={(v) => setForm({ ...form, km_atual: v === "" ? undefined : Number(v) })} /></F>
 
             <div className="md:col-span-2">
               <F label="Forma de pagamento *">

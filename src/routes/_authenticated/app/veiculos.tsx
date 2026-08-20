@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -284,21 +285,19 @@ function VeiculosPage() {
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <F label="Provisão manutenção (R$/km)">
-                    <Input
-                      type="number"
-                      step="0.01"
+                    <DecimalInput
+                      decimais={2}
                       placeholder="Ex.: 0,60"
                       value={form.provisao_manutencao_km ?? ""}
-                      onChange={(e) => setForm({ ...form, provisao_manutencao_km: e.target.value ? Number(e.target.value) : null })}
+                      onChange={(v) => setForm({ ...form, provisao_manutencao_km: v === "" ? null : Number(v) })}
                     />
                   </F>
                   <F label="Provisão pneus (R$/km)">
-                    <Input
-                      type="number"
-                      step="0.01"
+                    <DecimalInput
+                      decimais={2}
                       placeholder="Ex.: 0,15"
                       value={form.provisao_pneus_km ?? ""}
-                      onChange={(e) => setForm({ ...form, provisao_pneus_km: e.target.value ? Number(e.target.value) : null })}
+                      onChange={(v) => setForm({ ...form, provisao_pneus_km: v === "" ? null : Number(v) })}
                     />
                   </F>
                 </div>

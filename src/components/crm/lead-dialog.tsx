@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -143,11 +144,10 @@ export function LeadDialog({
             </Select>
           </F>
           <F label="Potencial de faturamento (R$/mês)">
-            <Input
-              type="number"
-              step="0.01"
+            <DecimalInput
+              decimais={2}
               value={form.potencial_faturamento ?? ""}
-              onChange={(e) => setForm({ ...form, potencial_faturamento: e.target.value === "" ? null : Number(e.target.value) })}
+              onChange={(v) => setForm({ ...form, potencial_faturamento: v === "" ? null : Number(v) })}
             />
           </F>
           <F label="Classificação">

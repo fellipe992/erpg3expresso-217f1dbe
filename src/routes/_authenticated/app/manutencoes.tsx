@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -241,7 +242,7 @@ function ManutencoesPage() {
           <DialogHeader><DialogTitle>{form.id ? "Editar manutenção" : "Nova manutenção"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
             <F label="Data *"><Input type="date" value={form.data ?? ""} onChange={(e) => setForm({ ...form, data: e.target.value })} /></F>
-            <F label="KM atual"><Input type="number" step="0.1" value={form.km_atual ?? ""} onChange={(e) => setForm({ ...form, km_atual: Number(e.target.value) })} /></F>
+            <F label="KM atual"><DecimalInput decimais={1} value={form.km_atual ?? ""} onChange={(v) => setForm({ ...form, km_atual: v === "" ? undefined : Number(v) })} /></F>
 
             <F label="Veículo *">
               <Select value={form.veiculo_id ?? ""} onValueChange={(v) => setForm({ ...form, veiculo_id: v })}>
@@ -276,11 +277,11 @@ function ManutencoesPage() {
               </Select>
             </F>
 
-            <F label="Valor (R$)"><Input type="number" step="0.01" value={form.valor ?? 0} onChange={(e) => setForm({ ...form, valor: Number(e.target.value) })} /></F>
+            <F label="Valor (R$)"><DecimalInput decimais={2} value={form.valor ?? 0} onChange={(v) => setForm({ ...form, valor: v === "" ? undefined : Number(v) })} /></F>
             <div />
 
             <F label="Próxima revisão (data)"><Input type="date" value={form.proxima_revisao_data ?? ""} onChange={(e) => setForm({ ...form, proxima_revisao_data: e.target.value })} /></F>
-            <F label="Próxima revisão (km)"><Input type="number" step="0.1" value={form.proxima_revisao_km ?? ""} onChange={(e) => setForm({ ...form, proxima_revisao_km: Number(e.target.value) })} /></F>
+            <F label="Próxima revisão (km)"><DecimalInput decimais={1} value={form.proxima_revisao_km ?? ""} onChange={(v) => setForm({ ...form, proxima_revisao_km: v === "" ? undefined : Number(v) })} /></F>
 
             <div className="md:col-span-2"><F label="Descrição do serviço"><Textarea rows={2} value={form.descricao ?? ""} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></F></div>
             <div className="md:col-span-2">

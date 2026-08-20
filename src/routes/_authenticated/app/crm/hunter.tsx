@@ -11,15 +11,23 @@ import {
   Loader2,
   Mail,
   MailCheck,
+  MessageCircle,
   MapPin,
   Phone,
   Plus,
   Search,
+  Send,
   Sparkles,
   Users,
 } from "lucide-react";
 
-import { adicionarContatoCrm, buscarDecisores, enviarApresentacao, salvarEmpresas } from "@/lib/hunter.functions";
+import {
+  adicionarContatoCrm,
+  buscarDecisores,
+  enviarApresentacao,
+  enviarLoteEmpresa,
+  salvarEmpresas,
+} from "@/lib/hunter.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { buscarEmpresasNoNavegador } from "@/lib/hunter-places-browser";
 
@@ -76,6 +84,8 @@ type Decisor = {
   email_status?: "valido" | "nao_confirmado" | "invalido";
   email_motivo?: string | null;
 };
+
+type EmailGeral = { email: string; motivo: string };
 
 type EmailEnviado = {
   id: string;
@@ -265,7 +275,7 @@ function HunterPage() {
       setAviso(res.aviso ?? null);
       setFontes((res.fontes as Fontes) ?? null);
       setResumoEmpresa(res.empresaResumo ?? null);
-      setEmailsGerais((res.emailsGerais as string[]) ?? []);
+      setEmailsGerais((res.emailsGerais as EmailGeral[]) ?? []);
       setTelefonesGerais((res.telefonesGerais as string[]) ?? []);
     },
     onError: (e: Error) => {
@@ -549,48 +559,86 @@ function HunterPage() {
               </div>
             )}
 
+            {!decisoresMut.isPending && alvosEmail.length > 0 && (
+              <div className="space-y-2 rounded-lg border border-brand/40 bg-brand-subtle/40 p-4 text-sm">
+                <div className="font-medium">Disparo em lote desta empresa</div>
+                <p className="text-xs text-muted-foreground">
+                  {alvosEmail.length} e-mail(s) real(is) encontrado(s) — cada um recebe um e-mail individual e a
+                  empresa entra no funil de vendas.
+                </p>
+                <Button size="sm" disabled={loteEmpresa.isPending} onClick={() => loteEmpresa.mutate()}>
+                  {loteEmpresa.isPending ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 size-4" />
+                  )}
+                  Disparar para os {alvosEmail.length} e-mails encontrados
+                </Button>
+              </div>
+            )}
+
             {!decisoresMut.isPending && (emailsGerais.length > 0 || telefonesGerais.length > 0) && (
-              <div className="space-y-2 rounded-lg border border-border p-4 text-sm">
+              <div className="space-y-3 rounded-lg border border-border p-4 text-sm">
                 <div className="flex items-center gap-1.5 font-medium">
-                  <Globe className="size-3.5 text-brand" /> Canais gerais do site
+                  <Globe className="size-3.5 text-brand" /> Canais da empresa (site e Google)
                 </div>
                 {emailsGerais.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="space-y-1.5">
                     {emailsGerais.map((e) => (
-                      <span key={e} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
-                        <a href={`mailto:${e}`} className="text-brand">
-                          {e}
+                      <div key={e.email} className="flex flex-wrap items-center gap-2">
+                        <a href={`mailto:${e.email}`} className="text-xs text-brand hover:underline">
+                          {e.email}
                         </a>
-                        <button
-                          type="button"
-                          className="text-muted-foreground transition hover:text-brand disabled:opacity-50"
-                          title="Enviar apresentação para este e-mail"
-                          disabled={enviados.includes(e) || enviarMut.isPending}
+                        <Badge variant="default" className="text-[10px] font-normal">
+                          e-mail verificado
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="ml-auto h-7 text-xs"
+                          disabled={enviados.includes(e.email) || enviarMut.isPending}
                           onClick={() =>
                             enviarMut.mutate({
                               apollo_id: null,
                               nome: "",
                               cargo: null,
-                              email: e,
+                              email: e.email,
                               telefone: null,
                               linkedin_url: null,
                               fonte: "site",
                             })
                           }
                         >
-                          {enviados.includes(e) ? <MailCheck className="size-3.5" /> : <Mail className="size-3.5" />}
-                        </button>
-                      </span>
+                          {enviados.includes(e.email) ? (
+                            <MailCheck className="mr-1.5 size-3.5" />
+                          ) : (
+                            <Mail className="mr-1.5 size-3.5" />
+                          )}
+                          {enviados.includes(e.email) ? "Enviado" : "Enviar e-mail"}
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 )}
                 {telefonesGerais.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {telefonesGerais.map((t) => (
-                      <span key={t} className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {t}
-                      </span>
-                    ))}
+                  <div className="space-y-1.5">
+                    {telefonesGerais.map((t) => {
+                      const wa = linkWhatsappEmpresa(t, selecionada?.nome ?? "sua empresa");
+                      return (
+                        <div key={t} className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Phone className="size-3.5" /> {t}
+                          </span>
+                          {wa && (
+                            <Button asChild size="sm" variant="outline" className="ml-auto h-7 text-xs">
+                              <a href={wa} target="_blank" rel="noopener noreferrer">
+                                <MessageCircle className="mr-1.5 size-3.5" /> WhatsApp
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -683,6 +731,18 @@ function HunterPage() {
                         {enviados.includes(d.email) ? "Apresentação enviada" : "Enviar apresentação"}
                       </Button>
                     )}
+                    {(() => {
+                      const wa = d.telefone
+                        ? linkWhatsappEmpresa(d.telefone, selecionada?.nome ?? "sua empresa")
+                        : null;
+                      return wa ? (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={wa} target="_blank" rel="noopener noreferrer">
+                            <MessageCircle className="mr-2 size-4" /> WhatsApp
+                          </a>
+                        </Button>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );

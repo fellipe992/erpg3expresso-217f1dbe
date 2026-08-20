@@ -15,6 +15,7 @@ import {
 } from "@/hooks/use-crm";
 import { PageShell } from "@/components/crud/page-shell";
 import { OportunidadeDialog } from "@/components/crm/oportunidade-dialog";
+import { ContatosEmpresa } from "@/components/crm/contatos-empresa";
 import { CrmTimeline } from "@/components/crm/crm-timeline";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -206,6 +207,7 @@ function FunilPage() {
                 <Info label="Origem" value={detalhe.origem ?? "—"} />
               </div>
               {detalhe.descricao && <p className="text-sm text-muted-foreground">{detalhe.descricao}</p>}
+              <ContatosEmpresa empresa={detalhe.titulo} />
               <CrmTimeline oportunidadeId={detalhe.id} />
             </div>
           )}

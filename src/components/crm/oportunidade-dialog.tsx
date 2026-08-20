@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -135,11 +136,10 @@ export function OportunidadeDialog({
             <Input value={form.contato_telefone ?? ""} onChange={(e) => setForm({ ...form, contato_telefone: e.target.value })} />
           </F>
           <F label="Valor estimado (R$)">
-            <Input
-              type="number"
-              step="0.01"
+            <DecimalInput
+              decimais={2}
               value={form.valor_estimado ?? 0}
-              onChange={(e) => setForm({ ...form, valor_estimado: Number(e.target.value) })}
+              onChange={(v) => setForm({ ...form, valor_estimado: v === "" ? 0 : Number(v) })}
             />
           </F>
           <F label="Probabilidade (%)">
@@ -179,11 +179,10 @@ export function OportunidadeDialog({
           </F>
           {etapaAtual?.tipo === "ganho" && (
             <F label="Valor fechado (R$)">
-              <Input
-                type="number"
-                step="0.01"
+              <DecimalInput
+                decimais={2}
                 value={form.valor_fechado ?? form.valor_estimado ?? 0}
-                onChange={(e) => setForm({ ...form, valor_fechado: Number(e.target.value) })}
+                onChange={(v) => setForm({ ...form, valor_fechado: v === "" ? 0 : Number(v) })}
               />
             </F>
           )}
