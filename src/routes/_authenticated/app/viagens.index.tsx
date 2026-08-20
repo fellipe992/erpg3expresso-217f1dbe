@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -373,7 +374,7 @@ function ViagensPage() {
               </Select>
             </F>
             <F label="Valor do frete (R$)">
-              <Input type="number" step="0.01" value={form.valor_frete ?? ""} onChange={(e) => setForm({ ...form, valor_frete: e.target.value ? Number(e.target.value) : null })} />
+              <DecimalInput decimais={2} value={form.valor_frete ?? ""} onChange={(v) => setForm({ ...form, valor_frete: v === "" ? null : Number(v) })} />
             </F>
 
             <F label="Origem — Cidade"><Input value={form.origem_cidade ?? ""} onChange={(e) => setForm({ ...form, origem_cidade: e.target.value })} /></F>

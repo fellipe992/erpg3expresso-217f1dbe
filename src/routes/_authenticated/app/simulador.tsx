@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -523,15 +524,10 @@ function PlanejadorPage() {
                 </Select>
               </Campo>
               <Campo label="Consumo médio (km/l)">
-                <Input type="number" step="0.1" value={consumo} onChange={(e) => setConsumo(e.target.value)} />
+                <DecimalInput decimais={1} value={consumo} onChange={setConsumo} />
               </Campo>
               <Campo label="Preço do combustível (R$/l)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={precoDiesel}
-                  onChange={(e) => setPrecoDiesel(e.target.value)}
-                />
+                <DecimalInput decimais={2} value={precoDiesel} onChange={setPrecoDiesel} />
               </Campo>
             </div>
 
@@ -549,33 +545,23 @@ function PlanejadorPage() {
             <p className="text-sm font-semibold">Dados financeiros da viagem</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <Campo label="Valor do frete (R$)">
-                <Input type="number" step="0.01" value={frete} onChange={(e) => setFrete(e.target.value)} />
+                <DecimalInput decimais={2} value={frete} onChange={setFrete} />
               </Campo>
               <Campo label="Comissão do motorista (%)">
-                <Input
-                  type="number"
-                  step="0.1"
-                  value={comissaoPct}
-                  onChange={(e) => setComissaoPct(e.target.value)}
-                />
+                <DecimalInput decimais={1} value={comissaoPct} onChange={setComissaoPct} />
               </Campo>
               <Campo label="Pedágios (R$) — ajuste manual">
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder={resultado ? resultado.pedagioTotal.toFixed(2) : "Calculado pela rota"}
-                  value={pedagioManual}
-                  onChange={(e) => setPedagioManual(e.target.value)}
-                />
+                <DecimalInput decimais={2} placeholder={resultado ? resultado.pedagioTotal.toFixed(2) : "Calculado pela rota"}
+                  value={pedagioManual} onChange={setPedagioManual} />
               </Campo>
               <Campo label="Outros custos (R$)">
-                <Input type="number" step="0.01" value={outros} onChange={(e) => setOutros(e.target.value)} />
+                <DecimalInput decimais={2} value={outros} onChange={setOutros} />
               </Campo>
               <Campo label="Provisão manutenção (R$/km)">
-                <Input type="number" step="0.01" value={manutKm} onChange={(e) => setManutKm(e.target.value)} />
+                <DecimalInput decimais={2} value={manutKm} onChange={setManutKm} />
               </Campo>
               <Campo label="Provisão pneus (R$/km)">
-                <Input type="number" step="0.01" value={pneusKm} onChange={(e) => setPneusKm(e.target.value)} />
+                <DecimalInput decimais={2} value={pneusKm} onChange={setPneusKm} />
               </Campo>
             </div>
             <p className="text-xs text-muted-foreground">
