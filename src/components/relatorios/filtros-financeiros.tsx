@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { BiDados, LancBi } from "@/hooks/use-bi-dados";
+import { diaLocal, type BiDados, type LancBi } from "@/hooks/use-bi-dados";
 
 export type FiltrosFin = {
   de: string;
