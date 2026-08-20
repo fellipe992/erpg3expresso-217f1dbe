@@ -67,6 +67,87 @@ const STATUS_META = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
+/** Número no padrão brasileiro (vírgula decimal, ponto de milhar). */
+const numBR = (v: number | string | null | undefined, casas = 0) =>
+  Number(v ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+
+/** Correção de quilometragem pela operação — liberada mesmo após a conclusão. */
+function EditarKmDialog({
+  viagemId,
+  kmInicial,
+  kmFinal,
+  onDone,
+}: {
+  viagemId: string;
+  kmInicial: number | null;
+  kmFinal: number | null;
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [ini, setIni] = useState("");
+  const [fim, setFim] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const abrir = () => {
+    setIni(kmInicial != null ? String(kmInicial) : "");
+    setFim(kmFinal != null ? String(kmFinal) : "");
+    setOpen(true);
+  };
+
+  const salvar = async () => {
+    const a = ini === "" ? null : Number(ini);
+    const b = fim === "" ? null : Number(fim);
+    if (a != null && b != null && b < a) {
+      toast.error("Km final não pode ser menor que o km inicial.");
+      return;
+    }
+    setSalvando(true);
+    const { error } = await supabase.from("viagens").update({ km_inicial: a, km_final: b }).eq("id", viagemId);
+    setSalvando(false);
+    if (error) {
+      toast.error("Erro ao salvar", { description: error.message });
+      return;
+    }
+    toast.success("Quilometragem atualizada.");
+    setOpen(false);
+    onDone();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button variant="outline" size="sm" onClick={abrir}>
+        <Pencil className="mr-2 size-4" /> Corrigir quilometragem
+      </Button>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Corrigir quilometragem</DialogTitle>
+          <DialogDescription>
+            Ajuste o odômetro registrado. Use vírgula para casas decimais, se necessário.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Km inicial</Label>
+            <DecimalInput value={ini} onChange={setIni} decimais={0} placeholder="0" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Km final</Label>
+            <DecimalInput value={fim} onChange={setFim} decimais={0} placeholder="0" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={salvar} disabled={salvando}>
+            {salvando ? "Salvando..." : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ViagemDetalheePage() {
   const { id } = Route.useParams();
   const { role } = useAuth();
