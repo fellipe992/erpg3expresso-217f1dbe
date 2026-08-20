@@ -123,7 +123,7 @@ function FinanceiroPage() {
   );
 
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
 
   const stats = useMemo(() => {
     let faturamento = 0;
