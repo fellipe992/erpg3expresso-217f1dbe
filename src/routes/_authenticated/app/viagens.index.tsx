@@ -270,8 +270,8 @@ function ViagensPage() {
           </div>
           <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
             <span>{filtered.length} viagem(ns)</span>
-            {(dataDe || dataAte) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            {(dataDe || dataAte || statusFiltro !== "todos") && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); }}>Limpar</Button>
             )}
           </div>
         </div>
