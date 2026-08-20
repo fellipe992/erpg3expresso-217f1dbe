@@ -731,6 +731,18 @@ function HunterPage() {
                         {enviados.includes(d.email) ? "Apresentação enviada" : "Enviar apresentação"}
                       </Button>
                     )}
+                    {(() => {
+                      const wa = d.telefone
+                        ? linkWhatsappEmpresa(d.telefone, selecionada?.nome ?? "sua empresa")
+                        : null;
+                      return wa ? (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={wa} target="_blank" rel="noopener noreferrer">
+                            <MessageCircle className="mr-2 size-4" /> WhatsApp
+                          </a>
+                        </Button>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               );
