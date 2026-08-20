@@ -72,6 +72,7 @@ function ViagensPage() {
   const [dataBase, setDataBase] = useState<"saida" | "prevista">("saida");
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>("todos");
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
   const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
@@ -191,6 +192,7 @@ function ViagensPage() {
   });
 
   const filtered = viagens.filter((v) => {
+    if (statusFiltro !== "todos" && v.status !== statusFiltro) return false;
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
@@ -234,7 +236,20 @@ function ViagensPage() {
       }}
     >
       <Card className="p-3">
-        <div className="grid gap-2 md:grid-cols-4">
+        <div className="grid gap-2 md:grid-cols-5">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</Label>
+            <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as typeof statusFiltro)}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os status</SelectItem>
+                <SelectItem value="planejada">Planejada</SelectItem>
+                <SelectItem value="em_andamento">Em andamento</SelectItem>
+                <SelectItem value="concluida">Concluída</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrar período por</Label>
             <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
@@ -255,8 +270,8 @@ function ViagensPage() {
           </div>
           <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
             <span>{filtered.length} viagem(ns)</span>
-            {(dataDe || dataAte) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); }}>Limpar</Button>
+            {(dataDe || dataAte || statusFiltro !== "todos") && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); }}>Limpar</Button>
             )}
           </div>
         </div>
