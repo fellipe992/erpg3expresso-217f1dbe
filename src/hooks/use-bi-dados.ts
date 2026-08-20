@@ -175,7 +175,7 @@ export function useBiDados(de: string, ate: string) {
       // Data de competência operacional de cada viagem (data_saida > created_at)
       const refViagem = new Map<string, string>();
       for (const raw of viagensRaw) {
-        refViagem.set(String(raw.id), String((raw.data_saida as string) ?? raw.created_at).slice(0, 10));
+        refViagem.set(String(raw.id), diaLocal((raw.data_saida as string) ?? (raw.created_at as string)));
       }
 
       const mapLanc = new Map<string, LancBi>();
