@@ -192,6 +192,7 @@ function ViagensPage() {
   });
 
   const filtered = viagens.filter((v) => {
+    if (statusFiltro !== "todos" && v.status !== statusFiltro) return false;
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
