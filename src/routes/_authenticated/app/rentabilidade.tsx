@@ -30,6 +30,7 @@ import {
   selecionado,
   rotuloSelecao,
   filtrosIniciais,
+  periodoMesAtual,
   useEmpresas,
   type FiltrosFin,
 } from "@/components/relatorios/filtros-financeiros";
@@ -127,7 +128,10 @@ function agregar(viagens: ViagemBi[], chave: (v: ViagemBi) => { id: string; nome
 function RentabilidadePage() {
   const { role } = useAuth();
   const podeVer = role === "administrador" || role === "financeiro" || role === "gestor";
-  const [filtros, setFiltros] = useState<FiltrosFin>(() => filtrosIniciais(365));
+  const [filtros, setFiltros] = useState<FiltrosFin>(() => ({
+    ...filtrosIniciais(0),
+    ...periodoMesAtual(),
+  }));
   const { data, isLoading } = useBiDados(filtros.de, filtros.ate);
   const { data: empresas = [] } = useEmpresas();
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, FilterX } from "lucide-react";
+import { CalendarDays, Check, ChevronsUpDown, FilterX } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -49,6 +49,22 @@ export function filtrosIniciais(diasAtras = 90): FiltrosFin {
     motoristaIds: [],
     status: "todos",
     busca: "",
+  };
+}
+
+export function periodoMesAtual() {
+  const ate = hojeLocal();
+  return { de: `${ate.slice(0, 7)}-01`, ate };
+}
+
+export function periodoMesAnterior() {
+  const hoje = hojeLocal();
+  const [ano, mes] = hoje.split("-").map(Number);
+  const inicio = new Date(Date.UTC(ano, mes - 2, 1));
+  const fim = new Date(Date.UTC(ano, mes - 1, 0));
+  return {
+    de: inicio.toISOString().slice(0, 10),
+    ate: fim.toISOString().slice(0, 10),
   };
 }
 
@@ -285,7 +301,17 @@ export function FiltrosFinanceiros({
         {extra}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-1">
+        {show("periodo") && (
+          <>
+            <Button variant="ghost" size="sm" onClick={() => set(periodoMesAnterior())}>
+              <CalendarDays className="mr-1 size-3.5" /> Mês anterior
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => set(periodoMesAtual())}>
+              <CalendarDays className="mr-1 size-3.5" /> Mês atual
+            </Button>
+          </>
+        )}
         <Button variant="ghost" size="sm" onClick={() => onChange({ ...filtrosIniciais(), de: value.de, ate: value.ate })}>
           <FilterX className="mr-1 size-3.5" /> Limpar filtros
         </Button>
