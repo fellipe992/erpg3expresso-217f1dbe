@@ -91,15 +91,24 @@ export async function enviarApresentacaoRegistrando({
       })
       .eq("id", leadId);
 
-    // Cria a oportunidade no funil (etapa Primeiro Contato) se ainda não existir
+    // UMA oportunidade por EMPRESA (o título é o nome da empresa). Todos os
+    // contatos daquela empresa aparecem no relatório do card no funil.
     const { data: oportExistente } = await supabase
       .from("crm_oportunidades")
-      .select("id")
-      .eq("lead_id", leadId)
+      .select("id, contato_nome, contato_email")
+      .eq("titulo", empresa)
       .limit(1)
       .maybeSingle();
 
-    if (!oportExistente) {
+    if (oportExistente?.id) {
+      await supabase
+        .from("crm_oportunidades")
+        .update({
+          contato_nome: oportExistente.contato_nome ?? nome ?? null,
+          contato_email: oportExistente.contato_email ?? email,
+        })
+        .eq("id", oportExistente.id as string);
+    } else {
       const { data: etapa } = await supabase
         .from("crm_etapas")
         .select("id")
@@ -108,14 +117,14 @@ export async function enviarApresentacaoRegistrando({
 
       if (etapa?.id) {
         await supabase.from("crm_oportunidades").insert({
-          titulo: `${empresa} — prospecção por e-mail`,
+          titulo: empresa,
           lead_id: leadId,
           contato_nome: nome ?? leadAtual?.contato_nome ?? null,
           contato_email: email,
           contato_telefone: leadAtual?.whatsapp ?? leadAtual?.telefone ?? null,
           etapa_id: etapa.id,
           origem: "Prospecção ativa",
-          descricao: "Criada automaticamente pelo envio da apresentação da G3 Expresso.",
+          descricao: "Prospecção por e-mail da G3 Expresso.",
           responsavel_id: leadAtual?.responsavel_id ?? userId,
           created_by: userId,
         });
@@ -124,4 +133,63 @@ export async function enviarApresentacaoRegistrando({
   }
 
   return { status, detalhe };
+}
+
+/**
+ * Garante um lead no CRM para o e-mail informado (reaproveita se já existir)
+ * e devolve o id. Usado pelo disparo individual e pelo disparo em lote.
+ */
+export async function garantirLead({
+  supabase,
+  userId,
+  empresa,
+  email,
+  nome,
+  cargo,
+  telefone,
+  cidade,
+  segmento,
+  observacoes,
+}: {
+  supabase: SupabaseClient<any, any, any>;
+  userId: string;
+  empresa: string;
+  email: string;
+  nome?: string | null;
+  cargo?: string | null;
+  telefone?: string | null;
+  cidade?: string | null;
+  segmento?: string | null;
+  observacoes?: string | null;
+}): Promise<string> {
+  const { data: existente } = await supabase
+    .from("crm_leads")
+    .select("id")
+    .eq("email", email)
+    .limit(1)
+    .maybeSingle();
+  if (existente?.id) return existente.id as string;
+
+  const { data: lead, error } = await supabase
+    .from("crm_leads")
+    .insert({
+      empresa,
+      contato_nome: nome ?? null,
+      cargo: cargo ?? null,
+      email,
+      telefone: telefone ?? null,
+      cidade: cidade ?? null,
+      segmento: segmento ?? null,
+      origem: "Prospecção ativa",
+      classificacao: "C",
+      prioridade: "baixa",
+      status: "aberto",
+      etiquetas: ["Hunter"],
+      observacoes: observacoes ?? null,
+      created_by: userId,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return lead.id as string;
 }

@@ -65,7 +65,6 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     const {
       buscarPerfisLinkedIn,
       enriquecerPerfisLinkedIn,
-      inferirEmailProvavel,
       raspagemSite,
       consolidarComIa,
       mesclarDecisores,
@@ -74,7 +73,7 @@ export const buscarDecisores = createServerFn({ method: "POST" })
 
     const { data: empresa, error } = await context.supabase
       .from("companies")
-      .select("id, nome, website")
+      .select("id, nome, website, telefone")
       .eq("id", data.companyId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -97,42 +96,40 @@ export const buscarDecisores = createServerFn({ method: "POST" })
 
     const { verificarEmail } = await import("@/lib/email-verify.server");
 
-    // Valida os e-mails encontrados e, quando não houver nenhum, sugere o
-    // padrão corporativo — sempre marcando o que foi apenas deduzido.
+    // NUNCA deduzimos endereços: só entram e-mails realmente publicados nas
+    // fontes (site da empresa / perfil público). Quem não tem e-mail real
+    // aparece sem e-mail, para contato por LinkedIn ou WhatsApp da empresa.
     const decisores = await Promise.all(
       mesclados.map(async (d) => {
-        if (d.email) {
-          const v = await verificarEmail(d.email, "fonte");
-          if (v.status === "invalido") {
-            return {
-              ...d,
-              email: null,
-              email_status: "invalido" as const,
-              email_motivo: v.motivo,
-              confianca: "baixa" as const,
-            };
-          }
-          return { ...d, email: v.email, email_status: v.status, email_motivo: v.motivo };
-        }
-
-        const provavel = inferirEmailProvavel(d.nome, dominio, site?.emails ?? []);
-        if (!provavel) return d;
-        const v = await verificarEmail(provavel, "inferido");
+        if (!d.email) return { ...d, email: null, email_status: undefined, email_motivo: null };
+        const v = await verificarEmail(d.email, "fonte");
         if (v.status === "invalido") {
-          return { ...d, email_status: "invalido" as const, email_motivo: v.motivo };
+          return {
+            ...d,
+            email: null,
+            email_status: "invalido" as const,
+            email_motivo: v.motivo,
+            confianca: "baixa" as const,
+          };
         }
-        return {
-          ...d,
-          email: v.email,
-          email_status: v.status,
-          email_motivo: v.motivo,
-          confianca: "baixa" as const,
-          resumo: [d.resumo, "E-mail sugerido pelo padrão corporativo — confirme antes de enviar."]
-            .filter(Boolean)
-            .join(" · "),
-        };
+        return { ...d, email: v.email, email_status: v.status, email_motivo: v.motivo };
       }),
     );
+
+    // E-mails institucionais do site: verificados um a um antes de exibir.
+    const emailsVerificados = (
+      await Promise.all(
+        (site?.emails ?? []).map(async (e) => {
+          const v = await verificarEmail(e, "fonte");
+          return v.status === "invalido" ? null : { email: v.email, motivo: v.motivo };
+        }),
+      )
+    ).filter(Boolean) as { email: string; motivo: string }[];
+
+    // Telefones da empresa (site + Google) prontos para WhatsApp.
+    const telefones = Array.from(
+      new Set([...(site?.telefones ?? []), (empresa.telefone as string | null) ?? ""].filter(Boolean)),
+    ) as string[];
 
     // Persiste o enriquecimento da empresa (resumo e canais gerais).
     if (site || ia.resumoEmpresa) {
@@ -140,8 +137,8 @@ export const buscarDecisores = createServerFn({ method: "POST" })
         .from("companies")
         .update({
           resumo: ia.resumoEmpresa ?? site?.resumo ?? null,
-          emails_gerais: site?.emails ?? null,
-          telefones_gerais: site?.telefones ?? null,
+          emails_gerais: emailsVerificados.map((e) => e.email),
+          telefones_gerais: telefones,
         })
         .eq("id", empresa.id as string);
     }
@@ -155,12 +152,11 @@ export const buscarDecisores = createServerFn({ method: "POST" })
     };
 
     const aviso =
-      decisores.length === 0
+      decisores.length === 0 && emailsVerificados.length === 0
         ? dominio
-          ? "Nenhum decisor identificado nas fontes públicas (LinkedIn e site da empresa). Cadastre o contato manualmente abaixo."
-          : "Esta empresa não possui site cadastrado no Google — a busca ficou limitada. Cadastre o contato manualmente abaixo."
+          ? "Nenhum e-mail ou decisor publicado nas fontes públicas (LinkedIn e site da empresa). Use o WhatsApp da empresa ou cadastre o contato manualmente."
+          : "Esta empresa não possui site cadastrado no Google — a busca ficou limitada. Use o WhatsApp da empresa ou cadastre o contato manualmente."
         : null;
-
 
     return {
       dominio,
@@ -168,8 +164,8 @@ export const buscarDecisores = createServerFn({ method: "POST" })
       aviso,
       fontes,
       empresaResumo: ia.resumoEmpresa ?? site?.resumo ?? null,
-      emailsGerais: site?.emails ?? [],
-      telefonesGerais: site?.telefones ?? [],
+      emailsGerais: emailsVerificados,
+      telefonesGerais: telefones,
       paginasAnalisadas: site?.paginas ?? [],
     };
   });
@@ -425,3 +421,99 @@ export const enviarLoteApresentacao = createServerFn({ method: "POST" })
     return { enviados, ignorados, falhas, invalidos };
   });
 
+
+/**
+ * Disparo em lote de TODOS os e-mails reais encontrados para uma empresa
+ * (decisores com e-mail publicado + e-mails institucionais do site).
+ * Cada endereço recebe um e-mail individual, sem repetir quem já recebeu.
+ */
+export const enviarLoteEmpresa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      companyId: string;
+      contatos: { email: string; nome?: string | null; cargo?: string | null; telefone?: string | null }[];
+    }) => {
+      if (!data?.companyId) throw new Error("Empresa inválida.");
+      const contatos = (Array.isArray(data?.contatos) ? data.contatos : [])
+        .map((c) => ({
+          email: (c?.email ?? "").trim().toLowerCase(),
+          nome: c?.nome?.trim() || null,
+          cargo: c?.cargo?.trim() || null,
+          telefone: c?.telefone?.trim() || null,
+        }))
+        .filter((c) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c.email))
+        .slice(0, 30);
+      if (contatos.length === 0) throw new Error("Nenhum e-mail válido para disparar.");
+      return { companyId: data.companyId, contatos };
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { data: empresa, error } = await context.supabase
+      .from("companies")
+      .select("id, nome, cidade, segmento, telefone, website, endereco")
+      .eq("id", data.companyId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!empresa) throw new Error("Empresa não encontrada.");
+
+    const { enviarApresentacaoRegistrando, garantirLead } = await import("@/lib/hunter-email.server");
+    const { verificarEmail } = await import("@/lib/email-verify.server");
+
+    const alvos = Array.from(new Map(data.contatos.map((c) => [c.email, c])).values());
+
+    const { data: jaEnviados } = await context.supabase
+      .from("crm_emails_enviados")
+      .select("destinatario")
+      .eq("template", "apresentacao-g3")
+      .eq("status", "enviado")
+      .in("destinatario", alvos.map((c) => c.email));
+    const bloqueados = new Set((jaEnviados ?? []).map((r) => (r.destinatario as string).toLowerCase()));
+
+    const nomeEmpresa = empresa.nome as string;
+    let enviados = 0;
+    let ignorados = 0;
+    let invalidos = 0;
+    let falhas = 0;
+
+    for (const c of alvos) {
+      if (bloqueados.has(c.email)) {
+        ignorados++;
+        continue;
+      }
+      bloqueados.add(c.email);
+
+      const check = await verificarEmail(c.email, "fonte");
+      if (check.status === "invalido") {
+        invalidos++;
+        continue;
+      }
+
+      const leadId = await garantirLead({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        empresa: nomeEmpresa,
+        email: c.email,
+        nome: c.nome,
+        cargo: c.cargo,
+        telefone: c.telefone ?? (empresa.telefone as string | null),
+        cidade: (empresa.cidade as string | null) ?? null,
+        segmento: (empresa.segmento as string | null) ?? null,
+        observacoes: [empresa.endereco, empresa.website].filter(Boolean).join(" · ") || null,
+      });
+
+      const { status } = await enviarApresentacaoRegistrando({
+        supabase: context.supabase as never,
+        userId: context.userId,
+        leadId,
+        email: c.email,
+        nome: c.nome,
+        empresa: nomeEmpresa,
+        companyId: empresa.id as string,
+      });
+      if (status === "enviado") enviados++;
+      else falhas++;
+    }
+
+    return { enviados, ignorados, invalidos, falhas };
+  });
