@@ -72,6 +72,7 @@ function ViagensPage() {
   const [dataBase, setDataBase] = useState<"saida" | "prevista">("saida");
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>("todos");
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
   const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
