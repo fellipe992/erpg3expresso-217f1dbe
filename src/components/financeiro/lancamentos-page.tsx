@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -689,7 +690,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
               />
             </div>
             <F label="Valor (R$) *">
-              <Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setForm({ ...form, valor: e.target.value as unknown as number })} />
+              <DecimalInput decimais={2} value={form.valor ?? ""} onChange={(v) => setForm({ ...form, valor: v as unknown as number })} />
             </F>
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
