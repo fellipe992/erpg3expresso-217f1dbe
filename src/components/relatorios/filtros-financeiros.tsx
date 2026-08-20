@@ -63,7 +63,7 @@ export const rotuloSelecao = (ids: string[], nome: (id: string) => string, todos
 /** Regra única de status usada por todos os relatórios e telas financeiras. */
 export function statusCombina(l: Pick<LancBi, "status" | "data_vencimento">, filtro: string) {
   if (filtro === "todos") return true;
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeLocal();
   if (filtro === "a_vencer") return l.status === "pendente" && !!l.data_vencimento && l.data_vencimento >= hoje;
   return l.status === filtro;
 }
