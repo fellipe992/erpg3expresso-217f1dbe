@@ -388,26 +388,9 @@ export async function enriquecerPerfisLinkedIn(perfis: DecisorRico[]): Promise<D
 }
 
 
-/** Padrões corporativos mais comuns no Brasil, usados como e-mail provável. */
-export function inferirEmailProvavel(nome: string, dominio: string | null, exemplos: string[]): string | null {
-  if (!dominio) return null;
-  const partes = nome
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z\s]/g, "")
-    .trim()
-    .split(/\s+/)
-    .filter((p) => p.length > 1 && !["de", "da", "do", "dos", "das"].includes(p));
-  if (partes.length < 2) return null;
-  const primeiro = partes[0]!;
-  const ultimo = partes[partes.length - 1]!;
-
-  // Detecta o padrão a partir de e-mails reais do site (ex.: nome.sobrenome@)
-  const amostra = exemplos.find((e) => e.endsWith(`@${dominio}`) && /[a-z]+[._][a-z]+@/.test(e));
-  if (amostra) {
-    const sep = amostra.split("@")[0]!.includes(".") ? "." : "_";
-    return `${primeiro}${sep}${ultimo}@${dominio}`;
-  }
-  return `${primeiro}.${ultimo}@${dominio}`;
-}
+/*
+ * Não existe (e não deve existir) inferência de e-mail por padrão corporativo:
+ * endereços deduzidos como nome.sobrenome@empresa.com.br não são reais, geram
+ * retorno de entrega e queimam a reputação do remetente. Só usamos e-mails
+ * publicados nas fontes (site da empresa / perfil público).
+ */
