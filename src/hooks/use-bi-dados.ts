@@ -135,7 +135,7 @@ export function useBiDados(de: string, ate: string) {
             "id, codigo, status, created_at, data_saida, data_chegada, km_inicial, km_final, valor_frete, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf",
           )
           .or(
-            `and(data_saida.gte.${de},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${de},created_at.lte.${fim})`,
+            `and(data_saida.gte.${inicioBusca},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${inicioBusca},created_at.lte.${fim})`,
           ),
         // Superset: cobre competência (emissão) e caixa (vencimento/pagamento)
         supabase
