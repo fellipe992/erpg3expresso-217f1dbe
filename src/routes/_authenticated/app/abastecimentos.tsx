@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Fuel, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import { Fuel, Pencil, Trash2, Loader2, Upload, Plus } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -87,6 +87,8 @@ function AbastecimentosPage() {
   }, [isMotorista, meMotorista]);
 
   const [form, setForm] = useState<Partial<Abast>>(emptyForm);
+  type Extra = { combustivel: string; litros: string; valor_litro: string };
+  const [extras, setExtras] = useState<Extra[]>([]);
 
   const { data: veiculos = [] } = useQuery({
     queryKey: ["veiculos-opt-abast"],
@@ -160,16 +162,38 @@ function AbastecimentosPage() {
       if (form.id) {
         const { error } = await supabase.from("abastecimentos").update(payload).eq("id", form.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("abastecimentos").insert(payload);
-        if (error) throw error;
+        return;
       }
+
+      const validos = extras
+        .map((e) => ({ combustivel: e.combustivel, litros: Number(e.litros), valor_litro: Number(e.valor_litro) }))
+        .filter((e) => e.combustivel && e.litros > 0 && e.valor_litro > 0);
+
+      if (extras.length > 0 && validos.length !== extras.length) {
+        throw new Error("Complete combustível, litros e R$/litro dos itens adicionais");
+      }
+
+      const grupo_id = validos.length > 0 ? crypto.randomUUID() : null;
+
+      const { error } = await supabase.from("abastecimentos").insert([
+        { ...payload, grupo_id },
+        ...validos.map((e) => ({
+          ...payload,
+          grupo_id,
+          combustivel: e.combustivel,
+          litros: e.litros,
+          valor_litro: e.valor_litro,
+          valor_total: Number((e.litros * e.valor_litro).toFixed(2)),
+        })),
+      ]);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(form.id ? "Abastecimento atualizado" : "Abastecimento registrado");
       qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
       setOpen(false);
       setForm(emptyForm);
+      setExtras([]);
       setFile(null);
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -204,6 +228,7 @@ function AbastecimentosPage() {
 
   const openNew = () => {
     setForm(emptyForm);
+    setExtras([]);
     setFile(null);
     setOpen(true);
   };
@@ -211,6 +236,9 @@ function AbastecimentosPage() {
   const litros = Number(form.litros ?? 0);
   const vl = Number(form.valor_litro ?? 0);
   const total = form.valor_total ?? (litros && vl ? (litros * vl).toFixed(2) : "");
+  const totalNota =
+    Number(total || 0) +
+    extras.reduce((s, e) => s + Number(e.litros || 0) * Number(e.valor_litro || 0), 0);
 
   return (
     <PageShell
@@ -347,6 +375,61 @@ function AbastecimentosPage() {
             <F label="R$ por litro *"><DecimalInput decimais={3} value={form.valor_litro ?? ""} onChange={(v) => setForm({ ...form, valor_litro: v === "" ? undefined : Number(v) })} /></F>
             <F label="Total (R$)"><DecimalInput decimais={2} value={String(total)} onChange={(v) => setForm({ ...form, valor_total: v === "" ? undefined : Number(v) })} placeholder="Auto" /></F>
             <F label="KM atual *"><DecimalInput decimais={1} value={form.km_atual ?? ""} onChange={(v) => setForm({ ...form, km_atual: v === "" ? undefined : Number(v) })} /></F>
+
+            {!form.id && (
+              <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold">Outros combustíveis na mesma nota</div>
+                    <p className="text-[11px] text-muted-foreground">Ex.: Arla 32 junto do Diesel S10.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExtras([...extras, { combustivel: "Arla 32", litros: "", valor_litro: "" }])}
+                  >
+                    <Plus className="mr-1 size-4" /> Adicionar
+                  </Button>
+                </div>
+
+                {extras.map((e, i) => (
+                  <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                    <Select
+                      value={e.combustivel}
+                      onValueChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, combustivel: v } : x)))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Combustível" /></SelectTrigger>
+                      <SelectContent>
+                        {COMBUSTIVEIS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <DecimalInput
+                      decimais={3}
+                      placeholder="Litros"
+                      value={e.litros}
+                      onChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, litros: v } : x)))}
+                    />
+                    <DecimalInput
+                      decimais={3}
+                      placeholder="R$/litro"
+                      value={e.valor_litro}
+                      onChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, valor_litro: v } : x)))}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setExtras(extras.filter((_, j) => j !== i))}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {extras.length > 0 && (
+                  <div className="text-xs font-medium">
+                    Total da nota: R$ {totalNota.toFixed(2).replace(".", ",")}
+                  </div>
+                )}
+              </div>
+            )}
+
 
             <div className="md:col-span-2">
               <F label="Forma de pagamento *">

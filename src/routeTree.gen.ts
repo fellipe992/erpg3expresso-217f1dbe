@@ -39,6 +39,8 @@ import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppFinanceiroRouteImport } from './routes/_authenticated/app/financeiro'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app/documentos'
+import { Route as AuthenticatedAppDespesasRouteImport } from './routes/_authenticated/app/despesas'
+import { Route as AuthenticatedAppCustosRouteImport } from './routes/_authenticated/app/custos'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
@@ -218,6 +220,17 @@ const AuthenticatedAppDocumentosRoute =
     path: '/app/documentos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppDespesasRoute =
+  AuthenticatedAppDespesasRouteImport.update({
+    id: '/app/despesas',
+    path: '/app/despesas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppCustosRoute = AuthenticatedAppCustosRouteImport.update({
+  id: '/app/custos',
+  path: '/app/custos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppConfiguracoesRoute =
   AuthenticatedAppConfiguracoesRouteImport.update({
     id: '/app/configuracoes',
@@ -317,6 +330,8 @@ export interface FileRoutesByFullPath {
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/app/custos': typeof AuthenticatedAppCustosRoute
+  '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -362,6 +377,8 @@ export interface FileRoutesByTo {
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/app/custos': typeof AuthenticatedAppCustosRoute
+  '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -409,6 +426,8 @@ export interface FileRoutesById {
   '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/_authenticated/app/custos': typeof AuthenticatedAppCustosRoute
+  '/_authenticated/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/_authenticated/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
@@ -456,6 +475,8 @@ export interface FileRouteTypes {
     | '/app/avisos'
     | '/app/clientes'
     | '/app/configuracoes'
+    | '/app/custos'
+    | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
     | '/app/financeiro'
@@ -501,6 +522,8 @@ export interface FileRouteTypes {
     | '/app/avisos'
     | '/app/clientes'
     | '/app/configuracoes'
+    | '/app/custos'
+    | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
     | '/app/financeiro'
@@ -547,6 +570,8 @@ export interface FileRouteTypes {
     | '/_authenticated/app/avisos'
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/configuracoes'
+    | '/_authenticated/app/custos'
+    | '/_authenticated/app/despesas'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/empresa'
     | '/_authenticated/app/financeiro'
@@ -803,6 +828,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDocumentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/despesas': {
+      id: '/_authenticated/app/despesas'
+      path: '/app/despesas'
+      fullPath: '/app/despesas'
+      preLoaderRoute: typeof AuthenticatedAppDespesasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/custos': {
+      id: '/_authenticated/app/custos'
+      path: '/app/custos'
+      fullPath: '/app/custos'
+      preLoaderRoute: typeof AuthenticatedAppCustosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/configuracoes': {
       id: '/_authenticated/app/configuracoes'
       path: '/app/configuracoes'
@@ -912,6 +951,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
+  AuthenticatedAppCustosRoute: typeof AuthenticatedAppCustosRoute
+  AuthenticatedAppDespesasRoute: typeof AuthenticatedAppDespesasRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
   AuthenticatedAppFinanceiroRoute: typeof AuthenticatedAppFinanceiroRoute
@@ -948,6 +989,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
+  AuthenticatedAppCustosRoute: AuthenticatedAppCustosRoute,
+  AuthenticatedAppDespesasRoute: AuthenticatedAppDespesasRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
   AuthenticatedAppFinanceiroRoute: AuthenticatedAppFinanceiroRoute,

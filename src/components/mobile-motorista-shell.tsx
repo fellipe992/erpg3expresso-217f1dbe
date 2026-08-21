@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from "@tanstack/react-router";
-import { LayoutDashboard, MapPin, Fuel, User, Bell } from "lucide-react";
+import { LayoutDashboard, MapPin, Wallet, User, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
   { to: "/app/viagens", label: "Viagens", icon: MapPin },
-  { to: "/app/abastecimentos", label: "Abast.", icon: Fuel },
+  { to: "/app/custos", label: "Custos", icon: Wallet },
   { to: "/app/alertas", label: "Alertas", icon: Bell },
   { to: "/app/perfil", label: "Perfil", icon: User },
 ];
@@ -37,7 +37,11 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md">
         <ul className="grid grid-cols-5">
           {tabs.map((t) => {
-            const active = location.pathname === t.to;
+            const custosPaths = ["/app/custos", "/app/abastecimentos", "/app/manutencoes", "/app/despesas"];
+            const active =
+              t.to === "/app/custos"
+                ? custosPaths.includes(location.pathname)
+                : location.pathname === t.to;
             const Icon = t.icon;
             return (
               <li key={t.to}>

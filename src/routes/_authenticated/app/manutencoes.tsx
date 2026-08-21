@@ -40,18 +40,40 @@ type Manut = {
 
 const TIPOS = ["Preventiva", "Corretiva", "Troca de óleo", "Pneus", "Freios", "Suspensão", "Elétrica", "Revisão", "Outro"];
 
-const empty: Partial<Manut> = { data: new Date().toISOString().slice(0, 10), tipo: "Preventiva", valor: 0 };
+type ManutForm = Partial<Manut> & { motorista_id?: string | null };
+
+const empty: ManutForm = { data: new Date().toISOString().slice(0, 10), tipo: "Preventiva", valor: 0 };
 
 function ManutencoesPage() {
   const { user, role } = useAuth();
   const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
+  const isMotorista = role === "motorista";
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [dataDe, setDataDe] = useState("");
   const [dataAte, setDataAte] = useState("");
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [form, setForm] = useState<Partial<Manut>>(empty);
+  const [form, setForm] = useState<ManutForm>(empty);
+
+  const { data: meMotorista } = useQuery({
+    queryKey: ["me-motorista-manut", user?.id],
+    enabled: !!user?.id && isMotorista,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("motoristas")
+        .select("id, nome, veiculo_id, veiculo:veiculos(placa, modelo)")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data as { id: string; nome: string; veiculo_id: string | null; veiculo: { placa: string; modelo: string } | null } | null;
+    },
+  });
+
+  const novo = () => {
+    setForm({ ...empty, veiculo_id: isMotorista ? meMotorista?.veiculo_id ?? undefined : undefined, motorista_id: isMotorista ? meMotorista?.id ?? null : null });
+    setFile(null);
+    setOpen(true);
+  };
 
   const { data: veiculos = [] } = useQuery({
     queryKey: ["veiculos-opt-manut"],
@@ -112,6 +134,7 @@ function ManutencoesPage() {
         proxima_revisao_km: form.proxima_revisao_km ? Number(form.proxima_revisao_km) : null,
         nota_path,
         observacoes: form.observacoes || null,
+        motorista_id: form.motorista_id ?? (isMotorista ? meMotorista?.id ?? null : null),
         created_by: user!.id,
       };
       if (form.id) {
@@ -162,12 +185,12 @@ function ManutencoesPage() {
     <PageShell
       icon={Wrench}
       title="Manutenções"
-      subtitle="Histórico de manutenções e revisões"
+      subtitle={isMotorista ? `Veículo vinculado: ${meMotorista?.veiculo?.placa ?? "—"}` : "Histórico de manutenções e revisões"}
       search={search}
       onSearch={setSearch}
-      canAdd={isStaff}
+      canAdd={isStaff || (isMotorista && !!meMotorista?.veiculo_id)}
       addLabel="Nova manutenção"
-      onAdd={() => { setForm(empty); setFile(null); setOpen(true); }}
+      onAdd={novo}
     >
       <Card className="p-3">
         <div className="grid gap-2 md:grid-cols-4">
@@ -245,7 +268,7 @@ function ManutencoesPage() {
             <F label="KM atual"><DecimalInput decimais={1} value={form.km_atual ?? ""} onChange={(v) => setForm({ ...form, km_atual: v === "" ? undefined : Number(v) })} /></F>
 
             <F label="Veículo *">
-              <Select value={form.veiculo_id ?? ""} onValueChange={(v) => setForm({ ...form, veiculo_id: v })}>
+              <Select value={form.veiculo_id ?? ""} onValueChange={(v) => setForm({ ...form, veiculo_id: v })} disabled={isMotorista}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {veiculos.map((v) => (
@@ -265,7 +288,7 @@ function ManutencoesPage() {
             </F>
 
             <F label="Oficina"><Input value={form.oficina ?? ""} onChange={(e) => setForm({ ...form, oficina: e.target.value })} /></F>
-            <F label="Fornecedor">
+            {!isMotorista && <F label="Fornecedor">
               <Select value={form.fornecedor_id ?? "none"} onValueChange={(v) => setForm({ ...form, fornecedor_id: v === "none" ? null : v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
@@ -275,7 +298,7 @@ function ManutencoesPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </F>
+            </F>}
 
             <F label="Valor (R$)"><DecimalInput decimais={2} value={form.valor ?? 0} onChange={(v) => setForm({ ...form, valor: v === "" ? undefined : Number(v) })} /></F>
             <div />
