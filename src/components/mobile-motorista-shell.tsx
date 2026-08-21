@@ -37,7 +37,11 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md">
         <ul className="grid grid-cols-5">
           {tabs.map((t) => {
-            const active = location.pathname === t.to;
+            const custosPaths = ["/app/custos", "/app/abastecimentos", "/app/manutencoes", "/app/despesas"];
+            const active =
+              t.to === "/app/custos"
+                ? custosPaths.includes(location.pathname)
+                : location.pathname === t.to;
             const Icon = t.icon;
             return (
               <li key={t.to}>
