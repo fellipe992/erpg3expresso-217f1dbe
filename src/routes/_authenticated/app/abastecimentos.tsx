@@ -162,16 +162,38 @@ function AbastecimentosPage() {
       if (form.id) {
         const { error } = await supabase.from("abastecimentos").update(payload).eq("id", form.id);
         if (error) throw error;
-      } else {
-        const { error } = await supabase.from("abastecimentos").insert(payload);
-        if (error) throw error;
+        return;
       }
+
+      const validos = extras
+        .map((e) => ({ combustivel: e.combustivel, litros: Number(e.litros), valor_litro: Number(e.valor_litro) }))
+        .filter((e) => e.combustivel && e.litros > 0 && e.valor_litro > 0);
+
+      if (extras.length > 0 && validos.length !== extras.length) {
+        throw new Error("Complete combustível, litros e R$/litro dos itens adicionais");
+      }
+
+      const grupo_id = validos.length > 0 ? crypto.randomUUID() : null;
+
+      const { error } = await supabase.from("abastecimentos").insert([
+        { ...payload, grupo_id },
+        ...validos.map((e) => ({
+          ...payload,
+          grupo_id,
+          combustivel: e.combustivel,
+          litros: e.litros,
+          valor_litro: e.valor_litro,
+          valor_total: Number((e.litros * e.valor_litro).toFixed(2)),
+        })),
+      ]);
+      if (error) throw error;
     },
     onSuccess: () => {
       toast.success(form.id ? "Abastecimento atualizado" : "Abastecimento registrado");
       qc.invalidateQueries({ queryKey: ["abastecimentos"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] }); qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
       setOpen(false);
       setForm(emptyForm);
+      setExtras([]);
       setFile(null);
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
