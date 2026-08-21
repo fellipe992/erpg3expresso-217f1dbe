@@ -24,6 +24,7 @@ export type Database = {
           custo_por_km: number | null
           data: string
           forma_pagamento_operacional: string | null
+          grupo_id: string | null
           hora: string | null
           id: string
           km_atual: number
@@ -47,6 +48,7 @@ export type Database = {
           custo_por_km?: number | null
           data: string
           forma_pagamento_operacional?: string | null
+          grupo_id?: string | null
           hora?: string | null
           id?: string
           km_atual: number
@@ -70,6 +72,7 @@ export type Database = {
           custo_por_km?: number | null
           data?: string
           forma_pagamento_operacional?: string | null
+          grupo_id?: string | null
           hora?: string | null
           id?: string
           km_atual?: number
@@ -890,6 +893,79 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      despesas_operacionais: {
+        Row: {
+          categoria: string
+          comprovante_path: string | null
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          forma_pagamento_operacional: string | null
+          id: string
+          motorista_id: string | null
+          observacoes: string | null
+          updated_at: string
+          valor: number
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          categoria: string
+          comprovante_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          forma_pagamento_operacional?: string | null
+          id?: string
+          motorista_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          categoria?: string
+          comprovante_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          forma_pagamento_operacional?: string | null
+          id?: string
+          motorista_id?: string | null
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "despesas_operacionais_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_operacionais_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "despesas_operacionais_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
             referencedColumns: ["id"]
           },
         ]
