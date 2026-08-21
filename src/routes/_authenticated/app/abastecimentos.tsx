@@ -228,6 +228,7 @@ function AbastecimentosPage() {
 
   const openNew = () => {
     setForm(emptyForm);
+    setExtras([]);
     setFile(null);
     setOpen(true);
   };
@@ -235,6 +236,9 @@ function AbastecimentosPage() {
   const litros = Number(form.litros ?? 0);
   const vl = Number(form.valor_litro ?? 0);
   const total = form.valor_total ?? (litros && vl ? (litros * vl).toFixed(2) : "");
+  const totalNota =
+    Number(total || 0) +
+    extras.reduce((s, e) => s + Number(e.litros || 0) * Number(e.valor_litro || 0), 0);
 
   return (
     <PageShell
