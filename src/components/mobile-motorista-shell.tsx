@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
   { to: "/app/viagens", label: "Viagens", icon: MapPin },
-  { to: "/app/abastecimentos", label: "Abast.", icon: Fuel },
+  { to: "/app/custos", label: "Custos", icon: Wallet },
   { to: "/app/alertas", label: "Alertas", icon: Bell },
   { to: "/app/perfil", label: "Perfil", icon: User },
 ];
