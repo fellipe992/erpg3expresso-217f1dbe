@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_abastecimento_calc() FROM authenticated, anon, PUBLIC;
