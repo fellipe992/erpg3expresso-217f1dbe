@@ -87,6 +87,8 @@ function AbastecimentosPage() {
   }, [isMotorista, meMotorista]);
 
   const [form, setForm] = useState<Partial<Abast>>(emptyForm);
+  type Extra = { combustivel: string; litros: string; valor_litro: string };
+  const [extras, setExtras] = useState<Extra[]>([]);
 
   const { data: veiculos = [] } = useQuery({
     queryKey: ["veiculos-opt-abast"],
