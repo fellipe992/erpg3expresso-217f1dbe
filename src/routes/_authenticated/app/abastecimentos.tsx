@@ -376,6 +376,61 @@ function AbastecimentosPage() {
             <F label="Total (R$)"><DecimalInput decimais={2} value={String(total)} onChange={(v) => setForm({ ...form, valor_total: v === "" ? undefined : Number(v) })} placeholder="Auto" /></F>
             <F label="KM atual *"><DecimalInput decimais={1} value={form.km_atual ?? ""} onChange={(v) => setForm({ ...form, km_atual: v === "" ? undefined : Number(v) })} /></F>
 
+            {!form.id && (
+              <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold">Outros combustíveis na mesma nota</div>
+                    <p className="text-[11px] text-muted-foreground">Ex.: Arla 32 junto do Diesel S10.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExtras([...extras, { combustivel: "Arla 32", litros: "", valor_litro: "" }])}
+                  >
+                    <Plus className="mr-1 size-4" /> Adicionar
+                  </Button>
+                </div>
+
+                {extras.map((e, i) => (
+                  <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                    <Select
+                      value={e.combustivel}
+                      onValueChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, combustivel: v } : x)))}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Combustível" /></SelectTrigger>
+                      <SelectContent>
+                        {COMBUSTIVEIS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <DecimalInput
+                      decimais={3}
+                      placeholder="Litros"
+                      value={e.litros}
+                      onChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, litros: v } : x)))}
+                    />
+                    <DecimalInput
+                      decimais={3}
+                      placeholder="R$/litro"
+                      value={e.valor_litro}
+                      onChange={(v) => setExtras(extras.map((x, j) => (j === i ? { ...x, valor_litro: v } : x)))}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => setExtras(extras.filter((_, j) => j !== i))}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {extras.length > 0 && (
+                  <div className="text-xs font-medium">
+                    Total da nota: R$ {totalNota.toFixed(2).replace(".", ",")}
+                  </div>
+                )}
+              </div>
+            )}
+
+
             <div className="md:col-span-2">
               <F label="Forma de pagamento *">
                 <Select value={form.forma_pagamento_operacional ?? ""} onValueChange={(v) => setForm({ ...form, forma_pagamento_operacional: v })}>
