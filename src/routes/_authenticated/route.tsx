@@ -45,13 +45,13 @@ function AuthenticatedLayout() {
   // Admin / Financeiro / Gestor: layout com sidebar
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-dvh w-full max-w-full overflow-x-hidden">
         <AppSidebar />
-        <SidebarInset>
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-md">
-            <SidebarTrigger />
-            <div className="flex-1">
-              <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+        <SidebarInset className="min-w-0 max-w-full overflow-x-hidden">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/80 px-3 pt-safe backdrop-blur-md sm:gap-3 sm:px-4">
+            <SidebarTrigger className="shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
                 {location.pathname === "/app" ? "Visão geral" : "Portal G3"}
               </div>
             </div>
@@ -60,7 +60,7 @@ function AuthenticatedLayout() {
             {role !== "monitor" && <NotificationsBell />}
             <UserMenu />
           </header>
-          <main className="flex-1 bg-background">
+          <main className="min-w-0 flex-1 bg-background pb-safe">
             <Outlet />
           </main>
         </SidebarInset>
