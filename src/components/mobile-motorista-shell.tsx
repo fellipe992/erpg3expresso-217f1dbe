@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from "@tanstack/react-router";
-import { LayoutDashboard, MapPin, Fuel, User, Bell } from "lucide-react";
+import { LayoutDashboard, MapPin, Wallet, User, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
