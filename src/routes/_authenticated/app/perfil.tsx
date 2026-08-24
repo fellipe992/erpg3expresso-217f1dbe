@@ -49,9 +49,11 @@ function PerfilPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
       <div className="flex items-center gap-3">
-        <div className="grid size-14 place-items-center rounded-full bg-brand text-brand-foreground font-display text-xl font-bold">
-          {(nome ?? "?").slice(0, 1).toUpperCase()}
-        </div>
+        <AvatarUpload
+          userId={user!.id}
+          nome={nome ?? "?"}
+          avatarPath={data?.profile?.avatar_url ?? null}
+        />
         <div>
           <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Perfil</div>
           <h1 className="font-display text-2xl font-bold capitalize">{nome}</h1>
@@ -61,6 +63,7 @@ function PerfilPage() {
           </div>
         </div>
       </div>
+
 
       <Card>
         <CardContent className="space-y-3 p-4">
