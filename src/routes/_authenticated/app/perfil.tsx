@@ -89,6 +89,9 @@ function PerfilPage() {
         </CardContent>
       </Card>
 
+      {data?.motorista && <DocsOneDrive />}
+
+
       <Button variant="outline" className="w-full" onClick={signOut}>
         <LogOut className="mr-2 size-4" /> Sair
       </Button>
