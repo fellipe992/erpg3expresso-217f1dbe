@@ -5,6 +5,8 @@ import { FileText, Loader2, Trash2, Download, HardDrive, Search, Image as ImageI
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { SincronizarOneDrive } from "@/components/perfil/sincronizar-onedrive";
+
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
