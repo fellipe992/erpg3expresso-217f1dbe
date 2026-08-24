@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
+import { AvatarUpload } from "@/components/perfil/avatar-upload";
+import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
+
 
 export const Route = createFileRoute("/_authenticated/app/perfil")({
   head: () => ({ meta: [{ title: "Perfil — G3 Expresso" }] }),
@@ -23,16 +26,17 @@ function PerfilPage() {
     enabled: !!user?.id,
     queryFn: async () => {
       const [{ data: profile }, { data: mot }] = await Promise.all([
-        supabase.from("profiles").select("nome, email, ativo").eq("id", user!.id).maybeSingle(),
+        supabase.from("profiles").select("nome, email, ativo, avatar_url").eq("id", user!.id).maybeSingle(),
         supabase
           .from("motoristas")
-          .select("nome, cpf, cnh, cnh_categoria, cnh_validade, telefone, email, cidade, uf, veiculo:veiculos(placa, modelo, marca)")
+          .select("id, nome, cpf, cnh, cnh_categoria, cnh_validade, telefone, email, cidade, uf, veiculo:veiculos(placa, modelo, marca)")
           .eq("user_id", user!.id)
           .maybeSingle(),
       ]);
       return { profile, motorista: mot };
     },
   });
+
 
   const signOut = async () => {
     await supabase.auth.signOut({ scope: "local" });
@@ -48,9 +52,11 @@ function PerfilPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 md:p-8">
       <div className="flex items-center gap-3">
-        <div className="grid size-14 place-items-center rounded-full bg-brand text-brand-foreground font-display text-xl font-bold">
-          {(nome ?? "?").slice(0, 1).toUpperCase()}
-        </div>
+        <AvatarUpload
+          userId={user!.id}
+          nome={nome ?? "?"}
+          avatarPath={data?.profile?.avatar_url ?? null}
+        />
         <div>
           <div className="text-[10px] uppercase tracking-[0.24em] text-muted-foreground">Perfil</div>
           <h1 className="font-display text-2xl font-bold capitalize">{nome}</h1>
@@ -60,6 +66,7 @@ function PerfilPage() {
           </div>
         </div>
       </div>
+
 
       <Card>
         <CardContent className="space-y-3 p-4">
@@ -81,6 +88,9 @@ function PerfilPage() {
           )}
         </CardContent>
       </Card>
+
+      {data?.motorista && <DocsOneDrive />}
+
 
       <Button variant="outline" className="w-full" onClick={signOut}>
         <LogOut className="mr-2 size-4" /> Sair
