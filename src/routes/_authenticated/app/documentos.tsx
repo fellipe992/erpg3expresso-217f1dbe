@@ -164,7 +164,10 @@ function DocumentosPage() {
             </p>
           </div>
         </div>
+        {isStaff && <SincronizarOneDrive />}
       </div>
+
+
 
       {/* Uso de armazenamento */}
       <Card className="p-4 md:p-6">
