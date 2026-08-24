@@ -2,7 +2,7 @@
  * Integração com o OneDrive (via connector gateway da Lovable).
  * Estrutura: /G3 Expresso - Agregados/<Nome do motorista>/...
  */
-const GATEWAY = "https://connector-gateway.lovable.dev/microsoft_onedrive/v1.0";
+const GATEWAY = "https://connector-gateway.lovable.dev/microsoft_onedrive";
 
 export const ROOT_FOLDER = "G3 Expresso - Agregados";
 
