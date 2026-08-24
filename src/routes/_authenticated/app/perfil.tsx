@@ -23,16 +23,17 @@ function PerfilPage() {
     enabled: !!user?.id,
     queryFn: async () => {
       const [{ data: profile }, { data: mot }] = await Promise.all([
-        supabase.from("profiles").select("nome, email, ativo").eq("id", user!.id).maybeSingle(),
+        supabase.from("profiles").select("nome, email, ativo, avatar_url").eq("id", user!.id).maybeSingle(),
         supabase
           .from("motoristas")
-          .select("nome, cpf, cnh, cnh_categoria, cnh_validade, telefone, email, cidade, uf, veiculo:veiculos(placa, modelo, marca)")
+          .select("id, nome, cpf, cnh, cnh_categoria, cnh_validade, telefone, email, cidade, uf, veiculo:veiculos(placa, modelo, marca)")
           .eq("user_id", user!.id)
           .maybeSingle(),
       ]);
       return { profile, motorista: mot };
     },
   });
+
 
   const signOut = async () => {
     await supabase.auth.signOut({ scope: "local" });
