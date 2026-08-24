@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
+import { AvatarUpload } from "@/components/perfil/avatar-upload";
+import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
+
 
 export const Route = createFileRoute("/_authenticated/app/perfil")({
   head: () => ({ meta: [{ title: "Perfil — G3 Expresso" }] }),
