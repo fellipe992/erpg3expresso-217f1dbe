@@ -117,12 +117,16 @@ export function AvatarUpload({
   };
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative">
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="relative size-16 shrink-0">
         {url ? (
-          <img src={url} alt={`Foto de ${nome}`} className="size-16 rounded-full object-cover" />
+          <img
+            src={url}
+            alt={`Foto de ${nome}`}
+            className="block size-full shrink-0 aspect-square rounded-full object-cover"
+          />
         ) : (
-          <div className="grid size-16 place-items-center rounded-full bg-brand font-display text-xl font-bold text-brand-foreground">
+          <div className="grid size-full place-items-center rounded-full bg-brand font-display text-xl font-bold text-brand-foreground">
             {(nome ?? "?").slice(0, 1).toUpperCase()}
           </div>
         )}
@@ -132,7 +136,7 @@ export function AvatarUpload({
           </div>
         )}
       </div>
-      <div>
+      <div className="min-w-0">
         {isNative() ? (
           <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void tirarFotoNativa()}>
             <ImagePlus className="mr-2 size-4" /> Alterar foto
