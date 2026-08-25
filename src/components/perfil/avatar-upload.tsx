@@ -10,14 +10,19 @@ const MAX_SIDE = 800;
 async function comprimir(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   try {
-    const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
+    // respeita a orientação EXIF (fotos de celular vinham giradas)
+    const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+    // recorta o centro em quadrado para o avatar nunca distorcer o layout
+    const side = Math.min(bmp.width, bmp.height);
+    const sx = Math.round((bmp.width - side) / 2);
+    const sy = Math.round((bmp.height - side) / 2);
+    const out = Math.min(MAX_SIDE, side);
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bmp.width * scale);
-    canvas.height = Math.round(bmp.height * scale);
+    canvas.width = out;
+    canvas.height = out;
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
-    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bmp, sx, sy, side, side, 0, 0, out, out);
     bmp.close();
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob((b) => r(b), "image/jpeg", 0.8));
     if (!blob) return file;
@@ -26,6 +31,7 @@ async function comprimir(file: File): Promise<File> {
     return file;
   }
 }
+
 
 export function AvatarUpload({
   userId,
