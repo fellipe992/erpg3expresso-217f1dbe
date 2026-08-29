@@ -161,7 +161,7 @@ function ViagensPage() {
   });
   const { data: motoristas = [] } = useQuery({
     queryKey: ["motoristas-lite"],
-    enabled: canWrite,
+    enabled: !isMotorista,
     queryFn: async () => {
       const { data } = await supabase.from("motoristas").select("id, nome").eq("ativo", true).order("nome");
       return data ?? [];
