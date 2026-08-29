@@ -94,14 +94,28 @@ function ViagensPage() {
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
   const isAdmin = role === "administrador";
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
+  const inicial = lerFiltros();
+  const [search, setSearch] = useState(inicial.search);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Viagem>>(emptyForm);
   const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
-  const [dataBase, setDataBase] = useState<"saida" | "prevista">("saida");
-  const [dataDe, setDataDe] = useState("");
-  const [dataAte, setDataAte] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>("todos");
+  const [dataBase, setDataBase] = useState<"saida" | "prevista">(inicial.dataBase);
+  const [dataDe, setDataDe] = useState(inicial.dataDe);
+  const [dataAte, setDataAte] = useState(inicial.dataAte);
+  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>(inicial.statusFiltro);
+  const [motoristaFiltro, setMotoristaFiltro] = useState<string>(inicial.motoristaFiltro);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        FILTROS_KEY,
+        JSON.stringify({ search, dataBase, dataDe, dataAte, statusFiltro, motoristaFiltro }),
+      );
+    } catch {
+      /* sessionStorage indisponível */
+    }
+  }, [search, dataBase, dataDe, dataAte, statusFiltro, motoristaFiltro]);
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
   const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
