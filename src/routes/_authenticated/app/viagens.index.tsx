@@ -329,8 +329,8 @@ function ViagensPage() {
           </div>
           <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
             <span>{filtered.length} viagem(ns)</span>
-            {(dataDe || dataAte || statusFiltro !== "todos") && (
-              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); }}>Limpar</Button>
+            {(dataDe || dataAte || statusFiltro !== "todos" || motoristaFiltro !== "todos") && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); setMotoristaFiltro("todos"); }}>Limpar</Button>
             )}
           </div>
         </div>
