@@ -59,6 +59,35 @@ const STATUS_META: Record<Viagem["status"], { label: string; variant: "default" 
 
 const emptyForm: Partial<Viagem> = { status: "planejada" };
 
+// Mantém os filtros da tela ao entrar em uma viagem e voltar.
+const FILTROS_KEY = "g3:viagens:filtros";
+type FiltrosViagens = {
+  search: string;
+  dataBase: "saida" | "prevista";
+  dataDe: string;
+  dataAte: string;
+  statusFiltro: "todos" | Viagem["status"];
+  motoristaFiltro: string;
+};
+const filtrosPadrao: FiltrosViagens = {
+  search: "",
+  dataBase: "saida",
+  dataDe: "",
+  dataAte: "",
+  statusFiltro: "todos",
+  motoristaFiltro: "todos",
+};
+function lerFiltros(): FiltrosViagens {
+  if (typeof window === "undefined") return filtrosPadrao;
+  try {
+    const raw = window.sessionStorage.getItem(FILTROS_KEY);
+    if (!raw) return filtrosPadrao;
+    return { ...filtrosPadrao, ...(JSON.parse(raw) as Partial<FiltrosViagens>) };
+  } catch {
+    return filtrosPadrao;
+  }
+}
+
 function ViagensPage() {
   const { role } = useAuth();
   const isMotorista = role === "motorista";
