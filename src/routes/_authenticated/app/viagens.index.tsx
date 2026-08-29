@@ -236,6 +236,11 @@ function ViagensPage() {
 
   const filtered = viagens.filter((v) => {
     if (statusFiltro !== "todos" && v.status !== statusFiltro) return false;
+    if (motoristaFiltro !== "todos") {
+      if (motoristaFiltro === "sem") {
+        if (v.motorista_id) return false;
+      } else if (v.motorista_id !== motoristaFiltro) return false;
+    }
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
