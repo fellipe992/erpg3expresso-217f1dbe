@@ -59,20 +59,63 @@ const STATUS_META: Record<Viagem["status"], { label: string; variant: "default" 
 
 const emptyForm: Partial<Viagem> = { status: "planejada" };
 
+// Mantém os filtros da tela ao entrar em uma viagem e voltar.
+const FILTROS_KEY = "g3:viagens:filtros";
+type FiltrosViagens = {
+  search: string;
+  dataBase: "saida" | "prevista";
+  dataDe: string;
+  dataAte: string;
+  statusFiltro: "todos" | Viagem["status"];
+  motoristaFiltro: string;
+};
+const filtrosPadrao: FiltrosViagens = {
+  search: "",
+  dataBase: "saida",
+  dataDe: "",
+  dataAte: "",
+  statusFiltro: "todos",
+  motoristaFiltro: "todos",
+};
+function lerFiltros(): FiltrosViagens {
+  if (typeof window === "undefined") return filtrosPadrao;
+  try {
+    const raw = window.sessionStorage.getItem(FILTROS_KEY);
+    if (!raw) return filtrosPadrao;
+    return { ...filtrosPadrao, ...(JSON.parse(raw) as Partial<FiltrosViagens>) };
+  } catch {
+    return filtrosPadrao;
+  }
+}
+
 function ViagensPage() {
   const { role } = useAuth();
   const isMotorista = role === "motorista";
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
   const isAdmin = role === "administrador";
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
+  const inicial = lerFiltros();
+  const [search, setSearch] = useState(inicial.search);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Viagem>>(emptyForm);
   const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
-  const [dataBase, setDataBase] = useState<"saida" | "prevista">("saida");
-  const [dataDe, setDataDe] = useState("");
-  const [dataAte, setDataAte] = useState("");
-  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>("todos");
+  const [dataBase, setDataBase] = useState<"saida" | "prevista">(inicial.dataBase);
+  const [dataDe, setDataDe] = useState(inicial.dataDe);
+  const [dataAte, setDataAte] = useState(inicial.dataAte);
+  const [statusFiltro, setStatusFiltro] = useState<"todos" | Viagem["status"]>(inicial.statusFiltro);
+  const [motoristaFiltro, setMotoristaFiltro] = useState<string>(inicial.motoristaFiltro);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        FILTROS_KEY,
+        JSON.stringify({ search, dataBase, dataDe, dataAte, statusFiltro, motoristaFiltro }),
+      );
+    } catch {
+      /* sessionStorage indisponível */
+    }
+  }, [search, dataBase, dataDe, dataAte, statusFiltro, motoristaFiltro]);
 
   // Carrega o roteiro já cadastrado ao editar uma viagem existente.
   const { data: paradasSalvas, isFetching: paradasCarregando } = useQuery({
@@ -118,7 +161,7 @@ function ViagensPage() {
   });
   const { data: motoristas = [] } = useQuery({
     queryKey: ["motoristas-lite"],
-    enabled: canWrite,
+    enabled: !isMotorista,
     queryFn: async () => {
       const { data } = await supabase.from("motoristas").select("id, nome").eq("ativo", true).order("nome");
       return data ?? [];
@@ -193,6 +236,11 @@ function ViagensPage() {
 
   const filtered = viagens.filter((v) => {
     if (statusFiltro !== "todos" && v.status !== statusFiltro) return false;
+    if (motoristaFiltro !== "todos") {
+      if (motoristaFiltro === "sem") {
+        if (v.motorista_id) return false;
+      } else if (v.motorista_id !== motoristaFiltro) return false;
+    }
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
@@ -236,7 +284,18 @@ function ViagensPage() {
       }}
     >
       <Card className="p-3">
-        <div className="grid gap-2 md:grid-cols-5">
+        <div className="grid gap-2 md:grid-cols-6">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Motorista</Label>
+            <Select value={motoristaFiltro} onValueChange={setMotoristaFiltro}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os motoristas</SelectItem>
+                <SelectItem value="sem">Sem motorista</SelectItem>
+                {motoristas.map((m) => <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</Label>
             <Select value={statusFiltro} onValueChange={(v) => setStatusFiltro(v as typeof statusFiltro)}>
@@ -270,8 +329,8 @@ function ViagensPage() {
           </div>
           <div className="flex items-end justify-between gap-2 text-xs text-muted-foreground">
             <span>{filtered.length} viagem(ns)</span>
-            {(dataDe || dataAte || statusFiltro !== "todos") && (
-              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); }}>Limpar</Button>
+            {(dataDe || dataAte || statusFiltro !== "todos" || motoristaFiltro !== "todos") && (
+              <Button variant="ghost" size="sm" onClick={() => { setDataDe(""); setDataAte(""); setStatusFiltro("todos"); setMotoristaFiltro("todos"); }}>Limpar</Button>
             )}
           </div>
         </div>
