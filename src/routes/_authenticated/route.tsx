@@ -12,12 +12,21 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    // Sessão persistente: só manda para /auth quando NÃO existe sessão salva
+    // no aparelho. Falha de rede / token vencido não desloga o motorista —
+    // o Supabase renova o token sozinho assim que a internet volta.
+    const { data: sessionData } = await supabase.auth.getSession();
+    let session = sessionData.session;
+    if (!session) {
+      const { data: refreshed } = await supabase.auth.refreshSession().catch(() => ({ data: { session: null } }) as never);
+      session = refreshed?.session ?? null;
+    }
+    if (!session) throw redirect({ to: "/auth" });
+    return { user: session.user };
   },
   component: AuthenticatedLayout,
 });
+
 
 function AuthenticatedLayout() {
   const { role, roleLoading } = useAuth();
