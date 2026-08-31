@@ -773,7 +773,14 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
   const [tacografo, setTacografo] = useState<"ok" | "problema" | null>(null);
 
   const [obs, setObs] = useState("");
-  const [km, setKm] = useState<string>(kmSugerido?.toString() ?? "");
+  const [km, setKm] = useState<string>(kmSugerido != null ? String(Math.round(kmSugerido)) : "");
+  const kmPreenchido = useRef(false);
+  useEffect(() => {
+    if (!kmPreenchido.current && kmSugerido != null) {
+      kmPreenchido.current = true;
+      setKm(String(Math.round(kmSugerido)));
+    }
+  }, [kmSugerido]);
   const [salvando, setSalvando] = useState(false);
 
   const canSubmit =
