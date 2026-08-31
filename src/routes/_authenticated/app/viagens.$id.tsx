@@ -178,7 +178,7 @@ function ViagemDetalheePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viagens")
-        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, provisao_manutencao_km, provisao_pneus_km)")
+        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, odometro_atual, provisao_manutencao_km, provisao_pneus_km)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -247,6 +247,41 @@ function ViagemDetalheePage() {
       return data ?? [];
     },
   });
+
+  /** Sugestões automáticas de quilometragem: último odômetro do veículo + média rodada. */
+  const veiculoId = viagem?.veiculo_id ?? null;
+  const { data: kmSugestao } = useQuery({
+    queryKey: ["veiculo-km-sugestao", veiculoId],
+    enabled: !!veiculoId,
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("viagens")
+        .select("km_inicial, km_final")
+        .eq("veiculo_id", veiculoId!)
+        .eq("status", "concluida")
+        .not("km_inicial", "is", null)
+        .not("km_final", "is", null)
+        .order("data_chegada", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const deltas = (rows ?? [])
+        .map((r) => Number(r.km_final) - Number(r.km_inicial))
+        .filter((d) => Number.isFinite(d) && d > 0);
+      const maiorKm = (rows ?? []).reduce((acc, r) => Math.max(acc, Number(r.km_final) || 0), 0);
+      const media = deltas.length ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
+      return { media, maiorKm: maiorKm || null };
+    },
+  });
+
+  const odometroVeiculo =
+    (viagem?.veiculo?.odometro_atual != null ? Number(viagem.veiculo.odometro_atual) : null) ??
+    kmSugestao?.maiorKm ??
+    null;
+  const kmInicialSugerido = viagem?.km_inicial != null ? Number(viagem.km_inicial) : odometroVeiculo;
+  const kmFinalSugerido =
+    kmInicialSugerido != null && kmSugestao?.media ? kmInicialSugerido + kmSugestao.media : null;
+
+
 
   if (isLoading) {
     return (
@@ -378,7 +413,7 @@ function ViagemDetalheePage() {
       {viagem.status === "planejada" && (
         <ChecklistSaidaDialog
           viagemId={id}
-          kmSugerido={viagem.km_inicial ?? null}
+          kmSugerido={kmInicialSugerido}
           onDone={invalidateAll}
           autoOpen={location.hash === "iniciar"}
         />
@@ -419,6 +454,7 @@ function ViagemDetalheePage() {
             <FinalizarViagemDialog
               viagemId={id}
               kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
+              kmFinalSugerido={kmFinalSugerido}
               onDone={invalidateAll}
               autoOpen={location.hash === "finalizar"}
             />
@@ -737,7 +773,14 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
   const [tacografo, setTacografo] = useState<"ok" | "problema" | null>(null);
 
   const [obs, setObs] = useState("");
-  const [km, setKm] = useState<string>(kmSugerido?.toString() ?? "");
+  const [km, setKm] = useState<string>(kmSugerido != null ? String(Math.round(kmSugerido)) : "");
+  const kmPreenchido = useRef(false);
+  useEffect(() => {
+    if (!kmPreenchido.current && kmSugerido != null) {
+      kmPreenchido.current = true;
+      setKm(String(Math.round(kmSugerido)));
+    }
+  }, [kmSugerido]);
   const [salvando, setSalvando] = useState(false);
 
   const canSubmit =
@@ -1045,7 +1088,19 @@ function QuickPhotoUpload({ viagemId, onDone }: { viagemId: string; onDone: () =
 }
 
 // ============ Finalizar Viagem ============
-function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viagemId: string; kmInicial: number | null; onDone: () => void; autoOpen?: boolean }) {
+function FinalizarViagemDialog({
+  viagemId,
+  kmInicial,
+  kmFinalSugerido,
+  onDone,
+  autoOpen,
+}: {
+  viagemId: string;
+  kmInicial: number | null;
+  kmFinalSugerido?: number | null;
+  onDone: () => void;
+  autoOpen?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const openedOnce = useRef(false);
   useEffect(() => {
@@ -1061,6 +1116,13 @@ function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viag
     return d.toISOString().slice(0, 16);
   });
   const [kmFinal, setKmFinal] = useState("");
+  const preenchido = useRef(false);
+  useEffect(() => {
+    if (!preenchido.current && kmFinalSugerido != null) {
+      preenchido.current = true;
+      setKmFinal(String(Math.round(kmFinalSugerido)));
+    }
+  }, [kmFinalSugerido]);
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
 

@@ -2035,6 +2035,8 @@ export type Database = {
           marca: string | null
           modelo: string
           observacoes: string | null
+          odometro_atual: number | null
+          odometro_atualizado_em: string | null
           placa: string
           proprietario_documento: string | null
           proprietario_nome: string | null
@@ -2060,6 +2062,8 @@ export type Database = {
           marca?: string | null
           modelo: string
           observacoes?: string | null
+          odometro_atual?: number | null
+          odometro_atualizado_em?: string | null
           placa: string
           proprietario_documento?: string | null
           proprietario_nome?: string | null
@@ -2085,6 +2089,8 @@ export type Database = {
           marca?: string | null
           modelo?: string
           observacoes?: string | null
+          odometro_atual?: number | null
+          odometro_atualizado_em?: string | null
           placa?: string
           proprietario_documento?: string | null
           proprietario_nome?: string | null
