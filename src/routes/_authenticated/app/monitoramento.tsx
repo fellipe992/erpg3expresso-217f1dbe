@@ -106,6 +106,7 @@ function MonitoramentoPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pedindoId, setPedindoId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"lista" | "mapa">("lista");
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
