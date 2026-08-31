@@ -248,6 +248,41 @@ function ViagemDetalheePage() {
     },
   });
 
+  /** Sugestões automáticas de quilometragem: último odômetro do veículo + média rodada. */
+  const veiculoId = viagem?.veiculo_id ?? null;
+  const { data: kmSugestao } = useQuery({
+    queryKey: ["veiculo-km-sugestao", veiculoId],
+    enabled: !!veiculoId,
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("viagens")
+        .select("km_inicial, km_final")
+        .eq("veiculo_id", veiculoId!)
+        .eq("status", "concluida")
+        .not("km_inicial", "is", null)
+        .not("km_final", "is", null)
+        .order("data_chegada", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const deltas = (rows ?? [])
+        .map((r) => Number(r.km_final) - Number(r.km_inicial))
+        .filter((d) => Number.isFinite(d) && d > 0);
+      const maiorKm = (rows ?? []).reduce((acc, r) => Math.max(acc, Number(r.km_final) || 0), 0);
+      const media = deltas.length ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
+      return { media, maiorKm: maiorKm || null };
+    },
+  });
+
+  const odometroVeiculo =
+    (viagem?.veiculo?.odometro_atual != null ? Number(viagem.veiculo.odometro_atual) : null) ??
+    kmSugestao?.maiorKm ??
+    null;
+  const kmInicialSugerido = viagem?.km_inicial != null ? Number(viagem.km_inicial) : odometroVeiculo;
+  const kmFinalSugerido =
+    kmInicialSugerido != null && kmSugestao?.media ? kmInicialSugerido + kmSugestao.media : null;
+
+
+
   if (isLoading) {
     return (
       <div className="grid min-h-[50vh] place-items-center">
