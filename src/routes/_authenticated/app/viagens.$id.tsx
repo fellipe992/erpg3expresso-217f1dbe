@@ -454,6 +454,7 @@ function ViagemDetalheePage() {
             <FinalizarViagemDialog
               viagemId={id}
               kmInicial={viagem.km_inicial ? Number(viagem.km_inicial) : null}
+              kmFinalSugerido={kmFinalSugerido}
               onDone={invalidateAll}
               autoOpen={location.hash === "finalizar"}
             />
