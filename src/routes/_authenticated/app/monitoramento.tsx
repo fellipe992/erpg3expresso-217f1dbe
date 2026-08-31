@@ -618,7 +618,12 @@ function MonitoramentoPage() {
       </aside>
 
       {/* Mapa */}
-      <div className="relative flex-1">
+      <div
+        className={cn(
+          "relative min-h-0 flex-1",
+          mobileView === "lista" ? "hidden md:block" : "block",
+        )}
+      >
         <div ref={mapDivRef} className="absolute inset-0" />
         {viagens.length === 0 && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
