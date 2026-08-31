@@ -374,6 +374,8 @@ function MonitoramentoPage() {
 
   function centralizar(v: ViagemAtiva) {
     const l = locsByViagem[v.id];
+    // No celular, centralizar leva direto para a aba do mapa.
+    setMobileView("mapa");
     const map = mapRef.current;
     // Posição ausente ou velha: pede uma atualização ao app do motorista.
     const velha = !l || Date.now() - new Date(l.created_at).getTime() > POSICAO_OBSOLETA_MS;
@@ -384,6 +386,23 @@ function MonitoramentoPage() {
     setSelectedId(v.id);
     openInfoWindow(v, l);
   }
+
+  // Quando o mapa volta a ficar visível no mobile, o Google Maps precisa do
+  // evento de resize para recalcular o tamanho do canvas (estava display:none).
+  useEffect(() => {
+    if (mobileView !== "mapa") return;
+    const map = mapRef.current;
+    if (!map || !window.google) return;
+    window.google.maps.event.trigger(map, "resize");
+    const pontos = Object.values(locsByViagem);
+    if (pontos.length > 1) {
+      const bounds = new window.google.maps.LatLngBounds();
+      for (const l of pontos) bounds.extend({ lat: l.latitude, lng: l.longitude });
+      map.fitBounds(bounds, 60);
+    } else if (pontos.length === 1) {
+      map.setCenter({ lat: pontos[0].latitude, lng: pontos[0].longitude });
+    }
+  }, [mobileView, locsByViagem]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
