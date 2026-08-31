@@ -389,12 +389,16 @@ function MonitoramentoPage() {
 
   // Quando o mapa volta a ficar visível no mobile, o Google Maps precisa do
   // evento de resize para recalcular o tamanho do canvas (estava display:none).
+  // Roda só na troca de aba: reenquadrar a cada nova posição roubaria o zoom
+  // que o usuário fez manualmente.
+  const locsRef = useRef(locsByViagem);
+  locsRef.current = locsByViagem;
   useEffect(() => {
     if (mobileView !== "mapa") return;
     const map = mapRef.current;
     if (!map || !window.google) return;
     window.google.maps.event.trigger(map, "resize");
-    const pontos = Object.values(locsByViagem);
+    const pontos = Object.values(locsRef.current);
     if (pontos.length > 1) {
       const bounds = new window.google.maps.LatLngBounds();
       for (const l of pontos) bounds.extend({ lat: l.latitude, lng: l.longitude });
@@ -402,7 +406,7 @@ function MonitoramentoPage() {
     } else if (pontos.length === 1) {
       map.setCenter({ lat: pontos[0].latitude, lng: pontos[0].longitude });
     }
-  }, [mobileView, locsByViagem]);
+  }, [mobileView]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
