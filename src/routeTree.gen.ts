@@ -35,6 +35,7 @@ import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
 import { Route as AuthenticatedAppMonitoramentoRouteImport } from './routes/_authenticated/app/monitoramento'
 import { Route as AuthenticatedAppManutencoesRouteImport } from './routes/_authenticated/app/manutencoes'
+import { Route as AuthenticatedAppFrotaRouteImport } from './routes/_authenticated/app/frota'
 import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
 import { Route as AuthenticatedAppFinanceiroRouteImport } from './routes/_authenticated/app/financeiro'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
@@ -197,6 +198,11 @@ const AuthenticatedAppManutencoesRoute =
     path: '/app/manutencoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppFrotaRoute = AuthenticatedAppFrotaRouteImport.update({
+  id: '/app/frota',
+  path: '/app/frota',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppFornecedoresRoute =
   AuthenticatedAppFornecedoresRouteImport.update({
     id: '/app/fornecedores',
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/app/frota': typeof AuthenticatedAppFrotaRoute
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByTo {
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/app/frota': typeof AuthenticatedAppFrotaRoute
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
   '/_authenticated/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
+  '/_authenticated/app/frota': typeof AuthenticatedAppFrotaRoute
   '/_authenticated/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
   '/_authenticated/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
@@ -481,6 +490,7 @@ export interface FileRouteTypes {
     | '/app/empresa'
     | '/app/financeiro'
     | '/app/fornecedores'
+    | '/app/frota'
     | '/app/manutencoes'
     | '/app/monitoramento'
     | '/app/motoristas'
@@ -528,6 +538,7 @@ export interface FileRouteTypes {
     | '/app/empresa'
     | '/app/financeiro'
     | '/app/fornecedores'
+    | '/app/frota'
     | '/app/manutencoes'
     | '/app/monitoramento'
     | '/app/motoristas'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/empresa'
     | '/_authenticated/app/financeiro'
     | '/_authenticated/app/fornecedores'
+    | '/_authenticated/app/frota'
     | '/_authenticated/app/manutencoes'
     | '/_authenticated/app/monitoramento'
     | '/_authenticated/app/motoristas'
@@ -800,6 +812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppManutencoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/frota': {
+      id: '/_authenticated/app/frota'
+      path: '/app/frota'
+      fullPath: '/app/frota'
+      preLoaderRoute: typeof AuthenticatedAppFrotaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/fornecedores': {
       id: '/_authenticated/app/fornecedores'
       path: '/app/fornecedores'
@@ -957,6 +976,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
   AuthenticatedAppFinanceiroRoute: typeof AuthenticatedAppFinanceiroRoute
   AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
+  AuthenticatedAppFrotaRoute: typeof AuthenticatedAppFrotaRoute
   AuthenticatedAppManutencoesRoute: typeof AuthenticatedAppManutencoesRoute
   AuthenticatedAppMonitoramentoRoute: typeof AuthenticatedAppMonitoramentoRoute
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
@@ -995,6 +1015,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
   AuthenticatedAppFinanceiroRoute: AuthenticatedAppFinanceiroRoute,
   AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
+  AuthenticatedAppFrotaRoute: AuthenticatedAppFrotaRoute,
   AuthenticatedAppManutencoesRoute: AuthenticatedAppManutencoesRoute,
   AuthenticatedAppMonitoramentoRoute: AuthenticatedAppMonitoramentoRoute,
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
