@@ -106,6 +106,7 @@ function MonitoramentoPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pedindoId, setPedindoId] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<"lista" | "mapa">("lista");
 
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -373,6 +374,8 @@ function MonitoramentoPage() {
 
   function centralizar(v: ViagemAtiva) {
     const l = locsByViagem[v.id];
+    // No celular, centralizar leva direto para a aba do mapa.
+    setMobileView("mapa");
     const map = mapRef.current;
     // Posição ausente ou velha: pede uma atualização ao app do motorista.
     const velha = !l || Date.now() - new Date(l.created_at).getTime() > POSICAO_OBSOLETA_MS;
@@ -383,6 +386,23 @@ function MonitoramentoPage() {
     setSelectedId(v.id);
     openInfoWindow(v, l);
   }
+
+  // Quando o mapa volta a ficar visível no mobile, o Google Maps precisa do
+  // evento de resize para recalcular o tamanho do canvas (estava display:none).
+  useEffect(() => {
+    if (mobileView !== "mapa") return;
+    const map = mapRef.current;
+    if (!map || !window.google) return;
+    window.google.maps.event.trigger(map, "resize");
+    const pontos = Object.values(locsByViagem);
+    if (pontos.length > 1) {
+      const bounds = new window.google.maps.LatLngBounds();
+      for (const l of pontos) bounds.extend({ lat: l.latitude, lng: l.longitude });
+      map.fitBounds(bounds, 60);
+    } else if (pontos.length === 1) {
+      map.setCenter({ lat: pontos[0].latitude, lng: pontos[0].longitude });
+    }
+  }, [mobileView, locsByViagem]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -420,9 +440,38 @@ function MonitoramentoPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col md:flex-row">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:flex-row">
+      {/* Abas mobile: Lista / Mapa */}
+      <div className="grid grid-cols-2 border-b border-border/60 bg-background md:hidden">
+        {(
+          [
+            ["lista", "Viagens"],
+            ["mapa", "Mapa"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMobileView(value)}
+            className={cn(
+              "py-2.5 text-sm font-medium transition-colors",
+              mobileView === value
+                ? "border-b-2 border-brand text-brand"
+                : "text-muted-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Painel de operações */}
-      <aside className="flex w-full flex-col border-b border-border/60 bg-background md:w-[380px] md:border-b-0 md:border-r">
+      <aside
+        className={cn(
+          "w-full flex-1 flex-col overflow-hidden border-b border-border/60 bg-background md:flex md:w-[380px] md:flex-none md:border-b-0 md:border-r",
+          mobileView === "mapa" ? "hidden md:flex" : "flex",
+        )}
+      >
         <div className="border-b border-border/60 p-4">
           <div className="flex items-center gap-2">
             <Radar className="size-5 text-brand" />
@@ -569,7 +618,12 @@ function MonitoramentoPage() {
       </aside>
 
       {/* Mapa */}
-      <div className="relative flex-1">
+      <div
+        className={cn(
+          "relative min-h-0 flex-1",
+          mobileView === "lista" ? "hidden md:block" : "block",
+        )}
+      >
         <div ref={mapDivRef} className="absolute inset-0" />
         {viagens.length === 0 && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
