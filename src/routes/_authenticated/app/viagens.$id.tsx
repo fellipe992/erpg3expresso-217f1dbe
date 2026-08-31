@@ -1081,7 +1081,19 @@ function QuickPhotoUpload({ viagemId, onDone }: { viagemId: string; onDone: () =
 }
 
 // ============ Finalizar Viagem ============
-function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viagemId: string; kmInicial: number | null; onDone: () => void; autoOpen?: boolean }) {
+function FinalizarViagemDialog({
+  viagemId,
+  kmInicial,
+  kmFinalSugerido,
+  onDone,
+  autoOpen,
+}: {
+  viagemId: string;
+  kmInicial: number | null;
+  kmFinalSugerido?: number | null;
+  onDone: () => void;
+  autoOpen?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const openedOnce = useRef(false);
   useEffect(() => {
@@ -1097,6 +1109,13 @@ function FinalizarViagemDialog({ viagemId, kmInicial, onDone, autoOpen }: { viag
     return d.toISOString().slice(0, 16);
   });
   const [kmFinal, setKmFinal] = useState("");
+  const preenchido = useRef(false);
+  useEffect(() => {
+    if (!preenchido.current && kmFinalSugerido != null) {
+      preenchido.current = true;
+      setKmFinal(String(Math.round(kmFinalSugerido)));
+    }
+  }, [kmFinalSugerido]);
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
 
