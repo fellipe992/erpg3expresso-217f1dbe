@@ -178,7 +178,7 @@ function ViagemDetalheePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viagens")
-        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, provisao_manutencao_km, provisao_pneus_km)")
+        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, odometro_atual, provisao_manutencao_km, provisao_pneus_km)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
