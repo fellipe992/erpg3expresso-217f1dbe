@@ -413,7 +413,7 @@ function ViagemDetalheePage() {
       {viagem.status === "planejada" && (
         <ChecklistSaidaDialog
           viagemId={id}
-          kmSugerido={viagem.km_inicial ?? null}
+          kmSugerido={kmInicialSugerido}
           onDone={invalidateAll}
           autoOpen={location.hash === "iniciar"}
         />
