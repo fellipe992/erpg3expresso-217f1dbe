@@ -440,9 +440,38 @@ function MonitoramentoPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col md:flex-row">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col md:flex-row">
+      {/* Abas mobile: Lista / Mapa */}
+      <div className="grid grid-cols-2 border-b border-border/60 bg-background md:hidden">
+        {(
+          [
+            ["lista", "Viagens"],
+            ["mapa", "Mapa"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setMobileView(value)}
+            className={cn(
+              "py-2.5 text-sm font-medium transition-colors",
+              mobileView === value
+                ? "border-b-2 border-brand text-brand"
+                : "text-muted-foreground",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Painel de operações */}
-      <aside className="flex w-full flex-col border-b border-border/60 bg-background md:w-[380px] md:border-b-0 md:border-r">
+      <aside
+        className={cn(
+          "w-full flex-1 flex-col overflow-hidden border-b border-border/60 bg-background md:flex md:w-[380px] md:flex-none md:border-b-0 md:border-r",
+          mobileView === "mapa" ? "hidden md:flex" : "flex",
+        )}
+      >
         <div className="border-b border-border/60 p-4">
           <div className="flex items-center gap-2">
             <Radar className="size-5 text-brand" />
