@@ -71,6 +71,7 @@ const financeiro: NavItem[] = [
 const operacional: NavItem[] = [
   { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
   { label: "Veículos", to: "/app/veiculos", icon: Truck },
+  { label: "Frota por veículo", to: "/app/frota", icon: Gauge },
   { label: "Motoristas", to: "/app/motoristas", icon: Users },
   { label: "Clientes", to: "/app/clientes", icon: Building2 },
   { label: "Fornecedores", to: "/app/fornecedores", icon: Wrench },
