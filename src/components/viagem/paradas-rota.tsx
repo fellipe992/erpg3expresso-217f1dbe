@@ -106,6 +106,7 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
   const [arrastando, setArrastando] = useState<number | null>(null);
   /** Ponto final opcional: CD / base onde o motorista termina o roteiro. */
   const [cd, setCd] = useState("");
+  const [otimizando, setOtimizando] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
