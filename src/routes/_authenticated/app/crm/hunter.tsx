@@ -140,7 +140,15 @@ function abrirLinkedinForaDoIframe(url: string) {
   window.open(destino, dentroDeIframe ? "_top" : "_blank", "noopener,noreferrer");
 }
 
-const vazioManual = { nome: "", cargo: "", email: "", telefone: "", linkedin_url: "", observacoes: "" };
+const vazioManual = {
+  nome: "",
+  cargo: "",
+  email: "",
+  telefone: "",
+  whatsapp: "",
+  linkedin_url: "",
+  observacoes: "",
+};
 
 /** Link de WhatsApp da empresa (DDI 55 quando vem só com DDD). */
 function linkWhatsappEmpresa(telefone: string, empresa: string) {
