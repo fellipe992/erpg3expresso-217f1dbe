@@ -236,6 +236,14 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={otimizar} disabled={otimizando}>
+            {otimizando ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <Wand2 className="mr-2 size-4" />
+            )}
+            Otimizar rota
+          </Button>
           {alterada && (
             <Button size="sm" variant="ghost" onClick={restaurar}>
               <RotateCcw className="mr-2 size-4" /> Restaurar otimizada
