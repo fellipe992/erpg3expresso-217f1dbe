@@ -242,12 +242,13 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
               {i + 1}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">
+              <span className="block font-medium break-words">
                 {p.cliente || p.endereco.split(",")[0]}
                 {p.nf ? ` · NF ${p.nf}` : ""}
               </span>
-              <span className="flex items-center gap-1 truncate text-muted-foreground">
-                <MapPin className="size-3 shrink-0" /> {p.endereco}
+              <span className="flex items-start gap-1 text-muted-foreground">
+                <MapPin className="mt-0.5 size-3 shrink-0" />
+                <span className="min-w-0 break-words whitespace-pre-wrap">{p.endereco}</span>
               </span>
             </span>
             {p.chegada_prevista && (
