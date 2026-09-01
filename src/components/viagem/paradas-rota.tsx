@@ -155,6 +155,44 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
     if (typeof window !== "undefined") window.localStorage.removeItem(chaveOrdem);
   };
 
+  /**
+   * Otimiza a sequência mantendo a 1ª parada como ponto de partida e o CD
+   * (quando informado) como destino final — assim a rota termina na coleta.
+   */
+  const otimizar = async () => {
+    const fim = cd.trim();
+    const lista = sequencia;
+    const meio = fim ? lista.slice(1) : lista.slice(1, -1);
+    if (meio.length < 2) {
+      toast.info("Informe o último ponto (CD) ou cadastre mais entregas para otimizar.");
+      return;
+    }
+    setOtimizando(true);
+    try {
+      const { km, minutos, ordem } = await otimizarParadas({
+        origem: ponto(lista[0]!),
+        destino: fim || ponto(lista[lista.length - 1]!),
+        paradas: meio.map(ponto),
+      });
+      const meioOrdenado = aplicarOrdem(meio, ordem);
+      const nova = fim
+        ? [lista[0]!, ...meioOrdenado]
+        : [lista[0]!, ...meioOrdenado, lista[lista.length - 1]!];
+      setSequencia(nova);
+      setAlterada(true);
+      salvarOrdem(nova);
+      toast.success("Rota otimizada", {
+        description: `${km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} km · ${Math.round(minutos)} min${fim ? " · termina no CD" : ""}`,
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setOtimizando(false);
+    }
+  };
+
+
+
   const atualizarCd = (valor: string) => {
     setCd(valor);
     if (typeof window === "undefined") return;
