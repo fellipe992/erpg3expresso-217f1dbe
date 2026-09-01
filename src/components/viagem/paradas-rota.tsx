@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ExternalLink, MapPin, Navigation2, RotateCcw, Warehouse } from "lucide-react";
+import { toast } from "sonner";
+import {
+  ArrowDown,
+  ArrowUp,
+  ExternalLink,
+  Loader2,
+  MapPin,
+  Navigation2,
+  RotateCcw,
+  Warehouse,
+  Wand2,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { aplicarOrdem, otimizarParadas } from "@/lib/otimizar-paradas";
 import { supabase } from "@/integrations/supabase/client";
 
 type Parada = {
@@ -94,6 +106,7 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
   const [arrastando, setArrastando] = useState<number | null>(null);
   /** Ponto final opcional: CD / base onde o motorista termina o roteiro. */
   const [cd, setCd] = useState("");
+  const [otimizando, setOtimizando] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -143,6 +156,44 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
     if (typeof window !== "undefined") window.localStorage.removeItem(chaveOrdem);
   };
 
+  /**
+   * Otimiza a sequência mantendo a 1ª parada como ponto de partida e o CD
+   * (quando informado) como destino final — assim a rota termina na coleta.
+   */
+  const otimizar = async () => {
+    const fim = cd.trim();
+    const lista = sequencia;
+    const meio = fim ? lista.slice(1) : lista.slice(1, -1);
+    if (meio.length < 2) {
+      toast.info("Informe o último ponto (CD) ou cadastre mais entregas para otimizar.");
+      return;
+    }
+    setOtimizando(true);
+    try {
+      const { km, minutos, ordem } = await otimizarParadas({
+        origem: ponto(lista[0]!),
+        destino: fim || ponto(lista[lista.length - 1]!),
+        paradas: meio.map(ponto),
+      });
+      const meioOrdenado = aplicarOrdem(meio, ordem);
+      const nova = fim
+        ? [lista[0]!, ...meioOrdenado]
+        : [lista[0]!, ...meioOrdenado, lista[lista.length - 1]!];
+      setSequencia(nova);
+      setAlterada(true);
+      salvarOrdem(nova);
+      toast.success("Rota otimizada", {
+        description: `${km.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} km · ${Math.round(minutos)} min${fim ? " · termina no CD" : ""}`,
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setOtimizando(false);
+    }
+  };
+
+
+
   const atualizarCd = (valor: string) => {
     setCd(valor);
     if (typeof window === "undefined") return;
@@ -185,6 +236,14 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={otimizar} disabled={otimizando}>
+            {otimizando ? (
+              <Loader2 className="mr-2 size-4 animate-spin" />
+            ) : (
+              <Wand2 className="mr-2 size-4" />
+            )}
+            Otimizar rota
+          </Button>
           {alterada && (
             <Button size="sm" variant="ghost" onClick={restaurar}>
               <RotateCcw className="mr-2 size-4" /> Restaurar otimizada
@@ -242,12 +301,13 @@ export function ParadasRotaCard({ viagemId }: { viagemId: string }) {
               {i + 1}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate font-medium">
+              <span className="block font-medium break-words">
                 {p.cliente || p.endereco.split(",")[0]}
                 {p.nf ? ` · NF ${p.nf}` : ""}
               </span>
-              <span className="flex items-center gap-1 truncate text-muted-foreground">
-                <MapPin className="size-3 shrink-0" /> {p.endereco}
+              <span className="flex items-start gap-1 text-muted-foreground">
+                <MapPin className="mt-0.5 size-3 shrink-0" />
+                <span className="min-w-0 break-words whitespace-pre-wrap">{p.endereco}</span>
               </span>
             </span>
             {p.chegada_prevista && (
