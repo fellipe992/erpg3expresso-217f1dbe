@@ -189,6 +189,21 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
+      {destino === "motorista" && (
+        <Card className="grid gap-3 p-3 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Percentual sobre a tabela do cliente (opcional)</Label>
+            <DecimalInput decimais={2} value={percentual} onChange={setPercentual} placeholder="70" />
+            <p className="text-[11px] text-muted-foreground">
+              Opcional: preenche os valores dos raios já cadastrados usando este percentual da tabela do cliente. Você
+              pode continuar digitando cada valor manualmente.
+            </p>
+          </div>
+          <Button variant="outline" onClick={aplicarPercentual} disabled={aplicando}>
+            {aplicando ? <Loader2 className="mr-2 size-4 animate-spin" /> : null} Aplicar percentual
+          </Button>
+        </Card>
+      )}
       <Card className="grid gap-3 p-3 md:grid-cols-[2fr_auto] md:items-end">
         <div className="space-y-1.5">
           <Label className="text-xs">Raio</Label>
