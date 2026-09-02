@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck, MessageCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { enviarLoteApresentacao } from "@/lib/hunter.functions";
 import {
   ORIGENS_LEAD,
   SEGMENTOS,
@@ -20,6 +22,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 const empty: Partial<CrmLead> = { prioridade: "media", classificacao: "B", status: "aberto", etiquetas: [] };
+
+/** Link de WhatsApp com a apresentação curta da G3 (DDI 55 quando vem só com DDD). */
+function linkWhatsapp(telefone: string, empresa: string) {
+  const bruto = telefone.replace(/\D/g, "");
+  if (bruto.length < 10) return null;
+  const numero = bruto.length <= 11 ? `55${bruto}` : bruto;
+  const texto = `Olá! Aqui é a G3 Expresso, transportadora rodoviária de cargas. Podemos falar sobre a operação de transporte da ${empresa}?`;
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+}
 
 export function LeadDialog({
   open,
