@@ -44,7 +44,8 @@ type Linha = {
   diferenca: number;
 };
 
-const diaRef = (v: ViagemFrete) => (v.data_chegada ?? v.data_saida ?? "").slice(0, 10);
+/** Dia-calendário no fuso da operação (viagens da noite não pulam para o dia seguinte). */
+const diaRef = (v: ViagemFrete) => diaLocal(v.data_chegada ?? v.data_saida);
 
 export function RelatorioFreteCliente() {
   const [de, setDe] = useState(() => `${hojeLocal().slice(0, 7)}-01`);
