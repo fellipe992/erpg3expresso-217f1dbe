@@ -43,6 +43,8 @@ type Viagem = {
   km_inicial: number | null;
   km_final: number | null;
   valor_frete: number | null;
+  pedagio_cliente?: number | null;
+  frete_faixa_id?: string | null;
   status: "planejada" | "em_andamento" | "concluida" | "cancelada";
   observacoes: string | null;
   cliente?: { razao_social: string } | null;
