@@ -771,9 +771,77 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
             </F>
-            <F label={isReceber ? "Vencimento (opcional)" : "Vencimento"}>
+            <F label={parcelar ? "Vencimento da 1ª parcela" : isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
+
+            {/* Parcelamento — provisiona os próximos meses já lançados */}
+            {!form.id && (
+              <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-[hsl(var(--brand))]"
+                    checked={parcelar}
+                    onChange={(e) => setParcelar(e.target.checked)}
+                  />
+                  Lançar parcelado (provisionar próximos meses)
+                </label>
+
+                {parcelar && (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <F label="Nº de parcelas">
+                      <Input
+                        type="number"
+                        min={2}
+                        max={120}
+                        value={parcelas}
+                        onChange={(e) => setParcelas(Number(e.target.value))}
+                      />
+                    </F>
+                    <F label="O valor informado é">
+                      <Select value={baseValor} onValueChange={(v) => setBaseValor(v as "parcela" | "total")}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="parcela">Valor de cada parcela</SelectItem>
+                          <SelectItem value="total">Valor total da compra</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </F>
+                    <div className="rounded-md border border-border/60 bg-background p-2 text-xs text-muted-foreground">
+                      {Number(form.valor) > 0 && Number(parcelas) > 1 ? (
+                        <>
+                          <div className="font-medium text-foreground">
+                            {Math.floor(Number(parcelas))}x de{" "}
+                            {fmtBRL(
+                              baseValor === "total"
+                                ? Number(form.valor) / Math.floor(Number(parcelas))
+                                : Number(form.valor),
+                            )}
+                          </div>
+                          <div>
+                            Total{" "}
+                            {fmtBRL(
+                              baseValor === "total"
+                                ? Number(form.valor)
+                                : Number(form.valor) * Math.floor(Number(parcelas)),
+                            )}
+                          </div>
+                          {form.data_vencimento && (
+                            <div>
+                              {fmtDate(form.data_vencimento)} até{" "}
+                              {fmtDate(somarMeses(form.data_vencimento, Math.floor(Number(parcelas)) - 1))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        "Informe valor e vencimento da 1ª parcela."
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <F label={isReceber ? "Cliente" : "Cliente (operação vinculada)"}>
               <Select
                 value={form.cliente_id ?? "__none"}
