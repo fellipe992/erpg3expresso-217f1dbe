@@ -77,16 +77,22 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
   const { data: tipologias = [] } = useQuery({ queryKey: ["tipologias"], queryFn: listarTipologias });
   const { data, isLoading } = useQuery({ queryKey: chave, queryFn: () => carregarTabela(clienteId, destino) });
 
-  const [novaFaixa, setNovaFaixa] = useState({ km_min: "", km_max: "", descricao: "" });
+  const [raio, setRaio] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   const recarregar = () => qc.invalidateQueries({ queryKey: chave });
   const ativos = tipologias.filter((t) => t.ativo);
 
   const adicionarFaixa = async () => {
-    const min = nnum(novaFaixa.km_min);
-    const max = nnum(novaFaixa.km_max);
-    if (max <= min) return toast.error("Informe KM inicial e final válidos (final maior que o inicial).");
+    const texto = raio.trim();
+    const numeros = (texto.match(/\d+([.,]\d+)?/g) ?? []).map(nnum);
+    if (!numeros.length) return toast.error('Informe o raio. Ex.: "50" ou "51 a 80".');
+
+    const anterior = (data?.faixas ?? []).reduce((m, f) => Math.max(m, f.km_max), 0);
+    const min = numeros.length > 1 ? numeros[0]! : anterior;
+    const max = numeros.length > 1 ? numeros[1]! : numeros[0]!;
+    if (max <= min) return toast.error("O raio informado deve ser maior que o último raio cadastrado.");
+
     setSalvando(true);
     try {
       const tabelaId = await garantirTabela(clienteId, destino);
@@ -94,7 +100,7 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
         tabela_id: tabelaId,
         km_min: min,
         km_max: max,
-        descricao: novaFaixa.descricao.trim() || null,
+        descricao: texto,
         ordem: (data?.faixas.length ?? 0) + 1,
       });
       if (error) throw error;
