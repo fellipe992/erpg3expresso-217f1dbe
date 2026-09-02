@@ -43,6 +43,8 @@ export type Lancamento = {
   motorista_id: string | null;
   origem: string | null;
   origem_id: string | null;
+  fechamento_id?: string | null;
+
   numero_documento: string | null;
   observacoes: string | null;
   plano_conta_id: string | null;
