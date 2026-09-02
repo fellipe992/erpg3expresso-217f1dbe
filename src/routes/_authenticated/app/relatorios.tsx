@@ -320,6 +320,7 @@ function RelatoriosPage() {
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
               <TabsTrigger value="medias">Médias por viagem</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="frete-cliente">Frete por Cliente</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
