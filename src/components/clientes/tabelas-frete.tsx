@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   brl,
   carregarTabela,
+  faixaEquivalente,
   garantirTabela,
   listarTipologias,
   precoDe,
@@ -79,9 +80,56 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   const [raio, setRaio] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [percentual, setPercentual] = useState("");
+  const [aplicando, setAplicando] = useState(false);
+
+  const { data: tabelaCliente } = useQuery({
+    queryKey: ["frete-tabela", clienteId, "cliente"],
+    queryFn: () => carregarTabela(clienteId, "cliente"),
+    enabled: destino === "motorista",
+  });
 
   const recarregar = () => qc.invalidateQueries({ queryKey: chave });
   const ativos = tipologias.filter((t) => t.ativo);
+
+  /** Opcional: gera os valores do motorista como um percentual da tabela do cliente. */
+  const aplicarPercentual = async () => {
+    const pct = nnum(percentual);
+    if (pct <= 0) return toast.error("Informe o percentual (ex.: 70).");
+    const faixas = data?.faixas ?? [];
+    if (!faixas.length) return toast.error("Cadastre primeiro os raios desta tabela.");
+    const origem = tabelaCliente;
+    if (!origem?.faixas.length) return toast.error("A tabela do cliente ainda não tem valores cadastrados.");
+
+    setAplicando(true);
+    try {
+      const linhas: { faixa_id: string; tipologia_id: string; valor: number }[] = [];
+      for (const f of faixas) {
+        const ref = faixaEquivalente(origem.faixas, f);
+        if (!ref) continue;
+        for (const t of ativos) {
+          const base = precoDe(origem.precos, ref.id, t.id);
+          if (base == null) continue;
+          linhas.push({
+            faixa_id: f.id,
+            tipologia_id: t.id,
+            valor: Math.round(base * (pct / 100) * 100) / 100,
+          });
+        }
+      }
+      if (!linhas.length) return toast.error("Nenhum valor equivalente encontrado na tabela do cliente.");
+      const { error } = await supabase
+        .from("frete_precos")
+        .upsert(linhas, { onConflict: "faixa_id,tipologia_id" });
+      if (error) throw error;
+      toast.success(`${linhas.length} valores gerados com ${pct}% da tabela do cliente.`);
+      recarregar();
+    } catch (e) {
+      toast.error("Não foi possível aplicar o percentual", { description: (e as Error).message });
+    } finally {
+      setAplicando(false);
+    }
+  };
 
   const adicionarFaixa = async () => {
     const texto = raio.trim();
@@ -141,6 +189,21 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
+      {destino === "motorista" && (
+        <Card className="grid gap-3 p-3 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Percentual sobre a tabela do cliente (opcional)</Label>
+            <DecimalInput decimais={2} value={percentual} onChange={setPercentual} placeholder="70" />
+            <p className="text-[11px] text-muted-foreground">
+              Opcional: preenche os valores dos raios já cadastrados usando este percentual da tabela do cliente. Você
+              pode continuar digitando cada valor manualmente.
+            </p>
+          </div>
+          <Button variant="outline" onClick={aplicarPercentual} disabled={aplicando}>
+            {aplicando ? <Loader2 className="mr-2 size-4 animate-spin" /> : null} Aplicar percentual
+          </Button>
+        </Card>
+      )}
       <Card className="grid gap-3 p-3 md:grid-cols-[2fr_auto] md:items-end">
         <div className="space-y-1.5">
           <Label className="text-xs">Raio</Label>
