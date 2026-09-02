@@ -91,6 +91,17 @@ const FORMAS: { value: string; label: string }[] = [
 const CATEGORIAS_RECEBER = ["Frete", "Serviços", "Diária", "Outros"];
 const CATEGORIAS_PAGAR = ["Combustível", "Manutenção", "Pedágio", "Salários", "Impostos", "Pneus", "Aluguel", "Seguro", "Outros"];
 
+/** Soma meses a uma data YYYY-MM-DD mantendo o dia (ajusta para o último dia do mês curto). */
+function somarMeses(iso: string, meses: number) {
+  const [a, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const alvoMes = m - 1 + meses;
+  const ano = a + Math.floor(alvoMes / 12);
+  const mes = ((alvoMes % 12) + 12) % 12;
+  const ultimoDia = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(d, ultimoDia);
+  return `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { role } = useAuth();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
