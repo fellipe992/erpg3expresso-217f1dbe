@@ -91,6 +91,17 @@ const FORMAS: { value: string; label: string }[] = [
 const CATEGORIAS_RECEBER = ["Frete", "Serviços", "Diária", "Outros"];
 const CATEGORIAS_PAGAR = ["Combustível", "Manutenção", "Pedágio", "Salários", "Impostos", "Pneus", "Aluguel", "Seguro", "Outros"];
 
+/** Soma meses a uma data YYYY-MM-DD mantendo o dia (ajusta para o último dia do mês curto). */
+function somarMeses(iso: string, meses: number) {
+  const [a, m, d] = iso.slice(0, 10).split("-").map(Number);
+  const alvoMes = m - 1 + meses;
+  const ano = a + Math.floor(alvoMes / 12);
+  const mes = ((alvoMes % 12) + 12) % 12;
+  const ultimoDia = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(d, ultimoDia);
+  return `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { role } = useAuth();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
@@ -112,6 +123,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [form, setForm] = useState<Partial<Lancamento>>({ tipo, status: "pendente" });
   const [plano, setPlano] = useState<PlanoContaSelection>({ grupoId: null, subgrupoId: null, contaId: null });
   const [viewing, setViewing] = useState<Lancamento | null>(null);
+  // Parcelamento: provisiona as próximas parcelas já lançadas mês a mês.
+  const [parcelar, setParcelar] = useState(false);
+  const [parcelas, setParcelas] = useState<number>(2);
+  const [baseValor, setBaseValor] = useState<"parcela" | "total">("parcela");
 
   const isReceber = tipo === "receber";
   const label = isReceber ? "Contas a receber" : "Contas a pagar";
@@ -238,18 +253,65 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       if (form.id) {
         const { error } = await supabase.from("financeiro_lancamentos").update(payload).eq("id", form.id);
         if (error) throw error;
-      } else {
-        const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase.from("financeiro_lancamentos").insert({ ...payload, created_by: userData.user?.id });
-        if (error) throw error;
+        return { criados: 1 };
       }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const criadoPor = userData.user?.id;
+
+      // Parcelado: provisiona todas as parcelas já lançadas, uma por mês.
+      const n = parcelar ? Math.max(1, Math.min(120, Math.floor(Number(parcelas) || 1))) : 1;
+      if (n > 1) {
+        if (!payload.data_vencimento) throw new Error("Informe o vencimento da 1ª parcela");
+        const valorParcela =
+          baseValor === "total" ? Math.round((Number(form.valor) / n) * 100) / 100 : Number(form.valor);
+        const grupo = crypto.randomUUID();
+        const linhas = Array.from({ length: n }, (_, i) => {
+          // Última parcela absorve o arredondamento quando o valor informado é o total.
+          const valor =
+            baseValor === "total" && i === n - 1
+              ? Math.round((Number(form.valor) - valorParcela * (n - 1)) * 100) / 100
+              : valorParcela;
+          return {
+            ...payload,
+            descricao: `${payload.descricao} (${i + 1}/${n})`,
+            valor,
+            data_vencimento: somarMeses(payload.data_vencimento!, i),
+            // Parcelas futuras nascem em aberto, sem data de pagamento.
+            status: i === 0 ? payload.status : ("pendente" as Lancamento["status"]),
+            data_pagamento: i === 0 ? payload.data_pagamento : null,
+            observacoes: [payload.observacoes, `Parcela ${i + 1} de ${n} • grupo ${grupo.slice(0, 8)}`]
+              .filter(Boolean)
+              .join(" — "),
+            origem: "parcelamento",
+            origem_id: grupo,
+            created_by: criadoPor,
+          };
+        });
+        const { error } = await supabase.from("financeiro_lancamentos").insert(linhas);
+        if (error) throw error;
+        return { criados: n };
+      }
+
+      const { error } = await supabase.from("financeiro_lancamentos").insert({ ...payload, created_by: criadoPor });
+      if (error) throw error;
+      return { criados: 1 };
     },
-    onSuccess: () => {
-      toast.success(form.id ? "Lançamento atualizado" : `Novo ${singular} registrado`);
+    onSuccess: (r) => {
+      toast.success(
+        form.id
+          ? "Lançamento atualizado"
+          : r.criados > 1
+            ? `${r.criados} parcelas provisionadas`
+            : `Novo ${singular} registrado`,
+      );
       invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
       setPlano({ grupoId: null, subgrupoId: null, contaId: null });
+      setParcelar(false);
+      setParcelas(2);
+      setBaseValor("parcela");
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -709,9 +771,77 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
             </F>
-            <F label={isReceber ? "Vencimento (opcional)" : "Vencimento"}>
+            <F label={parcelar ? "Vencimento da 1ª parcela" : isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
+
+            {/* Parcelamento — provisiona os próximos meses já lançados */}
+            {!form.id && (
+              <div className="md:col-span-2 space-y-3 rounded-lg border border-border/60 bg-muted/30 p-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    className="size-4 accent-[hsl(var(--brand))]"
+                    checked={parcelar}
+                    onChange={(e) => setParcelar(e.target.checked)}
+                  />
+                  Lançar parcelado (provisionar próximos meses)
+                </label>
+
+                {parcelar && (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <F label="Nº de parcelas">
+                      <Input
+                        type="number"
+                        min={2}
+                        max={120}
+                        value={parcelas}
+                        onChange={(e) => setParcelas(Number(e.target.value))}
+                      />
+                    </F>
+                    <F label="O valor informado é">
+                      <Select value={baseValor} onValueChange={(v) => setBaseValor(v as "parcela" | "total")}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="parcela">Valor de cada parcela</SelectItem>
+                          <SelectItem value="total">Valor total da compra</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </F>
+                    <div className="rounded-md border border-border/60 bg-background p-2 text-xs text-muted-foreground">
+                      {Number(form.valor) > 0 && Number(parcelas) > 1 ? (
+                        <>
+                          <div className="font-medium text-foreground">
+                            {Math.floor(Number(parcelas))}x de{" "}
+                            {fmtBRL(
+                              baseValor === "total"
+                                ? Number(form.valor) / Math.floor(Number(parcelas))
+                                : Number(form.valor),
+                            )}
+                          </div>
+                          <div>
+                            Total{" "}
+                            {fmtBRL(
+                              baseValor === "total"
+                                ? Number(form.valor)
+                                : Number(form.valor) * Math.floor(Number(parcelas)),
+                            )}
+                          </div>
+                          {form.data_vencimento && (
+                            <div>
+                              {fmtDate(form.data_vencimento)} até{" "}
+                              {fmtDate(somarMeses(form.data_vencimento, Math.floor(Number(parcelas)) - 1))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        "Informe valor e vencimento da 1ª parcela."
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <F label={isReceber ? "Cliente" : "Cliente (operação vinculada)"}>
               <Select
                 value={form.cliente_id ?? "__none"}
