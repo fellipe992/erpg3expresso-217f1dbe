@@ -56,7 +56,7 @@ export type Lancamento = {
   veiculo?: { placa: string } | null;
   motorista?: { nome: string } | null;
   plano_conta?: { codigo: string; nome: string; centro_custo: string | null } | null;
-  viagem?: { codigo: string | null } | null;
+  viagem?: { codigo: string | null; data_saida?: string | null; data_chegada?: string | null } | null;
 };
 
 type DisplayStatus = Lancamento["status"] | "vence_hoje";
@@ -105,7 +105,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
   const [clienteOperacaoFilter, setClienteOperacaoFilter] = useState<string>("todos"); // rateio de despesa por cliente
   // Base da data do filtro de período: o que o usuário quer de fato consultar.
-  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento">("emissao");
+  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento" | "viagem">("emissao");
   const [dataDe, setDataDe] = useState<string>("");
   const [dataAte, setDataAte] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -125,7 +125,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       
       const { data, error } = await supabase
         .from("financeiro_lancamentos")
-        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome), plano_conta:plano_contas(codigo, nome, centro_custo), viagem:viagens(codigo)")
+        .select("*, cliente:clientes(razao_social), fornecedor:fornecedores(razao_social), veiculo:veiculos(placa), motorista:motoristas(nome), plano_conta:plano_contas(codigo, nome, centro_custo), viagem:viagens(codigo, data_saida, data_chegada)")
         .eq("tipo", tipo)
         .order("data_vencimento");
       if (error) throw error;
@@ -301,8 +301,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
     // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
     if (dataDe || dataAte) {
-      const ref =
-        dataBase === "pagamento" ? l.data_pagamento : dataBase === "vencimento" ? l.data_vencimento : l.data_emissao;
+      const refBruta =
+        dataBase === "pagamento"
+          ? l.data_pagamento
+          : dataBase === "vencimento"
+            ? l.data_vencimento
+            : dataBase === "viagem"
+              ? (l.viagem?.data_chegada ?? l.viagem?.data_saida ?? null)
+              : l.data_emissao;
+      const ref = refBruta ? String(refBruta).slice(0, 10) : null;
       if (!ref) return false;
       if (dataDe && ref < dataDe) return false;
       if (dataAte && ref > dataAte) return false;
@@ -558,6 +565,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                 <SelectItem value="emissao">Data do lançamento</SelectItem>
                 <SelectItem value="vencimento">Data de vencimento</SelectItem>
                 <SelectItem value="pagamento">Data de {isReceber ? "recebimento" : "pagamento"}</SelectItem>
+                <SelectItem value="viagem">Data da viagem (conclusão)</SelectItem>
               </SelectContent>
             </Select>
           </div>

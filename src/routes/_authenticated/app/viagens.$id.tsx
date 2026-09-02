@@ -58,6 +58,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadFotos } from "@/components/viagem/upload-fotos";
 import { DemonstrativoViagem, calcularProvisao, brl } from "@/components/viagem/demonstrativo-viagem";
+import { apurarViagem, listarAjustes } from "@/lib/frete";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/$id")({
   head: () => ({ meta: [{ title: "Viagem — G3 Expresso" }] }),
@@ -249,6 +250,21 @@ function ViagemDetalheePage() {
       return data ?? [];
     },
   });
+
+  /** Apuração da tabela de frete (staff): alimenta o demonstrativo financeiro. */
+  const { data: ajustesViagem = [] } = useQuery({
+    queryKey: ["viagem-ajustes", id],
+    enabled: isStaff,
+    queryFn: () => listarAjustes(id),
+  });
+  const apuracaoDre = apurarViagem({
+    freteCliente: Number(viagem?.valor_frete ?? 0),
+    freteMotorista: Number((viagem as any)?.frete_motorista ?? 0),
+    pedagioCliente: Number((viagem as any)?.pedagio_cliente ?? 0),
+    pedagioMotorista: Number((viagem as any)?.pedagio_motorista ?? 0),
+    ajustes: ajustesViagem,
+  });
+
 
   /** Sugestões automáticas de quilometragem: último odômetro do veículo + média rodada. */
   const veiculoId = viagem?.veiculo_id ?? null;
@@ -540,7 +556,8 @@ function ViagemDetalheePage() {
 
           km={kmRodado ?? (viagem.distancia_estimada_km ? Number(viagem.distancia_estimada_km) : null)}
           kmEstimado={!kmRodado && !!viagem.distancia_estimada_km}
-          receita={Number(viagem.valor_frete ?? 0)}
+          receita={apuracaoDre.cliente.total > 0 ? apuracaoDre.cliente.total : Number(viagem.valor_frete ?? 0)}
+          pagamentoMotorista={apuracaoDre.motorista.total}
           movimentacoes={movimentacoes}
           comissaoPctSalvo={viagem.comissao_percentual != null ? Number(viagem.comissao_percentual) : null}
           pedagioEstimado={viagem.pedagio_estimado != null ? Number(viagem.pedagio_estimado) : null}
@@ -1245,6 +1262,7 @@ function ProvisionamentosSection({
   receita,
   movimentacoes,
   comissaoPctSalvo,
+  pagamentoMotorista,
   pedagioEstimado,
   outrosEstimados,
   manutencaoSalva,
@@ -1257,6 +1275,7 @@ function ProvisionamentosSection({
   receita: number;
   movimentacoes: any[];
   comissaoPctSalvo: number | null;
+  pagamentoMotorista: number;
   pedagioEstimado: number | null;
   outrosEstimados: number | null;
   manutencaoSalva: number | null;
@@ -1306,11 +1325,13 @@ function ProvisionamentosSection({
       : Number(comissaoPct) > 0 && receita > 0
         ? (receita * Number(comissaoPct)) / 100
         : 0;
-  const pedagio = pedagioLancado > 0 ? pedagioLancado : (pedagioEstimado ?? 0);
+  // Com a apuração da tabela de frete, o pedágio já está no pagamento do motorista.
+  const pedagio = pedagioLancado > 0 ? pedagioLancado : pagamentoMotorista > 0 ? 0 : (pedagioEstimado ?? 0);
   const outros = outrosLancados > 0 ? outrosLancados : (outrosEstimados ?? 0);
 
   const custos = {
     receita,
+    pagamentoMotorista,
     combustivel,
     pedagio,
     comissao,

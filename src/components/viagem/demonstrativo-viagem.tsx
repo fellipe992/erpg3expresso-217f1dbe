@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 export type CustosViagem = {
   receita: number;
   combustivel: number;
+  /** Frete + pedágio + adicionais − descontos apurados para o motorista/agregado. */
+  pagamentoMotorista?: number;
   pedagio: number;
   comissao: number;
   provisaoManutencao: number;
@@ -29,7 +31,13 @@ export function calcularProvisao(km: number | null | undefined, valorKm: unknown
 
 export function resumoViagem(c: CustosViagem) {
   const custoTotal =
-    c.combustivel + c.pedagio + c.comissao + c.provisaoManutencao + c.provisaoPneus + c.outros;
+    c.combustivel +
+    (c.pagamentoMotorista ?? 0) +
+    c.pedagio +
+    c.comissao +
+    c.provisaoManutencao +
+    c.provisaoPneus +
+    c.outros;
   const lucro = c.receita - custoTotal;
   const margem = c.receita > 0 ? (lucro / c.receita) * 100 : 0;
   const km = c.km && c.km > 0 ? c.km : 0;
@@ -81,6 +89,9 @@ function Linha({
 export function DemonstrativoViagem({ custos }: { custos: CustosViagem }) {
   const r = resumoViagem(custos);
   const linhas: Array<[string, number]> = [
+    ...(custos.pagamentoMotorista
+      ? ([["(-) Pagamento ao motorista (frete + pedágio + adicionais − descontos)", custos.pagamentoMotorista]] as Array<[string, number]>)
+      : []),
     ["(-) Combustível", custos.combustivel],
     ["(-) Pedágios", custos.pedagio],
     ["(-) Comissão do motorista", custos.comissao],
