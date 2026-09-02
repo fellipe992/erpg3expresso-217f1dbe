@@ -970,6 +970,199 @@ export type Database = {
           },
         ]
       }
+      fechamento_descontos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          fechamento_id: string
+          id: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          fechamento_id: string
+          id?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          fechamento_id?: string
+          id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamento_descontos_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fechamento_viagens: {
+        Row: {
+          adicionais: number
+          ativo: boolean
+          created_at: string
+          descontos: number
+          fechamento_id: string
+          frete: number
+          id: string
+          pedagio: number
+          tipo: string
+          total: number
+          viagem_id: string
+        }
+        Insert: {
+          adicionais?: number
+          ativo?: boolean
+          created_at?: string
+          descontos?: number
+          fechamento_id: string
+          frete?: number
+          id?: string
+          pedagio?: number
+          tipo: string
+          total?: number
+          viagem_id: string
+        }
+        Update: {
+          adicionais?: number
+          ativo?: boolean
+          created_at?: string
+          descontos?: number
+          fechamento_id?: string
+          frete?: number
+          id?: string
+          pedagio?: number
+          tipo?: string
+          total?: number
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamento_viagens_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fechamento_viagens_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fechamentos: {
+        Row: {
+          cancelado_em: string | null
+          cancelado_por: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          lancamento_id: string | null
+          motorista_id: string | null
+          numero: number
+          observacoes: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          status: string
+          tipo: string
+          updated_at: string
+          valor: number
+          valor_descontos_extras: number
+          valor_viagens: number
+          veiculo_id: string | null
+          vencimento: string | null
+        }
+        Insert: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          lancamento_id?: string | null
+          motorista_id?: string | null
+          numero?: number
+          observacoes?: string | null
+          periodo_fim: string
+          periodo_inicio: string
+          status?: string
+          tipo: string
+          updated_at?: string
+          valor?: number
+          valor_descontos_extras?: number
+          valor_viagens?: number
+          veiculo_id?: string | null
+          vencimento?: string | null
+        }
+        Update: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          lancamento_id?: string | null
+          motorista_id?: string | null
+          numero?: number
+          observacoes?: string | null
+          periodo_fim?: string
+          periodo_inicio?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+          valor?: number
+          valor_descontos_extras?: number
+          valor_viagens?: number
+          veiculo_id?: string | null
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fechamentos_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fechamentos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fechamentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_lancamentos: {
         Row: {
           categoria: string | null
@@ -981,6 +1174,7 @@ export type Database = {
           data_pagamento: string | null
           data_vencimento: string | null
           descricao: string
+          fechamento_id: string | null
           forma_pagamento: Database["public"]["Enums"]["forma_pagamento"] | null
           fornecedor_id: string | null
           id: string
@@ -1007,6 +1201,7 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento?: string | null
           descricao: string
+          fechamento_id?: string | null
           forma_pagamento?:
             | Database["public"]["Enums"]["forma_pagamento"]
             | null
@@ -1035,6 +1230,7 @@ export type Database = {
           data_pagamento?: string | null
           data_vencimento?: string | null
           descricao?: string
+          fechamento_id?: string | null
           forma_pagamento?:
             | Database["public"]["Enums"]["forma_pagamento"]
             | null
@@ -1059,6 +1255,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_lancamentos_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
             referencedColumns: ["id"]
           },
           {
@@ -1154,6 +1357,133 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      frete_faixas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          km_max: number
+          km_min: number
+          ordem: number
+          tabela_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          km_max: number
+          km_min?: number
+          ordem?: number
+          tabela_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          km_max?: number
+          km_min?: number
+          ordem?: number
+          tabela_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frete_faixas_tabela_id_fkey"
+            columns: ["tabela_id"]
+            isOneToOne: false
+            referencedRelation: "frete_tabelas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frete_precos: {
+        Row: {
+          created_at: string
+          faixa_id: string
+          id: string
+          tipologia_id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          faixa_id: string
+          id?: string
+          tipologia_id: string
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          created_at?: string
+          faixa_id?: string
+          id?: string
+          tipologia_id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frete_precos_faixa_id_fkey"
+            columns: ["faixa_id"]
+            isOneToOne: false
+            referencedRelation: "frete_faixas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frete_precos_tipologia_id_fkey"
+            columns: ["tipologia_id"]
+            isOneToOne: false
+            referencedRelation: "tipologias_veiculo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frete_tabelas: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          created_by: string | null
+          destino: string
+          id: string
+          nome: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          created_by?: string | null
+          destino: string
+          id?: string
+          nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          created_by?: string | null
+          destino?: string
+          id?: string
+          nome?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frete_tabelas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       manutencoes: {
         Row: {
@@ -1969,6 +2299,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tipologias_veiculo: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2046,6 +2409,7 @@ export type Database = {
           renavam: string | null
           seguro_validade: string | null
           tipo: Database["public"]["Enums"]["veiculo_tipo"]
+          tipologia_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2073,6 +2437,7 @@ export type Database = {
           renavam?: string | null
           seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]
+          tipologia_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2100,9 +2465,62 @@ export type Database = {
           renavam?: string | null
           seguro_validade?: string | null
           tipo?: Database["public"]["Enums"]["veiculo_tipo"]
+          tipologia_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "veiculos_tipologia_id_fkey"
+            columns: ["tipologia_id"]
+            isOneToOne: false
+            referencedRelation: "tipologias_veiculo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      viagem_ajustes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          descricao: string
+          id: string
+          tipo: string
+          updated_at: string
+          valor_cliente: number
+          valor_motorista: number
+          viagem_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          id?: string
+          tipo: string
+          updated_at?: string
+          valor_cliente?: number
+          valor_motorista?: number
+          viagem_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          id?: string
+          tipo?: string
+          updated_at?: string
+          valor_cliente?: number
+          valor_motorista?: number
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_ajustes_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       viagem_anexos: {
         Row: {
@@ -2389,6 +2807,8 @@ export type Database = {
           destino_uf: string | null
           distancia_estimada_km: number | null
           finalizada_por: string | null
+          frete_faixa_id: string | null
+          frete_motorista: number | null
           id: string
           iniciada_por: string | null
           km_final: number | null
@@ -2399,11 +2819,14 @@ export type Database = {
           origem_cidade: string | null
           origem_uf: string | null
           outros_custos_estimados: number | null
+          pedagio_cliente: number | null
           pedagio_estimado: number | null
+          pedagio_motorista: number | null
           provisao_manutencao_km: number | null
           provisao_pneus_km: number | null
           status: Database["public"]["Enums"]["viagem_status"]
           updated_at: string
+          usar_tabela_cliente: boolean
           valor_frete: number | null
           veiculo_id: string | null
         }
@@ -2422,6 +2845,8 @@ export type Database = {
           destino_uf?: string | null
           distancia_estimada_km?: number | null
           finalizada_por?: string | null
+          frete_faixa_id?: string | null
+          frete_motorista?: number | null
           id?: string
           iniciada_por?: string | null
           km_final?: number | null
@@ -2432,11 +2857,14 @@ export type Database = {
           origem_cidade?: string | null
           origem_uf?: string | null
           outros_custos_estimados?: number | null
+          pedagio_cliente?: number | null
           pedagio_estimado?: number | null
+          pedagio_motorista?: number | null
           provisao_manutencao_km?: number | null
           provisao_pneus_km?: number | null
           status?: Database["public"]["Enums"]["viagem_status"]
           updated_at?: string
+          usar_tabela_cliente?: boolean
           valor_frete?: number | null
           veiculo_id?: string | null
         }
@@ -2455,6 +2883,8 @@ export type Database = {
           destino_uf?: string | null
           distancia_estimada_km?: number | null
           finalizada_por?: string | null
+          frete_faixa_id?: string | null
+          frete_motorista?: number | null
           id?: string
           iniciada_por?: string | null
           km_final?: number | null
@@ -2465,11 +2895,14 @@ export type Database = {
           origem_cidade?: string | null
           origem_uf?: string | null
           outros_custos_estimados?: number | null
+          pedagio_cliente?: number | null
           pedagio_estimado?: number | null
+          pedagio_motorista?: number | null
           provisao_manutencao_km?: number | null
           provisao_pneus_km?: number | null
           status?: Database["public"]["Enums"]["viagem_status"]
           updated_at?: string
+          usar_tabela_cliente?: boolean
           valor_frete?: number | null
           veiculo_id?: string | null
         }
@@ -2479,6 +2912,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagens_frete_faixa_id_fkey"
+            columns: ["frete_faixa_id"]
+            isOneToOne: false
+            referencedRelation: "frete_faixas"
             referencedColumns: ["id"]
           },
           {
