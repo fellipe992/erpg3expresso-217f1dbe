@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   brl,
   carregarTabela,
+  faixaEquivalente,
   garantirTabela,
   listarTipologias,
   precoDe,
