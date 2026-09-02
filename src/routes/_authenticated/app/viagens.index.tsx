@@ -21,6 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
 import { sincronizarParadas } from "@/lib/paradas-viagem";
 import { apurarViagem, brl } from "@/lib/frete";
+import { diaLocal } from "@/hooks/use-bi-dados";
+
+/** Horas somadas à saída para sugerir a chegada prevista. */
+const HORAS_VIAGEM_PADRAO = 8;
 
 export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
