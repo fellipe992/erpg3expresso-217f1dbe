@@ -60,14 +60,14 @@ export function RelatorioFreteCliente() {
           .select(
             "id, codigo, cliente_id, status, data_saida, data_chegada, valor_frete, pedagio_cliente, frete_faixa_id, origem_cidade, destino_cidade, cliente:clientes(razao_social)",
           )
-          .neq("status", "cancelada"),
+          .neq("status", "cancelado"),
         supabase.from("viagem_ajustes").select("id, viagem_id, tipo, descricao, valor_cliente, valor_motorista"),
         supabase
           .from("financeiro_lancamentos")
           .select("id, viagem_id, valor, status")
           .eq("tipo", "receber")
           .not("viagem_id", "is", null)
-          .neq("status", "cancelada"),
+          .neq("status", "cancelado"),
       ]);
       if (viag.error) throw viag.error;
       if (aj.error) throw aj.error;
