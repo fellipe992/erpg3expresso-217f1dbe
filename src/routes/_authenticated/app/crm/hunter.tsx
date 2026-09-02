@@ -820,6 +820,15 @@ function HunterPage() {
                       onChange={(e) => setManual((m) => ({ ...m, telefone: e.target.value }))}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-zap">WhatsApp</Label>
+                    <Input
+                      id="man-zap"
+                      value={manual.whatsapp}
+                      onChange={(e) => setManual((m) => ({ ...m, whatsapp: e.target.value }))}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label htmlFor="man-li">LinkedIn</Label>
                     <Input
@@ -839,9 +848,32 @@ function HunterPage() {
                     />
                   </div>
                 </div>
-                <Button variant="secondary" size="sm" onClick={salvarManual} disabled={addCrm.isPending}>
-                  <Plus className="mr-2 size-4" /> Cadastrar contato no CRM
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => salvarManual("nada")}
+                    disabled={addCrm.isPending}
+                  >
+                    <Plus className="mr-2 size-4" /> Cadastrar contato no CRM
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-brand hover:bg-brand/90"
+                    onClick={() => salvarManual("email")}
+                    disabled={addCrm.isPending || enviarMut.isPending || !manual.email.trim()}
+                  >
+                    <MailCheck className="mr-2 size-4" /> Cadastrar e enviar apresentação
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => salvarManual("whatsapp")}
+                    disabled={addCrm.isPending || !(manual.whatsapp || manual.telefone).trim()}
+                  >
+                    <MessageCircle className="mr-2 size-4" /> Cadastrar e abrir WhatsApp
+                  </Button>
+                </div>
               </div>
             )}
           </div>
