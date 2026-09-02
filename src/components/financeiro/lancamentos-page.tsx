@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PlanoContaSelector, type PlanoContaSelection } from "@/components/financeiro/plano-conta-selector";
 import { SortHead, useSort } from "@/components/ui/sortable";
 import { exportarExcel, exportarPdf } from "@/lib/export-utils";
+import { diaLocal } from "@/hooks/use-bi-dados";
 
 
 type FormaPagamento = "dinheiro" | "pix" | "boleto" | "ted" | "cartao_credito" | "cartao_debito" | "cheque" | "outro";
