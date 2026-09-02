@@ -244,9 +244,23 @@ export function LeadDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-wrap gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => save.mutate("whatsapp")}
+            disabled={save.isPending || !(form.whatsapp || form.telefone || "").trim()}
+          >
+            <MessageCircle className="mr-2 size-4" /> Salvar e enviar WhatsApp
+          </Button>
+          <Button
+            className="bg-brand hover:bg-brand/90"
+            onClick={() => save.mutate("email")}
+            disabled={save.isPending || !(form.email ?? "").trim()}
+          >
+            <MailCheck className="mr-2 size-4" /> Salvar e enviar apresentação
+          </Button>
+          <Button variant="secondary" onClick={() => save.mutate("nada")} disabled={save.isPending}>
             {save.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar
           </Button>
         </DialogFooter>
