@@ -21,6 +21,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
 import { sincronizarParadas } from "@/lib/paradas-viagem";
 import { apurarViagem, brl } from "@/lib/frete";
+import { diaLocal } from "@/hooks/use-bi-dados";
+
+/** Horas somadas à saída para sugerir a chegada prevista. */
+const HORAS_VIAGEM_PADRAO = 8;
 
 export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
@@ -282,7 +286,9 @@ function ViagensPage() {
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
-      const ref = (bruto ?? "").slice(0, 10);
+      // Dia-calendário no fuso da operação: cortar a string ISO usaria UTC e jogaria
+      // uma viagem do dia 27 às 21h para o dia 28.
+      const ref = diaLocal(bruto);
       if (!ref) return false;
       if (dataDe && ref < dataDe) return false;
       if (dataAte && ref > dataAte) return false;
@@ -304,7 +310,14 @@ function ViagensPage() {
     return <MotoristaViagensView viagens={filtered} isLoading={isLoading} search={search} setSearch={setSearch} />;
   }
 
-  const toDatetimeLocal = (v?: string | null) => (v ? new Date(v).toISOString().slice(0, 16) : "");
+  /** Valor para <input type="datetime-local">: hora local, não UTC (senão o horário volta 3h). */
+  const toDatetimeLocal = (v?: string | null) => {
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "";
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
 
   return (
     <PageShell
@@ -517,7 +530,24 @@ function ViagensPage() {
             <F label="Destino — UF"><Input maxLength={2} value={form.destino_uf ?? ""} onChange={(e) => setForm({ ...form, destino_uf: e.target.value.toUpperCase() })} /></F>
 
             <F label="Saída prevista">
-              <Input type="datetime-local" value={toDatetimeLocal(form.data_prevista_saida)} onChange={(e) => setForm({ ...form, data_prevista_saida: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              <Input
+                type="datetime-local"
+                value={toDatetimeLocal(form.data_prevista_saida)}
+                onChange={(e) => {
+                  if (!e.target.value) return setForm({ ...form, data_prevista_saida: null });
+                  const saida = new Date(e.target.value);
+                  // Chegada prevista sugerida algumas horas depois da saída (editável).
+                  const atual = form.data_prevista_chegada ? new Date(form.data_prevista_chegada) : null;
+                  const manterChegada = atual && atual.getTime() > saida.getTime();
+                  setForm({
+                    ...form,
+                    data_prevista_saida: saida.toISOString(),
+                    data_prevista_chegada: manterChegada
+                      ? form.data_prevista_chegada
+                      : new Date(saida.getTime() + HORAS_VIAGEM_PADRAO * 3600_000).toISOString(),
+                  });
+                }}
+              />
             </F>
             <F label="Chegada prevista">
               <Input type="datetime-local" value={toDatetimeLocal(form.data_prevista_chegada)} onChange={(e) => setForm({ ...form, data_prevista_chegada: e.target.value ? new Date(e.target.value).toISOString() : null })} />
