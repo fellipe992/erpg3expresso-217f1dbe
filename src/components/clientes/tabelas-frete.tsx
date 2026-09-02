@@ -141,32 +141,18 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-3 p-3 md:grid-cols-[1fr_1fr_2fr_auto] md:items-end">
+      <Card className="grid gap-3 p-3 md:grid-cols-[2fr_auto] md:items-end">
         <div className="space-y-1.5">
-          <Label className="text-xs">KM inicial</Label>
-          <DecimalInput
-            decimais={0}
-            value={novaFaixa.km_min}
-            onChange={(v) => setNovaFaixa({ ...novaFaixa, km_min: v })}
-            placeholder="0"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">KM final</Label>
-          <DecimalInput
-            decimais={0}
-            value={novaFaixa.km_max}
-            onChange={(v) => setNovaFaixa({ ...novaFaixa, km_max: v })}
-            placeholder="50"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Descrição da faixa (opcional)</Label>
+          <Label className="text-xs">Raio</Label>
           <Input
-            value={novaFaixa.descricao}
-            onChange={(e) => setNovaFaixa({ ...novaFaixa, descricao: e.target.value })}
-            placeholder="Ex.: Capital"
+            value={raio}
+            onChange={(e) => setRaio(e.target.value)}
+            placeholder='Ex.: "50" ou "51 a 80"'
           />
+          <p className="text-[11px] text-muted-foreground">
+            Digite só o raio (ex.: 50, 80, 100) e o sistema continua a partir do último raio cadastrado. Você também
+            pode escrever o intervalo completo (ex.: 51 a 80).
+          </p>
         </div>
         <Button onClick={adicionarFaixa} disabled={salvando}>
           {salvando ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />} Nova faixa
