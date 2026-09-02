@@ -822,7 +822,22 @@ function ResumoCard({ label, value, tone }: { label: string; value: string; tone
   );
 }
 
+/** Abre o relatório do fechamento que originou este lançamento consolidado. */
+function FechamentoButton({ l }: { l: Lancamento }) {
+  const [open, setOpen] = useState(false);
+  if (!l.fechamento_id) return null;
+  return (
+    <>
+      <Button variant="ghost" size="icon" title="Ver fechamento" onClick={() => setOpen(true)}>
+        <FileCheck2 className="size-4" />
+      </Button>
+      <RelatorioFechamentoDialog fechamentoId={l.fechamento_id} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
 function OrigemButton({ l }: { l: Lancamento }) {
+
   if (!l.origem || !l.origem_id) return null;
   let to: string | null = null;
   const params: Record<string, string> = {};
