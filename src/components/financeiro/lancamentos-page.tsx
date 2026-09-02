@@ -641,6 +641,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       <Eye className="size-4" />
                     </Button>
                     <OrigemButton l={l} />
+                    <FechamentoButton l={l} />
+
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
                       <Button
                         variant="ghost"
