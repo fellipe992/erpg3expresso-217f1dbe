@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX, FileSpreadsheet, FileText } from "lucide-react";
+import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX, FileSpreadsheet, FileText, FileCheck2 } from "lucide-react";
+import { RelatorioFechamentoDialog } from "@/components/fechamento/relatorio-fechamento";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
