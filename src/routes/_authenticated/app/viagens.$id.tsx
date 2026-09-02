@@ -264,6 +264,11 @@ function ViagemDetalheePage() {
     pedagioMotorista: Number((viagem as any)?.pedagio_motorista ?? 0),
     ajustes: ajustesViagem,
   });
+  /** Viagem com frete apurado: faixa de tabela definida, pedágio ou ajustes lançados. */
+  const freteApurado =
+    Boolean((viagem as any)?.frete_faixa_id) ||
+    ajustesViagem.length > 0 ||
+    Number((viagem as any)?.pedagio_cliente ?? 0) > 0;
 
 
   /** Sugestões automáticas de quilometragem: último odômetro do veículo + média rodada. */
