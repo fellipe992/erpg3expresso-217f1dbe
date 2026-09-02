@@ -242,18 +242,65 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
       if (form.id) {
         const { error } = await supabase.from("financeiro_lancamentos").update(payload).eq("id", form.id);
         if (error) throw error;
-      } else {
-        const { data: userData } = await supabase.auth.getUser();
-        const { error } = await supabase.from("financeiro_lancamentos").insert({ ...payload, created_by: userData.user?.id });
-        if (error) throw error;
+        return { criados: 1 };
       }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const criadoPor = userData.user?.id;
+
+      // Parcelado: provisiona todas as parcelas já lançadas, uma por mês.
+      const n = parcelar ? Math.max(1, Math.min(120, Math.floor(Number(parcelas) || 1))) : 1;
+      if (n > 1) {
+        if (!payload.data_vencimento) throw new Error("Informe o vencimento da 1ª parcela");
+        const valorParcela =
+          baseValor === "total" ? Math.round((Number(form.valor) / n) * 100) / 100 : Number(form.valor);
+        const grupo = crypto.randomUUID();
+        const linhas = Array.from({ length: n }, (_, i) => {
+          // Última parcela absorve o arredondamento quando o valor informado é o total.
+          const valor =
+            baseValor === "total" && i === n - 1
+              ? Math.round((Number(form.valor) - valorParcela * (n - 1)) * 100) / 100
+              : valorParcela;
+          return {
+            ...payload,
+            descricao: `${payload.descricao} (${i + 1}/${n})`,
+            valor,
+            data_vencimento: somarMeses(payload.data_vencimento!, i),
+            // Parcelas futuras nascem em aberto, sem data de pagamento.
+            status: i === 0 ? payload.status : ("pendente" as Lancamento["status"]),
+            data_pagamento: i === 0 ? payload.data_pagamento : null,
+            observacoes: [payload.observacoes, `Parcela ${i + 1} de ${n} • grupo ${grupo.slice(0, 8)}`]
+              .filter(Boolean)
+              .join(" — "),
+            origem: "parcelamento",
+            origem_id: grupo,
+            created_by: criadoPor,
+          };
+        });
+        const { error } = await supabase.from("financeiro_lancamentos").insert(linhas);
+        if (error) throw error;
+        return { criados: n };
+      }
+
+      const { error } = await supabase.from("financeiro_lancamentos").insert({ ...payload, created_by: criadoPor });
+      if (error) throw error;
+      return { criados: 1 };
     },
-    onSuccess: () => {
-      toast.success(form.id ? "Lançamento atualizado" : `Novo ${singular} registrado`);
+    onSuccess: (r) => {
+      toast.success(
+        form.id
+          ? "Lançamento atualizado"
+          : r.criados > 1
+            ? `${r.criados} parcelas provisionadas`
+            : `Novo ${singular} registrado`,
+      );
       invalidateAll();
       setOpen(false);
       setForm({ tipo, status: "pendente" });
       setPlano({ grupoId: null, subgrupoId: null, contaId: null });
+      setParcelar(false);
+      setParcelas(2);
+      setBaseValor("parcela");
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
