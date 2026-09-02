@@ -167,6 +167,7 @@ function ViagensPage() {
         ...a,
         valor_cliente: Number(a.valor_cliente),
         valor_motorista: Number(a.valor_motorista),
+        tipo: a.tipo as "desconto" | "adicional",
       }));
     },
   });
