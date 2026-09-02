@@ -519,7 +519,24 @@ function ViagensPage() {
             <F label="Destino — UF"><Input maxLength={2} value={form.destino_uf ?? ""} onChange={(e) => setForm({ ...form, destino_uf: e.target.value.toUpperCase() })} /></F>
 
             <F label="Saída prevista">
-              <Input type="datetime-local" value={toDatetimeLocal(form.data_prevista_saida)} onChange={(e) => setForm({ ...form, data_prevista_saida: e.target.value ? new Date(e.target.value).toISOString() : null })} />
+              <Input
+                type="datetime-local"
+                value={toDatetimeLocal(form.data_prevista_saida)}
+                onChange={(e) => {
+                  if (!e.target.value) return setForm({ ...form, data_prevista_saida: null });
+                  const saida = new Date(e.target.value);
+                  // Chegada prevista sugerida algumas horas depois da saída (editável).
+                  const atual = form.data_prevista_chegada ? new Date(form.data_prevista_chegada) : null;
+                  const manterChegada = atual && atual.getTime() > saida.getTime();
+                  setForm({
+                    ...form,
+                    data_prevista_saida: saida.toISOString(),
+                    data_prevista_chegada: manterChegada
+                      ? form.data_prevista_chegada
+                      : new Date(saida.getTime() + HORAS_VIAGEM_PADRAO * 3600_000).toISOString(),
+                  });
+                }}
+              />
             </F>
             <F label="Chegada prevista">
               <Input type="datetime-local" value={toDatetimeLocal(form.data_prevista_chegada)} onChange={(e) => setForm({ ...form, data_prevista_chegada: e.target.value ? new Date(e.target.value).toISOString() : null })} />
