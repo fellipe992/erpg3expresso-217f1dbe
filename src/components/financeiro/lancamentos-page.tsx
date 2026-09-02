@@ -112,6 +112,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [form, setForm] = useState<Partial<Lancamento>>({ tipo, status: "pendente" });
   const [plano, setPlano] = useState<PlanoContaSelection>({ grupoId: null, subgrupoId: null, contaId: null });
   const [viewing, setViewing] = useState<Lancamento | null>(null);
+  // Parcelamento: provisiona as próximas parcelas já lançadas mês a mês.
+  const [parcelar, setParcelar] = useState(false);
+  const [parcelas, setParcelas] = useState<number>(2);
+  const [baseValor, setBaseValor] = useState<"parcela" | "total">("parcela");
 
   const isReceber = tipo === "receber";
   const label = isReceber ? "Contas a receber" : "Contas a pagar";
