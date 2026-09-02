@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck, MessageCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { enviarLoteApresentacao } from "@/lib/hunter.functions";
 import {
   ORIGENS_LEAD,
   SEGMENTOS,
@@ -20,6 +22,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 
 const empty: Partial<CrmLead> = { prioridade: "media", classificacao: "B", status: "aberto", etiquetas: [] };
+
+/** Link de WhatsApp com a apresentação curta da G3 (DDI 55 quando vem só com DDD). */
+function linkWhatsapp(telefone: string, empresa: string) {
+  const bruto = telefone.replace(/\D/g, "");
+  if (bruto.length < 10) return null;
+  const numero = bruto.length <= 11 ? `55${bruto}` : bruto;
+  const texto = `Olá! Aqui é a G3 Expresso, transportadora rodoviária de cargas. Podemos falar sobre a operação de transporte da ${empresa}?`;
+  return `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+}
 
 export function LeadDialog({
   open,
@@ -39,16 +50,23 @@ export function LeadDialog({
     if (open) setForm(lead && lead.id ? lead : { ...empty, responsavel_id: user?.id ?? null });
   }, [open, lead, user?.id]);
 
+  const enviarLoteFn = useServerFn(enviarLoteApresentacao);
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (acao: "nada" | "email" | "whatsapp") => {
       if (!form.empresa?.trim()) throw new Error("Empresa / Nome do lead é obrigatório");
+      const email = (form.email ?? "").trim();
+      const zap = (form.whatsapp || form.telefone || "").trim();
+      if (acao === "email" && !email) throw new Error("Informe o e-mail do lead para enviar a apresentação");
+      if (acao === "whatsapp" && !zap) throw new Error("Informe o WhatsApp (ou telefone) do lead");
+
       const payload = {
         empresa: form.empresa.trim(),
         contato_nome: form.contato_nome || null,
         cargo: form.cargo || null,
         telefone: form.telefone || null,
         whatsapp: form.whatsapp || null,
-        email: form.email || null,
+        email: email || null,
         cidade: form.cidade || null,
         uf: form.uf || null,
         segmento: form.segmento || null,
@@ -62,19 +80,51 @@ export function LeadDialog({
         etiquetas: form.etiquetas ?? [],
         proximo_contato: form.proximo_contato || null,
       };
-      if (form.id) {
-        const { error } = await supabase.from("crm_leads").update(payload).eq("id", form.id);
+
+      let leadId = form.id as string | undefined;
+      if (leadId) {
+        const { error } = await supabase.from("crm_leads").update(payload).eq("id", leadId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("crm_leads")
-          .insert({ ...payload, created_by: user?.id ?? null });
+          .insert({ ...payload, created_by: user?.id ?? null })
+          .select("id")
+          .single();
         if (error) throw error;
+        leadId = data.id as string;
       }
+
+      if (acao === "email" && leadId) {
+        const r = (await enviarLoteFn({ data: { leadIds: [leadId] } })) as {
+          enviados: number;
+          invalidos: number;
+          falhas: number;
+          ignorados: number;
+        };
+        return { acao, enviados: r.enviados, ignorados: r.ignorados, invalidos: r.invalidos, falhas: r.falhas };
+      }
+
+      if (acao === "whatsapp") {
+        const url = linkWhatsapp(zap, form.empresa.trim());
+        if (!url) throw new Error("Número de WhatsApp inválido");
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      return { acao };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast.success(form.id ? "Lead atualizado" : "Lead cadastrado");
+      if (res.acao === "email") {
+        if (res.enviados) toast.success("Apresentação enviada por e-mail");
+        else
+          toast.error("Não foi possível enviar", {
+            description: `${res.ignorados ?? 0} já contatado(s) · ${res.invalidos ?? 0} inválido(s) · ${res.falhas ?? 0} falha(s).`,
+          });
+      }
       qc.invalidateQueries({ queryKey: ["crm-leads"] });
+      qc.invalidateQueries({ queryKey: ["hunter-emails-enviados"] });
+      qc.invalidateQueries({ queryKey: ["crm-timeline"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -194,9 +244,23 @@ export function LeadDialog({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-wrap gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
+          <Button
+            variant="outline"
+            onClick={() => save.mutate("whatsapp")}
+            disabled={save.isPending || !(form.whatsapp || form.telefone || "").trim()}
+          >
+            <MessageCircle className="mr-2 size-4" /> Salvar e enviar WhatsApp
+          </Button>
+          <Button
+            className="bg-brand hover:bg-brand/90"
+            onClick={() => save.mutate("email")}
+            disabled={save.isPending || !(form.email ?? "").trim()}
+          >
+            <MailCheck className="mr-2 size-4" /> Salvar e enviar apresentação
+          </Button>
+          <Button variant="secondary" onClick={() => save.mutate("nada")} disabled={save.isPending}>
             {save.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Salvar
           </Button>
         </DialogFooter>

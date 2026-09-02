@@ -314,24 +314,46 @@ function HunterPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const salvarManual = () => {
+  /**
+   * Cadastra o contato no CRM e, opcionalmente, já dispara a apresentação
+   * por e-mail ou abre a conversa no WhatsApp do contato.
+   */
+  const salvarManual = (acao: "nada" | "email" | "whatsapp" = "nada") => {
     if (!manual.nome.trim()) {
       toast.error("Informe o nome do contato.");
       return;
     }
-    addCrm.mutate(
-      {
-        apollo_id: null,
-        nome: manual.nome.trim(),
-        cargo: manual.cargo.trim() || null,
-        email: manual.email.trim() || null,
-        telefone: manual.telefone.trim() || null,
-        linkedin_url: manual.linkedin_url.trim() || null,
-        fonte: "manual",
-        resumo: manual.observacoes.trim() || null,
+    const email = manual.email.trim();
+    const zap = (manual.whatsapp || manual.telefone).trim();
+    if (acao === "email" && !email) {
+      toast.error("Informe o e-mail do contato para enviar a apresentação.");
+      return;
+    }
+    if (acao === "whatsapp" && !zap) {
+      toast.error("Informe o WhatsApp (ou telefone) do contato.");
+      return;
+    }
+    const contato: Decisor = {
+      apollo_id: null,
+      nome: manual.nome.trim(),
+      cargo: manual.cargo.trim() || null,
+      email: email || null,
+      telefone: zap || null,
+      linkedin_url: manual.linkedin_url.trim() || null,
+      fonte: "manual",
+      resumo: manual.observacoes.trim() || null,
+    };
+    addCrm.mutate(contato, {
+      onSuccess: () => {
+        setManual({ ...vazioManual });
+        if (acao === "email") enviarMut.mutate(contato);
+        if (acao === "whatsapp") {
+          const url = linkWhatsappEmpresa(zap, selecionada?.nome ?? "sua empresa");
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+          else toast.error("Número de WhatsApp inválido.");
+        }
       },
-      { onSuccess: () => setManual({ ...vazioManual }) },
-    );
+    });
   };
 
   const abrirDecisores = (empresa: Empresa) => {
@@ -798,6 +820,15 @@ function HunterPage() {
                       onChange={(e) => setManual((m) => ({ ...m, telefone: e.target.value }))}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="man-zap">WhatsApp</Label>
+                    <Input
+                      id="man-zap"
+                      value={manual.whatsapp}
+                      onChange={(e) => setManual((m) => ({ ...m, whatsapp: e.target.value }))}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label htmlFor="man-li">LinkedIn</Label>
                     <Input
@@ -817,9 +848,32 @@ function HunterPage() {
                     />
                   </div>
                 </div>
-                <Button variant="secondary" size="sm" onClick={salvarManual} disabled={addCrm.isPending}>
-                  <Plus className="mr-2 size-4" /> Cadastrar contato no CRM
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => salvarManual("nada")}
+                    disabled={addCrm.isPending}
+                  >
+                    <Plus className="mr-2 size-4" /> Cadastrar contato no CRM
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-brand hover:bg-brand/90"
+                    onClick={() => salvarManual("email")}
+                    disabled={addCrm.isPending || enviarMut.isPending || !manual.email.trim()}
+                  >
+                    <MailCheck className="mr-2 size-4" /> Cadastrar e enviar apresentação
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => salvarManual("whatsapp")}
+                    disabled={addCrm.isPending || !(manual.whatsapp || manual.telefone).trim()}
+                  >
+                    <MessageCircle className="mr-2 size-4" /> Cadastrar e abrir WhatsApp
+                  </Button>
+                </div>
               </div>
             )}
           </div>
