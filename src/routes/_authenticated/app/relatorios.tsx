@@ -23,6 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
+import { RelatorioFreteCliente } from "@/components/relatorios/relatorio-frete-cliente";
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
 import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
