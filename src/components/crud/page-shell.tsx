@@ -17,9 +17,9 @@ export function PageShell({
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle?: string;
-  search: string;
-  onSearch: (v: string) => void;
-  onAdd: () => void;
+  search?: string;
+  onSearch?: (v: string) => void;
+  onAdd?: () => void;
   addLabel?: string;
   canAdd?: boolean;
   children: ReactNode;
@@ -37,16 +37,18 @@ export function PageShell({
           </div>
         </div>
         <div className="flex min-w-0 items-center gap-2">
-          <div className="relative min-w-0 flex-1 md:flex-none">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => onSearch(e.target.value)}
-              placeholder="Buscar..."
-              className="w-full pl-9 md:w-64"
-            />
-          </div>
-          {canAdd && (
+          {onSearch && (
+            <div className="relative min-w-0 flex-1 md:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search ?? ""}
+                onChange={(e) => onSearch(e.target.value)}
+                placeholder="Buscar..."
+                className="w-full pl-9 md:w-64"
+              />
+            </div>
+          )}
+          {canAdd && onAdd && (
             <Button onClick={onAdd} className="shrink-0">
               <Plus className="mr-2 size-4" />
               <span className="hidden sm:inline">{addLabel}</span>
@@ -54,6 +56,7 @@ export function PageShell({
           )}
         </div>
       </div>
+
       {children}
     </div>
   );

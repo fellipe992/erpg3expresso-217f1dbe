@@ -178,7 +178,7 @@ function ViagemDetalheePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viagens")
-        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, odometro_atual, provisao_manutencao_km, provisao_pneus_km)")
+        .select("*, cliente:clientes(razao_social, cidade, uf), motorista:motoristas(nome, telefone), veiculo:veiculos(placa, modelo, marca, tipo, tipologia_id, odometro_atual, provisao_manutencao_km, provisao_pneus_km)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
@@ -512,8 +512,27 @@ function ViagemDetalheePage() {
         </div>
       )}
 
+      {/* Apuração pela tabela de frete (staff only) */}
+      {isStaff && (
+        <ApuracaoViagemSection
+          viagem={{
+            id,
+            cliente_id: (viagem.cliente_id as string) ?? null,
+            valor_frete: viagem.valor_frete ?? null,
+            frete_motorista: (viagem as any).frete_motorista ?? null,
+            pedagio_cliente: (viagem as any).pedagio_cliente ?? null,
+            pedagio_motorista: (viagem as any).pedagio_motorista ?? null,
+            usar_tabela_cliente: (viagem as any).usar_tabela_cliente ?? false,
+            frete_faixa_id: (viagem as any).frete_faixa_id ?? null,
+            veiculo: (viagem.veiculo as any) ?? null,
+          }}
+          onSaved={invalidateAll}
+        />
+      )}
+
       {/* Provisionamentos e demonstrativo (staff only) */}
       {isStaff && (
+
         <ProvisionamentosSection
           viagemId={id}
 

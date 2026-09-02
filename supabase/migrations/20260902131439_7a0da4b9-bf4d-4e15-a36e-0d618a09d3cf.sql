@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_frete_faixa_valida() FROM PUBLIC, anon, authenticated;

@@ -7,6 +7,8 @@ import { Building, Pencil, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageShell } from "@/components/crud/page-shell";
+import { TabelasFreteButton } from "@/components/clientes/tabelas-frete";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -157,9 +159,11 @@ function ClientesPage() {
                   </TableCell>
                   <TableCell><Badge variant={c.ativo ? "default" : "outline"}>{c.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                   <TableCell className="text-right">
+                    {canWrite && <TabelasFreteButton clienteId={c.id} clienteNome={c.razao_social} />}
                     {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(c); setOpen(true); }}><Pencil className="size-4" /></Button>}
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${c.razao_social}?`) && del.mutate(c.id)}><Trash2 className="size-4" /></Button>}
                   </TableCell>
+
                 </TableRow>
               ))}
             </TableBody>
