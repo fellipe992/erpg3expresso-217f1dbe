@@ -310,7 +310,14 @@ function ViagensPage() {
     return <MotoristaViagensView viagens={filtered} isLoading={isLoading} search={search} setSearch={setSearch} />;
   }
 
-  const toDatetimeLocal = (v?: string | null) => (v ? new Date(v).toISOString().slice(0, 16) : "");
+  /** Valor para <input type="datetime-local">: hora local, não UTC (senão o horário volta 3h). */
+  const toDatetimeLocal = (v?: string | null) => {
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "";
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
 
   return (
     <PageShell
