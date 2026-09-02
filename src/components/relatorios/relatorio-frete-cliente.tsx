@@ -13,6 +13,7 @@ import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import { apurarViagem, type ViagemAjuste } from "@/lib/frete";
 import { brl, dt, exportarExcel, exportarPdf, num } from "@/lib/export-utils";
 import { hojeLocal } from "@/components/relatorios/filtros-financeiros";
+import { diaLocal } from "@/hooks/use-bi-dados";
 
 type ViagemFrete = {
   id: string;
