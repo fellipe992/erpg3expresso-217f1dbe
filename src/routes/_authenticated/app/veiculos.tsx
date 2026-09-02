@@ -47,7 +47,19 @@ type Veiculo = {
 
 
 
-const TIPOS = ["cavalo", "carreta", "truck", "toco", "vuc", "van", "utilitario", "outro"];
+const TIPOS = [
+  { value: "fiorino", label: "Fiorino" },
+  { value: "van", label: "Van / HR / Bongo" },
+  { value: "vuc", label: "VUC" },
+  { value: "tres_quartos", label: "3/4" },
+  { value: "toco", label: "Toco" },
+  { value: "truck", label: "Truck" },
+  { value: "bitruck", label: "Bitruck" },
+  { value: "cavalo", label: "Cavalo" },
+  { value: "carreta", label: "Carreta" },
+  { value: "utilitario", label: "Utilitário" },
+  { value: "outro", label: "Outro" },
+];
 const emptyForm: Partial<Veiculo> = { placa: "", modelo: "", tipo: "outro", ativo: true, agregado: false };
 
 function VeiculosPage() {
@@ -215,7 +227,7 @@ function VeiculosPage() {
             <F label="Tipo">
               <Select value={form.tipo ?? "outro"} onValueChange={(v) => setForm({ ...form, tipo: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
+                <SelectContent>{TIPOS.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
               </Select>
             </F>
             <F label="Modelo *"><Input value={form.modelo ?? ""} onChange={(e) => setForm({ ...form, modelo: e.target.value })} /></F>

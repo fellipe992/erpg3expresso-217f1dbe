@@ -7,10 +7,11 @@ import { brl, dt, exportarExcel, exportarPdf, type Celula } from "@/lib/export-u
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const COLUNAS = [
+/** No relatório do motorista nenhuma informação do cliente é exibida. */
+const colunasDe = (tipo: string) => [
   "OS",
   "Data",
-  "Cliente",
+  ...(tipo === "cliente" ? ["Cliente"] : []),
   "Motorista",
   "Placa",
   "Tipologia",
@@ -28,7 +29,7 @@ const linhasDe = (d: DetalheFechamento): Celula[][] =>
   d.linhas.map((l) => [
     l.codigo ?? "—",
     dt(l.data),
-    l.cliente,
+    ...(d.fechamento.tipo === "cliente" ? [l.cliente] : []),
     l.motorista,
     l.placa,
     l.tipologia,
@@ -41,6 +42,26 @@ const linhasDe = (d: DetalheFechamento): Celula[][] =>
     brl(l.descontos),
     brl(l.total),
   ]);
+
+/** Somente os ajustes com valor no lado do fechamento (motorista nunca vê valores do cliente). */
+const ajustesDe = (d: DetalheFechamento): Celula[][] =>
+  d.linhas.flatMap((l) =>
+    l.ajustes
+      .map((a) => ({
+        a,
+        valor: d.fechamento.tipo === "cliente" ? a.valor_cliente : a.valor_motorista,
+      }))
+      .filter((x) => x.valor > 0)
+      .map(
+        (x) =>
+          [
+            l.codigo ?? "—",
+            x.a.tipo === "desconto" ? "Desconto" : "Adicional",
+            x.a.descricao,
+            brl(x.valor),
+          ] as Celula[],
+      ),
+  );
 
 const tituloDe = (d: DetalheFechamento) =>
   `Fechamento #${d.fechamento.numero} — ${d.fechamento.tipo === "cliente" ? "Cliente" : "Motorista"}`;
@@ -63,7 +84,16 @@ export function baixarPdfFechamento(d: DetalheFechamento) {
       ["Status", d.fechamento.status],
     ],
     secoes: [
-      { titulo: "Viagens do fechamento", colunas: COLUNAS, linhas: linhasDe(d) },
+      { titulo: "Viagens do fechamento", colunas: colunasDe(d.fechamento.tipo), linhas: linhasDe(d) },
+      ...(ajustesDe(d).length
+        ? [
+            {
+              titulo: "Descontos e adicionais das viagens",
+              colunas: ["OS", "Tipo", "Descrição", "Valor"],
+              linhas: ajustesDe(d),
+            },
+          ]
+        : []),
       ...(d.extras.length
         ? [
             {
@@ -79,7 +109,16 @@ export function baixarPdfFechamento(d: DetalheFechamento) {
 
 export function baixarExcelFechamento(d: DetalheFechamento) {
   exportarExcel(`fechamento-${d.fechamento.numero}`, [
-    { nome: "Viagens", colunas: COLUNAS, linhas: linhasDe(d) },
+    { nome: "Viagens", colunas: colunasDe(d.fechamento.tipo), linhas: linhasDe(d) },
+    ...(ajustesDe(d).length
+      ? [
+          {
+            nome: "Ajustes",
+            colunas: ["OS", "Tipo", "Descrição", "Valor"],
+            linhas: ajustesDe(d),
+          },
+        ]
+      : []),
     {
       nome: "Resumo",
       colunas: ["Indicador", "Valor"],
@@ -140,7 +179,7 @@ export function RelatorioFechamentoDialog({
               <table className="w-full min-w-[900px] text-xs">
                 <thead>
                   <tr className="border-b border-border/60 bg-muted/40 text-left">
-                    {COLUNAS.map((c) => (
+                    {colunasDe(data.fechamento.tipo).map((c) => (
                       <th key={c} className="px-2 py-2 font-semibold">
                         {c}
                       </th>
@@ -151,7 +190,14 @@ export function RelatorioFechamentoDialog({
                   {linhasDe(data).map((l, i) => (
                     <tr key={i} className="border-b border-border/40 last:border-0">
                       {l.map((c, j) => (
-                        <td key={j} className={j >= 9 ? "px-2 py-1.5 font-mono tabular-nums" : "px-2 py-1.5"}>
+                        <td
+                          key={j}
+                          className={
+                            j >= colunasDe(data.fechamento.tipo).indexOf("Frete")
+                              ? "px-2 py-1.5 font-mono tabular-nums"
+                              : "px-2 py-1.5"
+                          }
+                        >
                           {c}
                         </td>
                       ))}

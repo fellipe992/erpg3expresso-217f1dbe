@@ -2970,6 +2970,7 @@ export type Database = {
           veiculo_placa: string
         }[]
       }
+      viagem_total_cliente: { Args: { _viagem_id: string }; Returns: number }
     }
     Enums: {
       app_role:
@@ -3009,6 +3010,9 @@ export type Database = {
         | "utilitario"
         | "outro"
         | "vuc"
+        | "fiorino"
+        | "tres_quartos"
+        | "bitruck"
       viagem_status: "planejada" | "em_andamento" | "concluida" | "cancelada"
     }
     CompositeTypes: {
@@ -3177,6 +3181,9 @@ export const Constants = {
         "utilitario",
         "outro",
         "vuc",
+        "fiorino",
+        "tres_quartos",
+        "bitruck",
       ],
       viagem_status: ["planejada", "em_andamento", "concluida", "cancelada"],
     },

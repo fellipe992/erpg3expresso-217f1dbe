@@ -313,27 +313,29 @@ function ListaAjustes({
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [descricao, setDescricao] = useState("");
-  const [valor, setValor] = useState("");
-  const [noCliente, setNoCliente] = useState(tipo === "adicional");
-  const [noMotorista, setNoMotorista] = useState(true);
+  const [igual, setIgual] = useState(true);
+  const [valorCliente, setValorCliente] = useState("");
+  const [valorMotorista, setValorMotorista] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   const salvar = async () => {
     if (!descricao.trim()) return toast.error("Informe a descrição.");
-    if (nnum(valor) <= 0) return toast.error("Informe um valor maior que zero.");
-    if (!noCliente && !noMotorista) return toast.error("Escolha ao menos um destino.");
+    const vc = nnum(valorCliente);
+    const vm = igual ? vc : nnum(valorMotorista);
+    if (vc <= 0 && vm <= 0) return toast.error("Informe um valor maior que zero.");
     setSalvando(true);
     const { error } = await supabase.from("viagem_ajustes").insert({
       viagem_id: viagemId,
       tipo,
       descricao: descricao.trim(),
-      valor_cliente: noCliente ? nnum(valor) : 0,
-      valor_motorista: noMotorista ? nnum(valor) : 0,
+      valor_cliente: vc > 0 ? vc : 0,
+      valor_motorista: vm > 0 ? vm : 0,
     });
     setSalvando(false);
     if (error) return toast.error(`Não foi possível lançar o ${tipo}.`, { description: error.message });
     setDescricao("");
-    setValor("");
+    setValorCliente("");
+    setValorMotorista("");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["viagem-ajustes", viagemId] });
   };
@@ -359,42 +361,32 @@ function ListaAjustes({
                   placeholder={tipo === "desconto" ? "Ex.: Mercadoria avariada" : "Ex.: Chapa"}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Valor (R$)</Label>
-                <DecimalInput value={valor} onChange={setValor} />
-              </div>
               <div className="space-y-2 rounded-lg border border-border/60 p-3">
-                {tipo === "desconto" ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked disabled />
-                      <span className="text-xs text-muted-foreground">
-                        Todo desconto reduz o valor a pagar ao motorista.
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id={`cli-${tipo}`} checked={noCliente} onCheckedChange={(v) => setNoCliente(!!v)} />
-                      <Label htmlFor={`cli-${tipo}`} className="text-xs">
-                        Abater também do frete do cliente
+                <div className="flex items-center gap-2">
+                  <Checkbox id={`ig-${tipo}`} checked={igual} onCheckedChange={(v) => setIgual(!!v)} />
+                  <Label htmlFor={`ig-${tipo}`} className="text-xs">
+                    Mesmo valor para cliente e motorista
+                  </Label>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
+                      {igual ? "Valor (R$)" : `${tipo === "desconto" ? "Desconto" : "Adicional"} cliente (R$)`}
+                    </Label>
+                    <DecimalInput value={valorCliente} onChange={setValorCliente} />
+                  </div>
+                  {!igual && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">
+                        {tipo === "desconto" ? "Desconto" : "Adicional"} motorista (R$)
                       </Label>
+                      <DecimalInput value={valorMotorista} onChange={setValorMotorista} />
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id={`acli-${tipo}`} checked={noCliente} onCheckedChange={(v) => setNoCliente(!!v)} />
-                      <Label htmlFor={`acli-${tipo}`} className="text-xs">
-                        Adicionar ao cliente
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox id={`amot-${tipo}`} checked={noMotorista} onCheckedChange={(v) => setNoMotorista(!!v)} />
-                      <Label htmlFor={`amot-${tipo}`} className="text-xs">
-                        Adicionar ao motorista
-                      </Label>
-                    </div>
-                  </>
-                )}
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Deixe um dos campos em zero para aplicar o {tipo} somente ao outro lado.
+                </p>
               </div>
             </div>
             <DialogFooter>
