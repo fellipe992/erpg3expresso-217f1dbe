@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
 import { sincronizarParadas } from "@/lib/paradas-viagem";
+import { apurarViagem, brl } from "@/lib/frete";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
@@ -43,6 +44,8 @@ type Viagem = {
   km_inicial: number | null;
   km_final: number | null;
   valor_frete: number | null;
+  pedagio_cliente?: number | null;
+  frete_faixa_id?: string | null;
   status: "planejada" | "em_andamento" | "concluida" | "cancelada";
   observacoes: string | null;
   cliente?: { razao_social: string } | null;
@@ -150,6 +153,41 @@ function ViagensPage() {
       return (data ?? []) as Viagem[];
     },
   });
+
+  /** Ajustes (descontos/adicionais) de todas as viagens: alimentam o valor apurado da lista. */
+  const { data: ajustes = [] } = useQuery({
+    queryKey: ["viagens-ajustes"],
+    enabled: !isMotorista,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagem_ajustes")
+        .select("viagem_id, tipo, valor_cliente, valor_motorista");
+      if (error) throw error;
+      return (data ?? []).map((a) => ({
+        ...a,
+        valor_cliente: Number(a.valor_cliente),
+        valor_motorista: Number(a.valor_motorista),
+        tipo: a.tipo as "desconto" | "adicional",
+      }));
+    },
+  });
+  const ajustesPorViagem = new Map<string, typeof ajustes>();
+  for (const a of ajustes) {
+    const arr = ajustesPorViagem.get(a.viagem_id) ?? [];
+    arr.push(a);
+    ajustesPorViagem.set(a.viagem_id, arr);
+  }
+  /** Valor apurado do cliente (frete + pedágio + adicionais − descontos) e se já foi apurado. */
+  const freteDaViagem = (v: Viagem) => {
+    const lista = ajustesPorViagem.get(v.id) ?? [];
+    const total = apurarViagem({
+      freteCliente: v.valor_frete,
+      pedagioCliente: v.pedagio_cliente ?? 0,
+      ajustes: lista,
+    }).cliente.total;
+    const apurado = Boolean(v.frete_faixa_id) || lista.length > 0 || Number(v.pedagio_cliente ?? 0) > 0;
+    return { total, apurado };
+  };
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-lite"],
@@ -353,14 +391,20 @@ function ViagensPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Motorista</TableHead>
                 <TableHead>Veículo</TableHead>
+                {canWrite && <TableHead className="text-right">Frete</TableHead>}
                 <TableHead>Saída</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((v) => (
-                <TableRow key={v.id} className="group">
+              {filtered.map((v) => {
+                const frete = freteDaViagem(v);
+                return (
+                <TableRow
+                  key={v.id}
+                  className={`group ${frete.apurado ? "border-l-2 border-l-brand bg-brand-subtle/30" : ""}`}
+                >
                   <TableCell className="font-mono text-xs">{v.codigo ?? v.id.slice(0, 6).toUpperCase()}</TableCell>
                   <TableCell className="text-sm">
                     <div className="flex items-center gap-1.5">
@@ -374,6 +418,21 @@ function ViagensPage() {
                   <TableCell className="text-sm">
                     {v.veiculo ? <span className="font-mono">{v.veiculo.placa}</span> : "—"}
                   </TableCell>
+                  {canWrite && (
+                    <TableCell className="text-right">
+                      <Link
+                        to="/app/viagens/$id"
+                        params={{ id: v.id }}
+                        className={`font-mono text-sm hover:underline ${frete.apurado ? "font-semibold text-brand" : "text-foreground"}`}
+                        title={frete.apurado ? "Frete apurado (frete + pedágio + adicionais − descontos)" : "Frete da tabela — ainda não apurado"}
+                      >
+                        {frete.total > 0 ? brl(frete.total) : "—"}
+                      </Link>
+                      {frete.apurado && (
+                        <span className="ml-1 align-middle text-[10px] font-semibold uppercase text-brand">apurado</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="text-xs text-muted-foreground">
                     {v.data_prevista_saida ? new Date(v.data_prevista_saida).toLocaleDateString("pt-BR") : "—"}
                   </TableCell>
@@ -398,7 +457,8 @@ function ViagensPage() {
                     )}
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}

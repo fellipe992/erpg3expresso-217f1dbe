@@ -264,6 +264,11 @@ function ViagemDetalheePage() {
     pedagioMotorista: Number((viagem as any)?.pedagio_motorista ?? 0),
     ajustes: ajustesViagem,
   });
+  /** Viagem com frete apurado: faixa de tabela definida, pedágio ou ajustes lançados. */
+  const freteApurado =
+    Boolean((viagem as any)?.frete_faixa_id) ||
+    ajustesViagem.length > 0 ||
+    Number((viagem as any)?.pedagio_cliente ?? 0) > 0;
 
 
   /** Sugestões automáticas de quilometragem: último odômetro do veículo + média rodada. */
@@ -354,8 +359,29 @@ function ViagemDetalheePage() {
           <Info label="Veículo" value={viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—"} />
           {isStaff && (
             <Info
-              label="Valor do frete"
-              value={viagem.valor_frete ? Number(viagem.valor_frete).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "—"}
+              label="Valor do frete (apurado)"
+              value={
+                apuracaoDre.cliente.total > 0 || Number(viagem.valor_frete ?? 0) > 0 ? (
+                  <span>
+                    <span className={freteApurado ? "font-semibold text-brand" : "font-semibold"}>
+                      {(apuracaoDre.cliente.total > 0
+                        ? apuracaoDre.cliente.total
+                        : Number(viagem.valor_frete ?? 0)
+                      ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                    </span>
+                    {freteApurado && (
+                      <span className="ml-2 block text-xs text-muted-foreground">
+                        Tabela {Number(viagem.valor_frete ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        {apuracaoDre.cliente.pedagio > 0 && ` · pedágio ${apuracaoDre.cliente.pedagio.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
+                        {apuracaoDre.cliente.adicionais > 0 && ` · adicionais ${apuracaoDre.cliente.adicionais.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
+                        {apuracaoDre.cliente.descontos > 0 && ` · descontos −${apuracaoDre.cliente.descontos.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
             />
           )}
           <Info label="Saída prevista" value={viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—"} />

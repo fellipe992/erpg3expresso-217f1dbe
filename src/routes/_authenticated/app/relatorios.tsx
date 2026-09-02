@@ -23,6 +23,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { RelatorioVeiculo } from "@/components/relatorios/relatorio-veiculo";
 import { RelatorioCliente } from "@/components/relatorios/relatorio-cliente";
+import { RelatorioFreteCliente } from "@/components/relatorios/relatorio-frete-cliente";
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
 import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
@@ -320,6 +321,7 @@ function RelatoriosPage() {
               <TabsTrigger value="veiculo">Por Veículo</TabsTrigger>
               <TabsTrigger value="medias">Médias por viagem</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="cliente">Por Cliente</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="frete-cliente">Frete por Cliente</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
@@ -340,6 +342,9 @@ function RelatoriosPage() {
               <>
                 <TabsContent value="cliente">
                   <RelatorioCliente />
+                </TabsContent>
+                <TabsContent value="frete-cliente">
+                  <RelatorioFreteCliente />
                 </TabsContent>
                 <TabsContent value="fin-veiculo">
                   <RelatorioFinanceiroVeiculo />
