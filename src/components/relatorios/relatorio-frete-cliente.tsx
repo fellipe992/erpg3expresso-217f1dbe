@@ -13,6 +13,7 @@ import { KpiCard, SecaoVazia } from "@/components/relatorios/kpi-card";
 import { apurarViagem, type ViagemAjuste } from "@/lib/frete";
 import { brl, dt, exportarExcel, exportarPdf, num } from "@/lib/export-utils";
 import { hojeLocal } from "@/components/relatorios/filtros-financeiros";
+import { diaLocal } from "@/hooks/use-bi-dados";
 
 type ViagemFrete = {
   id: string;
@@ -44,7 +45,8 @@ type Linha = {
   diferenca: number;
 };
 
-const diaRef = (v: ViagemFrete) => (v.data_chegada ?? v.data_saida ?? "").slice(0, 10);
+/** Dia-calendário no fuso da operação (viagens da noite não pulam para o dia seguinte). */
+const diaRef = (v: ViagemFrete) => diaLocal(v.data_chegada ?? v.data_saida);
 
 export function RelatorioFreteCliente() {
   const [de, setDe] = useState(() => `${hojeLocal().slice(0, 7)}-01`);
