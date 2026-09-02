@@ -314,24 +314,46 @@ function HunterPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const salvarManual = () => {
+  /**
+   * Cadastra o contato no CRM e, opcionalmente, já dispara a apresentação
+   * por e-mail ou abre a conversa no WhatsApp do contato.
+   */
+  const salvarManual = (acao: "nada" | "email" | "whatsapp" = "nada") => {
     if (!manual.nome.trim()) {
       toast.error("Informe o nome do contato.");
       return;
     }
-    addCrm.mutate(
-      {
-        apollo_id: null,
-        nome: manual.nome.trim(),
-        cargo: manual.cargo.trim() || null,
-        email: manual.email.trim() || null,
-        telefone: manual.telefone.trim() || null,
-        linkedin_url: manual.linkedin_url.trim() || null,
-        fonte: "manual",
-        resumo: manual.observacoes.trim() || null,
+    const email = manual.email.trim();
+    const zap = (manual.whatsapp || manual.telefone).trim();
+    if (acao === "email" && !email) {
+      toast.error("Informe o e-mail do contato para enviar a apresentação.");
+      return;
+    }
+    if (acao === "whatsapp" && !zap) {
+      toast.error("Informe o WhatsApp (ou telefone) do contato.");
+      return;
+    }
+    const contato: Decisor = {
+      apollo_id: null,
+      nome: manual.nome.trim(),
+      cargo: manual.cargo.trim() || null,
+      email: email || null,
+      telefone: zap || null,
+      linkedin_url: manual.linkedin_url.trim() || null,
+      fonte: "manual",
+      resumo: manual.observacoes.trim() || null,
+    };
+    addCrm.mutate(contato, {
+      onSuccess: () => {
+        setManual({ ...vazioManual });
+        if (acao === "email") enviarMut.mutate(contato);
+        if (acao === "whatsapp") {
+          const url = linkWhatsappEmpresa(zap, selecionada?.nome ?? "sua empresa");
+          if (url) window.open(url, "_blank", "noopener,noreferrer");
+          else toast.error("Número de WhatsApp inválido.");
+        }
       },
-      { onSuccess: () => setManual({ ...vazioManual }) },
-    );
+    });
   };
 
   const abrirDecisores = (empresa: Empresa) => {
