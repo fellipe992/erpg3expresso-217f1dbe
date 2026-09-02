@@ -282,7 +282,9 @@ function ViagensPage() {
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
     if (dataDe || dataAte) {
       const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
-      const ref = (bruto ?? "").slice(0, 10);
+      // Dia-calendário no fuso da operação: cortar a string ISO usaria UTC e jogaria
+      // uma viagem do dia 27 às 21h para o dia 28.
+      const ref = diaLocal(bruto);
       if (!ref) return false;
       if (dataDe && ref < dataDe) return false;
       if (dataAte && ref > dataAte) return false;
