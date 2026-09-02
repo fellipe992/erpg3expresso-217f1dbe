@@ -104,7 +104,7 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
         ordem: (data?.faixas.length ?? 0) + 1,
       });
       if (error) throw error;
-      setNovaFaixa({ km_min: "", km_max: "", descricao: "" });
+      setRaio("");
       toast.success("Faixa de raio criada.");
       recarregar();
     } catch (e) {
