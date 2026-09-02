@@ -342,6 +342,9 @@ function RelatoriosPage() {
                 <TabsContent value="cliente">
                   <RelatorioCliente />
                 </TabsContent>
+                <TabsContent value="frete-cliente">
+                  <RelatorioFreteCliente />
+                </TabsContent>
                 <TabsContent value="fin-veiculo">
                   <RelatorioFinanceiroVeiculo />
                 </TabsContent>
