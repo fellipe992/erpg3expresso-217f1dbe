@@ -2,7 +2,9 @@ import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX, FileSpreadsheet, FileText } from "lucide-react";
+import { Pencil, Trash2, Loader2, CheckCircle2, ArrowDownCircle, ArrowUpCircle, ExternalLink, Eye, Printer, FilterX, FileSpreadsheet, FileText, FileCheck2 } from "lucide-react";
+import { RelatorioFechamentoDialog } from "@/components/fechamento/relatorio-fechamento";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +45,8 @@ export type Lancamento = {
   motorista_id: string | null;
   origem: string | null;
   origem_id: string | null;
+  fechamento_id?: string | null;
+
   numero_documento: string | null;
   observacoes: string | null;
   plano_conta_id: string | null;
@@ -639,6 +643,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                       <Eye className="size-4" />
                     </Button>
                     <OrigemButton l={l} />
+                    <FechamentoButton l={l} />
+
                     {canWrite && l.status !== "pago" && l.status !== "cancelado" && (
                       <Button
                         variant="ghost"
@@ -818,7 +824,22 @@ function ResumoCard({ label, value, tone }: { label: string; value: string; tone
   );
 }
 
+/** Abre o relatório do fechamento que originou este lançamento consolidado. */
+function FechamentoButton({ l }: { l: Lancamento }) {
+  const [open, setOpen] = useState(false);
+  if (!l.fechamento_id) return null;
+  return (
+    <>
+      <Button variant="ghost" size="icon" title="Ver fechamento" onClick={() => setOpen(true)}>
+        <FileCheck2 className="size-4" />
+      </Button>
+      <RelatorioFechamentoDialog fechamentoId={l.fechamento_id} open={open} onOpenChange={setOpen} />
+    </>
+  );
+}
+
 function OrigemButton({ l }: { l: Lancamento }) {
+
   if (!l.origem || !l.origem_id) return null;
   let to: string | null = null;
   const params: Record<string, string> = {};

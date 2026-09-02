@@ -38,6 +38,7 @@ import { Route as AuthenticatedAppManutencoesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAppFrotaRouteImport } from './routes/_authenticated/app/frota'
 import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
 import { Route as AuthenticatedAppFinanceiroRouteImport } from './routes/_authenticated/app/financeiro'
+import { Route as AuthenticatedAppFechamentoRouteImport } from './routes/_authenticated/app/fechamento'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app/documentos'
 import { Route as AuthenticatedAppDespesasRouteImport } from './routes/_authenticated/app/despesas'
@@ -215,6 +216,12 @@ const AuthenticatedAppFinanceiroRoute =
     path: '/app/financeiro',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppFechamentoRoute =
+  AuthenticatedAppFechamentoRouteImport.update({
+    id: '/app/fechamento',
+    path: '/app/fechamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppEmpresaRoute = AuthenticatedAppEmpresaRouteImport.update({
   id: '/app/empresa',
   path: '/app/empresa',
@@ -340,6 +347,7 @@ export interface FileRoutesByFullPath {
   '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/app/fechamento': typeof AuthenticatedAppFechamentoRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/frota': typeof AuthenticatedAppFrotaRoute
@@ -388,6 +396,7 @@ export interface FileRoutesByTo {
   '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/app/fechamento': typeof AuthenticatedAppFechamentoRoute
   '/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/frota': typeof AuthenticatedAppFrotaRoute
@@ -438,6 +447,7 @@ export interface FileRoutesById {
   '/_authenticated/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
+  '/_authenticated/app/fechamento': typeof AuthenticatedAppFechamentoRoute
   '/_authenticated/app/financeiro': typeof AuthenticatedAppFinanceiroRoute
   '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/_authenticated/app/frota': typeof AuthenticatedAppFrotaRoute
@@ -488,6 +498,7 @@ export interface FileRouteTypes {
     | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
+    | '/app/fechamento'
     | '/app/financeiro'
     | '/app/fornecedores'
     | '/app/frota'
@@ -536,6 +547,7 @@ export interface FileRouteTypes {
     | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
+    | '/app/fechamento'
     | '/app/financeiro'
     | '/app/fornecedores'
     | '/app/frota'
@@ -585,6 +597,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/despesas'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/empresa'
+    | '/_authenticated/app/fechamento'
     | '/_authenticated/app/financeiro'
     | '/_authenticated/app/fornecedores'
     | '/_authenticated/app/frota'
@@ -833,6 +846,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppFinanceiroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/fechamento': {
+      id: '/_authenticated/app/fechamento'
+      path: '/app/fechamento'
+      fullPath: '/app/fechamento'
+      preLoaderRoute: typeof AuthenticatedAppFechamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/empresa': {
       id: '/_authenticated/app/empresa'
       path: '/app/empresa'
@@ -974,6 +994,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppDespesasRoute: typeof AuthenticatedAppDespesasRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
+  AuthenticatedAppFechamentoRoute: typeof AuthenticatedAppFechamentoRoute
   AuthenticatedAppFinanceiroRoute: typeof AuthenticatedAppFinanceiroRoute
   AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
   AuthenticatedAppFrotaRoute: typeof AuthenticatedAppFrotaRoute
@@ -1013,6 +1034,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppDespesasRoute: AuthenticatedAppDespesasRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
+  AuthenticatedAppFechamentoRoute: AuthenticatedAppFechamentoRoute,
   AuthenticatedAppFinanceiroRoute: AuthenticatedAppFinanceiroRoute,
   AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
   AuthenticatedAppFrotaRoute: AuthenticatedAppFrotaRoute,
