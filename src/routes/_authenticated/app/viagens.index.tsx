@@ -391,14 +391,20 @@ function ViagensPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Motorista</TableHead>
                 <TableHead>Veículo</TableHead>
+                {canWrite && <TableHead className="text-right">Frete</TableHead>}
                 <TableHead>Saída</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((v) => (
-                <TableRow key={v.id} className="group">
+              {filtered.map((v) => {
+                const frete = freteDaViagem(v);
+                return (
+                <TableRow
+                  key={v.id}
+                  className={`group ${frete.apurado ? "border-l-2 border-l-brand bg-brand-subtle/30" : ""}`}
+                >
                   <TableCell className="font-mono text-xs">{v.codigo ?? v.id.slice(0, 6).toUpperCase()}</TableCell>
                   <TableCell className="text-sm">
                     <div className="flex items-center gap-1.5">
@@ -412,6 +418,21 @@ function ViagensPage() {
                   <TableCell className="text-sm">
                     {v.veiculo ? <span className="font-mono">{v.veiculo.placa}</span> : "—"}
                   </TableCell>
+                  {canWrite && (
+                    <TableCell className="text-right">
+                      <Link
+                        to="/app/viagens/$id"
+                        params={{ id: v.id }}
+                        className={`font-mono text-sm hover:underline ${frete.apurado ? "font-semibold text-brand" : "text-foreground"}`}
+                        title={frete.apurado ? "Frete apurado (frete + pedágio + adicionais − descontos)" : "Frete da tabela — ainda não apurado"}
+                      >
+                        {frete.total > 0 ? brl(frete.total) : "—"}
+                      </Link>
+                      {frete.apurado && (
+                        <span className="ml-1 align-middle text-[10px] font-semibold uppercase text-brand">apurado</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell className="text-xs text-muted-foreground">
                     {v.data_prevista_saida ? new Date(v.data_prevista_saida).toLocaleDateString("pt-BR") : "—"}
                   </TableCell>
