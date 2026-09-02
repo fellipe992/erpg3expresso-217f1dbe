@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { apurarViagem, nnum, rotuloFaixa, type ViagemAjuste } from "@/lib/frete";
+import { diaLocal } from "@/hooks/use-bi-dados";
 
 export type TipoFechamento = "cliente" | "motorista";
 
