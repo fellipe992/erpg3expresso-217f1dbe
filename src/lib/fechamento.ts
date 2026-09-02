@@ -36,7 +36,8 @@ export type LinhaFechamento = {
   fechadoMotorista: number | null;
 };
 
-const dia = (v: string | null | undefined) => (v ? String(v).slice(0, 10) : "");
+/** Dia-calendário no fuso da operação (evita jogar viagens da noite para o dia seguinte). */
+const dia = (v: string | null | undefined) => diaLocal(v);
 
 /** Viagens elegíveis a fechamento, já apuradas pelo lado escolhido. */
 export async function carregarViagensFechamento(
