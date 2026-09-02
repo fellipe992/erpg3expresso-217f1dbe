@@ -77,16 +77,22 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
   const { data: tipologias = [] } = useQuery({ queryKey: ["tipologias"], queryFn: listarTipologias });
   const { data, isLoading } = useQuery({ queryKey: chave, queryFn: () => carregarTabela(clienteId, destino) });
 
-  const [novaFaixa, setNovaFaixa] = useState({ km_min: "", km_max: "", descricao: "" });
+  const [raio, setRaio] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   const recarregar = () => qc.invalidateQueries({ queryKey: chave });
   const ativos = tipologias.filter((t) => t.ativo);
 
   const adicionarFaixa = async () => {
-    const min = nnum(novaFaixa.km_min);
-    const max = nnum(novaFaixa.km_max);
-    if (max <= min) return toast.error("Informe KM inicial e final válidos (final maior que o inicial).");
+    const texto = raio.trim();
+    const numeros = (texto.match(/\d+([.,]\d+)?/g) ?? []).map(nnum);
+    if (!numeros.length) return toast.error('Informe o raio. Ex.: "50" ou "51 a 80".');
+
+    const anterior = (data?.faixas ?? []).reduce((m, f) => Math.max(m, f.km_max), 0);
+    const min = numeros.length > 1 ? numeros[0]! : anterior;
+    const max = numeros.length > 1 ? numeros[1]! : numeros[0]!;
+    if (max <= min) return toast.error("O raio informado deve ser maior que o último raio cadastrado.");
+
     setSalvando(true);
     try {
       const tabelaId = await garantirTabela(clienteId, destino);
@@ -94,11 +100,11 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
         tabela_id: tabelaId,
         km_min: min,
         km_max: max,
-        descricao: novaFaixa.descricao.trim() || null,
+        descricao: texto,
         ordem: (data?.faixas.length ?? 0) + 1,
       });
       if (error) throw error;
-      setNovaFaixa({ km_min: "", km_max: "", descricao: "" });
+      setRaio("");
       toast.success("Faixa de raio criada.");
       recarregar();
     } catch (e) {
@@ -135,32 +141,18 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-3 p-3 md:grid-cols-[1fr_1fr_2fr_auto] md:items-end">
+      <Card className="grid gap-3 p-3 md:grid-cols-[2fr_auto] md:items-end">
         <div className="space-y-1.5">
-          <Label className="text-xs">KM inicial</Label>
-          <DecimalInput
-            decimais={0}
-            value={novaFaixa.km_min}
-            onChange={(v) => setNovaFaixa({ ...novaFaixa, km_min: v })}
-            placeholder="0"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">KM final</Label>
-          <DecimalInput
-            decimais={0}
-            value={novaFaixa.km_max}
-            onChange={(v) => setNovaFaixa({ ...novaFaixa, km_max: v })}
-            placeholder="50"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Descrição da faixa (opcional)</Label>
+          <Label className="text-xs">Raio</Label>
           <Input
-            value={novaFaixa.descricao}
-            onChange={(e) => setNovaFaixa({ ...novaFaixa, descricao: e.target.value })}
-            placeholder="Ex.: Capital"
+            value={raio}
+            onChange={(e) => setRaio(e.target.value)}
+            placeholder='Ex.: "50" ou "51 a 80"'
           />
+          <p className="text-[11px] text-muted-foreground">
+            Digite só o raio (ex.: 50, 80, 100) e o sistema continua a partir do último raio cadastrado. Você também
+            pode escrever o intervalo completo (ex.: 51 a 80).
+          </p>
         </div>
         <Button onClick={adicionarFaixa} disabled={salvando}>
           {salvando ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />} Nova faixa
