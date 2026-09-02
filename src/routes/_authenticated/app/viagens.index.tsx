@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
 import { sincronizarParadas } from "@/lib/paradas-viagem";
+import { apurarViagem, brl } from "@/lib/frete";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/")({
   head: () => ({ meta: [{ title: "Viagens — G3 Expresso" }] }),
