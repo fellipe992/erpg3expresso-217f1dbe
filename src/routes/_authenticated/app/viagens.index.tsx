@@ -153,6 +153,40 @@ function ViagensPage() {
     },
   });
 
+  /** Ajustes (descontos/adicionais) de todas as viagens: alimentam o valor apurado da lista. */
+  const { data: ajustes = [] } = useQuery({
+    queryKey: ["viagens-ajustes"],
+    enabled: !isMotorista,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagem_ajustes")
+        .select("viagem_id, tipo, valor_cliente, valor_motorista");
+      if (error) throw error;
+      return (data ?? []).map((a) => ({
+        ...a,
+        valor_cliente: Number(a.valor_cliente),
+        valor_motorista: Number(a.valor_motorista),
+      }));
+    },
+  });
+  const ajustesPorViagem = new Map<string, typeof ajustes>();
+  for (const a of ajustes) {
+    const arr = ajustesPorViagem.get(a.viagem_id) ?? [];
+    arr.push(a);
+    ajustesPorViagem.set(a.viagem_id, arr);
+  }
+  /** Valor apurado do cliente (frete + pedágio + adicionais − descontos) e se já foi apurado. */
+  const freteDaViagem = (v: Viagem) => {
+    const lista = ajustesPorViagem.get(v.id) ?? [];
+    const total = apurarViagem({
+      freteCliente: v.valor_frete,
+      pedagioCliente: v.pedagio_cliente ?? 0,
+      ajustes: lista,
+    }).cliente.total;
+    const apurado = Boolean(v.frete_faixa_id) || lista.length > 0 || Number(v.pedagio_cliente ?? 0) > 0;
+    return { total, apurado };
+  };
+
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-lite"],
     enabled: canWrite,
