@@ -39,16 +39,23 @@ export function LeadDialog({
     if (open) setForm(lead && lead.id ? lead : { ...empty, responsavel_id: user?.id ?? null });
   }, [open, lead, user?.id]);
 
+  const enviarLoteFn = useServerFn(enviarLoteApresentacao);
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (acao: "nada" | "email" | "whatsapp") => {
       if (!form.empresa?.trim()) throw new Error("Empresa / Nome do lead é obrigatório");
+      const email = (form.email ?? "").trim();
+      const zap = (form.whatsapp || form.telefone || "").trim();
+      if (acao === "email" && !email) throw new Error("Informe o e-mail do lead para enviar a apresentação");
+      if (acao === "whatsapp" && !zap) throw new Error("Informe o WhatsApp (ou telefone) do lead");
+
       const payload = {
         empresa: form.empresa.trim(),
         contato_nome: form.contato_nome || null,
         cargo: form.cargo || null,
         telefone: form.telefone || null,
         whatsapp: form.whatsapp || null,
-        email: form.email || null,
+        email: email || null,
         cidade: form.cidade || null,
         uf: form.uf || null,
         segmento: form.segmento || null,
@@ -62,19 +69,51 @@ export function LeadDialog({
         etiquetas: form.etiquetas ?? [],
         proximo_contato: form.proximo_contato || null,
       };
-      if (form.id) {
-        const { error } = await supabase.from("crm_leads").update(payload).eq("id", form.id);
+
+      let leadId = form.id as string | undefined;
+      if (leadId) {
+        const { error } = await supabase.from("crm_leads").update(payload).eq("id", leadId);
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("crm_leads")
-          .insert({ ...payload, created_by: user?.id ?? null });
+          .insert({ ...payload, created_by: user?.id ?? null })
+          .select("id")
+          .single();
         if (error) throw error;
+        leadId = data.id as string;
       }
+
+      if (acao === "email" && leadId) {
+        const r = (await enviarLoteFn({ data: { leadIds: [leadId] } })) as {
+          enviados: number;
+          invalidos: number;
+          falhas: number;
+          ignorados: number;
+        };
+        return { acao, enviados: r.enviados, ignorados: r.ignorados, invalidos: r.invalidos, falhas: r.falhas };
+      }
+
+      if (acao === "whatsapp") {
+        const url = linkWhatsapp(zap, form.empresa.trim());
+        if (!url) throw new Error("Número de WhatsApp inválido");
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      return { acao };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       toast.success(form.id ? "Lead atualizado" : "Lead cadastrado");
+      if (res.acao === "email") {
+        if (res.enviados) toast.success("Apresentação enviada por e-mail");
+        else
+          toast.error("Não foi possível enviar", {
+            description: `${res.ignorados ?? 0} já contatado(s) · ${res.invalidos ?? 0} inválido(s) · ${res.falhas ?? 0} falha(s).`,
+          });
+      }
       qc.invalidateQueries({ queryKey: ["crm-leads"] });
+      qc.invalidateQueries({ queryKey: ["hunter-emails-enviados"] });
+      qc.invalidateQueries({ queryKey: ["crm-timeline"] });
       onOpenChange(false);
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
