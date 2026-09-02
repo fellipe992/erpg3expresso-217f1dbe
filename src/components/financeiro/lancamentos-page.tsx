@@ -371,7 +371,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             : dataBase === "viagem"
               ? (l.viagem?.data_chegada ?? l.viagem?.data_saida ?? null)
               : l.data_emissao;
-      const ref = refBruta ? String(refBruta).slice(0, 10) : null;
+      // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
+      const ref = refBruta ? diaLocal(String(refBruta)) || null : null;
       if (!ref) return false;
       if (dataDe && ref < dataDe) return false;
       if (dataAte && ref > dataAte) return false;
