@@ -15,6 +15,7 @@ import {
   nnum,
   type FreteDestino,
 } from "@/lib/frete";
+import { ImportarFreteBar } from "@/components/clientes/importar-frete";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DecimalInput } from "@/components/ui/decimal-input";
@@ -189,6 +190,7 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
+      <ImportarFreteBar clienteId={clienteId} destino={destino} onImportado={recarregar} />
       {destino === "motorista" && (
         <Card className="grid gap-3 p-3 md:grid-cols-[1fr_auto] md:items-end">
           <div className="space-y-1.5">
