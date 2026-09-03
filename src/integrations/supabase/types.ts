@@ -1301,6 +1301,159 @@ export type Database = {
           },
         ]
       }
+      fiscal_documentos: {
+        Row: {
+          bsoft_id: string | null
+          chave_acesso: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          fechamento_id: string | null
+          id: string
+          id_integracao: string
+          motivo: string | null
+          motorista_id: string | null
+          numero: string | null
+          observacoes: string | null
+          payload: Json
+          peso_kg: number | null
+          produto_predominante: string | null
+          resultado: Json | null
+          serie: string | null
+          status: string
+          tipo: string
+          transacao_id: string | null
+          updated_at: string
+          valor: number
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          bsoft_id?: string | null
+          chave_acesso?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fechamento_id?: string | null
+          id?: string
+          id_integracao?: string
+          motivo?: string | null
+          motorista_id?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          payload?: Json
+          peso_kg?: number | null
+          produto_predominante?: string | null
+          resultado?: Json | null
+          serie?: string | null
+          status?: string
+          tipo: string
+          transacao_id?: string | null
+          updated_at?: string
+          valor?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          bsoft_id?: string | null
+          chave_acesso?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          fechamento_id?: string | null
+          id?: string
+          id_integracao?: string
+          motivo?: string | null
+          motorista_id?: string | null
+          numero?: string | null
+          observacoes?: string | null
+          payload?: Json
+          peso_kg?: number | null
+          produto_predominante?: string | null
+          resultado?: Json | null
+          serie?: string | null
+          status?: string
+          tipo?: string
+          transacao_id?: string | null
+          updated_at?: string
+          valor?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_documentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documentos_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documentos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documentos_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documentos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fiscal_mdfe_ctes: {
+        Row: {
+          created_at: string
+          cte_id: string
+          id: string
+          mdfe_id: string
+        }
+        Insert: {
+          created_at?: string
+          cte_id: string
+          id?: string
+          mdfe_id: string
+        }
+        Update: {
+          created_at?: string
+          cte_id?: string
+          id?: string
+          mdfe_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_mdfe_ctes_cte_id_fkey"
+            columns: ["cte_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_mdfe_ctes_mdfe_id_fkey"
+            columns: ["mdfe_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_documentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fornecedores: {
         Row: {
           ativo: boolean
