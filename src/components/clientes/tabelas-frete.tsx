@@ -15,6 +15,7 @@ import {
   nnum,
   type FreteDestino,
 } from "@/lib/frete";
+import { ImportarFreteBar } from "@/components/clientes/importar-frete";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DecimalInput } from "@/components/ui/decimal-input";
