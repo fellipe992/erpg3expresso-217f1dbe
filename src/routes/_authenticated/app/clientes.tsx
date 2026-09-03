@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Building, Pencil, Trash2, Loader2, Copy } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -53,6 +53,16 @@ function ClientesPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Cliente>>(empty);
+  const [duplicando, setDuplicando] = useState(false);
+  const [operacao, setOperacao] = useState("");
+
+  const duplicar = (c: Cliente) => {
+    const { id: _id, ...rest } = c;
+    setForm({ ...rest });
+    setOperacao("");
+    setDuplicando(true);
+    setOpen(true);
+  };
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["clientes"],
