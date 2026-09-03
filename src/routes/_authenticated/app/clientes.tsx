@@ -139,7 +139,7 @@ function ClientesPage() {
       onSearch={setSearch}
       canAdd={canWrite}
       addLabel="Novo cliente"
-      onAdd={() => { setForm(empty); setOpen(true); }}
+      onAdd={() => { setForm(empty); setDuplicando(false); setOperacao(""); setOpen(true); }}
     >
       <Card>
         {isLoading ? (
@@ -174,7 +174,8 @@ function ClientesPage() {
                   <TableCell><Badge variant={c.ativo ? "default" : "outline"}>{c.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                   <TableCell className="text-right">
                     {canWrite && <TabelasFreteButton clienteId={c.id} clienteNome={c.razao_social} />}
-                    {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(c); setOpen(true); }}><Pencil className="size-4" /></Button>}
+                    {canWrite && <Button variant="ghost" size="icon" title="Duplicar para outra operação" onClick={() => duplicar(c)}><Copy className="size-4" /></Button>}
+                    {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(c); setDuplicando(false); setOperacao(""); setOpen(true); }}><Pencil className="size-4" /></Button>}
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${c.razao_social}?`) && del.mutate(c.id)}><Trash2 className="size-4" /></Button>}
                   </TableCell>
 
@@ -187,7 +188,22 @@ function ClientesPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{form.id ? "Editar cliente" : "Novo cliente"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{form.id ? "Editar cliente" : duplicando ? "Duplicar cliente" : "Novo cliente"}</DialogTitle></DialogHeader>
+          {duplicando && (
+            <div className="rounded-md border border-brand/40 bg-brand/5 p-3">
+              <F label="Nome da operação *">
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Operação Bertioga"
+                  value={operacao}
+                  onChange={(e) => setOperacao(e.target.value)}
+                />
+              </F>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Será criado um novo cliente com os mesmos dados: <span className="font-medium">{form.razao_social}{operacao.trim() ? ` - ${operacao.trim()}` : ""}</span>
+              </p>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <F label="Tipo">
               <Select value={form.tipo ?? "pj"} onValueChange={(v) => setForm({ ...form, tipo: v })}>
