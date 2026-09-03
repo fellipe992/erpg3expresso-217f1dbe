@@ -250,7 +250,26 @@ function ClientesPage() {
                 </SelectContent>
               </Select>
             </F>
-            <F label="CNPJ / CPF"><Input value={form.cnpj_cpf ?? ""} onChange={(e) => setForm({ ...form, cnpj_cpf: e.target.value })} /></F>
+            <F label="CNPJ / CPF">
+              <div className="flex gap-2">
+                <Input
+                  value={form.cnpj_cpf ?? ""}
+                  placeholder={form.tipo === "pf" ? "CPF" : "CNPJ — pressione Enter para buscar"}
+                  onChange={(e) => setForm({ ...form, cnpj_cpf: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (form.tipo !== "pf") tentarBuscarCnpj();
+                    }
+                  }}
+                />
+                {form.tipo !== "pf" && (
+                  <Button type="button" variant="outline" size="icon" title="Buscar dados do CNPJ" onClick={tentarBuscarCnpj} disabled={buscarCnpj.isPending}>
+                    {buscarCnpj.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  </Button>
+                )}
+              </div>
+            </F>
             <div className="md:col-span-2"><F label={form.tipo === "pf" ? "Nome *" : "Razão social *"}><Input value={form.razao_social ?? ""} onChange={(e) => setForm({ ...form, razao_social: e.target.value })} /></F></div>
             <F label="Nome fantasia"><Input value={form.nome_fantasia ?? ""} onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })} /></F>
             <F label="Inscrição estadual"><Input value={form.inscricao_estadual ?? ""} onChange={(e) => setForm({ ...form, inscricao_estadual: e.target.value })} /></F>
