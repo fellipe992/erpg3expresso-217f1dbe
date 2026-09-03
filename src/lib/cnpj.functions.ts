@@ -23,37 +23,75 @@ export const consultarCnpj = createServerFn({ method: "GET" })
     return { cnpj };
   })
   .handler(async ({ data }): Promise<CnpjDados> => {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${data.cnpj}`, {
-      headers: { accept: "application/json" },
-    });
-    if (res.status === 404) throw new Error("CNPJ não encontrado na Receita Federal");
-    if (!res.ok) throw new Error("Não foi possível consultar o CNPJ agora. Tente novamente.");
-    const j = (await res.json()) as Record<string, unknown>;
+    const cnpj = data.cnpj;
+    const txt = (v: unknown) => String(v ?? "").trim();
+    const monta = (
+      logradouro: string,
+      numero: string,
+      complemento: string,
+      bairro: string,
+    ) =>
+      [[logradouro, numero].filter(Boolean).join(", "), complemento, bairro]
+        .filter(Boolean)
+        .join(" - ") || null;
 
-    const logradouro = String(j["logradouro"] ?? "").trim();
-    const numero = String(j["numero"] ?? "").trim();
-    const complemento = String(j["complemento"] ?? "").trim();
-    const bairro = String(j["bairro"] ?? "").trim();
-    const endereco = [
-      [logradouro, numero].filter(Boolean).join(", "),
-      complemento,
-      bairro,
-    ]
-      .filter(Boolean)
-      .join(" - ");
+    let naoEncontrado = false;
+    const falhas: string[] = [];
 
-    const ddd = String(j["ddd_telefone_1"] ?? "").trim();
+    // 1) BrasilAPI (Receita Federal)
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+        headers: { accept: "application/json" },
+      });
+      if (res.status === 404) naoEncontrado = true;
+      else if (res.ok) {
+        const j = (await res.json()) as Record<string, unknown>;
+        return {
+          cnpj,
+          razao_social: txt(j["razao_social"]),
+          nome_fantasia: txt(j["nome_fantasia"]) || null,
+          telefone: txt(j["ddd_telefone_1"]) || null,
+          email: txt(j["email"]).toLowerCase() || null,
+          endereco: monta(txt(j["logradouro"]), txt(j["numero"]), txt(j["complemento"]), txt(j["bairro"])),
+          cidade: txt(j["municipio"]) || null,
+          uf: txt(j["uf"]).toUpperCase() || null,
+          cep: so(j["cep"]) || null,
+          situacao: txt(j["descricao_situacao_cadastral"]) || null,
+        };
+      } else falhas.push(`brasilapi ${res.status}`);
+    } catch (e) {
+      falhas.push(`brasilapi ${(e as Error).message}`);
+    }
 
-    return {
-      cnpj: data.cnpj,
-      razao_social: String(j["razao_social"] ?? "").trim(),
-      nome_fantasia: String(j["nome_fantasia"] ?? "").trim() || null,
-      telefone: ddd || null,
-      email: String(j["email"] ?? "").trim().toLowerCase() || null,
-      endereco: endereco || null,
-      cidade: String(j["municipio"] ?? "").trim() || null,
-      uf: String(j["uf"] ?? "").trim().toUpperCase() || null,
-      cep: so(j["cep"]) || null,
-      situacao: String(j["descricao_situacao_cadastral"] ?? "").trim() || null,
-    };
+    // 2) Fallback: CNPJá aberto
+    try {
+      const res = await fetch(`https://open.cnpja.com/office/${cnpj}`, {
+        headers: { accept: "application/json" },
+      });
+      if (res.status === 404) naoEncontrado = true;
+      else if (res.ok) {
+        const j = (await res.json()) as Record<string, any>;
+        const addr = j["address"] ?? {};
+        const fone = (j["phones"] ?? [])[0];
+        const mail = (j["emails"] ?? [])[0];
+        return {
+          cnpj,
+          razao_social: txt(j["company"]?.["name"]),
+          nome_fantasia: txt(j["alias"]) || null,
+          telefone: fone ? `(${txt(fone["area"])}) ${txt(fone["number"])}` : null,
+          email: txt(mail?.["address"]).toLowerCase() || null,
+          endereco: monta(txt(addr["street"]), txt(addr["number"]), txt(addr["details"]), txt(addr["district"])),
+          cidade: txt(addr["city"]) || null,
+          uf: txt(addr["state"]).toUpperCase() || null,
+          cep: so(addr["zip"]) || null,
+          situacao: txt(j["status"]?.["text"]) || null,
+        };
+      } else falhas.push(`cnpja ${res.status}`);
+    } catch (e) {
+      falhas.push(`cnpja ${(e as Error).message}`);
+    }
+
+    if (naoEncontrado) throw new Error("CNPJ não encontrado na Receita Federal");
+    console.error("[consultarCnpj] falhas:", falhas.join(" | "));
+    throw new Error("Consulta de CNPJ indisponível no momento. Tente novamente em instantes.");
   });
