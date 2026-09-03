@@ -305,6 +305,7 @@ export type Database = {
       clientes: {
         Row: {
           ativo: boolean
+          bairro: string | null
           cep: string | null
           cidade: string | null
           cnpj_cpf: string | null
@@ -312,6 +313,7 @@ export type Database = {
           created_at: string
           email: string | null
           endereco: string | null
+          endereco_numero: string | null
           id: string
           inscricao_estadual: string | null
           nome_fantasia: string | null
@@ -324,6 +326,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
@@ -331,6 +334,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           endereco?: string | null
+          endereco_numero?: string | null
           id?: string
           inscricao_estadual?: string | null
           nome_fantasia?: string | null
@@ -343,6 +347,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj_cpf?: string | null
@@ -350,6 +355,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           endereco?: string | null
+          endereco_numero?: string | null
           id?: string
           inscricao_estadual?: string | null
           nome_fantasia?: string | null
@@ -421,39 +427,60 @@ export type Database = {
       }
       company_settings: {
         Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
           cnpj: string | null
           created_at: string
           email: string | null
           endereco: string | null
+          endereco_numero: string | null
           id: string
+          inscricao_estadual: string | null
           logo_url: string | null
           nome_fantasia: string
           razao_social: string | null
+          rntrc: string | null
           telefone: string | null
+          uf: string | null
           updated_at: string
         }
         Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
+          endereco_numero?: string | null
           id?: string
+          inscricao_estadual?: string | null
           logo_url?: string | null
           nome_fantasia?: string
           razao_social?: string | null
+          rntrc?: string | null
           telefone?: string | null
+          uf?: string | null
           updated_at?: string
         }
         Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
+          endereco_numero?: string | null
           id?: string
+          inscricao_estadual?: string | null
           logo_url?: string | null
           nome_fantasia?: string
           razao_social?: string | null
+          rntrc?: string | null
           telefone?: string | null
+          uf?: string | null
           updated_at?: string
         }
         Relationships: []
