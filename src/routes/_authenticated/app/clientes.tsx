@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Building, Pencil, Trash2, Loader2, Copy } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -53,6 +53,16 @@ function ClientesPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Cliente>>(empty);
+  const [duplicando, setDuplicando] = useState(false);
+  const [operacao, setOperacao] = useState("");
+
+  const duplicar = (c: Cliente) => {
+    const { id: _id, ...rest } = c;
+    setForm({ ...rest });
+    setOperacao("");
+    setDuplicando(true);
+    setOpen(true);
+  };
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["clientes"],
@@ -66,10 +76,12 @@ function ClientesPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!form.razao_social?.trim()) throw new Error("Razão social / Nome é obrigatório");
+      if (duplicando && !operacao.trim()) throw new Error("Informe o nome da operação para diferenciar o cadastro");
+      const sufixo = duplicando ? ` - ${operacao.trim()}` : "";
       const payload = {
         tipo: (form.tipo ?? "pj") as "pf" | "pj",
-        razao_social: form.razao_social.trim(),
-        nome_fantasia: form.nome_fantasia || null,
+        razao_social: `${form.razao_social.trim()}${sufixo}`,
+        nome_fantasia: form.nome_fantasia ? `${form.nome_fantasia}${sufixo}` : null,
         cnpj_cpf: form.cnpj_cpf || null,
         inscricao_estadual: form.inscricao_estadual || null,
         contato_nome: form.contato_nome || null,
@@ -91,10 +103,12 @@ function ClientesPage() {
       }
     },
     onSuccess: () => {
-      toast.success(form.id ? "Cliente atualizado" : "Cliente cadastrado");
+      toast.success(form.id ? "Cliente atualizado" : duplicando ? "Cliente duplicado" : "Cliente cadastrado");
       qc.invalidateQueries({ queryKey: ["clientes"] });
       setOpen(false);
       setForm(empty);
+      setDuplicando(false);
+      setOperacao("");
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
@@ -125,7 +139,7 @@ function ClientesPage() {
       onSearch={setSearch}
       canAdd={canWrite}
       addLabel="Novo cliente"
-      onAdd={() => { setForm(empty); setOpen(true); }}
+      onAdd={() => { setForm(empty); setDuplicando(false); setOperacao(""); setOpen(true); }}
     >
       <Card>
         {isLoading ? (
@@ -160,7 +174,8 @@ function ClientesPage() {
                   <TableCell><Badge variant={c.ativo ? "default" : "outline"}>{c.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
                   <TableCell className="text-right">
                     {canWrite && <TabelasFreteButton clienteId={c.id} clienteNome={c.razao_social} />}
-                    {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(c); setOpen(true); }}><Pencil className="size-4" /></Button>}
+                    {canWrite && <Button variant="ghost" size="icon" title="Duplicar para outra operação" onClick={() => duplicar(c)}><Copy className="size-4" /></Button>}
+                    {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(c); setDuplicando(false); setOperacao(""); setOpen(true); }}><Pencil className="size-4" /></Button>}
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${c.razao_social}?`) && del.mutate(c.id)}><Trash2 className="size-4" /></Button>}
                   </TableCell>
 
@@ -173,7 +188,22 @@ function ClientesPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{form.id ? "Editar cliente" : "Novo cliente"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{form.id ? "Editar cliente" : duplicando ? "Duplicar cliente" : "Novo cliente"}</DialogTitle></DialogHeader>
+          {duplicando && (
+            <div className="rounded-md border border-brand/40 bg-brand/5 p-3">
+              <F label="Nome da operação *">
+                <Input
+                  autoFocus
+                  placeholder="Ex.: Operação Bertioga"
+                  value={operacao}
+                  onChange={(e) => setOperacao(e.target.value)}
+                />
+              </F>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Será criado um novo cliente com os mesmos dados: <span className="font-medium">{form.razao_social}{operacao.trim() ? ` - ${operacao.trim()}` : ""}</span>
+              </p>
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <F label="Tipo">
               <Select value={form.tipo ?? "pj"} onValueChange={(v) => setForm({ ...form, tipo: v })}>
