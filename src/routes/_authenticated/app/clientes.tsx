@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Building, Pencil, Trash2, Loader2, Copy } from "lucide-react";
+import { Building, Pencil, Trash2, Loader2, Copy, Search } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+
+import { consultarCnpj } from "@/lib/cnpj.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,6 +65,39 @@ function ClientesPage() {
     setOperacao("");
     setDuplicando(true);
     setOpen(true);
+  };
+
+  const buscarCnpjFn = useServerFn(consultarCnpj);
+  const buscarCnpj = useMutation({
+    mutationFn: async (cnpj: string) => await buscarCnpjFn({ data: { cnpj } }),
+    onSuccess: (d) => {
+      setForm((f) => ({
+        ...f,
+        tipo: "pj",
+        cnpj_cpf: d.cnpj,
+        razao_social: d.razao_social || f.razao_social,
+        nome_fantasia: d.nome_fantasia ?? f.nome_fantasia ?? null,
+        telefone: d.telefone ?? f.telefone ?? null,
+        email: d.email ?? f.email ?? null,
+        endereco: d.endereco ?? f.endereco ?? null,
+        cidade: d.cidade ?? f.cidade ?? null,
+        uf: d.uf ?? f.uf ?? null,
+        cep: d.cep ?? f.cep ?? null,
+      }));
+      toast.success("Dados preenchidos pela Receita Federal", {
+        description: d.situacao ? `Situação cadastral: ${d.situacao}` : undefined,
+      });
+    },
+    onError: (e: Error) => toast.error("CNPJ", { description: e.message }),
+  });
+
+  const tentarBuscarCnpj = () => {
+    const digits = (form.cnpj_cpf ?? "").replace(/\D/g, "");
+    if (digits.length !== 14) {
+      toast.error("CNPJ inválido", { description: "Informe os 14 dígitos do CNPJ." });
+      return;
+    }
+    buscarCnpj.mutate(digits);
   };
 
   const { data = [], isLoading } = useQuery({
