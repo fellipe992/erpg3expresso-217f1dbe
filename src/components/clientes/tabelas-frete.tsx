@@ -190,6 +190,7 @@ function PlanilhaFrete({ clienteId, destino }: { clienteId: string; destino: Fre
 
   return (
     <div className="space-y-4">
+      <ImportarFreteBar clienteId={clienteId} destino={destino} onImportado={recarregar} />
       {destino === "motorista" && (
         <Card className="grid gap-3 p-3 md:grid-cols-[1fr_auto] md:items-end">
           <div className="space-y-1.5">
