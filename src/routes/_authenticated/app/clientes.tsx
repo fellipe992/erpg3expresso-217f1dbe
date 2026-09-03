@@ -76,10 +76,12 @@ function ClientesPage() {
   const save = useMutation({
     mutationFn: async () => {
       if (!form.razao_social?.trim()) throw new Error("Razão social / Nome é obrigatório");
+      if (duplicando && !operacao.trim()) throw new Error("Informe o nome da operação para diferenciar o cadastro");
+      const sufixo = duplicando ? ` - ${operacao.trim()}` : "";
       const payload = {
         tipo: (form.tipo ?? "pj") as "pf" | "pj",
-        razao_social: form.razao_social.trim(),
-        nome_fantasia: form.nome_fantasia || null,
+        razao_social: `${form.razao_social.trim()}${sufixo}`,
+        nome_fantasia: form.nome_fantasia ? `${form.nome_fantasia}${sufixo}` : null,
         cnpj_cpf: form.cnpj_cpf || null,
         inscricao_estadual: form.inscricao_estadual || null,
         contato_nome: form.contato_nome || null,
@@ -101,10 +103,12 @@ function ClientesPage() {
       }
     },
     onSuccess: () => {
-      toast.success(form.id ? "Cliente atualizado" : "Cliente cadastrado");
+      toast.success(form.id ? "Cliente atualizado" : duplicando ? "Cliente duplicado" : "Cliente cadastrado");
       qc.invalidateQueries({ queryKey: ["clientes"] });
       setOpen(false);
       setForm(empty);
+      setDuplicando(false);
+      setOperacao("");
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
