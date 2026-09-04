@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Building2, Download, FileText, Loader2, RefreshCw, ShieldAlert, Truck, XCircle } from "lucide-react";
+import { BadgeCheck, Building2, Download, FileText, Loader2, RefreshCw, ShieldAlert, Truck, XCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmpresasCadastro } from "@/components/fiscal/empresas-cadastro";
+import { ValidarSefaz } from "@/components/fiscal/validar-sefaz";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/app/fiscal")({
@@ -81,6 +82,9 @@ function FiscalPage() {
           <TabsTrigger value="cte">CT-e</TabsTrigger>
           <TabsTrigger value="mdfe">MDF-e</TabsTrigger>
           <TabsTrigger value="ciot">CIOT</TabsTrigger>
+          <TabsTrigger value="validar">
+            <BadgeCheck className="mr-1.5 size-4" /> Validar na SEFAZ
+          </TabsTrigger>
           <TabsTrigger value="empresas">
             <Building2 className="mr-1.5 size-4" /> Empresas
           </TabsTrigger>
@@ -94,9 +98,13 @@ function FiscalPage() {
         <TabsContent value="ciot" className="pt-3">
           <ListaCiots />
         </TabsContent>
+        <TabsContent value="validar" className="pt-3">
+          <ValidarSefaz />
+        </TabsContent>
         <TabsContent value="empresas" className="pt-3">
           <EmpresasCadastro />
         </TabsContent>
+
       </Tabs>
 
     </PageShell>

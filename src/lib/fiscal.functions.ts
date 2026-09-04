@@ -756,3 +756,118 @@ export const baixarLoteFiscal = createServerFn({ method: "POST" })
     }
     return { arquivos };
   });
+
+/**
+ * Consulta a situação do documento na SEFAZ (via Bsoft) e devolve o resultado
+ * detalhado, atualizando também o registro local.
+ */
+export const validarNaSefaz = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id?: string; chave?: string }) => {
+    const id = txt(data?.id, 60);
+    const chave = dig(data?.chave);
+    if (!id && chave.length !== 44) throw new Error("Informe o documento ou uma chave de acesso com 44 dígitos.");
+    return { id: id || null, chave: chave || null };
+  })
+  .handler(async ({ data, context }) => {
+    const { bsoft } = await import("@/lib/fiscal.server");
+
+    let q = context.supabase
+      .from("fiscal_documentos")
+      .select("id, tipo, status, numero, serie, chave_acesso, bsoft_id, transacao_id, ambiente, valor, created_at");
+    q = data.id ? q.eq("id", data.id) : q.eq("chave_acesso", data.chave!);
+    const { data: doc } = await q.limit(1).maybeSingle();
+    if (!doc) throw new Error("Documento não encontrado neste sistema.");
+    if (!doc.bsoft_id) throw new Error("Documento ainda não foi enviado para autorização.");
+
+    const produto = doc.tipo === "cte" ? "cte" : "mdfe";
+    const rota = produto === "cte" ? "/v1/integracoes/ctes" : "/v1/integracoes/mdfes";
+    const ambiente = amb(doc.ambiente);
+
+    let detalhe: Record<string, unknown> | null = null;
+    let erroConsulta: string | null = null;
+    try {
+      detalhe = await bsoft<Record<string, unknown>>(produto, `${rota}/${doc.bsoft_id}`, { ambiente });
+    } catch (e) {
+      erroConsulta = e instanceof Error ? e.message : "Falha na consulta";
+    }
+
+    let itens: Array<Record<string, unknown>> = [];
+    if (doc.transacao_id) {
+      try {
+        const res = await bsoft<unknown>(produto, `${rota}/emitir/${doc.transacao_id}/obter-resultado`, { ambiente });
+        itens = Array.isArray(res) ? (res as Array<Record<string, unknown>>) : [];
+      } catch {
+        itens = [];
+      }
+    }
+    const item = itens[0] ?? {};
+
+    const bruto = String(
+      (detalhe?.["statusCte"] as string) ??
+        (detalhe?.["statusMdfe"] as string) ??
+        (detalhe?.["status"] as string) ??
+        (item["statusOperacao"] as string) ??
+        "",
+    ).toUpperCase();
+
+    let status: StatusDocumentoFiscal = doc.status as StatusDocumentoFiscal;
+    if (bruto.includes("AUTORIZ")) status = "autorizado";
+    else if (bruto.includes("CANCEL")) status = "cancelado";
+    else if (bruto.includes("ENCERR")) status = "encerrado";
+    else if (bruto.includes("REJEIT") || bruto.includes("DENEG") || item["sucesso"] === false) status = "rejeitado";
+    else if (bruto.includes("PROCESS") || bruto.includes("TRANSMI")) status = "processando";
+
+    const numero = (detalhe?.["numero"] ?? item["numero"] ?? doc.numero ?? null) as string | number | null;
+    const serie = (detalhe?.["serie"] ?? item["serie"] ?? doc.serie ?? null) as string | number | null;
+    const chave = (detalhe?.["chaveAcesso"] ?? detalhe?.["chave"] ?? doc.chave_acesso ?? null) as string | null;
+    const protocolo = (detalhe?.["protocolo"] ??
+      detalhe?.["numeroProtocolo"] ??
+      item["protocolo"] ??
+      null) as string | number | null;
+    const dataAutorizacao = (detalhe?.["dataAutorizacao"] ??
+      detalhe?.["dhRecebimento"] ??
+      detalhe?.["dataEmissao"] ??
+      null) as string | null;
+    const codigoSefaz = (detalhe?.["codigoStatusSefaz"] ??
+      detalhe?.["cStat"] ??
+      item["codigo"] ??
+      null) as string | number | null;
+    const motivo = (item["motivo"] ??
+      detalhe?.["motivo"] ??
+      detalhe?.["mensagemSefaz"] ??
+      detalhe?.["xMotivo"] ??
+      erroConsulta ??
+      null) as string | null;
+
+    if (!erroConsulta || itens.length) {
+      await context.supabase
+        .from("fiscal_documentos")
+        .update({
+          status,
+          numero: numero != null ? String(numero) : null,
+          serie: serie != null ? String(serie) : null,
+          chave_acesso: chave ? String(chave) : null,
+          motivo: motivo ? String(motivo).slice(0, 2000) : null,
+          resultado: JSON.parse(JSON.stringify({ detalhe, itens })),
+        })
+        .eq("id", doc.id);
+    }
+
+    return {
+      id: doc.id as string,
+      tipo: doc.tipo as string,
+      ambiente,
+      status,
+      situacaoSefaz: bruto || null,
+      numero: numero != null ? String(numero) : null,
+      serie: serie != null ? String(serie) : null,
+      chave: chave ? String(chave) : null,
+      protocolo: protocolo != null ? String(protocolo) : null,
+      codigoSefaz: codigoSefaz != null ? String(codigoSefaz) : null,
+      dataAutorizacao,
+      motivo: motivo ? String(motivo) : null,
+      valor: Number(doc.valor ?? 0),
+      consultaFalhou: !!erroConsulta,
+    };
+  });
