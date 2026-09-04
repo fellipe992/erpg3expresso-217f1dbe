@@ -6,7 +6,9 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { emitirCte } from "@/lib/fiscal.functions";
-import type { AdicionalFrete, AtividadeTomador, EnvolvidoFiscal } from "@/lib/fiscal-tipos";
+import type { AdicionalFrete, AmbienteFiscal, AtividadeTomador, EnvolvidoFiscal } from "@/lib/fiscal-tipos";
+import { rotuloAmbiente } from "@/lib/fiscal-tipos";
+import { PrevalidacaoPainel, usePrevalidacao } from "@/components/fiscal/prevalidacao";
 import { EnvolvidoForm, envolvidoVazio } from "@/components/fiscal/envolvido-form";
 import { nnum } from "@/lib/frete";
 import { brl, dt } from "@/lib/export-utils";
@@ -97,6 +99,7 @@ export function EmitirCteDialog({
   const [enviarEmail, setEnviarEmail] = useState(true);
 
   const [empresaId, setEmpresaId] = useState("");
+  const [ambiente, setAmbiente] = useState<AmbienteFiscal>("producao");
 
   const { data: empresas = [] } = useQuery({
     queryKey: ["company-settings-emitentes"],
@@ -221,6 +224,14 @@ export function EmitirCteDialog({
     setPedagio("");
   }, [origem, fechamentoId, fechamentos]);
 
+  const pre = usePrevalidacao({
+    tipo: "cte",
+    empresaId,
+    viagemId: origem === "viagem" ? viagemId : null,
+    fechamentoId: origem === "fechamento" ? fechamentoId : null,
+    enabled: open,
+  });
+
   const totalFrete = nnum(frete) + nnum(pedagio) + adicionais.reduce((s, a) => s + a.valor, 0);
 
   const salvar = useMutation({
@@ -228,6 +239,7 @@ export function EmitirCteDialog({
       emitir({
         data: {
           empresaId: empresaId || null,
+          ambiente,
           remetente,
           destinatario,
           tomador,
@@ -287,6 +299,21 @@ export function EmitirCteDialog({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ambiente de emissão</Label>
+              <Select value={ambiente} onValueChange={(v) => setAmbiente(v as AmbienteFiscal)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="producao">{rotuloAmbiente.producao}</SelectItem>
+                  <SelectItem value="homologacao">{rotuloAmbiente.homologacao}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {ambiente === "homologacao"
+                  ? "Documento de teste: não tem valor fiscal."
+                  : "Documento oficial: vale na SEFAZ."}
+              </p>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Base do documento</Label>
               <Select value={origem} onValueChange={(v) => setOrigem(v as Origem)}>
@@ -444,9 +471,11 @@ export function EmitirCteDialog({
           </div>
         </div>
 
+        <PrevalidacaoPainel carregando={pre.carregando} ok={pre.ok} pendencias={pre.pendencias} erro={pre.erro} />
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+          <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || pre.carregando || !pre.ok}>
             {salvar.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Emitir CT-e
           </Button>
         </DialogFooter>
