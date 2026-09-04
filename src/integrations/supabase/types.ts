@@ -1472,6 +1472,7 @@ export type Database = {
       }
       fiscal_documentos: {
         Row: {
+          ambiente: string
           bsoft_id: string | null
           chave_acesso: string | null
           ciot: string | null
@@ -1500,6 +1501,7 @@ export type Database = {
           viagem_id: string | null
         }
         Insert: {
+          ambiente?: string
           bsoft_id?: string | null
           chave_acesso?: string | null
           ciot?: string | null
@@ -1528,6 +1530,7 @@ export type Database = {
           viagem_id?: string | null
         }
         Update: {
+          ambiente?: string
           bsoft_id?: string | null
           chave_acesso?: string | null
           ciot?: string | null

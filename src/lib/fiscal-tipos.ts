@@ -1,6 +1,12 @@
 /** Tipos compartilhados entre a tela e as server functions da integração fiscal (Bsoft). */
 
 export type TipoDocumentoFiscal = "cte" | "mdfe";
+export type AmbienteFiscal = "homologacao" | "producao";
+
+export const rotuloAmbiente: Record<AmbienteFiscal, string> = {
+  homologacao: "Homologação (teste)",
+  producao: "Produção (valendo)",
+};
 
 export type StatusDocumentoFiscal =
   | "rascunho"
@@ -45,6 +51,7 @@ export type AdicionalFrete = { nome: string; valor: number };
 
 export type EntradaCte = {
   empresaId?: string | null;
+  ambiente?: AmbienteFiscal;
   remetente: EnvolvidoFiscal;
   destinatario: EnvolvidoFiscal;
   tomador: EnvolvidoFiscal;
@@ -80,6 +87,7 @@ export type TipoRodado = "NAOAPLICAVEL" | "TRUCK" | "TOCO" | "CAVALOMECANICO" | 
 
 export type EntradaMdfe = {
   empresaId?: string | null;
+  ambiente?: AmbienteFiscal;
   cteIds: string[];
   inicio: { uf: string; municipio: string };
   termino: { uf: string; municipio: string };
@@ -115,6 +123,7 @@ export type DocumentoFiscal = {
   id: string;
   tipo: TipoDocumentoFiscal;
   status: StatusDocumentoFiscal;
+  ambiente?: AmbienteFiscal;
   numero: string | null;
   serie: string | null;
   chave_acesso: string | null;

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { PageShell } from "@/components/crud/page-shell";
 import { EmitirCteDialog } from "@/components/fiscal/emitir-cte-dialog";
 import { EmitirMdfeDialog } from "@/components/fiscal/emitir-mdfe-dialog";
+import { DownloadLoteDialog } from "@/components/fiscal/download-lote";
 import {
   baixarDocumentoFiscal,
   cancelarDocumentoFiscal,
@@ -106,7 +107,8 @@ function StatusIntegracao() {
         <div className="font-semibold">Integração fiscal ainda não configurada</div>
         <p className="text-muted-foreground">
           As credenciais de acesso ao emissor não estão cadastradas, então a emissão fica indisponível. Você pode
-          preparar os documentos, mas o envio só funciona depois que o acesso for liberado.
+          preparar os documentos, mas o envio só funciona depois que o acesso for liberado — vale tanto para o ambiente
+          de teste (homologação) quanto para o de produção.
         </p>
       </div>
     </Card>
@@ -117,6 +119,7 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
   const qc = useQueryClient();
   const [abrirCte, setAbrirCte] = useState(false);
   const [abrirMdfe, setAbrirMdfe] = useState(false);
+  const [abrirLote, setAbrirLote] = useState(false);
 
   const sincronizar = useServerFn(sincronizarDocumentoFiscal);
   const baixar = useServerFn(baixarDocumentoFiscal);
@@ -184,6 +187,9 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
           <Button variant="outline" size="sm" onClick={recarregar}>
             <RefreshCw className="mr-2 size-4" /> Atualizar lista
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setAbrirLote(true)}>
+            <Download className="mr-2 size-4" /> Baixar em lote
+          </Button>
           {tipo === "cte" ? (
             <Button size="sm" onClick={() => setAbrirCte(true)}>
               <FileText className="mr-2 size-4" /> Emitir CT-e
@@ -223,6 +229,11 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
                   <td className="whitespace-nowrap px-3 py-2">{dt(d.created_at)}</td>
                   <td className="px-3 py-2 font-mono text-xs">
                     {d.numero ? `${d.serie ?? ""}/${d.numero}` : "—"}
+                    {d.ambiente === "homologacao" && (
+                      <Badge variant="outline" className="ml-2 border-amber-500/60 text-[10px] text-amber-600">
+                        teste
+                      </Badge>
+                    )}
                   </td>
                   <td className="px-3 py-2">{d.cliente?.razao_social ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">
@@ -300,6 +311,7 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
         )}
       </Card>
 
+      <DownloadLoteDialog open={abrirLote} onOpenChange={setAbrirLote} />
       <EmitirCteDialog open={abrirCte} onOpenChange={setAbrirCte} onDone={recarregar} />
       <EmitirMdfeDialog open={abrirMdfe} onOpenChange={setAbrirMdfe} ctes={ctes} onDone={recarregar} />
     </div>

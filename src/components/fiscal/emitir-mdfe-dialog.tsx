@@ -6,7 +6,9 @@ import { Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { emitirMdfe } from "@/lib/fiscal.functions";
-import type { DocumentoFiscal, TipoCarga, TipoCarroceria, TipoRodado } from "@/lib/fiscal-tipos";
+import type { AmbienteFiscal, DocumentoFiscal, TipoCarga, TipoCarroceria, TipoRodado } from "@/lib/fiscal-tipos";
+import { rotuloAmbiente } from "@/lib/fiscal-tipos";
+import { PrevalidacaoPainel, usePrevalidacao } from "@/components/fiscal/prevalidacao";
 import { nnum } from "@/lib/frete";
 import { brl } from "@/lib/export-utils";
 import { Button } from "@/components/ui/button";
@@ -63,10 +65,18 @@ export function EmitirMdfeDialog({
   const [observacao, setObservacao] = useState("");
   const [ciotId, setCiotId] = useState("");
   const [empresaId, setEmpresaId] = useState("");
+  const [ambiente, setAmbiente] = useState<AmbienteFiscal>("producao");
 
   const disponiveis = useMemo(() => ctes.filter((c) => c.status === "autorizado" && c.chave_acesso), [ctes]);
   const selecionados = disponiveis.filter((c) => sel[c.id]);
   const valorTotal = selecionados.reduce((s, c) => s + Number(c.valor ?? 0), 0);
+
+  const pre = usePrevalidacao({
+    tipo: "mdfe",
+    empresaId,
+    viagemId: selecionados.find((c) => c.viagem_id)?.viagem_id ?? null,
+    enabled: open,
+  });
 
   const { data: empresas = [] } = useQuery({
     queryKey: ["company-settings-emitentes"],
@@ -153,6 +163,7 @@ export function EmitirMdfeDialog({
       emitir({
         data: {
           empresaId: empresaId || null,
+          ambiente,
           cteIds: selecionados.map((c) => c.id),
           inicio: { municipio: inicio.municipio, uf: inicio.uf },
           termino: { municipio: termino.municipio, uf: termino.uf },
@@ -212,6 +223,20 @@ export function EmitirMdfeDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Ambiente de emissão</Label>
+            <Select value={ambiente} onValueChange={(v) => setAmbiente(v as AmbienteFiscal)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="producao">{rotuloAmbiente.producao}</SelectItem>
+                <SelectItem value="homologacao">{rotuloAmbiente.homologacao}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              O manifesto precisa ser emitido no mesmo ambiente dos CT-es selecionados.
+            </p>
           </div>
 
           <div className="space-y-2 rounded-lg border border-border/60 p-3">
@@ -348,9 +373,14 @@ export function EmitirMdfeDialog({
           </div>
         </div>
 
+        <PrevalidacaoPainel carregando={pre.carregando} ok={pre.ok} pendencias={pre.pendencias} erro={pre.erro} />
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => salvar.mutate()} disabled={salvar.isPending || !selecionados.length}>
+          <Button
+            onClick={() => salvar.mutate()}
+            disabled={salvar.isPending || !selecionados.length || pre.carregando || !pre.ok}
+          >
             {salvar.isPending && <Loader2 className="mr-2 size-4 animate-spin" />} Emitir MDF-e
           </Button>
         </DialogFooter>
