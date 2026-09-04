@@ -79,6 +79,7 @@ export type TipoCarroceria = "NAOAPLICAVEL" | "ABERTA" | "FECHADA_BAU" | "GRANEL
 export type TipoRodado = "NAOAPLICAVEL" | "TRUCK" | "TOCO" | "CAVALOMECANICO" | "VAN" | "UTILITARIO" | "OUTROS";
 
 export type EntradaMdfe = {
+  empresaId?: string | null;
   cteIds: string[];
   inicio: { uf: string; municipio: string };
   termino: { uf: string; municipio: string };
