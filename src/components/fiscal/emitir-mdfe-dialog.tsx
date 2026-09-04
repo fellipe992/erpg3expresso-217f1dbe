@@ -61,6 +61,7 @@ export function EmitirMdfeDialog({
   const [carroceria, setCarroceria] = useState<TipoCarroceria>("FECHADA_BAU");
   const [rodado, setRodado] = useState<TipoRodado>("TRUCK");
   const [observacao, setObservacao] = useState("");
+  const [ciotId, setCiotId] = useState("");
 
   const disponiveis = useMemo(() => ctes.filter((c) => c.status === "autorizado" && c.chave_acesso), [ctes]);
   const selecionados = disponiveis.filter((c) => sel[c.id]);
