@@ -44,7 +44,8 @@ async function empresaEmitente(
 
   const c = (data ?? {}) as Record<string, unknown>;
   const inscricaoFederal = dig(c["cnpj"]);
-  const inscricaoEstadual = txt(c["inscricao_estadual"], 20);
+  // A Bsoft cadastra a inscrição estadual apenas com dígitos; máscaras ("278.578.439.117") não são encontradas.
+  const inscricaoEstadual = dig(c["inscricao_estadual"]).slice(0, 20);
   if (!inscricaoFederal || !inscricaoEstadual) {
     throw new Error(
       "Selecione a empresa emitente e complete o CNPJ e a inscrição estadual dela em Empresa antes de emitir documentos fiscais.",
@@ -62,7 +63,9 @@ function envolvidoApi(e: EntradaCte["remetente"]) {
   return {
     nome: txt(e.nome, 60),
     inscricaoFederal: dig(e.inscricaoFederal),
-    inscricaoEstadual: txt(e.inscricaoEstadual, 20) || undefined,
+    inscricaoEstadual: (/^ISENTO$/i.test(String(e.inscricaoEstadual ?? "").trim())
+      ? "ISENTO"
+      : dig(e.inscricaoEstadual).slice(0, 20)) || undefined,
     telefone: dig(e.telefone),
     email: txt(e.email, 120) || undefined,
     endereco: {
