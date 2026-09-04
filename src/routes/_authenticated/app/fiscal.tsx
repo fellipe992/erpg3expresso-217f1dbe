@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmpresasCadastro } from "@/components/fiscal/empresas-cadastro";
+import { ValidarSefaz } from "@/components/fiscal/validar-sefaz";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/app/fiscal")({
