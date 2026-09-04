@@ -399,7 +399,9 @@ export const emitirMdfe = createServerFn({ method: "POST" })
       modal: {
         rodoviario: {
           rntrc: empresa.rntrc ?? undefined,
+          ciots: ciot ? [{ ciot, inscricaoFederalContratante: empresa.inscricaoFederal }] : undefined,
           motoristas: [{ nome: txt(data.motorista.nome, 60), cpf: dig(data.motorista.cpf) }],
+
           veiculos: [
             {
               placa: txt(data.veiculo.placa, 7).toUpperCase().replace(/[^A-Z0-9]/g, ""),
