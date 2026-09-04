@@ -71,6 +71,13 @@ export function EmitirMdfeDialog({
   const selecionados = disponiveis.filter((c) => sel[c.id]);
   const valorTotal = selecionados.reduce((s, c) => s + Number(c.valor ?? 0), 0);
 
+  const pre = usePrevalidacao({
+    tipo: "mdfe",
+    empresaId,
+    viagemId: selecionados.find((c) => c.viagem_id)?.viagem_id ?? null,
+    enabled: open,
+  });
+
   const { data: empresas = [] } = useQuery({
     queryKey: ["company-settings-emitentes"],
     enabled: open,
