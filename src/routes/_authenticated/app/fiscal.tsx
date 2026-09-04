@@ -353,9 +353,11 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
                     )}
                     {d.status === "autorizado" && (
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Cancelar documento"
+                        variant="outline"
+                        size="sm"
+                        title="Cancelar documento na SEFAZ"
+                        className="ml-1 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        disabled={acaoCancelar.isPending}
                         onClick={() => {
                           const motivo = window.prompt("Motivo do cancelamento (mínimo 15 caracteres):")?.trim();
                           if (!motivo) return;
@@ -363,12 +365,15 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
                             toast.error("O motivo precisa ter ao menos 15 caracteres.");
                             return;
                           }
+                          if (!window.confirm("Confirma o cancelamento deste documento na SEFAZ?")) return;
                           acaoCancelar.mutate({ id: d.id, motivo });
                         }}
                       >
-                        <XCircle className="size-4" />
+                        <XCircle className="mr-1 size-4" />
+                        Cancelar
                       </Button>
                     )}
+
                   </td>
                 </tr>
               ))}
