@@ -163,7 +163,7 @@ export function EmitirCteDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from("fechamentos")
-        .select("id, numero, cliente_id, periodo_inicio, periodo_fim, valor, status, tipo")
+        .select("id, numero, cliente_id, motorista_id, periodo_inicio, periodo_fim, valor, status, tipo, motoristas(nome), clientes(razao_social)")
         .eq("tipo", "cliente")
         .neq("status", "cancelado")
         .order("numero", { ascending: false })
