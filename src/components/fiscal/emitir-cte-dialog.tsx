@@ -351,8 +351,14 @@ export function EmitirCteDialog({
                   <SelectContent>
                     {fechamentos.map((f) => (
                       <SelectItem key={String(f["id"])} value={String(f["id"])}>
-                        #{f["numero"]} · {dt(String(f["periodo_inicio"]))} a {dt(String(f["periodo_fim"]))} ·{" "}
-                        {brl(Number(f["valor"] ?? 0))}
+                        #{String(f["numero"] ?? "")} · {dt(String(f["periodo_inicio"]))} a{" "}
+                        {dt(String(f["periodo_fim"]))} · {brl(Number(f["valor"] ?? 0))}
+                        {(f["motoristas"] as { nome?: string } | null)?.nome
+                          ? ` · ${(f["motoristas"] as { nome?: string }).nome}`
+                          : ""}
+                        {(f["clientes"] as { razao_social?: string } | null)?.razao_social
+                          ? ` · ${(f["clientes"] as { razao_social?: string }).razao_social}`
+                          : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
