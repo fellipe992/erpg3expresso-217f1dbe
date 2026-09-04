@@ -117,6 +117,8 @@ export type DocumentoFiscal = {
   serie: string | null;
   chave_acesso: string | null;
   valor: number;
+  ciot?: string | null;
+
   peso_kg: number | null;
   produto_predominante: string | null;
   motivo: string | null;
