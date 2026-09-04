@@ -282,7 +282,24 @@ export function EmitirMdfeDialog({
                 </SelectContent>
               </Select>
             </Campo>
+            <Campo label="CIOT (frete de terceiro)">
+              <Select value={ciotId} onValueChange={setCiotId}>
+                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                <SelectContent>
+                  {ciots.length === 0 ? (
+                    <SelectItem value="" disabled>Nenhum CIOT emitido</SelectItem>
+                  ) : (
+                    ciots.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.numero_ciot} · {c.contratado_nome}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </Campo>
             <div className="sm:col-span-2">
+
               <Campo label="Observações">
                 <Textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
               </Campo>
