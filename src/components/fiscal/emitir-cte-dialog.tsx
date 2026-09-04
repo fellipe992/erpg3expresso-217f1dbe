@@ -168,7 +168,7 @@ export function EmitirCteDialog({
         .neq("status", "cancelado")
         .order("numero", { ascending: false })
         .limit(100);
-      return (data ?? []) as Array<Record<string, string | number | null>>;
+      return (data ?? []) as unknown as Array<Record<string, unknown>>;
     },
   });
 
