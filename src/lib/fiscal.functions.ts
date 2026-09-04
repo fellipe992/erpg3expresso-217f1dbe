@@ -154,6 +154,7 @@ export const emitirCte = createServerFn({ method: "POST" })
       .single();
     if (error || !doc) throw new Error(error?.message ?? "Não foi possível registrar o CT-e.");
 
+    const chavesNfe = (data.chavesNfe ?? []).map((c) => dig(c)).filter((c) => c.length === 44);
     const payload = {
       idIntegracao: doc.id_integracao,
       empresa: { inscricaoFederal: empresa.inscricaoFederal, inscricaoEstadual: empresa.inscricaoEstadual },
@@ -173,7 +174,19 @@ export const emitirCte = createServerFn({ method: "POST" })
           pesoBrutoKG: Number(data.pesoKg),
         },
       },
-      documentos: { chaveAcessoNFe: (data.chavesNfe ?? []).map((c) => dig(c)).filter((c) => c.length === 44) },
+      documentos: chavesNfe.length
+        ? { chaveAcessoNFe: chavesNfe }
+        : {
+            outros: [
+              {
+                tipoDocumento: "OUTROS",
+                descricaoOutros: txt(data.produtoPredominante, 60) || "Declaracao de carga",
+                numeroDocumento: String(doc.id_integracao ?? "").slice(0, 20),
+                dataEmissao: new Date().toISOString().slice(0, 10),
+                valorDocumento: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
+              },
+            ],
+          },
       tipoTransporte: { tipoTransporte: "RODOVIARIO" },
       ambiente: codigoAmbiente(ambiente),
       observacaoGeral: txt(data.observacao, 500) || undefined,
