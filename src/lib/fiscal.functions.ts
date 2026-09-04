@@ -894,3 +894,84 @@ export const validarNaSefaz = createServerFn({ method: "POST" })
       consultaFalhou: !!erroConsulta,
     };
   });
+
+/** Remove o registro local de um documento que não está autorizado. */
+export const excluirDocumentoFiscal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => {
+    if (!data?.id) throw new Error("Documento não informado.");
+    return { id: String(data.id) };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: doc } = await context.supabase
+      .from("fiscal_documentos")
+      .select("id, tipo, status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!doc) throw new Error("Documento não encontrado.");
+    if (doc.status === "autorizado" || doc.status === "encerrado") {
+      throw new Error("Documento autorizado não pode ser excluído — use o cancelamento.");
+    }
+    if (doc.tipo === "mdfe") await context.supabase.from("fiscal_mdfe_ctes").delete().eq("mdfe_id", doc.id);
+    else await context.supabase.from("fiscal_mdfe_ctes").delete().eq("cte_id", doc.id);
+    const { error } = await context.supabase.from("fiscal_documentos").delete().eq("id", doc.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Reenvia à Bsoft um documento que ficou em rascunho ou foi rejeitado. */
+export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => {
+    if (!data?.id) throw new Error("Documento não informado.");
+    return { id: String(data.id) };
+  })
+  .handler(async ({ data, context }) => {
+    const { bsoft } = await import("@/lib/fiscal.server");
+    const { data: doc } = await context.supabase
+      .from("fiscal_documentos")
+      .select("id, tipo, status, ambiente, bsoft_id, payload")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!doc) throw new Error("Documento não encontrado.");
+    if (doc.status === "autorizado" || doc.status === "encerrado" || doc.status === "cancelado") {
+      throw new Error("Este documento já foi finalizado e não pode ser reenviado.");
+    }
+    if (!doc.payload) throw new Error("Não há dados salvos deste documento para reenviar. Emita novamente pelo formulário.");
+
+    const produto = doc.tipo === "cte" ? ("cte" as const) : ("mdfe" as const);
+    const recurso = produto === "cte" ? "/v1/integracoes/cte" : "/v1/integracoes/mdfe";
+    const emitirUrl = produto === "cte" ? "/v1/integracoes/ctes/emitir" : "/v1/integracoes/mdfes/emitir";
+    const ambiente = amb(doc.ambiente);
+
+    try {
+      let bsoftId = doc.bsoft_id as string | null;
+      if (!bsoftId) {
+        const criado = await bsoft<{ id?: string }>(context.supabase, produto, recurso, {
+          method: "POST",
+          body: doc.payload,
+          ambiente,
+        });
+        bsoftId = criado?.id ?? null;
+        if (!bsoftId) throw new Error("A Bsoft não retornou o identificador do documento criado.");
+      }
+      const emissao = await bsoft<{ id?: string; idTransacao?: string }>(context.supabase, produto, emitirUrl, {
+        method: "POST",
+        body: produto === "cte" ? { idList: [bsoftId], enviarEmail: false, averbarCte: false } : { idList: [bsoftId] },
+        ambiente,
+      });
+      const transacao = emissao?.idTransacao ?? emissao?.id ?? null;
+      await context.supabase
+        .from("fiscal_documentos")
+        .update({ bsoft_id: bsoftId, transacao_id: transacao, status: "processando", motivo: null })
+        .eq("id", doc.id);
+      return { ok: true as const, bsoftId, transacaoId: transacao };
+    } catch (e) {
+      const motivo = e instanceof Error ? e.message : "Falha desconhecida";
+      await context.supabase
+        .from("fiscal_documentos")
+        .update({ status: "rejeitado", motivo: motivo.slice(0, 2000) })
+        .eq("id", doc.id);
+      throw e;
+    }
+  });
