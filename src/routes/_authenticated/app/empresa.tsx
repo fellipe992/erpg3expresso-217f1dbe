@@ -2,16 +2,18 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, Save, Loader2, Building2 } from "lucide-react";
+import { Upload, Save, Loader2, Building2, Plus } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany, getSignedLogoUrl } from "@/hooks/use-company";
+import { useCompanies, getSignedLogoUrl, type CompanySettings } from "@/hooks/use-company";
 import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/app/empresa")({
   head: () => ({ meta: [{ title: "Configurações da empresa — G3 Expresso" }] }),
@@ -22,30 +24,48 @@ export const Route = createFileRoute("/_authenticated/app/empresa")({
   component: EmpresaPage,
 });
 
+const NOVA = "__nova__";
+
+const vazio = {
+  nome_fantasia: "",
+  razao_social: "",
+  cnpj: "",
+  inscricao_estadual: "",
+  rntrc: "",
+  endereco: "",
+  endereco_numero: "",
+  bairro: "",
+  cidade: "",
+  uf: "",
+  cep: "",
+  telefone: "",
+  email: "",
+  emitente_fiscal: false,
+  emitente_padrao: false,
+};
+
 function EmpresaPage() {
-  const { data: company, isLoading } = useCompany();
+  const { data: companies = [], isLoading } = useCompanies();
   const { role } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState<string>("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    nome_fantasia: "",
-    razao_social: "",
-    cnpj: "",
-    inscricao_estadual: "",
-    rntrc: "",
-    endereco: "",
-    endereco_numero: "",
-    bairro: "",
-    cidade: "",
-    uf: "",
-    cep: "",
-    telefone: "",
-    email: "",
-  });
+  const [form, setForm] = useState(vazio);
 
   const isAdmin = role === "administrador";
+  const novaEmpresa = selectedId === NOVA;
+  const company: CompanySettings | undefined = companies.find((c) => c.id === selectedId);
 
   useEffect(() => {
+    if (!selectedId && companies.length) setSelectedId(companies[0]!.id);
+  }, [companies, selectedId]);
+
+  useEffect(() => {
+    if (novaEmpresa) {
+      setForm({ ...vazio, emitente_fiscal: true });
+      setLogoPreview(null);
+      return;
+    }
     if (company) {
       setForm({
         nome_fantasia: company.nome_fantasia ?? "",
@@ -61,24 +81,43 @@ function EmpresaPage() {
         cep: company.cep ?? "",
         telefone: company.telefone ?? "",
         email: company.email ?? "",
+        emitente_fiscal: company.emitente_fiscal ?? false,
+        emitente_padrao: company.emitente_padrao ?? false,
       });
       getSignedLogoUrl(company.logo_url).then(setLogoPreview);
     }
-  }, [company]);
-
+  }, [company, novaEmpresa]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!company) throw new Error("Configuração não carregada");
-      const { error } = await supabase
-        .from("company_settings")
-        .update(form)
-        .eq("id", company.id);
+      if (!form.nome_fantasia.trim()) throw new Error("Informe o nome fantasia da empresa.");
+      // Só uma empresa pode ser a padrão de emissão.
+      if (form.emitente_padrao) {
+        await supabase
+          .from("company_settings")
+          .update({ emitente_padrao: false })
+          .eq("emitente_padrao", true);
+      }
+      if (novaEmpresa) {
+        const { data, error } = await supabase
+          .from("company_settings")
+          .insert(form)
+          .select("id")
+          .single();
+        if (error) throw error;
+        return data.id as string;
+      }
+      if (!company) throw new Error("Empresa não carregada");
+      const { error } = await supabase.from("company_settings").update(form).eq("id", company.id);
       if (error) throw error;
+      return company.id;
     },
-    onSuccess: () => {
-      toast.success("Dados atualizados");
+    onSuccess: async (id) => {
+      toast.success("Dados salvos");
+      await queryClient.invalidateQueries({ queryKey: ["company-settings-list"] });
       queryClient.invalidateQueries({ queryKey: ["company-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["status-integracao-fiscal"] });
+      setSelectedId(id);
     },
     onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
   });
@@ -102,6 +141,7 @@ function EmpresaPage() {
       .eq("id", company.id);
     if (updateErr) return toast.error("Erro ao salvar logo", { description: updateErr.message });
     toast.success("Logo atualizado");
+    queryClient.invalidateQueries({ queryKey: ["company-settings-list"] });
     queryClient.invalidateQueries({ queryKey: ["company-settings"] });
     getSignedLogoUrl(path).then(setLogoPreview);
   }
@@ -121,9 +161,9 @@ function EmpresaPage() {
           <Building2 className="size-5 text-brand" />
         </div>
         <div>
-          <h1 className="font-display text-2xl font-bold">Configurações da empresa</h1>
+          <h1 className="font-display text-2xl font-bold">Empresas</h1>
           <p className="text-sm text-muted-foreground">
-            Estes dados aparecem no login, sidebar e relatórios.
+            Cadastre suas empresas e escolha qual delas emite os documentos de transporte.
           </p>
         </div>
       </div>
@@ -135,6 +175,33 @@ function EmpresaPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-end">
+          <div className="flex-1 space-y-1.5">
+            <Label className="text-xs">Empresa</Label>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a empresa" />
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.nome_fantasia}
+                    {c.emitente_padrao ? " · emite CT-e" : ""}
+                  </SelectItem>
+                ))}
+                {isAdmin && <SelectItem value={NOVA}>+ Nova empresa</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+          {isAdmin && (
+            <Button variant="outline" onClick={() => setSelectedId(NOVA)}>
+              <Plus className="mr-2 size-4" /> Nova empresa
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
@@ -153,26 +220,29 @@ function EmpresaPage() {
                 </div>
               )}
             </div>
-            <label className={`block ${!isAdmin && "pointer-events-none opacity-60"}`}>
+            <label className={`block ${(!isAdmin || novaEmpresa) && "pointer-events-none opacity-60"}`}>
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/svg+xml"
                 className="sr-only"
                 onChange={handleLogoUpload}
-                disabled={!isAdmin}
+                disabled={!isAdmin || novaEmpresa}
               />
               <div className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
                 <Upload className="size-4" />
                 Enviar logo
               </div>
             </label>
+            {novaEmpresa && (
+              <p className="text-xs text-muted-foreground">Salve a empresa para poder enviar o logo.</p>
+            )}
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Dados cadastrais</CardTitle>
-            <CardDescription>Nome fantasia, CNPJ e contato</CardDescription>
+            <CardTitle>{novaEmpresa ? "Nova empresa" : "Dados cadastrais"}</CardTitle>
+            <CardDescription>Razão social, CNPJ, inscrição estadual, RNTRC e endereço</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -182,6 +252,7 @@ function EmpresaPage() {
                   value={form.nome_fantasia}
                   onChange={(e) => setForm({ ...form, nome_fantasia: e.target.value })}
                   disabled={!isAdmin}
+                  placeholder="G3 Transporte Logístico"
                 />
               </Field>
               <Field label="Razão social" id="razao_social">
@@ -288,6 +359,37 @@ function EmpresaPage() {
               </Field>
             </div>
 
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium">Emite CT-e e MDF-e</div>
+                  <div className="text-xs text-muted-foreground">
+                    Esta empresa aparece na lista ao emitir documentos.
+                  </div>
+                </div>
+                <Switch
+                  checked={form.emitente_fiscal}
+                  disabled={!isAdmin}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, emitente_fiscal: v, emitente_padrao: v ? form.emitente_padrao : false })
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium">Empresa padrão para emissão</div>
+                  <div className="text-xs text-muted-foreground">
+                    Já vem selecionada quando você emite um documento.
+                  </div>
+                </div>
+                <Switch
+                  checked={form.emitente_padrao}
+                  disabled={!isAdmin || !form.emitente_fiscal}
+                  onCheckedChange={(v) => setForm({ ...form, emitente_padrao: v })}
+                />
+              </div>
+            </div>
+
             {isAdmin && (
               <div className="flex justify-end">
                 <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
@@ -296,7 +398,7 @@ function EmpresaPage() {
                   ) : (
                     <Save className="mr-2 size-4" />
                   )}
-                  Salvar alterações
+                  {novaEmpresa ? "Cadastrar empresa" : "Salvar alterações"}
                 </Button>
               </div>
             )}
