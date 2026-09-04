@@ -10,9 +10,9 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
 export const statusCiot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const { credenciaisCiotBsoft, credenciaisCiotGestora } = await import("@/lib/ciot.server");
+    const { getCredenciaisCiot, credenciaisCiotGestora } = await import("@/lib/fiscal.server");
     return {
-      bsoft: credenciaisCiotBsoft().configurado,
+      bsoft: (await getCredenciaisCiot(context.supabase)).configurado,
       gestora: credenciaisCiotGestora().configurado,
     };
   });
@@ -163,7 +163,7 @@ export const cancelarCiot = createServerFn({ method: "POST" })
       const { ciotBsoft, ciotGestora } = await import("@/lib/ciot.server");
       const body = { ciot: row.numero_ciot, motivo: data.motivo };
       if (row.provedor === "bsoft") {
-        await ciotBsoft({ path: "/v1/integracoes/ciot/cancelar", method: "POST", body });
+        await ciotBsoft(context.supabase, { path: "/v1/integracoes/ciot/cancelar", method: "POST", body });
       } else {
         await ciotGestora({ path: `/ciots/${encodeURIComponent(row.numero_ciot)}/cancelar`, method: "POST", body });
       }
@@ -196,7 +196,7 @@ export const encerrarCiot = createServerFn({ method: "POST" })
       const { ciotBsoft, ciotGestora } = await import("@/lib/ciot.server");
       const body = { ciot: row.numero_ciot };
       if (row.provedor === "bsoft") {
-        await ciotBsoft({ path: "/v1/integracoes/ciot/encerrar", method: "POST", body });
+        await ciotBsoft(context.supabase, { path: "/v1/integracoes/ciot/encerrar", method: "POST", body });
       } else {
         await ciotGestora({ path: `/ciots/${encodeURIComponent(row.numero_ciot)}/encerrar`, method: "POST", body });
       }
