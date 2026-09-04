@@ -222,7 +222,14 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (!doc) throw new Error("Documento não encontrado.");
-    if (!doc.bsoft_id) throw new Error("Documento ainda não enviado à Bsoft.");
+    if (!doc.bsoft_id && !doc.transacao_id) {
+      return {
+        ok: false as const,
+        status: doc.status as StatusDocumentoFiscal,
+        motivo:
+          "Este documento ainda não foi enviado à Bsoft, então não há situação a consultar. Emita o documento primeiro.",
+      };
+    }
 
     const produto = doc.tipo === "cte" ? "cte" : "mdfe";
     const base = produto === "cte" ? "/v1/integracoes/ctes" : "/v1/integracoes/mdfes";
@@ -241,11 +248,14 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
 
     // Situação atual do documento.
     let detalhe: Record<string, unknown> | null = null;
-    try {
-      detalhe = await bsoft<Record<string, unknown>>(context.supabase, produto, `${base}/${doc.bsoft_id}`, { ambiente });
-    } catch {
-      detalhe = null;
+    if (doc.bsoft_id) {
+      try {
+        detalhe = await bsoft<Record<string, unknown>>(context.supabase, produto, `${base}/${doc.bsoft_id}`, { ambiente });
+      } catch {
+        detalhe = null;
+      }
     }
+
 
     const item = itens[0] ?? {};
     const bruto = String(
@@ -280,7 +290,7 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
       })
       .eq("id", doc.id);
 
-    return { status, numero, serie, chave, motivo };
+    return { ok: true as const, status, numero, serie, chave, motivo };
   });
 
 /** Gera o DACTE/DAMDFE e o XML do documento. */
