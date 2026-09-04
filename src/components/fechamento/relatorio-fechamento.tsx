@@ -63,8 +63,15 @@ const ajustesDe = (d: DetalheFechamento): Celula[][] =>
       ),
   );
 
-const tituloDe = (d: DetalheFechamento) =>
-  `Fechamento #${d.fechamento.numero} — ${d.fechamento.tipo === "cliente" ? "Cliente" : "Motorista"}`;
+const tituloDe = (d: DetalheFechamento) => {
+  const quem =
+    d.fechamento.tipo === "cliente"
+      ? d.fechamento.cliente?.razao_social
+      : d.fechamento.motorista?.nome;
+  const rotulo = d.fechamento.tipo === "cliente" ? "Cliente" : "Motorista";
+  return `Fechamento #${d.fechamento.numero} — ${rotulo}${quem ? `: ${quem}` : ""}`;
+};
+
 
 const subtituloDe = (d: DetalheFechamento) =>
   `${d.fechamento.cliente?.razao_social ?? d.fechamento.motorista?.nome ?? ""} • Período ${dt(
