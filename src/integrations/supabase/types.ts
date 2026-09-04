@@ -427,12 +427,15 @@ export type Database = {
       }
       company_settings: {
         Row: {
+          ativo: boolean
           bairro: string | null
           cep: string | null
           cidade: string | null
           cnpj: string | null
           created_at: string
           email: string | null
+          emitente_fiscal: boolean
+          emitente_padrao: boolean
           endereco: string | null
           endereco_numero: string | null
           id: string
@@ -446,12 +449,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ativo?: boolean
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          emitente_fiscal?: boolean
+          emitente_padrao?: boolean
           endereco?: string | null
           endereco_numero?: string | null
           id?: string
@@ -465,12 +471,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ativo?: boolean
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          emitente_fiscal?: boolean
+          emitente_padrao?: boolean
           endereco?: string | null
           endereco_numero?: string | null
           id?: string
@@ -1338,6 +1347,7 @@ export type Database = {
           created_by: string | null
           data_emissao: string
           distancia_km: number | null
+          empresa_id: string | null
           id: string
           mdfe_id: string | null
           motivo: string | null
@@ -1366,6 +1376,7 @@ export type Database = {
           created_by?: string | null
           data_emissao?: string
           distancia_km?: number | null
+          empresa_id?: string | null
           id?: string
           mdfe_id?: string | null
           motivo?: string | null
@@ -1394,6 +1405,7 @@ export type Database = {
           created_by?: string | null
           data_emissao?: string
           distancia_km?: number | null
+          empresa_id?: string | null
           id?: string
           mdfe_id?: string | null
           motivo?: string | null
@@ -1419,6 +1431,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_ciots_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "company_settings"
             referencedColumns: ["id"]
           },
           {
@@ -1459,6 +1478,7 @@ export type Database = {
           cliente_id: string | null
           created_at: string
           created_by: string | null
+          empresa_id: string | null
           fechamento_id: string | null
           id: string
           id_integracao: string
@@ -1486,6 +1506,7 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
+          empresa_id?: string | null
           fechamento_id?: string | null
           id?: string
           id_integracao?: string
@@ -1513,6 +1534,7 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
+          empresa_id?: string | null
           fechamento_id?: string | null
           id?: string
           id_integracao?: string
@@ -1539,6 +1561,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_documentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "company_settings"
             referencedColumns: ["id"]
           },
           {
