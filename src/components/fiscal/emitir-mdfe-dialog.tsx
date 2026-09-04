@@ -88,8 +88,31 @@ export function EmitirMdfeDialog({
     },
   });
 
+  // CIOTs já emitidos, para informar no manifesto quando o frete é de terceiro.
+  const { data: ciots = [] } = useQuery({
+    queryKey: ["ciots-emitidos-mdfe"],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("fiscal_ciots")
+        .select("id, numero_ciot, contratado_nome, data_emissao")
+        .eq("status", "emitido")
+        .not("numero_ciot", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return (data ?? []) as Array<{
+        id: string;
+        numero_ciot: string | null;
+        contratado_nome: string;
+        data_emissao: string;
+      }>;
+    },
+  });
+
   const veiculo = veiculos.find((v) => String(v["id"]) === veiculoId);
   const motorista = motoristas.find((m) => m.id === motoristaId);
+  const ciotSel = ciots.find((c) => c.id === ciotId);
+
 
   useEffect(() => {
     if (!veiculo) return;
