@@ -987,7 +987,13 @@ export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
       const transacao = emissao?.idTransacao ?? emissao?.id ?? null;
       await context.supabase
         .from("fiscal_documentos")
-        .update({ bsoft_id: bsoftId, transacao_id: transacao, status: "processando", motivo: null, payload })
+        .update({
+          bsoft_id: bsoftId,
+          transacao_id: transacao,
+          status: "processando",
+          motivo: null,
+          payload: JSON.parse(JSON.stringify(payload)),
+        })
         .eq("id", doc.id);
       return { ok: true as const, bsoftId, transacaoId: transacao };
     } catch (e) {
