@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { PageShell } from "@/components/crud/page-shell";
 import { EmitirCteDialog } from "@/components/fiscal/emitir-cte-dialog";
 import { EmitirMdfeDialog } from "@/components/fiscal/emitir-mdfe-dialog";
+import { DownloadLoteDialog } from "@/components/fiscal/download-lote";
 import {
   baixarDocumentoFiscal,
   cancelarDocumentoFiscal,
@@ -184,6 +185,9 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
           <Button variant="outline" size="sm" onClick={recarregar}>
             <RefreshCw className="mr-2 size-4" /> Atualizar lista
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setAbrirLote(true)}>
+            <Download className="mr-2 size-4" /> Baixar em lote
+          </Button>
           {tipo === "cte" ? (
             <Button size="sm" onClick={() => setAbrirCte(true)}>
               <FileText className="mr-2 size-4" /> Emitir CT-e
@@ -300,6 +304,7 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
         )}
       </Card>
 
+      <DownloadLoteDialog open={abrirLote} onOpenChange={setAbrirLote} />
       <EmitirCteDialog open={abrirCte} onOpenChange={setAbrirCte} onDone={recarregar} />
       <EmitirMdfeDialog open={abrirMdfe} onOpenChange={setAbrirMdfe} ctes={ctes} onDone={recarregar} />
     </div>
