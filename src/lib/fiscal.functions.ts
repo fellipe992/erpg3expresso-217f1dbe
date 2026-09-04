@@ -179,10 +179,14 @@ export const emitirCte = createServerFn({ method: "POST" })
         : {
             outros: [
               {
+                tipo: "OUTROS",
                 tipoDocumento: "OUTROS",
+                descricao: txt(data.produtoPredominante, 60) || "Declaracao de carga",
                 descricaoOutros: txt(data.produtoPredominante, 60) || "Declaracao de carga",
+                numero: String(doc.id_integracao ?? "").slice(0, 20),
                 numeroDocumento: String(doc.id_integracao ?? "").slice(0, 20),
                 dataEmissao: new Date().toISOString().slice(0, 10),
+                valor: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
                 valorDocumento: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
               },
             ],
