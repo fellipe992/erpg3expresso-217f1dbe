@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Save, Settings, Upload, Building2 } from "lucide-react";
+import { Key, Loader2, Save, Settings, ShieldCheck, Upload, Building2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -47,11 +48,15 @@ function ConfiguracoesPage() {
           <TabsTrigger value="preferencias">Preferências</TabsTrigger>
           <TabsTrigger value="financeiro">Regras financeiras</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="fiscal">
+            <Key className="mr-1.5 size-4" /> Integrações fiscais
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="empresa" className="mt-4"><EmpresaTab /></TabsContent>
         <TabsContent value="preferencias" className="mt-4"><PreferenciasTab /></TabsContent>
         <TabsContent value="financeiro" className="mt-4"><FinanceiroTab /></TabsContent>
         <TabsContent value="notificacoes" className="mt-4"><NotificacoesTab /></TabsContent>
+        <TabsContent value="fiscal" className="mt-4"><IntegracaoFiscalTab /></TabsContent>
       </Tabs>
     </div>
   );
@@ -384,6 +389,182 @@ function NotificacoesTab() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/* ---------------- Integrações fiscais (Bsoft/Hivecloud) ---------------- */
+type FiscalIntegracaoConfig = {
+  id: string;
+  bsoft_api_token: string | null;
+  bsoft_tenant_id: string | null;
+  bsoft_api_token_homologacao: string | null;
+  bsoft_tenant_id_homologacao: string | null;
+};
+
+function useFiscalIntegracaoConfig() {
+  return useQuery({
+    queryKey: ["fiscal-integracao-config"],
+    queryFn: async (): Promise<FiscalIntegracaoConfig | null> => {
+      const { data, error } = await supabase
+        .from("fiscal_integracao_config")
+        .select("id, bsoft_api_token, bsoft_tenant_id, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as FiscalIntegracaoConfig | null;
+    },
+  });
+}
+
+function useSaveFiscalIntegracaoConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: Partial<FiscalIntegracaoConfig> & { id: string }) => {
+      const { id, ...rest } = patch;
+      const { error } = await supabase.from("fiscal_integracao_config").update(rest).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Credenciais fiscais salvas");
+      qc.invalidateQueries({ queryKey: ["fiscal-integracao-config"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar", { description: e.message }),
+  });
+}
+
+function IntegracaoFiscalTab() {
+  const { data, isLoading } = useFiscalIntegracaoConfig();
+  const save = useSaveFiscalIntegracaoConfig();
+  const [form, setForm] = useState({
+    bsoft_api_token: "",
+    bsoft_tenant_id: "",
+    bsoft_api_token_homologacao: "",
+    bsoft_tenant_id_homologacao: "",
+  });
+  const [erros, setErros] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        bsoft_api_token: data.bsoft_api_token ?? "",
+        bsoft_tenant_id: data.bsoft_tenant_id ?? "",
+        bsoft_api_token_homologacao: data.bsoft_api_token_homologacao ?? "",
+        bsoft_tenant_id_homologacao: data.bsoft_tenant_id_homologacao ?? "",
+      });
+      setErros({});
+    }
+  }, [data]);
+
+  if (isLoading || !data) return <Spinner />;
+
+  const dig = (v: string) => v.replace(/\D+/g, "");
+
+  const alterarTenant = (campo: "bsoft_tenant_id" | "bsoft_tenant_id_homologacao", v: string) => {
+    setForm((f) => ({ ...f, [campo]: dig(v) }));
+    if (erros[campo]) setErros((e) => ({ ...e, [campo]: "" }));
+  };
+
+  const validar = () => {
+    const novos: Record<string, string> = {};
+    if (form.bsoft_tenant_id && !/^\d+$/.test(form.bsoft_tenant_id)) {
+      novos.bsoft_tenant_id = "O tenantID de produção deve conter apenas números.";
+    }
+    if (form.bsoft_tenant_id_homologacao && !/^\d+$/.test(form.bsoft_tenant_id_homologacao)) {
+      novos.bsoft_tenant_id_homologacao = "O tenantID de homologação deve conter apenas números.";
+    }
+    setErros(novos);
+    return Object.keys(novos).length === 0;
+  };
+
+  const prodOk = !!form.bsoft_api_token && !!form.bsoft_tenant_id;
+  const homOk = !!form.bsoft_api_token_homologacao && !!form.bsoft_tenant_id_homologacao;
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Key className="size-5 text-brand" />
+            <CardTitle>Produção</CardTitle>
+          </div>
+          <CardDescription>
+            Credenciais usadas para emitir CT-e, MDF-e e CIOT em ambiente de produção.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {prodOk && <Badge variant="outline" className="border-emerald-500/60 text-emerald-600"><ShieldCheck className="mr-1 size-3" /> Configurado</Badge>}
+          <Field label="API Token Bsoft">
+            <Input
+              type="password"
+              value={form.bsoft_api_token}
+              onChange={(e) => setForm({ ...form, bsoft_api_token: e.target.value })}
+              placeholder="Cole o token de integração"
+            />
+          </Field>
+          <Field label="Tenant ID (somente números)">
+            <Input
+              inputMode="numeric"
+              value={form.bsoft_tenant_id}
+              onChange={(e) => alterarTenant("bsoft_tenant_id", e.target.value)}
+              placeholder="Ex: 123456"
+            />
+            {erros.bsoft_tenant_id && <p className="text-xs text-destructive">{erros.bsoft_tenant_id}</p>}
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Key className="size-5 text-amber-500" />
+            <CardTitle>Homologação (teste)</CardTitle>
+          </div>
+          <CardDescription>
+            Se deixar em branco, o ambiente de teste usa as credenciais de produção.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {homOk && <Badge variant="outline" className="border-amber-500/60 text-amber-600">Configurado separadamente</Badge>}
+          <Field label="API Token Bsoft (homologação)">
+            <Input
+              type="password"
+              value={form.bsoft_api_token_homologacao}
+              onChange={(e) => setForm({ ...form, bsoft_api_token_homologacao: e.target.value })}
+              placeholder="Token de teste (opcional)"
+            />
+          </Field>
+          <Field label="Tenant ID de homologação (somente números)">
+            <Input
+              inputMode="numeric"
+              value={form.bsoft_tenant_id_homologacao}
+              onChange={(e) => alterarTenant("bsoft_tenant_id_homologacao", e.target.value)}
+              placeholder="Ex: 123456"
+            />
+            {erros.bsoft_tenant_id_homologacao && <p className="text-xs text-destructive">{erros.bsoft_tenant_id_homologacao}</p>}
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Estes dados são visíveis apenas para administradores. Se o tenantID tiver letras, traços ou espaços, a Bsoft rejeita a conexão com erro 401.
+            </p>
+            <Button
+              onClick={() => {
+                if (!validar()) return;
+                save.mutate({ id: data.id, ...form });
+              }}
+              disabled={save.isPending}
+            >
+              {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+              Salvar credenciais
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

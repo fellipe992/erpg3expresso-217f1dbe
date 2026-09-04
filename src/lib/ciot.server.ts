@@ -7,13 +7,11 @@
  *    por variáveis de ambiente para não amarrar o sistema a um fornecedor.
  */
 
+import { getCredenciaisCiot } from "@/lib/fiscal.server";
+
 const BSOFT_CIOT_BASE = "https://ciot-api.hivecloud.com.br/api";
 
-export function credenciaisCiotBsoft() {
-  const token = process.env["BSOFT_API_TOKEN"];
-  const tenant = process.env["BSOFT_TENANT_ID"];
-  return { token, tenant, configurado: !!token && !!tenant };
-}
+type SupabaseLike = { from: (t: string) => any };
 
 export function credenciaisCiotGestora() {
   const baseUrl = process.env["CIOT_GESTORA_BASE_URL"];
@@ -44,10 +42,10 @@ async function chamar(url: string, headers: Record<string, string>, req: Req) {
   }
 }
 
-export async function ciotBsoft<T = unknown>(req: Req): Promise<T> {
-  const { token, tenant, configurado } = credenciaisCiotBsoft();
+export async function ciotBsoft<T = unknown>(supabase: SupabaseLike, req: Req): Promise<T> {
+  const { token, tenant, configurado } = await getCredenciaisCiot(supabase);
   if (!configurado) {
-    throw new Error("Integração com a Bsoft não configurada. Cadastre o token e o tenantID de acesso.");
+    throw new Error("Integração com a Bsoft não configurada. Cadastre o token e o tenantID de acesso em Configurações > Integrações fiscais.");
   }
   return (await chamar(BSOFT_CIOT_BASE + req.path, {
     Authorization: `Bearer ${token}`,
