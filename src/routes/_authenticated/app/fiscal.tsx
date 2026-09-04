@@ -155,10 +155,12 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
 
   const acaoSincronizar = useMutation({
     mutationFn: (id: string) => sincronizar({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Situação atualizada");
+    onSuccess: (r) => {
+      if (r && r.ok === false) toast.info("Sem situação para consultar", { description: r.motivo });
+      else toast.success("Situação atualizada");
       recarregar();
     },
+
     onError: (e: Error) => toast.error("Não foi possível atualizar", { description: e.message }),
   });
 
