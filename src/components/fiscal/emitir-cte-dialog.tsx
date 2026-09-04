@@ -163,12 +163,12 @@ export function EmitirCteDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from("fechamentos")
-        .select("id, numero, cliente_id, periodo_inicio, periodo_fim, valor, status, tipo")
+        .select("id, numero, cliente_id, motorista_id, periodo_inicio, periodo_fim, valor, status, tipo, motoristas(nome), clientes(razao_social)")
         .eq("tipo", "cliente")
         .neq("status", "cancelado")
         .order("numero", { ascending: false })
         .limit(100);
-      return (data ?? []) as Array<Record<string, string | number | null>>;
+      return (data ?? []) as unknown as Array<Record<string, unknown>>;
     },
   });
 
@@ -351,8 +351,14 @@ export function EmitirCteDialog({
                   <SelectContent>
                     {fechamentos.map((f) => (
                       <SelectItem key={String(f["id"])} value={String(f["id"])}>
-                        #{f["numero"]} · {dt(String(f["periodo_inicio"]))} a {dt(String(f["periodo_fim"]))} ·{" "}
-                        {brl(Number(f["valor"] ?? 0))}
+                        #{String(f["numero"] ?? "")} · {dt(String(f["periodo_inicio"]))} a{" "}
+                        {dt(String(f["periodo_fim"]))} · {brl(Number(f["valor"] ?? 0))}
+                        {(f["motoristas"] as { nome?: string } | null)?.nome
+                          ? ` · ${(f["motoristas"] as { nome?: string }).nome}`
+                          : ""}
+                        {(f["clientes"] as { razao_social?: string } | null)?.razao_social
+                          ? ` · ${(f["clientes"] as { razao_social?: string }).razao_social}`
+                          : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
