@@ -44,6 +44,7 @@ export type AtividadeTomador =
 export type AdicionalFrete = { nome: string; valor: number };
 
 export type EntradaCte = {
+  empresaId?: string | null;
   remetente: EnvolvidoFiscal;
   destinatario: EnvolvidoFiscal;
   tomador: EnvolvidoFiscal;
