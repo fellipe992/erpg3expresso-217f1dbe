@@ -242,7 +242,7 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
     // Situação atual do documento.
     let detalhe: Record<string, unknown> | null = null;
     try {
-      detalhe = await bsoft<Record<string, unknown>>(produto, `${base}/${doc.bsoft_id}`, { ambiente });
+      detalhe = await bsoft<Record<string, unknown>>(context.supabase, produto, `${base}/${doc.bsoft_id}`, { ambiente });
     } catch {
       detalhe = null;
     }
@@ -736,14 +736,14 @@ export const baixarLoteFiscal = createServerFn({ method: "POST" })
         .join("-");
       try {
         if (d.tipo === "cte") {
-          const r = await bsoft<Record<string, unknown>>("cte", "/v1/integracoes/ctes/imprimir-documento-cte", {
+          const r = await bsoft<Record<string, unknown>>(sb, "cte", "/v1/integracoes/ctes/imprimir-documento-cte", {
             method: "POST",
             body: { idCteList: [d.bsoft_id], ordenarPorIntegracao: true },
             ambiente: amb(d.ambiente),
           });
           arquivos.push({ nome, pdf: b64(r?.["bytesDacteCte"]), xml: b64(r?.["bytesXmlCte"]), url: (r?.["url"] as string) || null });
         } else {
-          const r = await bsoft<Record<string, unknown>>("mdfe", "/v1/integracoes/mdfes/imprimir-documento-mdfe", {
+          const r = await bsoft<Record<string, unknown>>(sb, "mdfe", "/v1/integracoes/mdfes/imprimir-documento-mdfe", {
             method: "POST",
             body: { idMdfeList: [d.bsoft_id], ordenarPorIntegracao: true },
             ambiente: amb(d.ambiente),
