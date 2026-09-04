@@ -1603,6 +1603,39 @@ export type Database = {
           },
         ]
       }
+      fiscal_integracao_config: {
+        Row: {
+          bsoft_api_token: string | null
+          bsoft_api_token_homologacao: string | null
+          bsoft_tenant_id: string | null
+          bsoft_tenant_id_homologacao: string | null
+          id: string
+          singleton: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bsoft_api_token?: string | null
+          bsoft_api_token_homologacao?: string | null
+          bsoft_tenant_id?: string | null
+          bsoft_tenant_id_homologacao?: string | null
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bsoft_api_token?: string | null
+          bsoft_api_token_homologacao?: string | null
+          bsoft_tenant_id?: string | null
+          bsoft_tenant_id_homologacao?: string | null
+          id?: string
+          singleton?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       fiscal_mdfe_ctes: {
         Row: {
           created_at: string
