@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { BadgeCheck, Building2, Download, FileText, Loader2, RefreshCw, ShieldAlert, Truck, XCircle } from "lucide-react";
+import { BadgeCheck, Building2, Download, FileText, Loader2, RefreshCw, Send, ShieldAlert, Trash2, Truck, XCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,6 +15,8 @@ import {
   baixarDocumentoFiscal,
   cancelarDocumentoFiscal,
   encerrarMdfe,
+  excluirDocumentoFiscal,
+  reenviarDocumentoFiscal,
   sincronizarDocumentoFiscal,
   statusIntegracaoFiscal,
 } from "@/lib/fiscal.functions";
@@ -140,6 +142,8 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
   const baixar = useServerFn(baixarDocumentoFiscal);
   const cancelar = useServerFn(cancelarDocumentoFiscal);
   const encerrar = useServerFn(encerrarMdfe);
+  const excluir = useServerFn(excluirDocumentoFiscal);
+  const reenviar = useServerFn(reenviarDocumentoFiscal);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["fiscal-documentos", tipo],
@@ -181,6 +185,24 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
       recarregar();
     },
     onError: (e: Error) => toast.error("Não foi possível cancelar", { description: e.message }),
+  });
+
+  const acaoExcluir = useMutation({
+    mutationFn: (id: string) => excluir({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Documento excluído");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível excluir", { description: e.message }),
+  });
+
+  const acaoReenviar = useMutation({
+    mutationFn: (id: string) => reenviar({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Documento reenviado para emissão");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível reenviar", { description: e.message }),
   });
 
   const acaoEncerrar = useMutation({
@@ -281,6 +303,33 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
                     >
                       <RefreshCw className="size-4" />
                     </Button>
+                    {d.status !== "autorizado" && d.status !== "encerrado" && d.status !== "cancelado" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Reenviar para emissão"
+                        disabled={acaoReenviar.isPending}
+                        onClick={() => acaoReenviar.mutate(d.id)}
+                      >
+                        <Send className="size-4" />
+                      </Button>
+                    )}
+                    {d.status !== "autorizado" && d.status !== "encerrado" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Excluir documento"
+                        className="text-destructive"
+                        disabled={acaoExcluir.isPending}
+                        onClick={() => {
+                          if (window.confirm("Excluir este documento? Essa ação não pode ser desfeita.")) {
+                            acaoExcluir.mutate(d.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
                     {d.status === "autorizado" && (
                       <Button variant="ghost" size="icon" title="Baixar documento" onClick={() => acaoBaixar.mutate(d.id)}>
                         <Download className="size-4" />
@@ -367,6 +416,24 @@ function ListaCiots() {
       recarregar();
     },
     onError: (e: Error) => toast.error("Não foi possível cancelar", { description: e.message }),
+  });
+
+  const acaoExcluir = useMutation({
+    mutationFn: (id: string) => excluir({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Documento excluído");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível excluir", { description: e.message }),
+  });
+
+  const acaoReenviar = useMutation({
+    mutationFn: (id: string) => reenviar({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Documento reenviado para emissão");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível reenviar", { description: e.message }),
   });
 
   const acaoEncerrar = useMutation({
