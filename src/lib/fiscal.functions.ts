@@ -290,7 +290,7 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
       })
       .eq("id", doc.id);
 
-    return { status, numero, serie, chave, motivo };
+    return { ok: true as const, status, numero, serie, chave, motivo };
   });
 
 /** Gera o DACTE/DAMDFE e o XML do documento. */
