@@ -81,6 +81,9 @@ function FiscalPage() {
           <TabsTrigger value="cte">CT-e</TabsTrigger>
           <TabsTrigger value="mdfe">MDF-e</TabsTrigger>
           <TabsTrigger value="ciot">CIOT</TabsTrigger>
+          <TabsTrigger value="validar">
+            <BadgeCheck className="mr-1.5 size-4" /> Validar na SEFAZ
+          </TabsTrigger>
           <TabsTrigger value="empresas">
             <Building2 className="mr-1.5 size-4" /> Empresas
           </TabsTrigger>
@@ -94,9 +97,13 @@ function FiscalPage() {
         <TabsContent value="ciot" className="pt-3">
           <ListaCiots />
         </TabsContent>
+        <TabsContent value="validar" className="pt-3">
+          <ValidarSefaz />
+        </TabsContent>
         <TabsContent value="empresas" className="pt-3">
           <EmpresasCadastro />
         </TabsContent>
+
       </Tabs>
 
     </PageShell>
