@@ -9,25 +9,38 @@ const MDFE_BASE = "https://mdfe-api.hivecloud.com.br/api";
 export type Produto = "cte" | "mdfe";
 export type Ambiente = "homologacao" | "producao";
 
-/**
- * Credenciais por ambiente. Em homologação usa o token/tenant de teste quando
- * cadastrados; se não houver, cai no token de produção (a Bsoft aceita o mesmo
- * cadastro com o ambiente informado no envio).
- */
-export function credenciais(ambiente: Ambiente = "producao") {
-  const prodToken = process.env["BSOFT_API_TOKEN"];
-  const prodTenant = process.env["BSOFT_TENANT_ID"];
-  const homToken = process.env["BSOFT_API_TOKEN_HOMOLOGACAO"] || prodToken;
-  const homTenant = process.env["BSOFT_TENANT_ID_HOMOLOGACAO"] || prodTenant;
+type SupabaseLike = { from: (t: string) => any };
+
+/** Lê as credenciais cadastradas no banco (administração) e usa as variáveis de
+ *  ambiente legadas como fallback para não quebrar instalações anteriores. */
+export async function getCredenciais(supabase: SupabaseLike, ambiente: Ambiente = "producao") {
+  const { data } = await supabase
+    .from("fiscal_integracao_config")
+    .select("bsoft_api_token, bsoft_tenant_id, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao")
+    .eq("singleton", true)
+    .limit(1)
+    .maybeSingle();
+
+  const prodToken = data?.bsoft_api_token || process.env["BSOFT_API_TOKEN"];
+  const prodTenant = data?.bsoft_tenant_id || process.env["BSOFT_TENANT_ID"];
+  const homToken = data?.bsoft_api_token_homologacao || process.env["BSOFT_API_TOKEN_HOMOLOGACAO"] || prodToken;
+  const homTenant = data?.bsoft_tenant_id_homologacao || process.env["BSOFT_TENANT_ID_HOMOLOGACAO"] || prodTenant;
   const token = ambiente === "homologacao" ? homToken : prodToken;
   const tenant = ambiente === "homologacao" ? homTenant : prodTenant;
+
   return {
     token,
     tenant,
     ambiente,
     configurado: !!token && !!tenant,
-    homologacaoPropria: !!process.env["BSOFT_API_TOKEN_HOMOLOGACAO"],
+    homologacaoPropria: !!(data?.bsoft_api_token_homologacao || process.env["BSOFT_API_TOKEN_HOMOLOGACAO"]),
   };
+}
+
+/** Lê as credenciais do CIOT (mesmas da Bsoft) a partir do banco. */
+export async function getCredenciaisCiot(supabase: SupabaseLike) {
+  const c = await getCredenciais(supabase, "producao");
+  return { token: c.token, tenant: c.tenant, configurado: c.configurado };
 }
 
 function base(produto: Produto, ambiente: Ambiente) {
@@ -48,6 +61,7 @@ export const codigoAmbiente = (ambiente: Ambiente) => (ambiente === "homologacao
 export const nomeAmbiente = (ambiente: Ambiente) => (ambiente === "homologacao" ? "HOMOLOGACAO" : "PRODUCAO");
 
 export async function bsoft<T = unknown>(
+  supabase: SupabaseLike,
   produto: Produto,
   path: string,
   init: {
@@ -58,10 +72,10 @@ export async function bsoft<T = unknown>(
   } = {},
 ): Promise<T> {
   const ambiente: Ambiente = init.ambiente ?? "producao";
-  const { token, tenant, configurado } = credenciais(ambiente);
+  const { token, tenant, configurado } = await getCredenciais(supabase, ambiente);
   if (!configurado) {
     throw new Error(
-      "Integração com a Bsoft não configurada. Cadastre o token e o tenantID nas configurações de integração.",
+      "Integração com a Bsoft não configurada. Cadastre o token e o tenantID em Configurações > Integrações fiscais.",
     );
   }
 
@@ -87,9 +101,8 @@ export async function bsoft<T = unknown>(
     console.error(`Bsoft ${produto}/${ambiente} ${init.method ?? "GET"} ${path} falhou [${res.status}]: ${texto}`);
     if (res.status === 401 || res.status === 403) {
       throw new Error(
-        "A Bsoft recusou as credenciais (erro 401). Confirme, em Configurações > Integrações do emissor " +
-          `${produto === "cte" ? "CT-e" : "MDF-e"} da Bsoft, se a integração por API está ativada e copie novamente ` +
-          "o token e o tenantID para as configurações de integração deste sistema. O token atual não está autorizado.",
+        "A Bsoft recusou as credenciais (erro 401). Em Configurações > Integrações fiscais, verifique se o token e o tenantID estão corretos. " +
+          "O tenantID deve conter apenas números.",
       );
     }
     throw new Error(`Bsoft respondeu ${res.status}: ${texto.slice(0, 1200) || "sem detalhes"}`);
