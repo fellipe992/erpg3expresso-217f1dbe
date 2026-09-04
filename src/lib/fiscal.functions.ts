@@ -154,6 +154,7 @@ export const emitirCte = createServerFn({ method: "POST" })
       .single();
     if (error || !doc) throw new Error(error?.message ?? "Não foi possível registrar o CT-e.");
 
+    const chavesNfe = (data.chavesNfe ?? []).map((c) => dig(c)).filter((c) => c.length === 44);
     const payload = {
       idIntegracao: doc.id_integracao,
       empresa: { inscricaoFederal: empresa.inscricaoFederal, inscricaoEstadual: empresa.inscricaoEstadual },
