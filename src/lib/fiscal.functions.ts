@@ -30,6 +30,18 @@ function normalizarDeclaracaoCarga(payload: unknown): unknown {
   };
 }
 
+/** Atualiza os dados da emitente em payloads antigos antes do reenvio. */
+function normalizarEmpresaPayload(payload: unknown, empresa: EmpresaEmitente): unknown {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  return {
+    ...(payload as Record<string, unknown>),
+    empresa: {
+      inscricaoFederal: dig(empresa.inscricaoFederal),
+      inscricaoEstadual: dig(empresa.inscricaoEstadual).slice(0, 20),
+    },
+  };
+}
+
 type EmpresaEmitente = { id: string; inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
 
 /** Escolhe a empresa emitente: a informada, senão a marcada como padrão, senão a mais antiga. */
@@ -956,7 +968,7 @@ export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
     const { bsoft } = await import("@/lib/fiscal.server");
     const { data: doc } = await context.supabase
       .from("fiscal_documentos")
-      .select("id, tipo, status, ambiente, bsoft_id, payload")
+      .select("id, tipo, status, ambiente, empresa_id, bsoft_id, payload")
       .eq("id", data.id)
       .maybeSingle();
     if (!doc) throw new Error("Documento não encontrado.");
@@ -972,7 +984,9 @@ export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
 
     try {
       let bsoftId = doc.bsoft_id as string | null;
-      const payload = produto === "cte" ? normalizarDeclaracaoCarga(doc.payload) : doc.payload;
+      const empresa = await empresaEmitente(context.supabase as never, doc.empresa_id as string | null);
+      const payloadComEmpresa = normalizarEmpresaPayload(doc.payload, empresa);
+      const payload = produto === "cte" ? normalizarDeclaracaoCarga(payloadComEmpresa) : payloadComEmpresa;
       if (!bsoftId) {
         const criado = await bsoft<{ id?: string }>(context.supabase, produto, recurso, {
           method: "POST",
