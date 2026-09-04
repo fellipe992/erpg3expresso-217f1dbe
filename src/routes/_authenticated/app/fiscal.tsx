@@ -418,23 +418,6 @@ function ListaCiots() {
     onError: (e: Error) => toast.error("Não foi possível cancelar", { description: e.message }),
   });
 
-  const acaoExcluir = useMutation({
-    mutationFn: (id: string) => excluir({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Documento excluído");
-      recarregar();
-    },
-    onError: (e: Error) => toast.error("Não foi possível excluir", { description: e.message }),
-  });
-
-  const acaoReenviar = useMutation({
-    mutationFn: (id: string) => reenviar({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Documento reenviado para emissão");
-      recarregar();
-    },
-    onError: (e: Error) => toast.error("Não foi possível reenviar", { description: e.message }),
-  });
 
   const acaoEncerrar = useMutation({
     mutationFn: (id: string) => encerrar({ data: { id } }),
