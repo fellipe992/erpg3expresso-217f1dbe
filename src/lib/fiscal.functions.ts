@@ -180,11 +180,11 @@ export const emitirCte = createServerFn({ method: "POST" })
     };
 
     try {
-      const criado = await bsoft(context.supabase, "cte", "/v1/integracoes/cte", { method: "POST", body: payload, ambiente });
+      const criado = await bsoft<{ id?: string }>(context.supabase, "cte", "/v1/integracoes/cte", { method: "POST", body: payload, ambiente });
       const bsoftId = criado?.id;
       if (!bsoftId) throw new Error("A Bsoft não retornou o identificador do CT-e criado.");
 
-      const emissao = await bsoft(context.supabase, "cte", "/v1/integracoes/ctes/emitir", {
+      const emissao = await bsoft<{ id?: string; idTransacao?: string }>(context.supabase, "cte", "/v1/integracoes/ctes/emitir", {
         method: "POST",
         body: { idList: [bsoftId], enviarEmail: !!data.enviarEmail, averbarCte: false },
         ambiente,
@@ -308,7 +308,7 @@ export const baixarDocumentoFiscal = createServerFn({ method: "POST" })
     };
 
     if (doc.tipo === "cte") {
-      const r = await bsoft<Record<string, unknown>>("cte", "/v1/integracoes/ctes/imprimir-documento-cte", {
+      const r = await bsoft<Record<string, unknown>>(context.supabase, "cte", "/v1/integracoes/ctes/imprimir-documento-cte", {
         method: "POST",
         body: { idCteList: [doc.bsoft_id], ordenarPorIntegracao: true },
         ambiente: amb(doc.ambiente),
@@ -316,7 +316,7 @@ export const baixarDocumentoFiscal = createServerFn({ method: "POST" })
       return { url: (r?.["url"] as string) || null, pdf: b64(r?.["bytesDacteCte"]), xml: b64(r?.["bytesXmlCte"]) };
     }
 
-    const r = await bsoft<Record<string, unknown>>("mdfe", "/v1/integracoes/mdfes/imprimir-documento-mdfe", {
+    const r = await bsoft<Record<string, unknown>>(context.supabase, "mdfe", "/v1/integracoes/mdfes/imprimir-documento-mdfe", {
       method: "POST",
       body: { idMdfeList: [doc.bsoft_id], ordenarPorIntegracao: true },
       ambiente: amb(doc.ambiente),
@@ -477,11 +477,11 @@ export const emitirMdfe = createServerFn({ method: "POST" })
     };
 
     try {
-      const criado = await bsoft(context.supabase, "mdfe", "/v1/integracoes/mdfe", { method: "POST", body: payload, ambiente });
+      const criado = await bsoft<{ id?: string }>(context.supabase, "mdfe", "/v1/integracoes/mdfe", { method: "POST", body: payload, ambiente });
       const bsoftId = criado?.id;
       if (!bsoftId) throw new Error("A Bsoft não retornou o identificador do MDF-e criado.");
 
-      const emissao = await bsoft(context.supabase, "mdfe", "/v1/integracoes/mdfes/emitir", {
+      const emissao = await bsoft<{ id?: string; idTransacao?: string }>(context.supabase, "mdfe", "/v1/integracoes/mdfes/emitir", {
         method: "POST",
         body: { idList: [bsoftId], enviarEmailParaEmitente: false },
         ambiente,
@@ -787,7 +787,7 @@ export const validarNaSefaz = createServerFn({ method: "POST" })
     let detalhe: Record<string, unknown> | null = null;
     let erroConsulta: string | null = null;
     try {
-      detalhe = await bsoft<Record<string, unknown>>(produto, `${rota}/${doc.bsoft_id}`, { ambiente });
+      detalhe = await bsoft<Record<string, unknown>>(context.supabase, produto, `${rota}/${doc.bsoft_id}`, { ambiente });
     } catch (e) {
       erroConsulta = e instanceof Error ? e.message : "Falha na consulta";
     }
