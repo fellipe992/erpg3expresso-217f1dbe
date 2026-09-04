@@ -74,14 +74,30 @@ export const statusIntegracaoFiscal = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { credenciais } = await import("@/lib/fiscal.server");
     const { configurado } = credenciais();
-    const { data } = await context.supabase.from("company_settings").select("*").limit(1).maybeSingle();
-    const c = (data ?? {}) as Record<string, unknown>;
+    const { data } = await context.supabase
+      .from("company_settings")
+      .select("id, nome_fantasia, razao_social, cnpj, inscricao_estadual, rntrc, emitente_fiscal, emitente_padrao, ativo")
+      .eq("emitente_fiscal", true)
+      .eq("ativo", true)
+      .order("emitente_padrao", { ascending: false })
+      .order("created_at", { ascending: true });
+    const emitentes = (data ?? []).map((c) => ({
+      id: String(c.id),
+      nome: txt(c.razao_social || c.nome_fantasia, 120),
+      cnpj: dig(c.cnpj) || null,
+      inscricaoEstadual: txt(c.inscricao_estadual, 20) || null,
+      rntrc: txt(c.rntrc, 8) || null,
+      padrao: !!c.emitente_padrao,
+      completo: !!dig(c.cnpj) && !!txt(c.inscricao_estadual),
+    }));
+    const principal = emitentes[0] ?? null;
     return {
       configurado,
-      empresaOk: !!dig(c["cnpj"]) && !!txt(c["inscricao_estadual"]),
-      cnpj: dig(c["cnpj"]) || null,
-      inscricaoEstadual: txt(c["inscricao_estadual"], 20) || null,
-      rntrc: txt(c["rntrc"], 8) || null,
+      emitentes,
+      empresaOk: !!principal?.completo,
+      cnpj: principal?.cnpj ?? null,
+      inscricaoEstadual: principal?.inscricaoEstadual ?? null,
+      rntrc: principal?.rntrc ?? null,
     };
   });
 
