@@ -63,7 +63,9 @@ function envolvidoApi(e: EntradaCte["remetente"]) {
   return {
     nome: txt(e.nome, 60),
     inscricaoFederal: dig(e.inscricaoFederal),
-    inscricaoEstadual: txt(e.inscricaoEstadual, 20) || undefined,
+    inscricaoEstadual: (/^ISENTO$/i.test(String(e.inscricaoEstadual ?? "").trim())
+      ? "ISENTO"
+      : dig(e.inscricaoEstadual).slice(0, 20)) || undefined,
     telefone: dig(e.telefone),
     email: txt(e.email, 120) || undefined,
     endereco: {
