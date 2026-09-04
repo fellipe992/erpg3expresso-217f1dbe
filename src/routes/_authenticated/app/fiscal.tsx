@@ -107,7 +107,8 @@ function StatusIntegracao() {
         <div className="font-semibold">Integração fiscal ainda não configurada</div>
         <p className="text-muted-foreground">
           As credenciais de acesso ao emissor não estão cadastradas, então a emissão fica indisponível. Você pode
-          preparar os documentos, mas o envio só funciona depois que o acesso for liberado.
+          preparar os documentos, mas o envio só funciona depois que o acesso for liberado — vale tanto para o ambiente
+          de teste (homologação) quanto para o de produção.
         </p>
       </div>
     </Card>
