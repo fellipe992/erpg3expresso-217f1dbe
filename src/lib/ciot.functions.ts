@@ -95,7 +95,7 @@ export const gerarCiot = createServerFn({ method: "POST" })
     try {
       const { ciotBsoft, ciotGestora } = await import("@/lib/ciot.server");
       const resposta = (data.provedor === "bsoft"
-        ? await ciotBsoft<Record<string, unknown>>({ path: "/v1/integracoes/ciot", method: "POST", body: payload })
+        ? await ciotBsoft<Record<string, unknown>>(context.supabase, { path: "/v1/integracoes/ciot", method: "POST", body: payload })
         : await ciotGestora<Record<string, unknown>>({ path: "/ciots", method: "POST", body: payload })) ?? {};
 
       const numero =
