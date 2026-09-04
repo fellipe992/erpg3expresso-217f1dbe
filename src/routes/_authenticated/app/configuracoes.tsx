@@ -395,11 +395,17 @@ function NotificacoesTab() {
 /* ---------------- Integrações fiscais (Bsoft/Hivecloud) ---------------- */
 type FiscalIntegracaoConfig = {
   id: string;
+  bsoft_usuario_api: string | null;
   bsoft_api_token: string | null;
   bsoft_tenant_id: string | null;
+  bsoft_api_token_mdfe: string | null;
+  bsoft_tenant_id_mdfe: string | null;
   bsoft_api_token_homologacao: string | null;
   bsoft_tenant_id_homologacao: string | null;
 };
+
+const FISCAL_COLS =
+  "id, bsoft_usuario_api, bsoft_api_token, bsoft_tenant_id, bsoft_api_token_mdfe, bsoft_tenant_id_mdfe, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao";
 
 function useFiscalIntegracaoConfig() {
   return useQuery({
@@ -407,7 +413,7 @@ function useFiscalIntegracaoConfig() {
     queryFn: async (): Promise<FiscalIntegracaoConfig | null> => {
       const { data, error } = await supabase
         .from("fiscal_integracao_config")
-        .select("id, bsoft_api_token, bsoft_tenant_id, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao")
+        .select(FISCAL_COLS)
         .limit(1)
         .maybeSingle();
       if (error) throw error;
@@ -436,79 +442,53 @@ function IntegracaoFiscalTab() {
   const { data, isLoading } = useFiscalIntegracaoConfig();
   const save = useSaveFiscalIntegracaoConfig();
   const [form, setForm] = useState({
+    bsoft_usuario_api: "",
     bsoft_api_token: "",
     bsoft_tenant_id: "",
+    bsoft_api_token_mdfe: "",
+    bsoft_tenant_id_mdfe: "",
     bsoft_api_token_homologacao: "",
     bsoft_tenant_id_homologacao: "",
   });
-  const [erros, setErros] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (data) {
       setForm({
+        bsoft_usuario_api: data.bsoft_usuario_api ?? "",
         bsoft_api_token: data.bsoft_api_token ?? "",
         bsoft_tenant_id: data.bsoft_tenant_id ?? "",
+        bsoft_api_token_mdfe: data.bsoft_api_token_mdfe ?? "",
+        bsoft_tenant_id_mdfe: data.bsoft_tenant_id_mdfe ?? "",
         bsoft_api_token_homologacao: data.bsoft_api_token_homologacao ?? "",
         bsoft_tenant_id_homologacao: data.bsoft_tenant_id_homologacao ?? "",
       });
-      setErros({});
     }
   }, [data]);
 
   if (isLoading || !data) return <Spinner />;
 
-  const dig = (v: string) => v.replace(/\D+/g, "");
-
-  const alterarTenant = (campo: "bsoft_tenant_id" | "bsoft_tenant_id_homologacao", v: string) => {
-    setForm((f) => ({ ...f, [campo]: dig(v) }));
-    if (erros[campo]) setErros((e) => ({ ...e, [campo]: "" }));
-  };
-
-  const validar = () => {
-    const novos: Record<string, string> = {};
-    if (form.bsoft_tenant_id && !/^\d+$/.test(form.bsoft_tenant_id)) {
-      novos.bsoft_tenant_id = "O tenantID de produção deve conter apenas números.";
-    }
-    if (form.bsoft_tenant_id_homologacao && !/^\d+$/.test(form.bsoft_tenant_id_homologacao)) {
-      novos.bsoft_tenant_id_homologacao = "O tenantID de homologação deve conter apenas números.";
-    }
-    setErros(novos);
-    return Object.keys(novos).length === 0;
-  };
-
-  const prodOk = !!form.bsoft_api_token && !!form.bsoft_tenant_id;
+  const limpar = (v: string) => v.trim();
+  const cteOk = !!form.bsoft_api_token && !!form.bsoft_tenant_id;
+  const mdfeOk = !!form.bsoft_api_token_mdfe && !!form.bsoft_tenant_id_mdfe;
   const homOk = !!form.bsoft_api_token_homologacao && !!form.bsoft_tenant_id_homologacao;
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Key className="size-5 text-brand" />
-            <CardTitle>Produção</CardTitle>
+            <CardTitle>Usuário de API</CardTitle>
           </div>
-          <CardDescription>
-            Credenciais usadas para emitir CT-e, MDF-e e CIOT em ambiente de produção.
-          </CardDescription>
+          <CardDescription>E-mail do usuário de integração cadastrado na Bsoft.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {prodOk && <Badge variant="outline" className="border-emerald-500/60 text-emerald-600"><ShieldCheck className="mr-1 size-3" /> Configurado</Badge>}
-          <Field label="API Token Bsoft">
+        <CardContent>
+          <Field label="Usuário de API">
             <Input
-              type="password"
-              value={form.bsoft_api_token}
-              onChange={(e) => setForm({ ...form, bsoft_api_token: e.target.value })}
-              placeholder="Cole o token de integração"
+              value={form.bsoft_usuario_api}
+              onChange={(e) => setForm({ ...form, bsoft_usuario_api: e.target.value })}
+              placeholder="usuario@empresa.com.br"
             />
-          </Field>
-          <Field label="Tenant ID (somente números)">
-            <Input
-              inputMode="numeric"
-              value={form.bsoft_tenant_id}
-              onChange={(e) => alterarTenant("bsoft_tenant_id", e.target.value)}
-              placeholder="Ex: 123456"
-            />
-            {erros.bsoft_tenant_id && <p className="text-xs text-destructive">{erros.bsoft_tenant_id}</p>}
           </Field>
         </CardContent>
       </Card>
@@ -516,31 +496,95 @@ function IntegracaoFiscalTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
+            <Key className="size-5 text-brand" />
+            <CardTitle>CT-e (produção)</CardTitle>
+          </div>
+          <CardDescription>Credenciais usadas para emitir CT-e e CIOT.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {cteOk && (
+            <Badge variant="outline" className="border-emerald-500/60 text-emerald-600">
+              <ShieldCheck className="mr-1 size-3" /> Configurado
+            </Badge>
+          )}
+          <Field label="Token do CT-e">
+            <Input
+              type="password"
+              value={form.bsoft_api_token}
+              onChange={(e) => setForm({ ...form, bsoft_api_token: limpar(e.target.value) })}
+              placeholder="Cole o token de integração do CT-e"
+            />
+          </Field>
+          <Field label="Tenant ID do CT-e">
+            <Input
+              value={form.bsoft_tenant_id}
+              onChange={(e) => setForm({ ...form, bsoft_tenant_id: limpar(e.target.value) })}
+              placeholder="Ex: 978997c3-4960-4cda-a9a0-906cd6d62677"
+            />
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Key className="size-5 text-brand" />
+            <CardTitle>MDF-e (produção)</CardTitle>
+          </div>
+          <CardDescription>O MDF-e tem token e tenant próprios na Bsoft.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {mdfeOk && (
+            <Badge variant="outline" className="border-emerald-500/60 text-emerald-600">
+              <ShieldCheck className="mr-1 size-3" /> Configurado
+            </Badge>
+          )}
+          <Field label="Token do MDF-e">
+            <Input
+              type="password"
+              value={form.bsoft_api_token_mdfe}
+              onChange={(e) => setForm({ ...form, bsoft_api_token_mdfe: limpar(e.target.value) })}
+              placeholder="Cole o token de integração do MDF-e"
+            />
+          </Field>
+          <Field label="Tenant ID do MDF-e">
+            <Input
+              value={form.bsoft_tenant_id_mdfe}
+              onChange={(e) => setForm({ ...form, bsoft_tenant_id_mdfe: limpar(e.target.value) })}
+              placeholder="Ex: c20485f4-89e0-4c1f-8651-2c2d4af118059"
+            />
+          </Field>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <div className="flex items-center gap-2">
             <Key className="size-5 text-amber-500" />
             <CardTitle>Homologação (teste)</CardTitle>
           </div>
-          <CardDescription>
-            Se deixar em branco, o ambiente de teste usa as credenciais de produção.
-          </CardDescription>
+          <CardDescription>Se deixar em branco, o ambiente de teste usa as credenciais de produção.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {homOk && <Badge variant="outline" className="border-amber-500/60 text-amber-600">Configurado separadamente</Badge>}
-          <Field label="API Token Bsoft (homologação)">
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          {homOk && (
+            <Badge variant="outline" className="border-amber-500/60 text-amber-600 sm:col-span-2">
+              Configurado separadamente
+            </Badge>
+          )}
+          <Field label="Token de homologação">
             <Input
               type="password"
               value={form.bsoft_api_token_homologacao}
-              onChange={(e) => setForm({ ...form, bsoft_api_token_homologacao: e.target.value })}
+              onChange={(e) => setForm({ ...form, bsoft_api_token_homologacao: limpar(e.target.value) })}
               placeholder="Token de teste (opcional)"
             />
           </Field>
-          <Field label="Tenant ID de homologação (somente números)">
+          <Field label="Tenant ID de homologação">
             <Input
-              inputMode="numeric"
               value={form.bsoft_tenant_id_homologacao}
-              onChange={(e) => alterarTenant("bsoft_tenant_id_homologacao", e.target.value)}
-              placeholder="Ex: 123456"
+              onChange={(e) => setForm({ ...form, bsoft_tenant_id_homologacao: limpar(e.target.value) })}
+              placeholder="Opcional"
             />
-            {erros.bsoft_tenant_id_homologacao && <p className="text-xs text-destructive">{erros.bsoft_tenant_id_homologacao}</p>}
           </Field>
         </CardContent>
       </Card>
@@ -549,15 +593,10 @@ function IntegracaoFiscalTab() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              Estes dados são visíveis apenas para administradores. Se o tenantID tiver letras, traços ou espaços, a Bsoft rejeita a conexão com erro 401.
+              Estes dados são visíveis apenas para administradores. Cada produto (CT-e e MDF-e) tem token e tenant
+              próprios — usar o par errado faz a Bsoft recusar a conexão.
             </p>
-            <Button
-              onClick={() => {
-                if (!validar()) return;
-                save.mutate({ id: data.id, ...form });
-              }}
-              disabled={save.isPending}
-            >
+            <Button onClick={() => save.mutate({ id: data.id, ...form })} disabled={save.isPending}>
               {save.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
               Salvar credenciais
             </Button>
@@ -567,6 +606,7 @@ function IntegracaoFiscalTab() {
     </div>
   );
 }
+
 
 /* ---------------- helpers ---------------- */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

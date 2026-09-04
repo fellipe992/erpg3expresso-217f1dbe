@@ -1607,8 +1607,13 @@ export type Database = {
         Row: {
           bsoft_api_token: string | null
           bsoft_api_token_homologacao: string | null
+          bsoft_api_token_mdfe: string | null
+          bsoft_api_token_mdfe_homologacao: string | null
           bsoft_tenant_id: string | null
           bsoft_tenant_id_homologacao: string | null
+          bsoft_tenant_id_mdfe: string | null
+          bsoft_tenant_id_mdfe_homologacao: string | null
+          bsoft_usuario_api: string | null
           id: string
           singleton: boolean
           updated_at: string
@@ -1617,8 +1622,13 @@ export type Database = {
         Insert: {
           bsoft_api_token?: string | null
           bsoft_api_token_homologacao?: string | null
+          bsoft_api_token_mdfe?: string | null
+          bsoft_api_token_mdfe_homologacao?: string | null
           bsoft_tenant_id?: string | null
           bsoft_tenant_id_homologacao?: string | null
+          bsoft_tenant_id_mdfe?: string | null
+          bsoft_tenant_id_mdfe_homologacao?: string | null
+          bsoft_usuario_api?: string | null
           id?: string
           singleton?: boolean
           updated_at?: string
@@ -1627,8 +1637,13 @@ export type Database = {
         Update: {
           bsoft_api_token?: string | null
           bsoft_api_token_homologacao?: string | null
+          bsoft_api_token_mdfe?: string | null
+          bsoft_api_token_mdfe_homologacao?: string | null
           bsoft_tenant_id?: string | null
           bsoft_tenant_id_homologacao?: string | null
+          bsoft_tenant_id_mdfe?: string | null
+          bsoft_tenant_id_mdfe_homologacao?: string | null
+          bsoft_usuario_api?: string | null
           id?: string
           singleton?: boolean
           updated_at?: string

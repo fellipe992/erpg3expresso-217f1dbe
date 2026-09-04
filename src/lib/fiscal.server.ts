@@ -12,19 +12,37 @@ export type Ambiente = "homologacao" | "producao";
 type SupabaseLike = { from: (t: string) => any };
 
 /** Lê as credenciais cadastradas no banco (administração) e usa as variáveis de
- *  ambiente legadas como fallback para não quebrar instalações anteriores. */
-export async function getCredenciais(supabase: SupabaseLike, ambiente: Ambiente = "producao") {
+ *  ambiente legadas como fallback para não quebrar instalações anteriores.
+ *  CT-e e MDF-e têm token/tenant próprios na Bsoft. */
+export async function getCredenciais(
+  supabase: SupabaseLike,
+  ambiente: Ambiente = "producao",
+  produto: Produto = "cte",
+) {
   const { data } = await supabase
     .from("fiscal_integracao_config")
-    .select("bsoft_api_token, bsoft_tenant_id, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao")
+    .select(
+      "bsoft_api_token, bsoft_tenant_id, bsoft_api_token_homologacao, bsoft_tenant_id_homologacao, bsoft_api_token_mdfe, bsoft_tenant_id_mdfe, bsoft_api_token_mdfe_homologacao, bsoft_tenant_id_mdfe_homologacao",
+    )
     .eq("singleton", true)
     .limit(1)
     .maybeSingle();
 
-  const prodToken = data?.bsoft_api_token || process.env["BSOFT_API_TOKEN"];
-  const prodTenant = data?.bsoft_tenant_id || process.env["BSOFT_TENANT_ID"];
-  const homToken = data?.bsoft_api_token_homologacao || process.env["BSOFT_API_TOKEN_HOMOLOGACAO"] || prodToken;
-  const homTenant = data?.bsoft_tenant_id_homologacao || process.env["BSOFT_TENANT_ID_HOMOLOGACAO"] || prodTenant;
+  const mdfe = produto === "mdfe";
+  const prodToken =
+    (mdfe ? data?.bsoft_api_token_mdfe : null) || data?.bsoft_api_token || process.env["BSOFT_API_TOKEN"];
+  const prodTenant =
+    (mdfe ? data?.bsoft_tenant_id_mdfe : null) || data?.bsoft_tenant_id || process.env["BSOFT_TENANT_ID"];
+  const homToken =
+    (mdfe ? data?.bsoft_api_token_mdfe_homologacao : null) ||
+    data?.bsoft_api_token_homologacao ||
+    process.env["BSOFT_API_TOKEN_HOMOLOGACAO"] ||
+    prodToken;
+  const homTenant =
+    (mdfe ? data?.bsoft_tenant_id_mdfe_homologacao : null) ||
+    data?.bsoft_tenant_id_homologacao ||
+    process.env["BSOFT_TENANT_ID_HOMOLOGACAO"] ||
+    prodTenant;
   const token = ambiente === "homologacao" ? homToken : prodToken;
   const tenant = ambiente === "homologacao" ? homTenant : prodTenant;
 
@@ -36,6 +54,7 @@ export async function getCredenciais(supabase: SupabaseLike, ambiente: Ambiente 
     homologacaoPropria: !!(data?.bsoft_api_token_homologacao || process.env["BSOFT_API_TOKEN_HOMOLOGACAO"]),
   };
 }
+
 
 /** Lê as credenciais do CIOT (mesmas da Bsoft) a partir do banco. */
 export async function getCredenciaisCiot(supabase: SupabaseLike) {
@@ -72,7 +91,7 @@ export async function bsoft<T = unknown>(
   } = {},
 ): Promise<T> {
   const ambiente: Ambiente = init.ambiente ?? "producao";
-  const { token, tenant, configurado } = await getCredenciais(supabase, ambiente);
+  const { token, tenant, configurado } = await getCredenciais(supabase, ambiente, produto);
   if (!configurado) {
     throw new Error(
       "Integração com a Bsoft não configurada. Cadastre o token e o tenantID em Configurações > Integrações fiscais.",
@@ -101,8 +120,8 @@ export async function bsoft<T = unknown>(
     console.error(`Bsoft ${produto}/${ambiente} ${init.method ?? "GET"} ${path} falhou [${res.status}]: ${texto}`);
     if (res.status === 401 || res.status === 403) {
       throw new Error(
-        "A Bsoft recusou as credenciais (erro 401). Em Configurações > Integrações fiscais, verifique se o token e o tenantID estão corretos. " +
-          "O tenantID deve conter apenas números.",
+        "A Bsoft recusou as credenciais (erro 401). Em Configurações > Integrações fiscais, verifique se o token e o tenantID " +
+          `do ${produto === "mdfe" ? "MDF-e" : "CT-e"} estão corretos (cada produto tem credenciais próprias).`,
       );
     }
     throw new Error(`Bsoft respondeu ${res.status}: ${texto.slice(0, 1200) || "sem detalhes"}`);
