@@ -118,6 +118,7 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
   const qc = useQueryClient();
   const [abrirCte, setAbrirCte] = useState(false);
   const [abrirMdfe, setAbrirMdfe] = useState(false);
+  const [abrirLote, setAbrirLote] = useState(false);
 
   const sincronizar = useServerFn(sincronizarDocumentoFiscal);
   const baixar = useServerFn(baixarDocumentoFiscal);
