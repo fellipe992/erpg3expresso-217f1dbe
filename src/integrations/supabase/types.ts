@@ -1328,10 +1328,134 @@ export type Database = {
           },
         ]
       }
+      fiscal_ciots: {
+        Row: {
+          cliente_id: string | null
+          contratado_documento: string
+          contratado_nome: string
+          contratado_rntrc: string | null
+          created_at: string
+          created_by: string | null
+          data_emissao: string
+          distancia_km: number | null
+          id: string
+          mdfe_id: string | null
+          motivo: string | null
+          motorista_id: string | null
+          numero_ciot: string | null
+          observacoes: string | null
+          payload: Json
+          protocolo: string | null
+          provedor: string
+          resultado: Json | null
+          status: string
+          tipo_contratado: string
+          updated_at: string
+          valor_adiantamento: number
+          valor_frete: number
+          valor_quitacao: number
+          veiculo_id: string | null
+          viagem_id: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          contratado_documento: string
+          contratado_nome: string
+          contratado_rntrc?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          distancia_km?: number | null
+          id?: string
+          mdfe_id?: string | null
+          motivo?: string | null
+          motorista_id?: string | null
+          numero_ciot?: string | null
+          observacoes?: string | null
+          payload?: Json
+          protocolo?: string | null
+          provedor?: string
+          resultado?: Json | null
+          status?: string
+          tipo_contratado?: string
+          updated_at?: string
+          valor_adiantamento?: number
+          valor_frete?: number
+          valor_quitacao?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          contratado_documento?: string
+          contratado_nome?: string
+          contratado_rntrc?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_emissao?: string
+          distancia_km?: number | null
+          id?: string
+          mdfe_id?: string | null
+          motivo?: string | null
+          motorista_id?: string | null
+          numero_ciot?: string | null
+          observacoes?: string | null
+          payload?: Json
+          protocolo?: string | null
+          provedor?: string
+          resultado?: Json | null
+          status?: string
+          tipo_contratado?: string
+          updated_at?: string
+          valor_adiantamento?: number
+          valor_frete?: number
+          valor_quitacao?: number
+          veiculo_id?: string | null
+          viagem_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_ciots_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_ciots_mdfe_id_fkey"
+            columns: ["mdfe_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_documentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_ciots_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_ciots_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_ciots_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_documentos: {
         Row: {
           bsoft_id: string | null
           chave_acesso: string | null
+          ciot: string | null
           cliente_id: string | null
           created_at: string
           created_by: string | null
@@ -1358,6 +1482,7 @@ export type Database = {
         Insert: {
           bsoft_id?: string | null
           chave_acesso?: string | null
+          ciot?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -1384,6 +1509,7 @@ export type Database = {
         Update: {
           bsoft_id?: string | null
           chave_acesso?: string | null
+          ciot?: string | null
           cliente_id?: string | null
           created_at?: string
           created_by?: string | null
