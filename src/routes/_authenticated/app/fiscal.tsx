@@ -69,12 +69,13 @@ function FiscalPage() {
   }
 
   return (
-    <PageShell icon={FileText} title="Documentos fiscais" subtitle="Emissão de CT-e e MDF-e">
+    <PageShell icon={FileText} title="Documentos fiscais" subtitle="Emissão de CT-e, MDF-e e CIOT">
       <StatusIntegracao />
       <Tabs defaultValue="cte">
         <TabsList>
           <TabsTrigger value="cte">CT-e</TabsTrigger>
           <TabsTrigger value="mdfe">MDF-e</TabsTrigger>
+          <TabsTrigger value="ciot">CIOT</TabsTrigger>
         </TabsList>
         <TabsContent value="cte" className="pt-3">
           <ListaDocumentos tipo="cte" />
@@ -82,7 +83,11 @@ function FiscalPage() {
         <TabsContent value="mdfe" className="pt-3">
           <ListaDocumentos tipo="mdfe" />
         </TabsContent>
+        <TabsContent value="ciot" className="pt-3">
+          <ListaCiots />
+        </TabsContent>
       </Tabs>
+
     </PageShell>
   );
 }
