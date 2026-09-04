@@ -156,8 +156,11 @@ export function EmitirMdfeDialog({
             propriedadeVeiculo: veiculo?.["agregado"] ? "TERCEIRO" : "PROPRIO",
           },
           observacao,
+          ciot: ciotSel?.numero_ciot ?? null,
+          ciotId: ciotId || null,
           veiculoId: veiculoId || null,
           motoristaId: motoristaId || null,
+
         },
       }),
     onSuccess: () => {
