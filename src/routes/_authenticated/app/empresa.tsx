@@ -31,7 +31,14 @@ function EmpresaPage() {
     nome_fantasia: "",
     razao_social: "",
     cnpj: "",
+    inscricao_estadual: "",
+    rntrc: "",
     endereco: "",
+    endereco_numero: "",
+    bairro: "",
+    cidade: "",
+    uf: "",
+    cep: "",
     telefone: "",
     email: "",
   });
@@ -44,13 +51,21 @@ function EmpresaPage() {
         nome_fantasia: company.nome_fantasia ?? "",
         razao_social: company.razao_social ?? "",
         cnpj: company.cnpj ?? "",
+        inscricao_estadual: company.inscricao_estadual ?? "",
+        rntrc: company.rntrc ?? "",
         endereco: company.endereco ?? "",
+        endereco_numero: company.endereco_numero ?? "",
+        bairro: company.bairro ?? "",
+        cidade: company.cidade ?? "",
+        uf: company.uf ?? "",
+        cep: company.cep ?? "",
         telefone: company.telefone ?? "",
         email: company.email ?? "",
       });
       getSignedLogoUrl(company.logo_url).then(setLogoPreview);
     }
   }, [company]);
+
 
   const saveMutation = useMutation({
     mutationFn: async () => {
