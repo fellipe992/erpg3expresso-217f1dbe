@@ -173,7 +173,19 @@ export const emitirCte = createServerFn({ method: "POST" })
           pesoBrutoKG: Number(data.pesoKg),
         },
       },
-      documentos: { chaveAcessoNFe: (data.chavesNfe ?? []).map((c) => dig(c)).filter((c) => c.length === 44) },
+      documentos: chavesNfe.length
+        ? { chaveAcessoNFe: chavesNfe }
+        : {
+            outros: [
+              {
+                tipoDocumento: "OUTROS",
+                descricaoOutros: txt(data.produtoPredominante, 60) || "Declaracao de carga",
+                numeroDocumento: String(doc.id_integracao ?? "").slice(0, 20),
+                dataEmissao: new Date().toISOString().slice(0, 10),
+                valorDocumento: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
+              },
+            ],
+          },
       tipoTransporte: { tipoTransporte: "RODOVIARIO" },
       ambiente: codigoAmbiente(ambiente),
       observacaoGeral: txt(data.observacao, 500) || undefined,
