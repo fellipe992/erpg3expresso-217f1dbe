@@ -6,11 +6,19 @@ export type CompanySettings = {
   nome_fantasia: string;
   razao_social: string | null;
   cnpj: string | null;
+  inscricao_estadual: string | null;
+  rntrc: string | null;
   logo_url: string | null;
   endereco: string | null;
+  endereco_numero: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  cep: string | null;
   telefone: string | null;
   email: string | null;
 };
+
 
 async function fetchCompany(): Promise<CompanySettings | null> {
   const { data, error } = await supabase
