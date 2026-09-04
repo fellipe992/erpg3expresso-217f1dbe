@@ -40,6 +40,16 @@ export type LinhaFechamento = {
 /** Dia-calendário no fuso da operação (evita jogar viagens da noite para o dia seguinte). */
 const dia = (v: string | null | undefined) => diaLocal(v);
 
+/**
+ * Dia em que a viagem aconteceu: usa a saída real, depois a saída prevista e
+ * só cai na data de lançamento quando a viagem não tem nenhuma data de operação.
+ */
+const diaOperacao = (v: {
+  data_saida?: string | null;
+  data_prevista_saida?: string | null;
+  created_at?: string | null;
+}) => dia(v.data_saida ?? v.data_prevista_saida ?? v.created_at);
+
 /** Viagens elegíveis a fechamento, já apuradas pelo lado escolhido. */
 export async function carregarViagensFechamento(
   tipo: TipoFechamento,
@@ -48,7 +58,7 @@ export async function carregarViagensFechamento(
   let q = supabase
     .from("viagens")
     .select(
-      "id, codigo, status, created_at, data_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete, frete_motorista, pedagio_cliente, pedagio_motorista, frete_faixa_id, cliente_id, motorista_id, veiculo_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id)",
+      "id, codigo, status, created_at, data_saida, data_chegada, data_prevista_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete, frete_motorista, pedagio_cliente, pedagio_motorista, frete_faixa_id, cliente_id, motorista_id, veiculo_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id)",
     )
     .neq("status", "cancelada")
     .order("data_saida", { ascending: true });
@@ -61,7 +71,7 @@ export async function carregarViagensFechamento(
   if (error) throw error;
 
   const viagens = (data ?? []).filter((v) => {
-    const d = dia((v.data_saida as string) ?? (v.created_at as string));
+    const d = diaOperacao(v);
     return d >= f.de && d <= f.ate;
   });
   if (!viagens.length) return [];
@@ -130,7 +140,7 @@ export async function carregarViagensFechamento(
     return {
       viagemId: String(v.id),
       codigo: (v.codigo as string) ?? null,
-      data: dia((v.data_saida as string) ?? (v.created_at as string)),
+      data: diaOperacao(v),
       clienteId: (v.cliente_id as string) ?? null,
       cliente: (v.cliente as any)?.razao_social ?? "—",
       motoristaId: (v.motorista_id as string) ?? null,
@@ -368,7 +378,7 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
     supabase
       .from("fechamento_viagens")
       .select(
-        "viagem_id, frete, pedagio, adicionais, descontos, total, viagem:viagens(codigo, created_at, data_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, frete_faixa_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id))",
+        "viagem_id, frete, pedagio, adicionais, descontos, total, viagem:viagens(codigo, created_at, data_saida, data_prevista_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, frete_faixa_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id))",
       )
       .eq("fechamento_id", fechamentoId),
     supabase.from("fechamento_descontos").select("descricao, valor").eq("fechamento_id", fechamentoId),
@@ -416,7 +426,7 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
     return {
       viagemId: String(i.viagem_id),
       codigo: v.codigo ?? null,
-      data: dia(v.data_saida ?? v.created_at),
+      data: diaOperacao(v),
       clienteId: registro.cliente_id,
       cliente: v.cliente?.razao_social ?? "—",
       motoristaId: registro.motorista_id,
