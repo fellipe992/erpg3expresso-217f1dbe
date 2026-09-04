@@ -18,6 +18,9 @@ import {
   statusIntegracaoFiscal,
 } from "@/lib/fiscal.functions";
 import { rotuloStatusFiscal, type DocumentoFiscal, type TipoDocumentoFiscal } from "@/lib/fiscal-tipos";
+import { GerarCiotDialog } from "@/components/fiscal/gerar-ciot-dialog";
+import { cancelarCiot, encerrarCiot, registrarNumeroCiot } from "@/lib/ciot.functions";
+import { rotuloProvedorCiot, rotuloStatusCiot, type Ciot } from "@/lib/ciot-tipos";
 import { brl, dt } from "@/lib/export-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
