@@ -85,8 +85,16 @@ export async function bsoft<T = unknown>(
   const texto = await res.text();
   if (!res.ok) {
     console.error(`Bsoft ${produto}/${ambiente} ${init.method ?? "GET"} ${path} falhou [${res.status}]: ${texto}`);
-    throw new Error(`Bsoft respondeu ${res.status}: ${texto.slice(0, 1200)}`);
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        "A Bsoft recusou as credenciais (erro 401). Confirme, em Configurações > Integrações do emissor " +
+          `${produto === "cte" ? "CT-e" : "MDF-e"} da Bsoft, se a integração por API está ativada e copie novamente ` +
+          "o token e o tenantID para as configurações de integração deste sistema. O token atual não está autorizado.",
+      );
+    }
+    throw new Error(`Bsoft respondeu ${res.status}: ${texto.slice(0, 1200) || "sem detalhes"}`);
   }
+
   if (!texto) return undefined as T;
   try {
     return JSON.parse(texto) as T;
