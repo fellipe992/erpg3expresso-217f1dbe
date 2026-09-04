@@ -5,21 +5,32 @@ import type { EntradaCte, EntradaMdfe, StatusDocumentoFiscal } from "@/lib/fisca
 const dig = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
 const txt = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
-type EmpresaEmitente = { inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
+type EmpresaEmitente = { id: string; inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
 
-async function empresaEmitente(supabase: {
-  from: (t: string) => { select: (c: string) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } } };
-}): Promise<EmpresaEmitente> {
-  const { data } = await supabase.from("company_settings").select("*").limit(1).maybeSingle();
+/** Escolhe a empresa emitente: a informada, senão a marcada como padrão, senão a mais antiga. */
+async function empresaEmitente(
+  supabase: { from: (t: string) => any },
+  empresaId?: string | null,
+): Promise<EmpresaEmitente> {
+  let query = supabase.from("company_settings").select("*");
+  if (empresaId) query = query.eq("id", empresaId);
+  else query = query.eq("emitente_fiscal", true).eq("ativo", true).order("emitente_padrao", { ascending: false });
+  const { data } = await query.order("created_at", { ascending: true }).limit(1).maybeSingle();
+
   const c = (data ?? {}) as Record<string, unknown>;
   const inscricaoFederal = dig(c["cnpj"]);
   const inscricaoEstadual = txt(c["inscricao_estadual"], 20);
   if (!inscricaoFederal || !inscricaoEstadual) {
     throw new Error(
-      "Complete o CNPJ e a inscrição estadual da empresa em Configurações → Empresa antes de emitir documentos fiscais.",
+      "Selecione a empresa emitente e complete o CNPJ e a inscrição estadual dela em Empresa antes de emitir documentos fiscais.",
     );
   }
-  return { inscricaoFederal, inscricaoEstadual, rntrc: txt(c["rntrc"], 8) || null };
+  return {
+    id: String(c["id"] ?? ""),
+    inscricaoFederal,
+    inscricaoEstadual,
+    rntrc: txt(c["rntrc"], 8) || null,
+  };
 }
 
 function envolvidoApi(e: EntradaCte["remetente"]) {
