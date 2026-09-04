@@ -201,6 +201,22 @@ function EmpresaPage() {
                   placeholder="00.000.000/0000-00"
                 />
               </Field>
+              <Field label="Inscrição estadual" id="inscricao_estadual">
+                <Input
+                  id="inscricao_estadual"
+                  value={form.inscricao_estadual}
+                  onChange={(e) => setForm({ ...form, inscricao_estadual: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+              <Field label="RNTRC" id="rntrc">
+                <Input
+                  id="rntrc"
+                  value={form.rntrc}
+                  onChange={(e) => setForm({ ...form, rntrc: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
               <Field label="Telefone" id="telefone">
                 <Input
                   id="telefone"
@@ -228,6 +244,50 @@ function EmpresaPage() {
                 rows={2}
               />
             </Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Número" id="endereco_numero">
+                <Input
+                  id="endereco_numero"
+                  value={form.endereco_numero}
+                  onChange={(e) => setForm({ ...form, endereco_numero: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+              <Field label="Bairro" id="bairro">
+                <Input
+                  id="bairro"
+                  value={form.bairro}
+                  onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+              <Field label="Cidade" id="cidade">
+                <Input
+                  id="cidade"
+                  value={form.cidade}
+                  onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+              <Field label="UF" id="uf">
+                <Input
+                  id="uf"
+                  maxLength={2}
+                  value={form.uf}
+                  onChange={(e) => setForm({ ...form, uf: e.target.value.toUpperCase() })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+              <Field label="CEP" id="cep">
+                <Input
+                  id="cep"
+                  value={form.cep}
+                  onChange={(e) => setForm({ ...form, cep: e.target.value })}
+                  disabled={!isAdmin}
+                />
+              </Field>
+            </div>
+
             {isAdmin && (
               <div className="flex justify-end">
                 <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
