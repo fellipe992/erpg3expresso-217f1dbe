@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Download, FileText, Loader2, RefreshCw, ShieldAlert, Truck, XCircle } from "lucide-react";
+import { Building2, Download, FileText, Loader2, RefreshCw, ShieldAlert, Truck, XCircle } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +26,7 @@ import { brl, dt } from "@/lib/export-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { EmpresasCadastro } from "@/components/fiscal/empresas-cadastro";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/app/fiscal")({
@@ -80,6 +81,9 @@ function FiscalPage() {
           <TabsTrigger value="cte">CT-e</TabsTrigger>
           <TabsTrigger value="mdfe">MDF-e</TabsTrigger>
           <TabsTrigger value="ciot">CIOT</TabsTrigger>
+          <TabsTrigger value="empresas">
+            <Building2 className="mr-1.5 size-4" /> Empresas
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="cte" className="pt-3">
           <ListaDocumentos tipo="cte" />
@@ -89,6 +93,9 @@ function FiscalPage() {
         </TabsContent>
         <TabsContent value="ciot" className="pt-3">
           <ListaCiots />
+        </TabsContent>
+        <TabsContent value="empresas" className="pt-3">
+          <EmpresasCadastro />
         </TabsContent>
       </Tabs>
 
