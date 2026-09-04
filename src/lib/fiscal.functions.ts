@@ -347,6 +347,8 @@ export const emitirMdfe = createServerFn({ method: "POST" })
     const validos = (ctes ?? []).filter((c) => c.status === "autorizado" && c.chave_acesso);
     if (!validos.length) throw new Error("Nenhum dos CT-es selecionados está autorizado com chave de acesso.");
 
+    const ciot = txt(data.ciot, 40).replace(/\D+/g, "") || null;
+
     const { data: doc, error } = await context.supabase
       .from("fiscal_documentos")
       .insert({
@@ -355,6 +357,7 @@ export const emitirMdfe = createServerFn({ method: "POST" })
         valor: Number(data.valorTotal) || validos.reduce((s, c) => s + Number(c.valor ?? 0), 0),
         peso_kg: Number(data.pesoTotalKg),
         produto_predominante: txt(data.produtoPredominante, 120),
+        ciot,
         viagem_id: data.viagemId ?? null,
         veiculo_id: data.veiculoId ?? null,
         motorista_id: data.motoristaId ?? null,
@@ -368,6 +371,11 @@ export const emitirMdfe = createServerFn({ method: "POST" })
     await context.supabase
       .from("fiscal_mdfe_ctes")
       .insert(validos.map((c) => ({ mdfe_id: doc.id, cte_id: c.id })));
+
+    if (data.ciotId) {
+      await context.supabase.from("fiscal_ciots").update({ mdfe_id: doc.id }).eq("id", data.ciotId);
+    }
+
 
     const ufs = Array.from(
       new Set([...(data.ufsPercurso ?? []).map((u) => txt(u, 2).toUpperCase())].filter(Boolean)),
@@ -391,7 +399,9 @@ export const emitirMdfe = createServerFn({ method: "POST" })
       modal: {
         rodoviario: {
           rntrc: empresa.rntrc ?? undefined,
+          ciots: ciot ? [{ ciot, inscricaoFederalContratante: empresa.inscricaoFederal }] : undefined,
           motoristas: [{ nome: txt(data.motorista.nome, 60), cpf: dig(data.motorista.cpf) }],
+
           veiculos: [
             {
               placa: txt(data.veiculo.placa, 7).toUpperCase().replace(/[^A-Z0-9]/g, ""),

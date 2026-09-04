@@ -61,6 +61,7 @@ export function EmitirMdfeDialog({
   const [carroceria, setCarroceria] = useState<TipoCarroceria>("FECHADA_BAU");
   const [rodado, setRodado] = useState<TipoRodado>("TRUCK");
   const [observacao, setObservacao] = useState("");
+  const [ciotId, setCiotId] = useState("");
 
   const disponiveis = useMemo(() => ctes.filter((c) => c.status === "autorizado" && c.chave_acesso), [ctes]);
   const selecionados = disponiveis.filter((c) => sel[c.id]);
@@ -88,8 +89,31 @@ export function EmitirMdfeDialog({
     },
   });
 
+  // CIOTs já emitidos, para informar no manifesto quando o frete é de terceiro.
+  const { data: ciots = [] } = useQuery({
+    queryKey: ["ciots-emitidos-mdfe"],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("fiscal_ciots")
+        .select("id, numero_ciot, contratado_nome, data_emissao")
+        .eq("status", "emitido")
+        .not("numero_ciot", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return (data ?? []) as Array<{
+        id: string;
+        numero_ciot: string | null;
+        contratado_nome: string;
+        data_emissao: string;
+      }>;
+    },
+  });
+
   const veiculo = veiculos.find((v) => String(v["id"]) === veiculoId);
   const motorista = motoristas.find((m) => m.id === motoristaId);
+  const ciotSel = ciots.find((c) => c.id === ciotId);
+
 
   useEffect(() => {
     if (!veiculo) return;
@@ -132,8 +156,11 @@ export function EmitirMdfeDialog({
             propriedadeVeiculo: veiculo?.["agregado"] ? "TERCEIRO" : "PROPRIO",
           },
           observacao,
+          ciot: ciotSel?.numero_ciot ?? null,
+          ciotId: ciotId || null,
           veiculoId: veiculoId || null,
           motoristaId: motoristaId || null,
+
         },
       }),
     onSuccess: () => {
@@ -255,7 +282,25 @@ export function EmitirMdfeDialog({
                 </SelectContent>
               </Select>
             </Campo>
+            <Campo label="CIOT (frete de terceiro)">
+              <Select value={ciotId} onValueChange={setCiotId}>
+                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
+                <SelectContent>
+                  {ciots.length === 0 ? (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum CIOT emitido</div>
+                  ) : (
+                    ciots.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.numero_ciot} · {c.contratado_nome}
+                      </SelectItem>
+                    ))
+                  )}
+
+                </SelectContent>
+              </Select>
+            </Campo>
             <div className="sm:col-span-2">
+
               <Campo label="Observações">
                 <Textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
               </Campo>

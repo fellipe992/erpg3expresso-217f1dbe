@@ -18,6 +18,9 @@ import {
   statusIntegracaoFiscal,
 } from "@/lib/fiscal.functions";
 import { rotuloStatusFiscal, type DocumentoFiscal, type TipoDocumentoFiscal } from "@/lib/fiscal-tipos";
+import { GerarCiotDialog } from "@/components/fiscal/gerar-ciot-dialog";
+import { cancelarCiot, encerrarCiot, registrarNumeroCiot } from "@/lib/ciot.functions";
+import { rotuloProvedorCiot, rotuloStatusCiot, type Ciot } from "@/lib/ciot-tipos";
 import { brl, dt } from "@/lib/export-utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,12 +72,13 @@ function FiscalPage() {
   }
 
   return (
-    <PageShell icon={FileText} title="Documentos fiscais" subtitle="Emissão de CT-e e MDF-e">
+    <PageShell icon={FileText} title="Documentos fiscais" subtitle="Emissão de CT-e, MDF-e e CIOT">
       <StatusIntegracao />
       <Tabs defaultValue="cte">
         <TabsList>
           <TabsTrigger value="cte">CT-e</TabsTrigger>
           <TabsTrigger value="mdfe">MDF-e</TabsTrigger>
+          <TabsTrigger value="ciot">CIOT</TabsTrigger>
         </TabsList>
         <TabsContent value="cte" className="pt-3">
           <ListaDocumentos tipo="cte" />
@@ -82,7 +86,11 @@ function FiscalPage() {
         <TabsContent value="mdfe" className="pt-3">
           <ListaDocumentos tipo="mdfe" />
         </TabsContent>
+        <TabsContent value="ciot" className="pt-3">
+          <ListaCiots />
+        </TabsContent>
       </Tabs>
+
     </PageShell>
   );
 }
@@ -297,3 +305,156 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
     </div>
   );
 }
+
+function ListaCiots() {
+  const qc = useQueryClient();
+  const [abrir, setAbrir] = useState(false);
+
+  const cancelar = useServerFn(cancelarCiot);
+  const encerrar = useServerFn(encerrarCiot);
+  const registrar = useServerFn(registrarNumeroCiot);
+
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["fiscal-ciots"],
+    queryFn: async (): Promise<Ciot[]> => {
+      const { data: rows, error } = await supabase
+        .from("fiscal_ciots")
+        .select(
+          "*, cliente:clientes(razao_social), viagem:viagens(codigo), veiculo:veiculos(placa), motorista:motoristas(nome)",
+        )
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw new Error(error.message);
+      return (rows ?? []) as unknown as Ciot[];
+    },
+  });
+
+  const recarregar = () => qc.invalidateQueries({ queryKey: ["fiscal-ciots"] });
+
+  const acaoCancelar = useMutation({
+    mutationFn: (v: { id: string; motivo: string }) => cancelar({ data: v }),
+    onSuccess: () => {
+      toast.success("CIOT cancelado");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível cancelar", { description: e.message }),
+  });
+
+  const acaoEncerrar = useMutation({
+    mutationFn: (id: string) => encerrar({ data: { id } }),
+    onSuccess: () => {
+      toast.success("CIOT encerrado");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível encerrar", { description: e.message }),
+  });
+
+  const acaoRegistrar = useMutation({
+    mutationFn: (v: { id: string; numero: string }) => registrar({ data: v }),
+    onSuccess: () => {
+      toast.success("Número do CIOT salvo");
+      recarregar();
+    },
+    onError: (e: Error) => toast.error("Não foi possível salvar", { description: e.message }),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button onClick={() => setAbrir(true)}>
+          <Truck className="mr-2 size-4" />
+          Gerar CIOT
+        </Button>
+      </div>
+
+      <Card className="overflow-x-auto">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 p-8 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> Carregando...
+          </div>
+        ) : data.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Nenhum CIOT registrado. Gere pela integração ou lance o número obtido no portal da gestora.
+          </div>
+        ) : (
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="p-3">Número</th>
+                <th className="p-3">Situação</th>
+                <th className="p-3">Origem</th>
+                <th className="p-3">Contratado</th>
+                <th className="p-3">Viagem</th>
+                <th className="p-3">Emissão</th>
+                <th className="p-3 text-right">Frete</th>
+                <th className="p-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((c) => (
+                <tr key={c.id} className="border-b last:border-0">
+                  <td className="p-3 font-mono">{c.numero_ciot ?? "—"}</td>
+                  <td className="p-3">
+                    <Badge variant={c.status === "emitido" || c.status === "encerrado" ? "default" : "secondary"}>
+                      {rotuloStatusCiot[c.status]}
+                    </Badge>
+                    {c.motivo && <p className="mt-1 max-w-[220px] text-xs text-muted-foreground">{c.motivo}</p>}
+                  </td>
+                  <td className="p-3 text-xs text-muted-foreground">{rotuloProvedorCiot[c.provedor]}</td>
+                  <td className="p-3">
+                    {c.contratado_nome}
+                    <span className="block text-xs text-muted-foreground">{c.tipo_contratado}</span>
+                  </td>
+                  <td className="p-3">
+                    {c.viagem?.codigo ?? "—"}
+                    <span className="block text-xs text-muted-foreground">{c.veiculo?.placa ?? ""}</span>
+                  </td>
+                  <td className="p-3">{dt(c.data_emissao)}</td>
+                  <td className="p-3 text-right font-mono tabular-nums">{brl(Number(c.valor_frete ?? 0))}</td>
+                  <td className="p-3">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {!c.numero_ciot && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const numero = window.prompt("Número do CIOT:")?.trim();
+                            if (numero) acaoRegistrar.mutate({ id: c.id, numero });
+                          }}
+                        >
+                          Lançar número
+                        </Button>
+                      )}
+                      {c.status === "emitido" && (
+                        <Button size="sm" variant="outline" onClick={() => acaoEncerrar.mutate(c.id)}>
+                          Encerrar
+                        </Button>
+                      )}
+                      {c.status !== "cancelado" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const motivo = window.prompt("Motivo do cancelamento:")?.trim();
+                            if (motivo && motivo.length >= 5) acaoCancelar.mutate({ id: c.id, motivo });
+                            else if (motivo) toast.error("Descreva o motivo com mais detalhes.");
+                          }}
+                        >
+                          <XCircle className="mr-1 size-4" />
+                          Cancelar
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <GerarCiotDialog open={abrir} onOpenChange={setAbrir} onDone={recarregar} />
+    </div>
+  );
+}
+

@@ -99,10 +99,15 @@ export type EntradaMdfe = {
     propriedadeVeiculo: "PROPRIO" | "TERCEIRO";
   };
   observacao?: string;
+  /** CIOT já emitido que deve constar no manifesto. */
+  ciot?: string | null;
+  /** Registro de CIOT deste sistema, para vincular ao manifesto gerado. */
+  ciotId?: string | null;
   viagemId?: string | null;
   veiculoId?: string | null;
   motoristaId?: string | null;
 };
+
 
 export type DocumentoFiscal = {
   id: string;
@@ -112,6 +117,8 @@ export type DocumentoFiscal = {
   serie: string | null;
   chave_acesso: string | null;
   valor: number;
+  ciot?: string | null;
+
   peso_kg: number | null;
   produto_predominante: string | null;
   motivo: string | null;
