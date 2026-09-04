@@ -91,7 +91,7 @@ export async function bsoft<T = unknown>(
   } = {},
 ): Promise<T> {
   const ambiente: Ambiente = init.ambiente ?? "producao";
-  const { token, tenant, configurado } = await getCredenciais(supabase, ambiente);
+  const { token, tenant, configurado } = await getCredenciais(supabase, ambiente, produto);
   if (!configurado) {
     throw new Error(
       "Integração com a Bsoft não configurada. Cadastre o token e o tenantID em Configurações > Integrações fiscais.",
@@ -120,8 +120,8 @@ export async function bsoft<T = unknown>(
     console.error(`Bsoft ${produto}/${ambiente} ${init.method ?? "GET"} ${path} falhou [${res.status}]: ${texto}`);
     if (res.status === 401 || res.status === 403) {
       throw new Error(
-        "A Bsoft recusou as credenciais (erro 401). Em Configurações > Integrações fiscais, verifique se o token e o tenantID estão corretos. " +
-          "O tenantID deve conter apenas números.",
+        "A Bsoft recusou as credenciais (erro 401). Em Configurações > Integrações fiscais, verifique se o token e o tenantID " +
+          `do ${produto === "mdfe" ? "MDF-e" : "CT-e"} estão corretos (cada produto tem credenciais próprias).`,
       );
     }
     throw new Error(`Bsoft respondeu ${res.status}: ${texto.slice(0, 1200) || "sem detalhes"}`);
