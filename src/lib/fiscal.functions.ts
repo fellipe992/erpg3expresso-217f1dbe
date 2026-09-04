@@ -534,3 +534,225 @@ export const encerrarMdfe = createServerFn({ method: "POST" })
     await context.supabase.from("fiscal_documentos").update({ status: "encerrado" }).eq("id", doc.id);
     return { ok: true };
   });
+
+/* ------------------------------------------------------------------ */
+/* Pré-validação: aponta os campos que faltam antes de emitir          */
+/* ------------------------------------------------------------------ */
+
+type Bloco = { rotulo: string; nome: string; faltando: string[] };
+
+const falta = (cond: unknown, campo: string, lista: string[]) => {
+  if (!cond) lista.push(campo);
+};
+
+function checarEmpresa(c: Record<string, unknown> | null, tipo: "cte" | "mdfe"): Bloco {
+  const f: string[] = [];
+  if (!c) return { rotulo: "Empresa emitente", nome: "—", faltando: ["cadastre e marque uma empresa emitente"] };
+  falta(txt(c["razao_social"]), "razão social", f);
+  falta(dig(c["cnpj"]).length >= 14, "CNPJ", f);
+  falta(txt(c["inscricao_estadual"]), "inscrição estadual", f);
+  falta(txt(c["endereco"]), "logradouro", f);
+  falta(txt(c["endereco_numero"]), "número", f);
+  falta(txt(c["bairro"]), "bairro", f);
+  falta(txt(c["cidade"]), "cidade", f);
+  falta(txt(c["uf"]), "UF", f);
+  falta(dig(c["cep"]).length === 8, "CEP", f);
+  falta(dig(c["telefone"]).length >= 10, "telefone", f);
+  if (tipo === "mdfe") falta(txt(c["rntrc"]), "RNTRC", f);
+  return {
+    rotulo: "Empresa emitente",
+    nome: txt(c["razao_social"] || c["nome_fantasia"], 80) || "—",
+    faltando: f,
+  };
+}
+
+function checarCliente(c: Record<string, unknown> | null): Bloco {
+  const f: string[] = [];
+  if (!c) return { rotulo: "Cliente", nome: "—", faltando: ["vincule um cliente à viagem"] };
+  falta(txt(c["razao_social"]), "razão social", f);
+  falta(dig(c["cnpj_cpf"]).length >= 11, "CNPJ/CPF", f);
+  falta(txt(c["endereco"]), "logradouro", f);
+  falta(txt(c["endereco_numero"]), "número", f);
+  falta(txt(c["bairro"]), "bairro", f);
+  falta(txt(c["cidade"]), "cidade", f);
+  falta(txt(c["uf"]), "UF", f);
+  falta(dig(c["cep"]).length === 8, "CEP", f);
+  falta(dig(c["telefone"]).length >= 10, "telefone", f);
+  return { rotulo: "Cliente", nome: txt(c["razao_social"], 80) || "—", faltando: f };
+}
+
+/** Confere empresa, cliente, viagem, veículo e motorista antes de enviar à SEFAZ. */
+export const prevalidarEmissao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { tipo: "cte" | "mdfe"; empresaId?: string | null; viagemId?: string | null; fechamentoId?: string | null }) => ({
+    tipo: data?.tipo === "mdfe" ? ("mdfe" as const) : ("cte" as const),
+    empresaId: data?.empresaId ? String(data.empresaId) : null,
+    viagemId: data?.viagemId ? String(data.viagemId) : null,
+    fechamentoId: data?.fechamentoId ? String(data.fechamentoId) : null,
+  }))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const blocos: Bloco[] = [];
+
+    let qEmp = sb.from("company_settings").select("*");
+    qEmp = data.empresaId
+      ? qEmp.eq("id", data.empresaId)
+      : qEmp.eq("emitente_fiscal", true).eq("ativo", true).order("emitente_padrao", { ascending: false });
+    const { data: empresa } = await qEmp.order("created_at", { ascending: true }).limit(1).maybeSingle();
+    blocos.push(checarEmpresa((empresa ?? null) as Record<string, unknown> | null, data.tipo));
+
+    // Viagens envolvidas: a informada ou as do fechamento.
+    let viagemIds: string[] = data.viagemId ? [data.viagemId] : [];
+    if (!viagemIds.length && data.fechamentoId) {
+      const { data: fv } = await sb.from("fechamento_viagens").select("viagem_id").eq("fechamento_id", data.fechamentoId);
+      viagemIds = (fv ?? []).map((r) => String(r.viagem_id)).filter(Boolean);
+    }
+
+    if (viagemIds.length) {
+      const { data: viagens } = await sb
+        .from("viagens")
+        .select(
+          "id, codigo, status, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf, valor_frete, distancia_estimada_km",
+        )
+        .in("id", viagemIds.slice(0, 100));
+
+      const clienteIds = Array.from(new Set((viagens ?? []).map((v) => v.cliente_id).filter(Boolean))) as string[];
+      const { data: clientes } = clienteIds.length
+        ? await sb.from("clientes").select("*").in("id", clienteIds)
+        : { data: [] as Record<string, unknown>[] };
+
+      const veiculoIds = Array.from(new Set((viagens ?? []).map((v) => v.veiculo_id).filter(Boolean))) as string[];
+      const { data: veiculos } = veiculoIds.length
+        ? await sb.from("veiculos").select("id, placa, renavam, capacidade_kg, tipo").in("id", veiculoIds)
+        : { data: [] as Record<string, unknown>[] };
+
+      const motoristaIds = Array.from(new Set((viagens ?? []).map((v) => v.motorista_id).filter(Boolean))) as string[];
+      const { data: motoristas } = motoristaIds.length
+        ? await sb.from("motoristas").select("id, nome, cpf, telefone").in("id", motoristaIds)
+        : { data: [] as Record<string, unknown>[] };
+
+      for (const v of viagens ?? []) {
+        const f: string[] = [];
+        falta(v.cliente_id, "cliente", f);
+        falta(txt(v.origem_cidade) && txt(v.origem_uf), "cidade/UF de origem", f);
+        falta(txt(v.destino_cidade) && txt(v.destino_uf), "cidade/UF de destino", f);
+        falta(Number(v.valor_frete) > 0, "valor do frete", f);
+        if (data.tipo === "mdfe") {
+          falta(v.veiculo_id, "veículo", f);
+          falta(v.motorista_id, "motorista", f);
+        }
+        blocos.push({ rotulo: `Viagem OS ${v.codigo ?? "—"}`, nome: `${v.origem_cidade ?? "?"} → ${v.destino_cidade ?? "?"}`, faltando: f });
+
+        const cli = (clientes ?? []).find((c) => String((c as { id?: string }).id) === String(v.cliente_id)) ?? null;
+        const bc = checarCliente(cli as Record<string, unknown> | null);
+        if (!blocos.some((b) => b.rotulo === bc.rotulo && b.nome === bc.nome)) blocos.push(bc);
+
+        if (data.tipo === "mdfe") {
+          const ve = (veiculos ?? []).find((x) => String((x as { id?: string }).id) === String(v.veiculo_id)) as
+            | Record<string, unknown>
+            | undefined;
+          if (ve) {
+            const fv: string[] = [];
+            falta(txt(ve["placa"]), "placa", fv);
+            falta(dig(ve["renavam"]).length >= 9, "Renavam", fv);
+            falta(Number(ve["capacidade_kg"]) > 0, "capacidade em kg", fv);
+            blocos.push({ rotulo: "Veículo", nome: txt(ve["placa"], 10) || "—", faltando: fv });
+          }
+          const mo = (motoristas ?? []).find((x) => String((x as { id?: string }).id) === String(v.motorista_id)) as
+            | Record<string, unknown>
+            | undefined;
+          if (mo) {
+            const fm: string[] = [];
+            falta(txt(mo["nome"]), "nome", fm);
+            falta(dig(mo["cpf"]).length === 11, "CPF", fm);
+            blocos.push({ rotulo: "Motorista", nome: txt(mo["nome"], 60) || "—", faltando: fm });
+          }
+        }
+      }
+    }
+
+    const pendencias = blocos.filter((b) => b.faltando.length);
+    return { ok: pendencias.length === 0, blocos, pendencias };
+  });
+
+/* ------------------------------------------------------------------ */
+/* Download em lote de XML e PDF                                       */
+/* ------------------------------------------------------------------ */
+
+/** Gera XML e PDF de todos os documentos de uma viagem ou de um fechamento. */
+export const baixarLoteFiscal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { viagemId?: string | null; fechamentoId?: string | null; tipo?: "cte" | "mdfe" | "todos" }) => {
+    if (!data?.viagemId && !data?.fechamentoId) throw new Error("Escolha uma viagem ou um fechamento.");
+    return {
+      viagemId: data.viagemId ? String(data.viagemId) : null,
+      fechamentoId: data.fechamentoId ? String(data.fechamentoId) : null,
+      tipo: data.tipo === "cte" || data.tipo === "mdfe" ? data.tipo : ("todos" as const),
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { bsoft } = await import("@/lib/fiscal.server");
+    const sb = context.supabase;
+
+    let viagemIds: string[] = data.viagemId ? [data.viagemId] : [];
+    if (data.fechamentoId) {
+      const { data: fv } = await sb.from("fechamento_viagens").select("viagem_id").eq("fechamento_id", data.fechamentoId);
+      viagemIds = Array.from(new Set([...viagemIds, ...(fv ?? []).map((r) => String(r.viagem_id))])).filter(Boolean);
+    }
+
+    let query = sb
+      .from("fiscal_documentos")
+      .select("id, tipo, numero, serie, chave_acesso, bsoft_id, status, ambiente, viagem_id, fechamento_id, viagem:viagens(codigo)")
+      .in("status", ["autorizado", "encerrado"])
+      .not("bsoft_id", "is", null)
+      .limit(60);
+    if (data.tipo !== "todos") query = query.eq("tipo", data.tipo);
+
+    const filtros: string[] = [];
+    if (viagemIds.length) filtros.push(`viagem_id.in.(${viagemIds.join(",")})`);
+    if (data.fechamentoId) filtros.push(`fechamento_id.eq.${data.fechamentoId}`);
+    if (filtros.length) query = query.or(filtros.join(","));
+
+    const { data: docs, error } = await query;
+    if (error) throw new Error(error.message);
+    if (!docs?.length) return { arquivos: [] as Array<{ nome: string; pdf: string | null; xml: string | null; url: string | null }> };
+
+    const b64 = (bytes: unknown) => {
+      if (typeof bytes === "string" && bytes.length > 100) return bytes;
+      if (Array.isArray(bytes) && bytes.length) return Buffer.from(Uint8Array.from(bytes as number[])).toString("base64");
+      return null;
+    };
+
+    const arquivos: Array<{ nome: string; pdf: string | null; xml: string | null; url: string | null }> = [];
+    for (const d of docs) {
+      const os = (d as { viagem?: { codigo?: string | null } | null }).viagem?.codigo;
+      const nome = [
+        d.tipo === "cte" ? "CTe" : "MDFe",
+        d.numero ? `n${d.numero}` : null,
+        os ? `OS${os}` : null,
+        d.chave_acesso ? String(d.chave_acesso).slice(-6) : String(d.id).slice(0, 6),
+      ]
+        .filter(Boolean)
+        .join("-");
+      try {
+        if (d.tipo === "cte") {
+          const r = await bsoft<Record<string, unknown>>("cte", "/v1/integracoes/ctes/imprimir-documento-cte", {
+            method: "POST",
+            body: { idCteList: [d.bsoft_id], ordenarPorIntegracao: true },
+            ambiente: amb(d.ambiente),
+          });
+          arquivos.push({ nome, pdf: b64(r?.["bytesDacteCte"]), xml: b64(r?.["bytesXmlCte"]), url: (r?.["url"] as string) || null });
+        } else {
+          const r = await bsoft<Record<string, unknown>>("mdfe", "/v1/integracoes/mdfes/imprimir-documento-mdfe", {
+            method: "POST",
+            body: { idMdfeList: [d.bsoft_id], ordenarPorIntegracao: true },
+            ambiente: amb(d.ambiente),
+          });
+          arquivos.push({ nome, pdf: b64(r?.["bytesDacteMdfe"]), xml: b64(r?.["bytesXmlMdfe"]), url: (r?.["url"] as string) || null });
+        }
+      } catch (e) {
+        console.error("Falha ao baixar documento fiscal", d.id, e);
+      }
+    }
+    return { arquivos };
+  });
