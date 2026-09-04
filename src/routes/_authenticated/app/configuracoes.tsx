@@ -48,11 +48,15 @@ function ConfiguracoesPage() {
           <TabsTrigger value="preferencias">Preferências</TabsTrigger>
           <TabsTrigger value="financeiro">Regras financeiras</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="fiscal">
+            <Key className="mr-1.5 size-4" /> Integrações fiscais
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="empresa" className="mt-4"><EmpresaTab /></TabsContent>
         <TabsContent value="preferencias" className="mt-4"><PreferenciasTab /></TabsContent>
         <TabsContent value="financeiro" className="mt-4"><FinanceiroTab /></TabsContent>
         <TabsContent value="notificacoes" className="mt-4"><NotificacoesTab /></TabsContent>
+        <TabsContent value="fiscal" className="mt-4"><IntegracaoFiscalTab /></TabsContent>
       </Tabs>
     </div>
   );
