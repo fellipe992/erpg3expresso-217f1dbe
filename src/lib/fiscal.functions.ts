@@ -238,7 +238,7 @@ export const sincronizarDocumentoFiscal = createServerFn({ method: "POST" })
         serie: serie != null ? String(serie) : null,
         chave_acesso: chave ? String(chave) : null,
         motivo: motivo ? String(motivo).slice(0, 2000) : null,
-        resultado: { detalhe, itens },
+        resultado: JSON.parse(JSON.stringify({ detalhe, itens })),
       })
       .eq("id", doc.id);
 
