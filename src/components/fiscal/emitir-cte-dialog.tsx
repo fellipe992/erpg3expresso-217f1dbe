@@ -96,14 +96,32 @@ export function EmitirCteDialog({
   const [observacao, setObservacao] = useState("");
   const [enviarEmail, setEnviarEmail] = useState(true);
 
-  const { data: empresa } = useQuery({
-    queryKey: ["company-settings-fiscal"],
+  const [empresaId, setEmpresaId] = useState("");
+
+  const { data: empresas = [] } = useQuery({
+    queryKey: ["company-settings-emitentes"],
     enabled: open,
     queryFn: async () => {
-      const { data } = await supabase.from("company_settings").select("*").limit(1).maybeSingle();
-      return data as Record<string, string | null> | null;
+      const { data } = await supabase
+        .from("company_settings")
+        .select("*")
+        .eq("emitente_fiscal", true)
+        .eq("ativo", true)
+        .order("emitente_padrao", { ascending: false })
+        .order("created_at", { ascending: true });
+      return (data ?? []) as Array<Record<string, string | boolean | null>>;
     },
   });
+
+  const empresa = useMemo(
+    () => empresas.find((e) => String(e["id"]) === empresaId) ?? empresas[0] ?? null,
+    [empresas, empresaId],
+  );
+
+  // Seleciona a empresa padrão de emissão ao abrir.
+  useEffect(() => {
+    if (open && !empresaId && empresas.length) setEmpresaId(String(empresas[0]!["id"]));
+  }, [open, empresaId, empresas]);
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-fiscal"],
@@ -153,26 +171,26 @@ export function EmitirCteDialog({
 
   const empresaEnvolvido = useMemo<EnvolvidoFiscal>(
     () => ({
-      nome: (empresa?.["razao_social"] || empresa?.["nome_fantasia"] || "") as string,
-      inscricaoFederal: (empresa?.["cnpj"] ?? "") as string,
-      inscricaoEstadual: (empresa?.["inscricao_estadual"] ?? "") as string,
-      telefone: (empresa?.["telefone"] ?? "") as string,
-      email: (empresa?.["email"] ?? "") as string,
+      nome: String(empresa?.["razao_social"] || empresa?.["nome_fantasia"] || ""),
+      inscricaoFederal: String(empresa?.["cnpj"] ?? ""),
+      inscricaoEstadual: String(empresa?.["inscricao_estadual"] ?? ""),
+      telefone: String(empresa?.["telefone"] ?? ""),
+      email: String(empresa?.["email"] ?? ""),
       endereco: {
-        logradouro: (empresa?.["endereco"] ?? "") as string,
-        numero: (empresa?.["endereco_numero"] ?? "") as string,
-        bairro: (empresa?.["bairro"] ?? "") as string,
-        municipio: (empresa?.["cidade"] ?? "") as string,
-        uf: (empresa?.["uf"] ?? "") as string,
-        cep: (empresa?.["cep"] ?? "") as string,
+        logradouro: String(empresa?.["endereco"] ?? ""),
+        numero: String(empresa?.["endereco_numero"] ?? ""),
+        bairro: String(empresa?.["bairro"] ?? ""),
+        municipio: String(empresa?.["cidade"] ?? ""),
+        uf: String(empresa?.["uf"] ?? ""),
+        cep: String(empresa?.["cep"] ?? ""),
       },
     }),
     [empresa],
   );
 
-  // Pré-preenche remetente com a empresa emitente.
+  // Pré-preenche remetente com a empresa emitente escolhida.
   useEffect(() => {
-    if (open && empresa) setRemetente((r) => (r.nome ? r : empresaEnvolvido));
+    if (open && empresa) setRemetente(empresaEnvolvido);
   }, [open, empresa, empresaEnvolvido]);
 
   // Ao escolher o cliente, preenche destinatário e tomador.
@@ -209,6 +227,7 @@ export function EmitirCteDialog({
     mutationFn: () =>
       emitir({
         data: {
+          empresaId: empresaId || null,
           remetente,
           destinatario,
           tomador,
@@ -248,6 +267,25 @@ export function EmitirCteDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Empresa emitente</Label>
+            <Select value={empresaId} onValueChange={setEmpresaId}>
+              <SelectTrigger><SelectValue placeholder="Selecione a empresa emitente" /></SelectTrigger>
+              <SelectContent>
+                {empresas.map((e) => (
+                  <SelectItem key={String(e["id"])} value={String(e["id"])}>
+                    {String(e["nome_fantasia"] ?? e["razao_social"] ?? "")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!empresas.length && (
+              <p className="text-xs text-amber-600">
+                Nenhuma empresa marcada como emitente. Cadastre em Empresa e ative "Emite CT-e e MDF-e".
+              </p>
+            )}
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Base do documento</Label>

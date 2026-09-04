@@ -62,10 +62,30 @@ export function EmitirMdfeDialog({
   const [rodado, setRodado] = useState<TipoRodado>("TRUCK");
   const [observacao, setObservacao] = useState("");
   const [ciotId, setCiotId] = useState("");
+  const [empresaId, setEmpresaId] = useState("");
 
   const disponiveis = useMemo(() => ctes.filter((c) => c.status === "autorizado" && c.chave_acesso), [ctes]);
   const selecionados = disponiveis.filter((c) => sel[c.id]);
   const valorTotal = selecionados.reduce((s, c) => s + Number(c.valor ?? 0), 0);
+
+  const { data: empresas = [] } = useQuery({
+    queryKey: ["company-settings-emitentes"],
+    enabled: open,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("company_settings")
+        .select("id, nome_fantasia, razao_social")
+        .eq("emitente_fiscal", true)
+        .eq("ativo", true)
+        .order("emitente_padrao", { ascending: false })
+        .order("created_at", { ascending: true });
+      return (data ?? []) as Array<{ id: string; nome_fantasia: string | null; razao_social: string | null }>;
+    },
+  });
+
+  useEffect(() => {
+    if (open && !empresaId && empresas.length) setEmpresaId(empresas[0]!.id);
+  }, [open, empresaId, empresas]);
 
   const { data: motoristas = [] } = useQuery({
     queryKey: ["motoristas-mdfe"],
@@ -132,6 +152,7 @@ export function EmitirMdfeDialog({
     mutationFn: () =>
       emitir({
         data: {
+          empresaId: empresaId || null,
           cteIds: selecionados.map((c) => c.id),
           inicio: { municipio: inicio.municipio, uf: inicio.uf },
           termino: { municipio: termino.municipio, uf: termino.uf },
@@ -179,6 +200,20 @@ export function EmitirMdfeDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Empresa emitente</Label>
+            <Select value={empresaId} onValueChange={setEmpresaId}>
+              <SelectTrigger><SelectValue placeholder="Selecione a empresa emitente" /></SelectTrigger>
+              <SelectContent>
+                {empresas.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.nome_fantasia ?? e.razao_social ?? ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-2 rounded-lg border border-border/60 p-3">
             <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               CT-es autorizados

@@ -5,21 +5,32 @@ import type { EntradaCte, EntradaMdfe, StatusDocumentoFiscal } from "@/lib/fisca
 const dig = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
 const txt = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
-type EmpresaEmitente = { inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
+type EmpresaEmitente = { id: string; inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
 
-async function empresaEmitente(supabase: {
-  from: (t: string) => { select: (c: string) => { limit: (n: number) => { maybeSingle: () => Promise<{ data: unknown }> } } };
-}): Promise<EmpresaEmitente> {
-  const { data } = await supabase.from("company_settings").select("*").limit(1).maybeSingle();
+/** Escolhe a empresa emitente: a informada, senão a marcada como padrão, senão a mais antiga. */
+async function empresaEmitente(
+  supabase: { from: (t: string) => any },
+  empresaId?: string | null,
+): Promise<EmpresaEmitente> {
+  let query = supabase.from("company_settings").select("*");
+  if (empresaId) query = query.eq("id", empresaId);
+  else query = query.eq("emitente_fiscal", true).eq("ativo", true).order("emitente_padrao", { ascending: false });
+  const { data } = await query.order("created_at", { ascending: true }).limit(1).maybeSingle();
+
   const c = (data ?? {}) as Record<string, unknown>;
   const inscricaoFederal = dig(c["cnpj"]);
   const inscricaoEstadual = txt(c["inscricao_estadual"], 20);
   if (!inscricaoFederal || !inscricaoEstadual) {
     throw new Error(
-      "Complete o CNPJ e a inscrição estadual da empresa em Configurações → Empresa antes de emitir documentos fiscais.",
+      "Selecione a empresa emitente e complete o CNPJ e a inscrição estadual dela em Empresa antes de emitir documentos fiscais.",
     );
   }
-  return { inscricaoFederal, inscricaoEstadual, rntrc: txt(c["rntrc"], 8) || null };
+  return {
+    id: String(c["id"] ?? ""),
+    inscricaoFederal,
+    inscricaoEstadual,
+    rntrc: txt(c["rntrc"], 8) || null,
+  };
 }
 
 function envolvidoApi(e: EntradaCte["remetente"]) {
@@ -63,14 +74,30 @@ export const statusIntegracaoFiscal = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { credenciais } = await import("@/lib/fiscal.server");
     const { configurado } = credenciais();
-    const { data } = await context.supabase.from("company_settings").select("*").limit(1).maybeSingle();
-    const c = (data ?? {}) as Record<string, unknown>;
+    const { data } = await context.supabase
+      .from("company_settings")
+      .select("id, nome_fantasia, razao_social, cnpj, inscricao_estadual, rntrc, emitente_fiscal, emitente_padrao, ativo")
+      .eq("emitente_fiscal", true)
+      .eq("ativo", true)
+      .order("emitente_padrao", { ascending: false })
+      .order("created_at", { ascending: true });
+    const emitentes = (data ?? []).map((c) => ({
+      id: String(c.id),
+      nome: txt(c.razao_social || c.nome_fantasia, 120),
+      cnpj: dig(c.cnpj) || null,
+      inscricaoEstadual: txt(c.inscricao_estadual, 20) || null,
+      rntrc: txt(c.rntrc, 8) || null,
+      padrao: !!c.emitente_padrao,
+      completo: !!dig(c.cnpj) && !!txt(c.inscricao_estadual),
+    }));
+    const principal = emitentes[0] ?? null;
     return {
       configurado,
-      empresaOk: !!dig(c["cnpj"]) && !!txt(c["inscricao_estadual"]),
-      cnpj: dig(c["cnpj"]) || null,
-      inscricaoEstadual: txt(c["inscricao_estadual"], 20) || null,
-      rntrc: txt(c["rntrc"], 8) || null,
+      emitentes,
+      empresaOk: !!principal?.completo,
+      cnpj: principal?.cnpj ?? null,
+      inscricaoEstadual: principal?.inscricaoEstadual ?? null,
+      rntrc: principal?.rntrc ?? null,
     };
   });
 
@@ -89,7 +116,7 @@ export const emitirCte = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { bsoft } = await import("@/lib/fiscal.server");
-    const empresa = await empresaEmitente(context.supabase as never);
+    const empresa = await empresaEmitente(context.supabase as never, data.empresaId ?? null);
 
     const adicionais = (data.adicionais ?? []).filter((a) => txt(a.nome) && Number(a.valor) > 0);
     const outrosFretes = [
@@ -104,6 +131,7 @@ export const emitirCte = createServerFn({ method: "POST" })
       .insert({
         tipo: "cte",
         status: "rascunho",
+        empresa_id: empresa.id || null,
         valor: valorTotal,
         peso_kg: Number(data.pesoKg),
         produto_predominante: txt(data.produtoPredominante, 120),
@@ -337,7 +365,7 @@ export const emitirMdfe = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { bsoft } = await import("@/lib/fiscal.server");
-    const empresa = await empresaEmitente(context.supabase as never);
+    const empresa = await empresaEmitente(context.supabase as never, data.empresaId ?? null);
 
     const { data: ctes } = await context.supabase
       .from("fiscal_documentos")
@@ -354,6 +382,7 @@ export const emitirMdfe = createServerFn({ method: "POST" })
       .insert({
         tipo: "mdfe",
         status: "rascunho",
+        empresa_id: empresa.id || null,
         valor: Number(data.valorTotal) || validos.reduce((s, c) => s + Number(c.valor ?? 0), 0),
         peso_kg: Number(data.pesoTotalKg),
         produto_predominante: txt(data.produtoPredominante, 120),
