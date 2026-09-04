@@ -116,7 +116,7 @@ export const emitirCte = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { bsoft } = await import("@/lib/fiscal.server");
-    const empresa = await empresaEmitente(context.supabase as never);
+    const empresa = await empresaEmitente(context.supabase as never, data.empresaId ?? null);
 
     const adicionais = (data.adicionais ?? []).filter((a) => txt(a.nome) && Number(a.valor) > 0);
     const outrosFretes = [
@@ -131,6 +131,7 @@ export const emitirCte = createServerFn({ method: "POST" })
       .insert({
         tipo: "cte",
         status: "rascunho",
+        empresa_id: empresa.id || null,
         valor: valorTotal,
         peso_kg: Number(data.pesoKg),
         produto_predominante: txt(data.produtoPredominante, 120),
@@ -364,7 +365,7 @@ export const emitirMdfe = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { bsoft } = await import("@/lib/fiscal.server");
-    const empresa = await empresaEmitente(context.supabase as never);
+    const empresa = await empresaEmitente(context.supabase as never, data.empresaId ?? null);
 
     const { data: ctes } = await context.supabase
       .from("fiscal_documentos")
@@ -381,6 +382,7 @@ export const emitirMdfe = createServerFn({ method: "POST" })
       .insert({
         tipo: "mdfe",
         status: "rascunho",
+        empresa_id: empresa.id || null,
         valor: Number(data.valorTotal) || validos.reduce((s, c) => s + Number(c.valor ?? 0), 0),
         peso_kg: Number(data.pesoTotalKg),
         produto_predominante: txt(data.produtoPredominante, 120),
