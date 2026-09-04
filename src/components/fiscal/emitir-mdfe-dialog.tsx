@@ -287,7 +287,7 @@ export function EmitirMdfeDialog({
                 <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
                 <SelectContent>
                   {ciots.length === 0 ? (
-                    <SelectItem value="" disabled>Nenhum CIOT emitido</SelectItem>
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum CIOT emitido</div>
                   ) : (
                     ciots.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
@@ -295,6 +295,7 @@ export function EmitirMdfeDialog({
                       </SelectItem>
                     ))
                   )}
+
                 </SelectContent>
               </Select>
             </Campo>
