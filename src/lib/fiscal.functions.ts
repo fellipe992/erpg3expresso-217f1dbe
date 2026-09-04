@@ -7,6 +7,29 @@ const amb = (v: unknown): AmbienteFiscal => (v === "homologacao" ? "homologacao"
 const dig = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
 const txt = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
+/** A API converte valores desconhecidos desse enum em null. No CT-e sem NF-e,
+ * o documento equivalente é uma declaração (tpDoc 00), não o grupo "OUTROS". */
+function normalizarDeclaracaoCarga(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  const raiz = payload as Record<string, unknown>;
+  const documentos = raiz["documentos"];
+  if (!documentos || typeof documentos !== "object" || Array.isArray(documentos)) return payload;
+  const docs = documentos as Record<string, unknown>;
+  if (!Array.isArray(docs["outros"])) return payload;
+
+  return {
+    ...raiz,
+    documentos: {
+      ...docs,
+      outros: docs["outros"].map((item) =>
+        item && typeof item === "object" && !Array.isArray(item)
+          ? { ...(item as Record<string, unknown>), tipo: "DECLARACAO" }
+          : item,
+      ),
+    },
+  };
+}
+
 type EmpresaEmitente = { id: string; inscricaoFederal: string; inscricaoEstadual: string; rntrc: string | null };
 
 /** Escolhe a empresa emitente: a informada, senão a marcada como padrão, senão a mais antiga. */
@@ -179,15 +202,11 @@ export const emitirCte = createServerFn({ method: "POST" })
         : {
             outros: [
               {
-                tipo: "OUTROS",
-                tipoDocumento: "OUTROS",
+                tipo: "DECLARACAO",
                 descricao: txt(data.produtoPredominante, 60) || "Declaracao de carga",
-                descricaoOutros: txt(data.produtoPredominante, 60) || "Declaracao de carga",
                 numero: String(doc.id_integracao ?? "").slice(0, 20),
-                numeroDocumento: String(doc.id_integracao ?? "").slice(0, 20),
                 dataEmissao: new Date().toISOString().slice(0, 10),
                 valor: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
-                valorDocumento: Number(data.cargaValor) > 0 ? Number(data.cargaValor) : valorTotal,
               },
             ],
           },
@@ -950,10 +969,11 @@ export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
 
     try {
       let bsoftId = doc.bsoft_id as string | null;
+      const payload = produto === "cte" ? normalizarDeclaracaoCarga(doc.payload) : doc.payload;
       if (!bsoftId) {
         const criado = await bsoft<{ id?: string }>(context.supabase, produto, recurso, {
           method: "POST",
-          body: doc.payload,
+          body: payload,
           ambiente,
         });
         bsoftId = criado?.id ?? null;
@@ -967,7 +987,13 @@ export const reenviarDocumentoFiscal = createServerFn({ method: "POST" })
       const transacao = emissao?.idTransacao ?? emissao?.id ?? null;
       await context.supabase
         .from("fiscal_documentos")
-        .update({ bsoft_id: bsoftId, transacao_id: transacao, status: "processando", motivo: null })
+        .update({
+          bsoft_id: bsoftId,
+          transacao_id: transacao,
+          status: "processando",
+          motivo: null,
+          payload: JSON.parse(JSON.stringify(payload)),
+        })
         .eq("id", doc.id);
       return { ok: true as const, bsoftId, transacaoId: transacao };
     } catch (e) {
