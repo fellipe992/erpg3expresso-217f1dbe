@@ -9,8 +9,9 @@ const num = (v: unknown) => Number(v ?? 0) || 0;
 /** Quais caminhos de geração de CIOT estão disponíveis neste ambiente. */
 export const statusCiot = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const { getCredenciaisCiot, credenciaisCiotGestora } = await import("@/lib/fiscal.server");
+  .handler(async ({ context }) => {
+    const { getCredenciaisCiot } = await import("@/lib/fiscal.server");
+    const { credenciaisCiotGestora } = await import("@/lib/ciot.server");
     return {
       bsoft: (await getCredenciaisCiot(context.supabase)).configurado,
       gestora: credenciaisCiotGestora().configurado,
