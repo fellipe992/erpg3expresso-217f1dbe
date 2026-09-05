@@ -206,6 +206,19 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
   const totalExtras = p.descontosExtras.reduce((s, d) => s + nnum(d.valor), 0);
   const valorFinal = valorViagens - totalExtras;
 
+  // Em fechamento por cliente, preserve o motorista quando todas as viagens
+  // selecionadas pertencem à mesma pessoa. Assim o vínculo não depende do
+  // filtro opcional de motorista usado na tela.
+  const motoristasDasViagens = Array.from(
+    new Set(p.linhas.map((linha) => linha.motoristaId).filter((id): id is string => Boolean(id))),
+  );
+  const motoristaVinculado = p.motoristaId ?? (motoristasDasViagens.length === 1 ? motoristasDasViagens[0] : null);
+
+  const veiculosDasViagens = Array.from(
+    new Set(p.linhas.map((linha) => linha.veiculoId).filter((id): id is string => Boolean(id))),
+  );
+  const veiculoVinculado = p.veiculoId ?? (veiculosDasViagens.length === 1 ? veiculosDasViagens[0] : null);
+
   const { data: user } = await supabase.auth.getUser();
   const uid = user.user?.id ?? null;
 
@@ -214,8 +227,8 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
     .insert({
       tipo: p.tipo,
       cliente_id: p.clienteId,
-      motorista_id: p.motoristaId,
-      veiculo_id: p.veiculoId,
+      motorista_id: motoristaVinculado,
+      veiculo_id: veiculoVinculado,
       periodo_inicio: p.periodo.de,
       periodo_fim: p.periodo.ate,
       descricao: p.descricao,
