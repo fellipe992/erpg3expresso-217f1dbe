@@ -163,7 +163,7 @@ export function EmitirCteDialog({
     queryFn: async () => {
       const { data } = await supabase
         .from("fechamentos")
-        .select("id, numero, cliente_id, motorista_id, periodo_inicio, periodo_fim, valor, status, tipo, motoristas(nome), clientes(razao_social)")
+        .select("id, numero, cliente_id, motorista_id, periodo_inicio, periodo_fim, valor, status, tipo, motoristas(nome), clientes(razao_social), fechamento_viagens(ativo, viagem:viagens(motoristas(nome)))")
         .eq("tipo", "cliente")
         .neq("status", "cancelado")
         .order("numero", { ascending: false })
@@ -353,9 +353,21 @@ export function EmitirCteDialog({
                       <SelectItem key={String(f["id"])} value={String(f["id"])}>
                         #{String(f["numero"] ?? "")} · {dt(String(f["periodo_inicio"]))} a{" "}
                         {dt(String(f["periodo_fim"]))} · {brl(Number(f["valor"] ?? 0))}
-                        {(f["motoristas"] as { nome?: string } | null)?.nome
-                          ? ` · ${(f["motoristas"] as { nome?: string }).nome}`
-                          : ""}
+                        {(() => {
+                          const motoristaDireto = (f["motoristas"] as { nome?: string } | null)?.nome;
+                          const vinculos = (f["fechamento_viagens"] as Array<{
+                            ativo?: boolean;
+                            viagem?: { motoristas?: { nome?: string } | null } | null;
+                          }> | null) ?? [];
+                          const nomes = Array.from(new Set(
+                            vinculos
+                              .filter((vinculo) => vinculo.ativo !== false)
+                              .map((vinculo) => vinculo.viagem?.motoristas?.nome)
+                              .filter((nome): nome is string => Boolean(nome)),
+                          ));
+                          const motorista = motoristaDireto || nomes.join(", ");
+                          return motorista ? ` · ${motorista}` : "";
+                        })()}
                         {(f["clientes"] as { razao_social?: string } | null)?.razao_social
                           ? ` · ${(f["clientes"] as { razao_social?: string }).razao_social}`
                           : ""}
