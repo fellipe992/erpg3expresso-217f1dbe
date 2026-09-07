@@ -739,7 +739,7 @@ export const prevalidarEmissao = createServerFn({ method: "POST" })
         blocos.push({ rotulo: `Viagem OS ${v.codigo ?? "—"}`, nome: `${v.origem_cidade ?? "?"} → ${v.destino_cidade ?? "?"}`, faltando: f });
 
         const cli = (clientes ?? []).find((c) => String((c as { id?: string }).id) === String(v.cliente_id)) ?? null;
-        const bc = checarCliente(cli as Record<string, unknown> | null);
+        const bc = checarCliente(cli as Record<string, unknown> | null, data.cliente);
         if (!blocos.some((b) => b.rotulo === bc.rotulo && b.nome === bc.nome)) blocos.push(bc);
 
         if (data.tipo === "mdfe") {
