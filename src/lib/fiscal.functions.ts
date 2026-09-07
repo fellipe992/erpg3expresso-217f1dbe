@@ -665,12 +665,26 @@ export type ClienteFormulario = {
 /** Confere empresa, cliente, viagem, veículo e motorista antes de enviar à SEFAZ. */
 export const prevalidarEmissao = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { tipo: "cte" | "mdfe"; empresaId?: string | null; viagemId?: string | null; fechamentoId?: string | null }) => ({
-    tipo: data?.tipo === "mdfe" ? ("mdfe" as const) : ("cte" as const),
-    empresaId: data?.empresaId ? String(data.empresaId) : null,
-    viagemId: data?.viagemId ? String(data.viagemId) : null,
-    fechamentoId: data?.fechamentoId ? String(data.fechamentoId) : null,
-  }))
+  .inputValidator(
+    (data: {
+      tipo: "cte" | "mdfe";
+      empresaId?: string | null;
+      viagemId?: string | null;
+      fechamentoId?: string | null;
+      cliente?: ClienteFormulario | null;
+    }) => ({
+      tipo: data?.tipo === "mdfe" ? ("mdfe" as const) : ("cte" as const),
+      empresaId: data?.empresaId ? String(data.empresaId) : null,
+      viagemId: data?.viagemId ? String(data.viagemId) : null,
+      fechamentoId: data?.fechamentoId ? String(data.fechamentoId) : null,
+      cliente: data?.cliente
+        ? (Object.fromEntries(
+            Object.entries(data.cliente).map(([k, v]) => [k, String(v ?? "").trim()]),
+          ) as Record<string, string>)
+        : null,
+    }),
+  )
+
   .handler(async ({ data, context }) => {
     const sb = context.supabase;
     const blocos: Bloco[] = [];
