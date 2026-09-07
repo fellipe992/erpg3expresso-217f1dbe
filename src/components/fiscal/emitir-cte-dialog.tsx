@@ -229,8 +229,21 @@ export function EmitirCteDialog({
     empresaId,
     viagemId: origem === "viagem" ? viagemId : null,
     fechamentoId: origem === "fechamento" ? fechamentoId : null,
+    // Dados digitados na tela contam na conferência (destinatário, com o tomador como reserva).
+    cliente: {
+      razao_social: destinatario.nome || tomador.nome,
+      cnpj_cpf: destinatario.inscricaoFederal || tomador.inscricaoFederal,
+      endereco: destinatario.endereco.logradouro || tomador.endereco.logradouro,
+      endereco_numero: destinatario.endereco.numero || tomador.endereco.numero,
+      bairro: destinatario.endereco.bairro || tomador.endereco.bairro,
+      cidade: destinatario.endereco.municipio || tomador.endereco.municipio,
+      uf: destinatario.endereco.uf || tomador.endereco.uf,
+      cep: destinatario.endereco.cep || tomador.endereco.cep,
+      telefone: destinatario.telefone || tomador.telefone,
+    },
     enabled: open,
   });
+
 
   const totalFrete = nnum(frete) + nnum(pedagio) + adicionais.reduce((s, a) => s + a.valor, 0);
 
