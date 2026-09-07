@@ -627,20 +627,40 @@ function checarEmpresa(c: Record<string, unknown> | null, tipo: "cte" | "mdfe"):
   };
 }
 
-function checarCliente(c: Record<string, unknown> | null): Bloco {
+function checarCliente(c: Record<string, unknown> | null, extra?: Record<string, string> | null): Bloco {
   const f: string[] = [];
-  if (!c) return { rotulo: "Cliente", nome: "—", faltando: ["vincule um cliente à viagem"] };
-  falta(txt(c["razao_social"]), "razão social", f);
-  falta(dig(c["cnpj_cpf"]).length >= 11, "CNPJ/CPF", f);
-  falta(txt(c["endereco"]), "logradouro", f);
-  falta(txt(c["endereco_numero"]), "número", f);
-  falta(txt(c["bairro"]), "bairro", f);
-  falta(txt(c["cidade"]), "cidade", f);
-  falta(txt(c["uf"]), "UF", f);
-  falta(dig(c["cep"]).length === 8, "CEP", f);
-  falta(dig(c["telefone"]).length >= 10, "telefone", f);
-  return { rotulo: "Cliente", nome: txt(c["razao_social"], 80) || "—", faltando: f };
+  if (!c && !extra) return { rotulo: "Cliente", nome: "—", faltando: ["vincule um cliente à viagem"] };
+  // Dados digitados na tela (destinatário/tomador) valem sobre o cadastro.
+  const base = { ...(c ?? {}) } as Record<string, unknown>;
+  Object.entries(extra ?? {}).forEach(([k, v]) => {
+    if (String(v ?? "").trim()) base[k] = v;
+  });
+  const cl = base;
+  falta(txt(cl["razao_social"]), "razão social", f);
+  falta(dig(cl["cnpj_cpf"]).length >= 11, "CNPJ/CPF", f);
+  falta(txt(cl["endereco"]), "logradouro", f);
+  falta(txt(cl["endereco_numero"]), "número", f);
+  falta(txt(cl["bairro"]), "bairro", f);
+  falta(txt(cl["cidade"]), "cidade", f);
+  falta(txt(cl["uf"]), "UF", f);
+  falta(dig(cl["cep"]).length === 8, "CEP", f);
+  falta(dig(cl["telefone"]).length >= 10, "telefone", f);
+  return { rotulo: "Cliente", nome: txt(cl["razao_social"], 80) || "—", faltando: f };
 }
+
+/** Campos do cliente digitados na tela, para não travar a emissão. */
+export type ClienteFormulario = {
+  razao_social?: string;
+  cnpj_cpf?: string;
+  endereco?: string;
+  endereco_numero?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+  cep?: string;
+  telefone?: string;
+};
+
 
 /** Confere empresa, cliente, viagem, veículo e motorista antes de enviar à SEFAZ. */
 export const prevalidarEmissao = createServerFn({ method: "POST" })
