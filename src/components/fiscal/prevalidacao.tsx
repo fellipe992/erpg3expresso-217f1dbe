@@ -4,19 +4,40 @@ import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 
 import { prevalidarEmissao } from "@/lib/fiscal.functions";
 
+type ClienteForm = {
+  razao_social?: string;
+  cnpj_cpf?: string;
+  endereco?: string;
+  endereco_numero?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+  cep?: string;
+  telefone?: string;
+};
+
 type Args = {
   tipo: "cte" | "mdfe";
   empresaId?: string | null;
   viagemId?: string | null;
   fechamentoId?: string | null;
+  /** Dados digitados na tela; substituem o cadastro do cliente na conferência. */
+  cliente?: ClienteForm | null;
   enabled?: boolean;
 };
 
 /** Consulta os campos fiscais obrigatórios que ainda faltam. */
-export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, enabled = true }: Args) {
+export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, cliente, enabled = true }: Args) {
   const validar = useServerFn(prevalidarEmissao);
   const q = useQuery({
-    queryKey: ["prevalidacao-fiscal", tipo, empresaId ?? "", viagemId ?? "", fechamentoId ?? ""],
+    queryKey: [
+      "prevalidacao-fiscal",
+      tipo,
+      empresaId ?? "",
+      viagemId ?? "",
+      fechamentoId ?? "",
+      JSON.stringify(cliente ?? {}),
+    ],
     enabled,
     staleTime: 0,
     queryFn: () =>
@@ -26,9 +47,11 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, enabl
           empresaId: empresaId ?? null,
           viagemId: viagemId ?? null,
           fechamentoId: fechamentoId ?? null,
+          cliente: cliente ?? null,
         },
       }),
   });
+
   return {
     carregando: q.isFetching,
     ok: q.data?.ok ?? false,
