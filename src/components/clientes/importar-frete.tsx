@@ -42,46 +42,112 @@ type LinhaImport = {
 
 const ativas = (t: Tipologia[]) => t.filter((x) => x.ativo);
 
-/** Grava faixas + preços na tabela do cliente/motorista, substituindo o conteúdo atual. */
+/**
+ * Grava faixas + preços na tabela do cliente/motorista, substituindo o conteúdo atual.
+ * Faixas já usadas em viagens não podem ser apagadas (histórico); elas são reaproveitadas.
+ */
 async function gravarTabela(clienteId: string, destino: FreteDestino, linhas: LinhaImport[]) {
   const tabelaId = await garantirTabela(clienteId, destino);
 
-  const atual = await supabase.from("frete_faixas").select("id").eq("tabela_id", tabelaId);
+  const atual = await supabase
+    .from("frete_faixas")
+    .select("id, km_min, km_max")
+    .eq("tabela_id", tabelaId)
+    .order("ordem");
   if (atual.error) throw atual.error;
-  if (atual.data?.length) {
-    const del = await supabase.from("frete_faixas").delete().eq("tabela_id", tabelaId);
+  const ids = (atual.data ?? []).map((f) => String(f.id));
+
+  let usadas: string[] = [];
+  if (ids.length) {
+    const vs = await supabase.from("viagens").select("frete_faixa_id").in("frete_faixa_id", ids);
+    if (vs.error) throw vs.error;
+    usadas = Array.from(new Set((vs.data ?? []).map((v) => String(v.frete_faixa_id)).filter(Boolean)));
+  }
+
+  const remover = ids.filter((id) => !usadas.includes(id));
+  if (remover.length) {
+    const del = await supabase.from("frete_faixas").delete().in("id", remover);
     if (del.error) throw del.error;
   }
 
-  const ins = await supabase
-    .from("frete_faixas")
-    .insert(
-      linhas.map((l, i) => ({
-        tabela_id: tabelaId,
-        km_min: l.km_min,
-        km_max: l.km_max,
-        descricao: l.descricao,
-        ordem: i + 1,
-      })),
-    )
-    .select("id, km_min, km_max");
-  if (ins.error) throw ins.error;
+  // Move as faixas preservadas para uma faixa temporária, evitando sobreposição durante a troca.
+  for (let i = 0; i < usadas.length; i++) {
+    const up = await supabase
+      .from("frete_faixas")
+      .update({ km_min: 900000 + i * 10, km_max: 900000 + i * 10 + 5 })
+      .eq("id", usadas[i]!);
+    if (up.error) throw up.error;
+  }
 
-  const criadas = ins.data ?? [];
+  const idPorLinha: Array<string | null> = linhas.map(() => null);
+
+  // Reaproveita as faixas preservadas nas novas linhas.
+  for (let i = 0; i < linhas.length && i < usadas.length; i++) {
+    const l = linhas[i]!;
+    const up = await supabase
+      .from("frete_faixas")
+      .update({ km_min: l.km_min, km_max: l.km_max, descricao: l.descricao, ordem: i + 1 })
+      .eq("id", usadas[i]!);
+    if (up.error) throw up.error;
+    const dp = await supabase.from("frete_precos").delete().eq("faixa_id", usadas[i]!);
+    if (dp.error) throw dp.error;
+    idPorLinha[i] = usadas[i]!;
+  }
+
+  // Sobras preservadas ficam guardadas acima da última faixa, sem conflitar.
+  const maiorKm = linhas.reduce((m, l) => Math.max(m, l.km_max), 0);
+  for (let i = linhas.length; i < usadas.length; i++) {
+    const base = maiorKm + 1 + (i - linhas.length) * 10;
+    const up = await supabase
+      .from("frete_faixas")
+      .update({
+        km_min: base,
+        km_max: base + 5,
+        descricao: "Faixa antiga (usada em viagens)",
+        ordem: 900 + i,
+      })
+      .eq("id", usadas[i]!);
+    if (up.error) throw up.error;
+  }
+
+  const novas = linhas.map((l, i) => ({ l, i })).filter(({ i }) => !idPorLinha[i]);
+  if (novas.length) {
+    const ins = await supabase
+      .from("frete_faixas")
+      .insert(
+        novas.map(({ l, i }) => ({
+          tabela_id: tabelaId,
+          km_min: l.km_min,
+          km_max: l.km_max,
+          descricao: l.descricao,
+          ordem: i + 1,
+        })),
+      )
+      .select("id, km_min, km_max");
+    if (ins.error) throw ins.error;
+    novas.forEach(({ l, i }) => {
+      const f = (ins.data ?? []).find(
+        (c) => Number(c.km_min) === l.km_min && Number(c.km_max) === l.km_max,
+      );
+      if (f) idPorLinha[i] = String(f.id);
+    });
+  }
+
   const precos: { faixa_id: string; tipologia_id: string; valor: number }[] = [];
-  linhas.forEach((l) => {
-    const f = criadas.find((c) => Number(c.km_min) === l.km_min && Number(c.km_max) === l.km_max);
-    if (!f) return;
+  linhas.forEach((l, i) => {
+    const faixaId = idPorLinha[i];
+    if (!faixaId) return;
     Object.entries(l.valores).forEach(([tipologia_id, valor]) => {
-      if (valor > 0) precos.push({ faixa_id: f.id, tipologia_id, valor });
+      if (valor > 0) precos.push({ faixa_id: faixaId, tipologia_id, valor });
     });
   });
   if (precos.length) {
     const pr = await supabase.from("frete_precos").upsert(precos, { onConflict: "faixa_id,tipologia_id" });
     if (pr.error) throw pr.error;
   }
-  return { faixas: criadas.length, precos: precos.length };
+  return { faixas: linhas.length, precos: precos.length };
 }
+
 
 /** Interpreta o texto do raio: "51 a 80", "80", "0-50". */
 function interpretarRaio(texto: string, anterior: number) {
