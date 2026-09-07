@@ -15,6 +15,22 @@ export type CnpjDados = {
 
 const so = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 
+/** Cache em memória (24h) para não estourar o limite das APIs públicas. */
+const cache = new Map<string, { dados: CnpjDados; ts: number }>();
+const TTL = 24 * 60 * 60 * 1000;
+const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Busca com uma nova tentativa quando o serviço responde 429 (limite de uso). */
+async function buscar(url: string) {
+  for (let tentativa = 0; tentativa < 2; tentativa++) {
+    const res = await fetch(url, { headers: { accept: "application/json" } });
+    if (res.status !== 429 || tentativa === 1) return res;
+    await espera(900);
+  }
+  throw new Error("indisponível");
+}
+
+
 /** Consulta dados públicos de um CNPJ na BrasilAPI (Receita Federal). */
 export const consultarCnpj = createServerFn({ method: "GET" })
   .inputValidator((data: { cnpj: string }) => {
