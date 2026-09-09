@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { aprovarParceiro, rejeitarParceiro } from "@/lib/parceiros.functions";
 import { PageShell } from "@/components/crud/page-shell";
+import { CompartilharTabelaParceiro } from "@/components/parceiros/compartilhar-tabela";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
