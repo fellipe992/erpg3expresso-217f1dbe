@@ -139,14 +139,17 @@ function ParceirosPage() {
       canAdd={false}
       onAdd={() => {}}
     >
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="pendente">Pendentes</TabsTrigger>
-          <TabsTrigger value="aprovado">Aprovados</TabsTrigger>
-          <TabsTrigger value="rejeitado">Rejeitados</TabsTrigger>
-          <TabsTrigger value="todos">Todos</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList>
+            <TabsTrigger value="pendente">Pendentes</TabsTrigger>
+            <TabsTrigger value="aprovado">Aprovados</TabsTrigger>
+            <TabsTrigger value="rejeitado">Rejeitados</TabsTrigger>
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <CompartilharTabelaParceiro />
+      </div>
 
       <Card>
         {isLoading ? (
