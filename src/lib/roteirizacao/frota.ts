@@ -49,7 +49,7 @@ const base = (
   categoria,
   capacidadeKg,
   capacidadeM3,
-  disponiveis: 3,
+  disponiveis: 0,
   velocidadeMediaKmh,
   eixos,
   custos: { ...CUSTOS_PADRAO, ...custos },
