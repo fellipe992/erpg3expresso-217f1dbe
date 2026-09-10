@@ -7,6 +7,7 @@ import { UserMenu } from "@/components/user-menu";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
 import { usePedidoPosicaoMotorista } from "@/hooks/use-pedido-posicao";
+import { useAlertaLocalizacaoMotorista } from "@/hooks/use-alerta-localizacao";
 import type { ReactNode } from "react";
 
 const tabs = [
@@ -21,6 +22,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   const location = useLocation();
   useMotoristaAutoTracking();
   usePedidoPosicaoMotorista();
+  useAlertaLocalizacaoMotorista();
   return (
     <div className="flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden bg-background">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/80 px-3 pt-safe backdrop-blur-md sm:px-4">

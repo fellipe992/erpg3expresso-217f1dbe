@@ -118,12 +118,31 @@ export function usePedidoPosicaoMotorista() {
       if (readHandled().includes(pedido.id)) return;
       markHandled(pedido.id);
 
+      // Avisa o motorista no aparelho ANTES de tentar o GPS: assim ele sabe do
+      // pedido mesmo quando a localização está desligada ou sem sinal.
+      void notifyLocal({
+        titulo: "A operação pediu sua localização",
+        mensagem: "Estamos enviando sua posição atual. Mantenha a localização ativa.",
+        categoria: "monitoramento",
+        prioridade: "alta",
+        tag: `pedido-recebido-${pedido.id}`,
+        link: "/app",
+      });
+
       const coords = await capturarPosicao();
       if (!coords) {
         void responderPedido(
           pedido.id,
           "Não foi possível obter o GPS agora (sinal ou permissão de localização).",
         );
+        void notifyLocal({
+          titulo: "Localização não pôde ser enviada",
+          mensagem: "Abra o app da G3 e permita o acesso à localização para responder a operação.",
+          categoria: "monitoramento",
+          prioridade: "alta",
+          tag: `pedido-falha-${pedido.id}`,
+          link: "/app",
+        });
         return;
       }
       if (pedido.viagem_id) {

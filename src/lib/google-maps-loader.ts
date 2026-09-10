@@ -142,3 +142,70 @@ export function truckIcon(color = "#F15A24"): google.maps.Symbol | google.maps.I
     anchor: new google.maps.Point(22, 22),
   };
 }
+
+/**
+ * Marcador com a foto do motorista: recorta a foto num círculo e aplica o anel
+ * laranja da marca. Devolve `null` quando a imagem não pode ser carregada — aí
+ * o mapa continua com o ícone do caminhão.
+ */
+export async function fotoMotoristaIcon(
+  fotoUrl: string,
+  color = "#F15A24",
+): Promise<google.maps.Icon | null> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("imagem indisponível"));
+      el.src = fotoUrl;
+    });
+
+    const size = 88; // 2x para telas retina
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    const raio = size / 2;
+    const borda = 6;
+
+    ctx.beginPath();
+    ctx.arc(raio, raio, raio - 1, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(raio, raio, raio - borda, 0, Math.PI * 2);
+    ctx.clip();
+    const lado = Math.min(img.width, img.height);
+    ctx.drawImage(
+      img,
+      (img.width - lado) / 2,
+      (img.height - lado) / 2,
+      lado,
+      lado,
+      borda,
+      borda,
+      size - borda * 2,
+      size - borda * 2,
+    );
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(raio, raio, raio - borda / 2 - 1, 0, Math.PI * 2);
+    ctx.lineWidth = borda;
+    ctx.strokeStyle = color;
+    ctx.stroke();
+
+    return {
+      url: canvas.toDataURL("image/png"),
+      scaledSize: new google.maps.Size(46, 46),
+      anchor: new google.maps.Point(23, 23),
+    };
+  } catch {
+    return null;
+  }
+}
