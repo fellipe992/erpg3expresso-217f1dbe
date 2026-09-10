@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
+import { Route as ApiPlacesRouteImport } from './routes/api/places'
 import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiGoogleMapsConfigRouteImport } from './routes/api/google-maps-config'
 import { Route as ApiAssistenteRouteImport } from './routes/api/assistente'
@@ -92,6 +93,11 @@ const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
 const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
   id: '/api/planejador-rota',
   path: '/api/planejador-rota',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlacesRoute = ApiPlacesRouteImport.update({
+  id: '/api/places',
+  path: '/api/places',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOtimizarRotaRoute = ApiOtimizarRotaRouteImport.update({
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -451,6 +459,7 @@ export interface FileRoutesById {
   '/api/assistente': typeof ApiAssistenteRoute
   '/api/google-maps-config': typeof ApiGoogleMapsConfigRoute
   '/api/otimizar-rota': typeof ApiOtimizarRotaRoute
+  '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/otimizar-rota'
+    | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/otimizar-rota'
+    | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/app/abastecimentos'
@@ -607,6 +618,7 @@ export interface FileRouteTypes {
     | '/api/assistente'
     | '/api/google-maps-config'
     | '/api/otimizar-rota'
+    | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
     | '/_authenticated/app/abastecimentos'
@@ -660,6 +672,7 @@ export interface RootRouteChildren {
   ApiAssistenteRoute: typeof ApiAssistenteRoute
   ApiGoogleMapsConfigRoute: typeof ApiGoogleMapsConfigRoute
   ApiOtimizarRotaRoute: typeof ApiOtimizarRotaRoute
+  ApiPlacesRoute: typeof ApiPlacesRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
@@ -715,6 +728,13 @@ declare module '@tanstack/react-router' {
       path: '/api/planejador-rota'
       fullPath: '/api/planejador-rota'
       preLoaderRoute: typeof ApiPlanejadorRotaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/places': {
+      id: '/api/places'
+      path: '/api/places'
+      fullPath: '/api/places'
+      preLoaderRoute: typeof ApiPlacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/otimizar-rota': {
@@ -1115,6 +1135,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAssistenteRoute: ApiAssistenteRoute,
   ApiGoogleMapsConfigRoute: ApiGoogleMapsConfigRoute,
   ApiOtimizarRotaRoute: ApiOtimizarRotaRoute,
+  ApiPlacesRoute: ApiPlacesRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,

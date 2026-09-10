@@ -1,10 +1,10 @@
-/// <reference types="google.maps" />
 import { useEffect, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { loadGoogleMaps } from "@/lib/google-maps-loader";
+import { buscarSugestoesEndereco, novoSessionToken } from "@/lib/places";
 import { cn } from "@/lib/utils";
 
 type Sugestao = { texto: string };
+
 
 export function LocalInput({
   value,
