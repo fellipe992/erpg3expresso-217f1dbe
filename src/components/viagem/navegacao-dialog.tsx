@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
+import { buscarSugestoesEndereco, detalhesEndereco, novoSessionToken } from "@/lib/places";
 
 type Props = {
   viagemId: string;
@@ -405,18 +406,15 @@ function NavegacaoDialog({
   }, [gmaps, query, origin, destinationLabel]);
 
   const selectSuggestion = async (s: Suggestion) => {
-    if (!gmaps) return;
     setSuggestions([]);
     setQuery(s.text);
     setDestinationLabel(s.text);
     try {
-      const { Place } = (await gmaps.maps.importLibrary("places")) as google.maps.PlacesLibrary;
-      const place = new Place({ id: s.placeId });
-      await place.fetchFields({ fields: ["location", "displayName", "formattedAddress"] });
-      if (place.location) {
-        setDestination({ lat: place.location.lat(), lng: place.location.lng() });
+      const detalhe = await detalhesEndereco(s.placeId, sessionTokenRef.current ?? undefined);
+      if (detalhe.lat != null && detalhe.lng != null) {
+        setDestination({ lat: detalhe.lat, lng: detalhe.lng });
       }
-      sessionTokenRef.current = new gmaps.maps.places.AutocompleteSessionToken();
+      sessionTokenRef.current = novoSessionToken();
     } catch {
       toast.error("Não foi possível carregar o destino");
     }
