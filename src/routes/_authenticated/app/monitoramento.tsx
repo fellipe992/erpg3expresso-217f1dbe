@@ -312,6 +312,17 @@ function MonitoramentoPage() {
       } else {
         marker.setPosition(pos);
       }
+
+      // Motorista com foto de perfil → marcador com a foto; sem foto,
+      // permanece o ícone do caminhão.
+      const foto = v.motorista?.foto ? fotoUrls[v.motorista.foto] : undefined;
+      if (foto && fotoIconsRef.current[v.id] !== foto) {
+        const alvo = marker;
+        fotoIconsRef.current[v.id] = foto;
+        void fotoMotoristaIcon(foto).then((icon) => {
+          if (icon && markersRef.current[v.id] === alvo) alvo.setIcon(icon);
+        });
+      }
     }
 
     if (has && !mapHasBeenFitRef.current) {
@@ -319,9 +330,11 @@ function MonitoramentoPage() {
       if (viagens.length === 1) map.setZoom(13);
       mapHasBeenFitRef.current = true;
     }
-  }, [viagens, locsByViagem]);
+  }, [viagens, locsByViagem, fotoUrls]);
 
   const mapHasBeenFitRef = useRef(false);
+  const fotoIconsRef = useRef<Record<string, string>>({});
+
 
   function openInfoWindow(v: ViagemAtiva, l: Loc) {
     const map = mapRef.current;
