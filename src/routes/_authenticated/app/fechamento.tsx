@@ -135,7 +135,7 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-3 p-3 md:grid-cols-5 md:items-end">
+      <Card className="grid grid-cols-2 gap-3 p-3 md:grid-cols-5 md:items-end">
         <div className="space-y-1.5">
           <Label className="text-xs">De</Label>
           <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} />
@@ -182,7 +182,7 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
         </div>
       </Card>
 
-      <Card className="overflow-x-auto">
+      <Card className="max-w-full overflow-x-auto">
         {isLoading ? (
           <div className="grid place-items-center p-10"><Loader2 className="size-5 animate-spin text-brand" /></div>
         ) : linhas.length === 0 ? (
@@ -477,7 +477,7 @@ function Historico() {
 
   return (
     <>
-      <Card className="overflow-x-auto">
+      <Card className="max-w-full overflow-x-auto">
         <table className="w-full min-w-[860px] text-sm">
           <thead>
             <tr className="border-b border-border/60 bg-muted/40 text-left">

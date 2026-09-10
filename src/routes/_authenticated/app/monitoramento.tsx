@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
+import { fotoMotoristaIcon, loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,7 @@ type ViagemAtiva = {
   data_saida: string | null;
   km_inicial: number | null;
   cliente: { razao_social: string | null } | null;
-  motorista: { id: string; nome: string; telefone: string | null } | null;
+  motorista: { id: string; nome: string; telefone: string | null; foto: string | null } | null;
   veiculo: {
     id: string;
     placa: string;
@@ -137,7 +137,12 @@ function MonitoramentoPage() {
         km_inicial: r.km_inicial,
         cliente: { razao_social: r.cliente_nome },
         motorista: r.motorista_id
-          ? { id: r.motorista_id, nome: r.motorista_nome ?? "—", telefone: r.motorista_telefone }
+          ? {
+              id: r.motorista_id,
+              nome: r.motorista_nome ?? "—",
+              telefone: r.motorista_telefone,
+              foto: r.motorista_foto ?? null,
+            }
           : null,
         veiculo: r.veiculo_id
           ? {
@@ -190,6 +195,37 @@ function MonitoramentoPage() {
       return map;
     },
   });
+
+  // Fotos de perfil dos motoristas (para o marcador no mapa).
+  const fotosKey = viagens
+    .map((v) => v.motorista?.foto ?? "")
+    .filter(Boolean)
+    .sort()
+    .join(",");
+
+  const { data: fotoUrls = {} } = useQuery<Record<string, string>>({
+    queryKey: ["monitoramento-fotos", fotosKey],
+    enabled: allowed && fotosKey.length > 0,
+    staleTime: 50 * 60_000,
+    queryFn: async () => {
+      const paths = Array.from(new Set(fotosKey.split(",").filter(Boolean)));
+      const externas: Record<string, string> = {};
+      const internas = paths.filter((p) => {
+        if (p.startsWith("http")) {
+          externas[p] = p;
+          return false;
+        }
+        return true;
+      });
+      if (internas.length === 0) return externas;
+      const { data } = await supabase.storage.from("avatars").createSignedUrls(internas, 3600);
+      for (const item of data ?? []) {
+        if (item.path && item.signedUrl) externas[item.path] = item.signedUrl;
+      }
+      return externas;
+    },
+  });
+
 
   // Realtime — invalida ao receber novas posições ou mudanças de status.
   useEffect(() => {
@@ -276,6 +312,17 @@ function MonitoramentoPage() {
       } else {
         marker.setPosition(pos);
       }
+
+      // Motorista com foto de perfil → marcador com a foto; sem foto,
+      // permanece o ícone do caminhão.
+      const foto = v.motorista?.foto ? fotoUrls[v.motorista.foto] : undefined;
+      if (foto && fotoIconsRef.current[v.id] !== foto) {
+        const alvo = marker;
+        fotoIconsRef.current[v.id] = foto;
+        void fotoMotoristaIcon(foto).then((icon) => {
+          if (icon && markersRef.current[v.id] === alvo) alvo.setIcon(icon);
+        });
+      }
     }
 
     if (has && !mapHasBeenFitRef.current) {
@@ -283,9 +330,11 @@ function MonitoramentoPage() {
       if (viagens.length === 1) map.setZoom(13);
       mapHasBeenFitRef.current = true;
     }
-  }, [viagens, locsByViagem]);
+  }, [viagens, locsByViagem, fotoUrls]);
 
   const mapHasBeenFitRef = useRef(false);
+  const fotoIconsRef = useRef<Record<string, string>>({});
+
 
   function openInfoWindow(v: ViagemAtiva, l: Loc) {
     const map = mapRef.current;

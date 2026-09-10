@@ -28,8 +28,8 @@ export const CATEGORIAS: { value: NotifCategoria; label: string }[] = [
   { value: "sistema", label: "Sistema" },
 ];
 
-const BRAND_COLOR = "#F15A24";
-const CHANNEL_ALTA = "g3-prioritarias";
+export const BRAND_COLOR = "#F15A24";
+export const CHANNEL_ALTA = "g3-prioritarias";
 const CHANNEL_GERAL = "g3-geral";
 
 let channelsReady = false;
