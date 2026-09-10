@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
+import { fotoMotoristaIcon, loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,7 @@ type ViagemAtiva = {
   data_saida: string | null;
   km_inicial: number | null;
   cliente: { razao_social: string | null } | null;
-  motorista: { id: string; nome: string; telefone: string | null } | null;
+  motorista: { id: string; nome: string; telefone: string | null; foto: string | null } | null;
   veiculo: {
     id: string;
     placa: string;
@@ -137,7 +137,12 @@ function MonitoramentoPage() {
         km_inicial: r.km_inicial,
         cliente: { razao_social: r.cliente_nome },
         motorista: r.motorista_id
-          ? { id: r.motorista_id, nome: r.motorista_nome ?? "—", telefone: r.motorista_telefone }
+          ? {
+              id: r.motorista_id,
+              nome: r.motorista_nome ?? "—",
+              telefone: r.motorista_telefone,
+              foto: r.motorista_foto ?? null,
+            }
           : null,
         veiculo: r.veiculo_id
           ? {
