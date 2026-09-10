@@ -3344,6 +3344,7 @@ export type Database = {
           destino_uf: string
           id: string
           km_inicial: number
+          motorista_foto: string
           motorista_id: string
           motorista_nome: string
           motorista_telefone: string
