@@ -241,7 +241,7 @@ function ListaDocumentos({ tipo }: { tipo: TipoDocumentoFiscal }) {
         </div>
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card className="max-w-full overflow-x-auto">
         {isLoading ? (
           <div className="grid place-items-center p-10">
             <Loader2 className="size-5 animate-spin text-brand" />
@@ -451,7 +451,7 @@ function ListaCiots() {
         </Button>
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card className="max-w-full overflow-x-auto">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 p-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Carregando...
