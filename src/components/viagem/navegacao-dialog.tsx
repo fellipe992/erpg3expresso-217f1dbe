@@ -389,30 +389,12 @@ function NavegacaoDialog({
     const handle = setTimeout(async () => {
       setSearching(true);
       try {
-        const { AutocompleteSuggestion } = (await gmaps.maps.importLibrary(
-          "places",
-        )) as google.maps.PlacesLibrary;
-        const req: google.maps.places.AutocompleteRequest = {
-          input: query,
-          sessionToken: sessionTokenRef.current ?? undefined,
-          region: "br",
-          language: "pt-BR",
-        };
-        if (origin) {
-          req.locationBias = new gmaps.maps.Circle({ center: origin, radius: 200_000 });
-        }
-        const { suggestions: results } =
-          await AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
-        setSuggestions(
-          results
-            .map((s) => {
-              const p = s.placePrediction;
-              if (!p) return null;
-              return { placeId: p.placeId, text: p.text?.toString() ?? "" } as Suggestion;
-            })
-            .filter((x): x is Suggestion => !!x)
-            .slice(0, 6),
-        );
+        if (!sessionTokenRef.current) sessionTokenRef.current = novoSessionToken();
+        const sugs = await buscarSugestoesEndereco(query, {
+          sessionToken: sessionTokenRef.current,
+          bias: origin ?? undefined,
+        });
+        setSuggestions(sugs.map((s) => ({ placeId: s.placeId, text: s.texto })));
       } catch {
         // ignora falhas transitórias
       } finally {
