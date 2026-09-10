@@ -15,12 +15,11 @@ export const Route = createFileRoute("/_authenticated")({
     // Sessão persistente: só manda para /auth quando NÃO existe sessão salva
     // no aparelho. Falha de rede / token vencido não desloga o motorista —
     // o Supabase renova o token sozinho assim que a internet volta.
+    // getSession() já renova o token quando necessário, uma única vez, dentro
+    // do próprio SDK. Chamar refreshSession() aqui criava corrida entre abas /
+    // navegações e derrubava a sessão ("refresh token já utilizado").
     const { data: sessionData } = await supabase.auth.getSession();
-    let session = sessionData.session;
-    if (!session) {
-      const { data: refreshed } = await supabase.auth.refreshSession().catch(() => ({ data: { session: null } }) as never);
-      session = refreshed?.session ?? null;
-    }
+    const session = sessionData.session;
     if (!session) throw redirect({ to: "/auth" });
     return { user: session.user };
   },

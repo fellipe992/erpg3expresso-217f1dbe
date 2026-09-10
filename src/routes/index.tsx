@@ -4,15 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: async () => {
+    // O SDK do Supabase renova o token sozinho (autoRefreshToken) e serializa
+    // as chamadas — não pedimos renovação manual aqui para não disputar o
+    // mesmo refresh token e derrubar a sessão.
     const { data } = await supabase.auth.getSession();
-    let session = data.session;
-    if (!session) {
-      const { data: refreshed } = await supabase.auth
-        .refreshSession()
-        .catch(() => ({ data: { session: null } }) as never);
-      session = refreshed?.session ?? null;
-    }
-    throw redirect({ to: session ? "/app" : "/auth" });
+    throw redirect({ to: data.session ? "/app" : "/auth" });
   },
   component: () => null,
 });

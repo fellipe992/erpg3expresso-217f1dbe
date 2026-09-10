@@ -46,28 +46,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Revalida/renova o token ao voltar para o app ou reconectar à internet.
-  // Evita "sessão expirada" após o celular ficar horas em segundo plano.
+  // Revalida a sessão ao voltar para o app ou reconectar à internet.
+  // Usamos apenas getSession(): o próprio SDK renova o token quando está perto
+  // de vencer e serializa as chamadas. Chamar refreshSession() em paralelo
+  // (foco, online, navegação) gerava "refresh token já utilizado" e deslogava.
   useEffect(() => {
     const revalidate = () => {
       if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
       if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-      void supabase.auth.getSession().then(({ data }) => {
-        if (data.session) return;
-        // Sessão local perdida por falha de renovação: tenta reerguer.
-        void supabase.auth.refreshSession().catch(() => {});
-      });
-    };
-    const onOnline = () => {
-      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
-      void supabase.auth.refreshSession().catch(() => {});
+      void supabase.auth.getSession().catch(() => {});
     };
     document.addEventListener("visibilitychange", revalidate);
-    window.addEventListener("online", onOnline);
+    window.addEventListener("online", revalidate);
     window.addEventListener("focus", revalidate);
     return () => {
       document.removeEventListener("visibilitychange", revalidate);
-      window.removeEventListener("online", onOnline);
+      window.removeEventListener("online", revalidate);
       window.removeEventListener("focus", revalidate);
     };
   }, []);

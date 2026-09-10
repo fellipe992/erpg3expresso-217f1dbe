@@ -51,11 +51,12 @@ async function gravarTabela(clienteId: string, destino: FreteDestino, linhas: Li
 
   const atual = await supabase
     .from("frete_faixas")
-    .select("id, km_min, km_max")
+    .select("id, km_min, km_max, descricao")
     .eq("tabela_id", tabelaId)
     .order("ordem");
   if (atual.error) throw atual.error;
-  const ids = (atual.data ?? []).map((f) => String(f.id));
+  const faixasAtuais = atual.data ?? [];
+  const ids = faixasAtuais.map((f) => String(f.id));
 
   let usadas: string[] = [];
   if (ids.length) {
@@ -70,46 +71,28 @@ async function gravarTabela(clienteId: string, destino: FreteDestino, linhas: Li
     if (del.error) throw del.error;
   }
 
-  // Move as faixas preservadas para uma faixa temporária, evitando sobreposição durante a troca.
+  // Faixas já usadas em viagens NÃO são reescritas: mantêm o rótulo e os preços
+  // originais (histórico intacto) e saem do intervalo ativo para não conflitar
+  // com as novas faixas importadas.
   for (let i = 0; i < usadas.length; i++) {
+    const id = usadas[i]!;
+    const orig = faixasAtuais.find((f) => String(f.id) === id);
+    const rotulo = orig
+      ? rotuloFaixa({ km_min: Number(orig.km_min), km_max: Number(orig.km_max), descricao: orig.descricao })
+      : "Faixa antiga";
     const up = await supabase
       .from("frete_faixas")
-      .update({ km_min: 900000 + i * 10, km_max: 900000 + i * 10 + 5 })
-      .eq("id", usadas[i]!);
+      .update({
+        km_min: 900000 + i * 10,
+        km_max: 900000 + i * 10 + 5,
+        descricao: `${rotulo} (histórico)`,
+        ordem: 900 + i,
+      })
+      .eq("id", id);
     if (up.error) throw up.error;
   }
 
   const idPorLinha: Array<string | null> = linhas.map(() => null);
-
-  // Reaproveita as faixas preservadas nas novas linhas.
-  for (let i = 0; i < linhas.length && i < usadas.length; i++) {
-    const l = linhas[i]!;
-    const up = await supabase
-      .from("frete_faixas")
-      .update({ km_min: l.km_min, km_max: l.km_max, descricao: l.descricao, ordem: i + 1 })
-      .eq("id", usadas[i]!);
-    if (up.error) throw up.error;
-    const dp = await supabase.from("frete_precos").delete().eq("faixa_id", usadas[i]!);
-    if (dp.error) throw dp.error;
-    idPorLinha[i] = usadas[i]!;
-  }
-
-  // Sobras preservadas ficam guardadas acima da última faixa, sem conflitar.
-  const maiorKm = linhas.reduce((m, l) => Math.max(m, l.km_max), 0);
-  for (let i = linhas.length; i < usadas.length; i++) {
-    const base = maiorKm + 1 + (i - linhas.length) * 10;
-    const up = await supabase
-      .from("frete_faixas")
-      .update({
-        km_min: base,
-        km_max: base + 5,
-        descricao: "Faixa antiga (usada em viagens)",
-        ordem: 900 + i,
-      })
-      .eq("id", usadas[i]!);
-    if (up.error) throw up.error;
-  }
-
   const novas = linhas.map((l, i) => ({ l, i })).filter(({ i }) => !idPorLinha[i]);
   if (novas.length) {
     const ins = await supabase

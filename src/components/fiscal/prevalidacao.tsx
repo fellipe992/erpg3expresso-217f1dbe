@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 
 import { prevalidarEmissao } from "@/lib/fiscal.functions";
@@ -29,6 +30,16 @@ type Args = {
 /** Consulta os campos fiscais obrigatórios que ainda faltam. */
 export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, cliente, enabled = true }: Args) {
   const validar = useServerFn(prevalidarEmissao);
+
+  // Enquanto o usuário digita, aguardamos 600 ms antes de conferir de novo —
+  // assim a tela não trava e o botão "Emitir" não pisca a cada caractere.
+  const clienteJson = JSON.stringify(cliente ?? {});
+  const [clienteDebounced, setClienteDebounced] = useState(clienteJson);
+  useEffect(() => {
+    const t = setTimeout(() => setClienteDebounced(clienteJson), 600);
+    return () => clearTimeout(t);
+  }, [clienteJson]);
+
   const q = useQuery({
     queryKey: [
       "prevalidacao-fiscal",
@@ -36,10 +47,11 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, clien
       empresaId ?? "",
       viagemId ?? "",
       fechamentoId ?? "",
-      JSON.stringify(cliente ?? {}),
+      clienteDebounced,
     ],
     enabled,
-    staleTime: 0,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
     queryFn: () =>
       validar({
         data: {
@@ -47,13 +59,13 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, clien
           empresaId: empresaId ?? null,
           viagemId: viagemId ?? null,
           fechamentoId: fechamentoId ?? null,
-          cliente: cliente ?? null,
+          cliente: (clienteDebounced ? (JSON.parse(clienteDebounced) as ClienteForm) : null) ?? null,
         },
       }),
   });
 
   return {
-    carregando: q.isFetching,
+    carregando: q.isPending,
     ok: q.data?.ok ?? false,
     pendencias: q.data?.pendencias ?? [],
     erro: q.error instanceof Error ? q.error.message : null,
