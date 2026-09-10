@@ -177,7 +177,7 @@ function NavegacaoDialog({
       fullscreenControl: true,
     });
     dirServiceRef.current = new gmaps.maps.DirectionsService();
-    sessionTokenRef.current = new gmaps.maps.places.AutocompleteSessionToken();
+    sessionTokenRef.current = novoSessionToken();
   }, [gmaps]);
 
   // Última localização conhecida (inicial)
