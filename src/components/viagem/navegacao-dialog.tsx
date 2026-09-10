@@ -111,7 +111,7 @@ function NavegacaoDialog({
   const renderersRef = useRef<google.maps.DirectionsRenderer[]>([]);
   const dirServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const truckMarkerRef = useRef<google.maps.Marker | null>(null);
-  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [gmaps, setGmaps] = useState<typeof google | null>(null);
