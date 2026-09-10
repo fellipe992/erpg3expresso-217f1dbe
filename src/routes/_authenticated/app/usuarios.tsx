@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Users, KeyRound, Loader2, Pencil } from "lucide-react";
+import { Users, KeyRound, Loader2, Pencil, Eye } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,6 +24,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { createUser, resetUserPassword, updateUser } from "@/lib/users.functions";
+import { PerfilUsuarioDialog } from "@/components/usuarios/perfil-usuario-dialog";
 
 export const Route = createFileRoute("/_authenticated/app/usuarios")({
   head: () => ({ meta: [{ title: "Usuários — G3 Expresso" }] }),
@@ -39,6 +40,7 @@ type Row = {
   nome: string;
   telefone: string | null;
   ativo: boolean;
+  avatar_url: string | null;
   role: Role | null;
   motorista_id: string | null;
   motorista_nome: string | null;
@@ -53,6 +55,7 @@ function UsuariosPage() {
   const [openNew, setOpenNew] = useState(false);
   const [openEdit, setOpenEdit] = useState<Row | null>(null);
   const [openPwd, setOpenPwd] = useState<Row | null>(null);
+  const [openView, setOpenView] = useState<Row | null>(null);
 
   const createFn = useServerFn(createUser);
   const updateFn = useServerFn(updateUser);
@@ -64,7 +67,7 @@ function UsuariosPage() {
     queryFn: async () => {
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, email, nome, telefone, ativo")
+        .select("id, email, nome, telefone, ativo, avatar_url")
         .order("nome");
       if (error) throw error;
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
@@ -361,6 +364,9 @@ function UsuariosPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => setOpenView(r)} title="Ver perfil">
+                      <Eye className="size-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => startEdit(r)} title="Editar">
                       <Pencil className="size-4" />
                     </Button>
@@ -374,6 +380,9 @@ function UsuariosPage() {
           </Table>
         )}
       </Card>
+
+      <PerfilUsuarioDialog alvo={openView} onClose={() => setOpenView(null)} />
+
 
       {/* Novo usuário */}
       <Dialog open={openNew} onOpenChange={setOpenNew}>
