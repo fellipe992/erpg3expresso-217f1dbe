@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { loadGoogleMaps, truckIcon } from "@/lib/google-maps-loader";
+import { buscarSugestoesEndereco, detalhesEndereco, novoSessionToken } from "@/lib/places";
 
 type Props = {
   viagemId: string;
@@ -110,7 +111,7 @@ function NavegacaoDialog({
   const renderersRef = useRef<google.maps.DirectionsRenderer[]>([]);
   const dirServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const truckMarkerRef = useRef<google.maps.Marker | null>(null);
-  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const sessionTokenRef = useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [gmaps, setGmaps] = useState<typeof google | null>(null);
@@ -176,7 +177,7 @@ function NavegacaoDialog({
       fullscreenControl: true,
     });
     dirServiceRef.current = new gmaps.maps.DirectionsService();
-    sessionTokenRef.current = new gmaps.maps.places.AutocompleteSessionToken();
+    sessionTokenRef.current = novoSessionToken();
   }, [gmaps]);
 
   // Última localização conhecida (inicial)
@@ -389,30 +390,12 @@ function NavegacaoDialog({
     const handle = setTimeout(async () => {
       setSearching(true);
       try {
-        const { AutocompleteSuggestion } = (await gmaps.maps.importLibrary(
-          "places",
-        )) as google.maps.PlacesLibrary;
-        const req: google.maps.places.AutocompleteRequest = {
-          input: query,
-          sessionToken: sessionTokenRef.current ?? undefined,
-          region: "br",
-          language: "pt-BR",
-        };
-        if (origin) {
-          req.locationBias = new gmaps.maps.Circle({ center: origin, radius: 200_000 });
-        }
-        const { suggestions: results } =
-          await AutocompleteSuggestion.fetchAutocompleteSuggestions(req);
-        setSuggestions(
-          results
-            .map((s) => {
-              const p = s.placePrediction;
-              if (!p) return null;
-              return { placeId: p.placeId, text: p.text?.toString() ?? "" } as Suggestion;
-            })
-            .filter((x): x is Suggestion => !!x)
-            .slice(0, 6),
-        );
+        if (!sessionTokenRef.current) sessionTokenRef.current = novoSessionToken();
+        const sugs = await buscarSugestoesEndereco(query, {
+          sessionToken: sessionTokenRef.current,
+          bias: origin ?? undefined,
+        });
+        setSuggestions(sugs.map((s) => ({ placeId: s.placeId, text: s.texto })));
       } catch {
         // ignora falhas transitórias
       } finally {
@@ -423,18 +406,15 @@ function NavegacaoDialog({
   }, [gmaps, query, origin, destinationLabel]);
 
   const selectSuggestion = async (s: Suggestion) => {
-    if (!gmaps) return;
     setSuggestions([]);
     setQuery(s.text);
     setDestinationLabel(s.text);
     try {
-      const { Place } = (await gmaps.maps.importLibrary("places")) as google.maps.PlacesLibrary;
-      const place = new Place({ id: s.placeId });
-      await place.fetchFields({ fields: ["location", "displayName", "formattedAddress"] });
-      if (place.location) {
-        setDestination({ lat: place.location.lat(), lng: place.location.lng() });
+      const detalhe = await detalhesEndereco(s.placeId, sessionTokenRef.current ?? undefined);
+      if (detalhe.lat != null && detalhe.lng != null) {
+        setDestination({ lat: detalhe.lat, lng: detalhe.lng });
       }
-      sessionTokenRef.current = new gmaps.maps.places.AutocompleteSessionToken();
+      sessionTokenRef.current = novoSessionToken();
     } catch {
       toast.error("Não foi possível carregar o destino");
     }

@@ -1,10 +1,10 @@
-/// <reference types="google.maps" />
 import { useEffect, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { loadGoogleMaps } from "@/lib/google-maps-loader";
+import { buscarSugestoesEndereco, novoSessionToken } from "@/lib/places";
 import { cn } from "@/lib/utils";
 
 type Sugestao = { texto: string };
+
 
 export function LocalInput({
   value,
@@ -33,21 +33,11 @@ export function LocalInput({
     }
     timerRef.current = setTimeout(async () => {
       try {
-        await loadGoogleMaps();
-        const { AutocompleteSuggestion, AutocompleteSessionToken } =
-          (await google.maps.importLibrary("places")) as google.maps.PlacesLibrary;
-        if (!tokenRef.current) tokenRef.current = new AutocompleteSessionToken();
-        const { suggestions } = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
-          input: texto,
-          sessionToken: tokenRef.current as google.maps.places.AutocompleteSessionToken,
-          includedRegionCodes: ["br"],
-          language: "pt-BR",
+        if (!tokenRef.current) tokenRef.current = novoSessionToken();
+        const sugs = await buscarSugestoesEndereco(texto, {
+          sessionToken: tokenRef.current as string,
         });
-        setSugestoes(
-          suggestions
-            .map((s) => ({ texto: s.placePrediction?.text?.toString() ?? "" }))
-            .filter((s) => s.texto),
-        );
+        setSugestoes(sugs.map((s) => ({ texto: s.texto })));
         setAberto(true);
       } catch {
         setSugestoes([]);
