@@ -381,6 +381,9 @@ function UsuariosPage() {
         )}
       </Card>
 
+      <PerfilUsuarioDialog alvo={openView} onClose={() => setOpenView(null)} />
+
+
       {/* Novo usuário */}
       <Dialog open={openNew} onOpenChange={setOpenNew}>
         <DialogContent className="max-w-lg">
