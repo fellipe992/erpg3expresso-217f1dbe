@@ -196,6 +196,37 @@ function MonitoramentoPage() {
     },
   });
 
+  // Fotos de perfil dos motoristas (para o marcador no mapa).
+  const fotosKey = viagens
+    .map((v) => v.motorista?.foto ?? "")
+    .filter(Boolean)
+    .sort()
+    .join(",");
+
+  const { data: fotoUrls = {} } = useQuery<Record<string, string>>({
+    queryKey: ["monitoramento-fotos", fotosKey],
+    enabled: allowed && fotosKey.length > 0,
+    staleTime: 50 * 60_000,
+    queryFn: async () => {
+      const paths = Array.from(new Set(fotosKey.split(",").filter(Boolean)));
+      const externas: Record<string, string> = {};
+      const internas = paths.filter((p) => {
+        if (p.startsWith("http")) {
+          externas[p] = p;
+          return false;
+        }
+        return true;
+      });
+      if (internas.length === 0) return externas;
+      const { data } = await supabase.storage.from("avatars").createSignedUrls(internas, 3600);
+      for (const item of data ?? []) {
+        if (item.path && item.signedUrl) externas[item.path] = item.signedUrl;
+      }
+      return externas;
+    },
+  });
+
+
   // Realtime — invalida ao receber novas posições ou mudanças de status.
   useEffect(() => {
     if (!allowed) return;
