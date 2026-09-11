@@ -33,6 +33,8 @@ export function useAlertaLocalizacaoMotorista() {
   const viagensRef = useRef<ViagemAlvo[]>([]);
   const aguardandoRedeRef = useRef(false);
   const ultimoAvisoRef = useRef(0);
+  /** Início da viagem em andamento mais recente (ms) — dá carência ao primeiro sinal. */
+  const inicioMaisRecenteRef = useRef<number | null>(null);
   const busyRef = useRef(false);
 
   useEffect(() => {
