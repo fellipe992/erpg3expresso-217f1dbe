@@ -484,6 +484,49 @@ function MonitoramentoPage() {
     });
   }, [viagens, search]);
 
+  // Relógio para reavaliar o tempo sem posição mesmo sem novas posições.
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setAgora(Date.now()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  /** Viagens em andamento há mais de 20 minutos sem nenhuma posição nova. */
+  const atrasadas = useMemo(() => {
+    return viagens
+      .map((v) => {
+        const l = locsByViagem[v.id];
+        const ref = l?.created_at ?? v.data_saida;
+        if (!ref) return null;
+        const ms = agora - new Date(ref).getTime();
+        if (!Number.isFinite(ms) || ms <= SEM_POSICAO_ALERTA_MS) return null;
+        return { viagem: v, ms };
+      })
+      .filter((x): x is { viagem: ViagemAtiva; ms: number } => x !== null)
+      .sort((a, b) => b.ms - a.ms);
+  }, [viagens, locsByViagem, agora]);
+
+  const atrasadasIds = useMemo(() => new Set(atrasadas.map((a) => a.viagem.id)), [atrasadas]);
+
+  // Cobrança automática: pede a posição ao celular do motorista a cada 10 min
+  // enquanto a viagem seguir sem atualização.
+  const ultimaCobrancaRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    if (!allowed || isMonitor || atrasadas.length === 0) return;
+    for (const { viagem } of atrasadas) {
+      const ultima = ultimaCobrancaRef.current[viagem.id] ?? 0;
+      if (Date.now() - ultima < COBRANCA_INTERVALO_MS) continue;
+      ultimaCobrancaRef.current[viagem.id] = Date.now();
+      void criarPedidoPosicao({
+        viagemId: viagem.id,
+        motoristaId: viagem.motorista?.id ?? null,
+        veiculoId: viagem.veiculo?.id ?? null,
+        placa: viagem.veiculo?.placa ?? null,
+      }).catch(() => undefined);
+    }
+  }, [allowed, isMonitor, atrasadas]);
+
+
   if (!allowed) {
     return (
       <div className="p-6">
