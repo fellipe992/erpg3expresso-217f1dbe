@@ -78,9 +78,22 @@ const subtituloDe = (d: DetalheFechamento) =>
     d.fechamento.periodo_inicio,
   )} a ${dt(d.fechamento.periodo_fim)} • ${d.linhas.length} viagem(ns)`;
 
+/** Nome do arquivo: fechamento, nome do beneficiário e período mostrados na tela. */
+const nomeArquivoDe = (d: DetalheFechamento) => {
+  const quem = d.fechamento.cliente?.razao_social ?? d.fechamento.motorista?.nome ?? "";
+  const slug = quem
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toUpperCase();
+  const per = `${dt(d.fechamento.periodo_inicio)}_a_${dt(d.fechamento.periodo_fim)}`.replace(/\//g, "-");
+  return ["fechamento", String(d.fechamento.numero), slug, per].filter(Boolean).join("-");
+};
+
 export function baixarPdfFechamento(d: DetalheFechamento) {
   exportarPdf({
-    nomeArquivo: `fechamento-${d.fechamento.numero}`,
+    nomeArquivo: nomeArquivoDe(d),
     titulo: tituloDe(d),
     subtitulo: subtituloDe(d),
     kpis: [
