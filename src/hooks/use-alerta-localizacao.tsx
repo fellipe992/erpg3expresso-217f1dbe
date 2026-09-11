@@ -107,7 +107,19 @@ export function useAlertaLocalizacaoMotorista() {
           return;
         }
 
-        const critico = idade > CRITICO_MS;
+        // Viagem que acabou de começar: tenta pegar o primeiro ponto em
+        // silêncio, sem alarmar o motorista antes da carência.
+        const inicio = inicioMaisRecenteRef.current;
+        const desdeInicio = inicio === null ? Number.POSITIVE_INFINITY : Date.now() - inicio;
+        const referencia = Math.min(idade, desdeInicio);
+        if (referencia <= SEM_POSICAO_MS) {
+          aguardandoRedeRef.current = false;
+          await cancelarLembretesGps();
+          await capturarEGravar(viagens);
+          return;
+        }
+
+        const critico = referencia > CRITICO_MS;
         aguardandoRedeRef.current = critico;
 
         if (Date.now() - ultimoAvisoRef.current > AVISO_INTERVALO_MS) {
