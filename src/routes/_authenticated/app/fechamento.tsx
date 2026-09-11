@@ -579,7 +579,7 @@ function Historico() {
             </tr>
           </thead>
           <tbody>
-            {data.map((f) => (
+            {filtrados.map((f) => (
               <tr key={f.id} className="border-b border-border/40 last:border-0">
                 <td className="px-3 py-2 font-mono">#{f.numero}</td>
                 <td className="px-3 py-2">{f.tipo === "cliente" ? "Cliente" : "Motorista"}</td>
@@ -613,7 +613,9 @@ function Historico() {
           </tbody>
         </table>
       </Card>
+      )}
       <RelatorioFechamentoDialog fechamentoId={detalhe} open={!!detalhe} onOpenChange={(v) => !v && setDetalhe(null)} />
+
     </>
   );
 }
