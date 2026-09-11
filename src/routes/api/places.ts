@@ -87,7 +87,8 @@ export const Route = createFileRoute("/api/places")({
                     locationBias: {
                       circle: {
                         center: { latitude: parsed.bias.lat, longitude: parsed.bias.lng },
-                        radius: 200000,
+                        // A Places API aceita no máximo 50 km de raio.
+                        radius: 50000,
                       },
                     },
                   }
