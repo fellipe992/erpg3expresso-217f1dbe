@@ -586,6 +586,29 @@ function MonitoramentoPage() {
               Não foi possível carregar as viagens: {viagensError?.message ?? "erro desconhecido"}
             </p>
           )}
+          {atrasadas.length > 0 && (
+            <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <AlertTriangle className="size-3.5" />
+                {atrasadas.length === 1
+                  ? "1 motorista sem enviar posição há mais de 20 min"
+                  : `${atrasadas.length} motoristas sem enviar posição há mais de 20 min`}
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {atrasadas.slice(0, 5).map(({ viagem, ms }) => (
+                  <li key={viagem.id} className="truncate">
+                    {viagem.veiculo?.placa ?? "—"} · {viagem.motorista?.nome ?? "—"} —{" "}
+                    {Math.round(ms / 60000)} min
+                  </li>
+                ))}
+              </ul>
+              {!isMonitor && (
+                <p className="mt-1 text-[11px] opacity-80">
+                  Cobrança automática enviada ao celular do motorista a cada 10 min.
+                </p>
+              )}
+            </div>
+          )}
           <div className="relative mt-3">
             <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
