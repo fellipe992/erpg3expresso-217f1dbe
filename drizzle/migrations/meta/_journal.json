@@ -15,6 +15,13 @@
       "when": 1789131157807,
       "tag": "0001_tighten_avisos_manut_insert_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789131175173,
+      "tag": "0002_fix_manut_nota_insert_policy_precedence",
+      "breakpoints": true
     }
   ]
 }
