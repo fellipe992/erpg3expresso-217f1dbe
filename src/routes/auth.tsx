@@ -18,7 +18,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Entrar — Controle Financeiro G3 Expresso" },
+      { title: "Entrar — G3 Expresso" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
