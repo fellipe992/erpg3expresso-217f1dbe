@@ -128,7 +128,7 @@ export function baixarPdfFechamento(d: DetalheFechamento) {
 }
 
 export function baixarExcelFechamento(d: DetalheFechamento) {
-  exportarExcel(`fechamento-${d.fechamento.numero}`, [
+  exportarExcel(nomeArquivoDe(d), [
     { nome: "Viagens", colunas: colunasDe(d.fechamento.tipo), linhas: linhasDe(d) },
     ...(ajustesDe(d).length
       ? [
