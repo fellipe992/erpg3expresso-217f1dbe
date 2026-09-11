@@ -567,9 +567,17 @@ function MonitoramentoPage() {
                 onClick={() => centralizar(v)}
               >
                 <div className="flex items-start gap-3">
-                  <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                    {v.motorista?.nome?.slice(0, 2).toUpperCase() ?? "—"}
-                  </div>
+                  {v.motorista?.foto && fotoUrls[v.motorista.foto] ? (
+                    <img
+                      src={fotoUrls[v.motorista.foto]}
+                      alt={v.motorista.nome ?? "Motorista"}
+                      className="size-10 shrink-0 rounded-full border border-border object-cover"
+                    />
+                  ) : (
+                    <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      {v.motorista?.nome?.slice(0, 2).toUpperCase() ?? "—"}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="rounded bg-foreground/90 px-1.5 py-0.5 text-[10px] font-bold text-background">
