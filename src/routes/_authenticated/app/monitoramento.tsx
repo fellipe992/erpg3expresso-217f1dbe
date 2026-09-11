@@ -634,6 +634,7 @@ function MonitoramentoPage() {
                 key={v.id}
                 className={cn(
                   "cursor-pointer p-3 transition hover:border-brand/50",
+                  atrasadasIds.has(v.id) && "border-amber-500/60 bg-amber-500/5",
                   selectedId === v.id && "border-brand ring-1 ring-brand/40",
                 )}
                 onClick={() => centralizar(v)}
