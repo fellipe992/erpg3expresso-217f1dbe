@@ -27,6 +27,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
 
+/** Acima disso a viagem entra em alerta na central. */
+const SEM_POSICAO_ALERTA_MS = 20 * 60_000;
+/** Intervalo mínimo entre cobranças automáticas no celular do motorista. */
+const COBRANCA_INTERVALO_MS = 10 * 60_000;
+
 export const Route = createFileRoute("/_authenticated/app/monitoramento")({
   head: () => ({
     meta: [
