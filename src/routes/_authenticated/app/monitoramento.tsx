@@ -698,6 +698,11 @@ function MonitoramentoPage() {
                     </div>
                     <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                       {l ? `Atualizado ${tempoDesde(l.created_at)} atrás` : "Sem posição ainda"}
+                      {atrasadasIds.has(v.id) && (
+                        <span className="ml-1 font-semibold text-amber-600 dark:text-amber-400">
+                          · sem posição há mais de 20 min
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
