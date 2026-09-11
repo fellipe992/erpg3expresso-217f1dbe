@@ -435,6 +435,12 @@ function ViagensPage() {
         </div>
       </Card>
 
+      <Tabs defaultValue="ativas">
+        <TabsList>
+          <TabsTrigger value="ativas">Viagens</TabsTrigger>
+          {canWrite && <TabsTrigger value="excluidas">Excluídas ({excluidas.length})</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="ativas" className="mt-3">
       <Card>
 
         {isLoading ? (
@@ -524,6 +530,99 @@ function ViagensPage() {
           </Table>
         )}
       </Card>
+        </TabsContent>
+
+        {canWrite && (
+          <TabsContent value="excluidas" className="mt-3">
+            <Card>
+              {excluidasCarregando ? (
+                <div className="grid place-items-center p-12">
+                  <Loader2 className="size-6 animate-spin text-brand" />
+                </div>
+              ) : excluidas.length === 0 ? (
+                <div className="p-12 text-center text-sm text-muted-foreground">Nenhuma viagem excluída.</div>
+              ) : (
+                <>
+                  {/* Lista em cartões no celular */}
+                  <div className="divide-y md:hidden">
+                    {excluidas.map((e) => (
+                      <div key={e.id} className="space-y-2 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs">{e.codigo ?? "—"}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {new Date(e.deleted_at).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        <div className="text-sm">{e.cliente_nome ?? "Sem cliente"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {e.motorista_nome ?? "Sem motorista"}{e.veiculo_placa ? ` · ${e.veiculo_placa}` : ""}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="flex-1" onClick={() => restaurar.mutate(e.id)}>
+                            <RotateCcw className="mr-1.5 size-4" /> Restaurar
+                          </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => confirm("Apagar definitivamente? Não será possível restaurar.") && excluirDefinitivo.mutate(e.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Motorista</TableHead>
+                          <TableHead>Veículo</TableHead>
+                          <TableHead>Excluída em</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {excluidas.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-mono text-xs">{e.codigo ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{e.cliente_nome ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{e.motorista_nome ?? "—"}</TableCell>
+                            <TableCell className="font-mono text-sm">{e.veiculo_placa ?? "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(e.deleted_at).toLocaleString("pt-BR")}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" onClick={() => restaurar.mutate(e.id)}>
+                                <RotateCcw className="mr-1.5 size-4" /> Restaurar
+                              </Button>
+                              {isAdmin && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="ml-1"
+                                  onClick={() => confirm("Apagar definitivamente? Não será possível restaurar.") && excluirDefinitivo.mutate(e.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl">
