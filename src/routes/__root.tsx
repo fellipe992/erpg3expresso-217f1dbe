@@ -84,14 +84,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { title: "Controle Financeiro G3 Expresso" },
+      { title: "G3 Expresso" },
       {
         name: "description",
         content:
           "Sistema de Gestão G3 Expresso",
       },
       { name: "author", content: "G3 Expresso" },
-      { property: "og:title", content: "Controle Financeiro G3 Expresso" },
+      { property: "og:title", content: "G3 Expresso" },
       {
         property: "og:description",
         content: "Sistema de Gestão G3 Expresso",
@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex, nofollow" },
       { name: "theme-color", content: "#141414" },
-      { name: "twitter:title", content: "Controle Financeiro G3 Expresso" },
+      { name: "twitter:title", content: "G3 Expresso" },
       { name: "twitter:description", content: "Sistema de Gestão G3 Expresso" },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RDDezQarWoPtarvZTaZBf3jN0G22/social-images/social-1785519660940-social-image.webp" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/RDDezQarWoPtarvZTaZBf3jN0G22/social-images/social-1785519660940-social-image.webp" },
