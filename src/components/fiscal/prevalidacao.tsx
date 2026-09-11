@@ -50,8 +50,10 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, clien
       clienteDebounced,
     ],
     enabled,
-    staleTime: 30_000,
-    placeholderData: (prev) => prev,
+    // Sempre confere de novo ao abrir a tela: dados corrigidos no cadastro
+    // precisam refletir na hora, sem resposta antiga em cache.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: () =>
       validar({
         data: {
