@@ -52,10 +52,20 @@ export function useAlertaLocalizacaoMotorista() {
       if (!mid) return [];
       const { data } = await supabase
         .from("viagens")
-        .select("id, motorista_id, veiculo_id")
+        .select("id, motorista_id, veiculo_id, data_saida")
         .eq("motorista_id", mid)
         .eq("status", "em_andamento");
-      return (data ?? []) as ViagemAlvo[];
+      const rows = (data ?? []) as Array<ViagemAlvo & { data_saida: string | null }>;
+      inicioMaisRecenteRef.current = rows.reduce<number | null>((maior, v) => {
+        const t = v.data_saida ? new Date(v.data_saida).getTime() : null;
+        if (t === null || Number.isNaN(t)) return maior;
+        return maior === null || t > maior ? t : maior;
+      }, null);
+      return rows.map(({ id, motorista_id, veiculo_id }) => ({
+        id,
+        motorista_id,
+        veiculo_id,
+      })) as ViagemAlvo[];
     };
 
     /** Idade (ms) da última posição gravada nas viagens ativas. */
