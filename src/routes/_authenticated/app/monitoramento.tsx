@@ -15,6 +15,7 @@ import {
   Crosshair,
   ExternalLink,
   Radar,
+  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +27,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
+
+/** Acima disso a viagem entra em alerta na central. */
+const SEM_POSICAO_ALERTA_MS = 20 * 60_000;
+/** Intervalo mínimo entre cobranças automáticas no celular do motorista. */
+const COBRANCA_INTERVALO_MS = 10 * 60_000;
 
 export const Route = createFileRoute("/_authenticated/app/monitoramento")({
   head: () => ({
@@ -479,6 +485,49 @@ function MonitoramentoPage() {
     });
   }, [viagens, search]);
 
+  // Relógio para reavaliar o tempo sem posição mesmo sem novas posições.
+  const [agora, setAgora] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setAgora(Date.now()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  /** Viagens em andamento há mais de 20 minutos sem nenhuma posição nova. */
+  const atrasadas = useMemo(() => {
+    return viagens
+      .map((v) => {
+        const l = locsByViagem[v.id];
+        const ref = l?.created_at ?? v.data_saida;
+        if (!ref) return null;
+        const ms = agora - new Date(ref).getTime();
+        if (!Number.isFinite(ms) || ms <= SEM_POSICAO_ALERTA_MS) return null;
+        return { viagem: v, ms };
+      })
+      .filter((x): x is { viagem: ViagemAtiva; ms: number } => x !== null)
+      .sort((a, b) => b.ms - a.ms);
+  }, [viagens, locsByViagem, agora]);
+
+  const atrasadasIds = useMemo(() => new Set(atrasadas.map((a) => a.viagem.id)), [atrasadas]);
+
+  // Cobrança automática: pede a posição ao celular do motorista a cada 10 min
+  // enquanto a viagem seguir sem atualização.
+  const ultimaCobrancaRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    if (!allowed || isMonitor || atrasadas.length === 0) return;
+    for (const { viagem } of atrasadas) {
+      const ultima = ultimaCobrancaRef.current[viagem.id] ?? 0;
+      if (Date.now() - ultima < COBRANCA_INTERVALO_MS) continue;
+      ultimaCobrancaRef.current[viagem.id] = Date.now();
+      void criarPedidoPosicao({
+        viagemId: viagem.id,
+        motoristaId: viagem.motorista?.id ?? null,
+        veiculoId: viagem.veiculo?.id ?? null,
+        placa: viagem.veiculo?.placa ?? null,
+      }).catch(() => undefined);
+    }
+  }, [allowed, isMonitor, atrasadas]);
+
+
   if (!allowed) {
     return (
       <div className="p-6">
@@ -538,6 +587,29 @@ function MonitoramentoPage() {
               Não foi possível carregar as viagens: {viagensError?.message ?? "erro desconhecido"}
             </p>
           )}
+          {atrasadas.length > 0 && (
+            <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <AlertTriangle className="size-3.5" />
+                {atrasadas.length === 1
+                  ? "1 motorista sem enviar posição há mais de 20 min"
+                  : `${atrasadas.length} motoristas sem enviar posição há mais de 20 min`}
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {atrasadas.slice(0, 5).map(({ viagem, ms }) => (
+                  <li key={viagem.id} className="truncate">
+                    {viagem.veiculo?.placa ?? "—"} · {viagem.motorista?.nome ?? "—"} —{" "}
+                    {Math.round(ms / 60000)} min
+                  </li>
+                ))}
+              </ul>
+              {!isMonitor && (
+                <p className="mt-1 text-[11px] opacity-80">
+                  Cobrança automática enviada ao celular do motorista a cada 10 min.
+                </p>
+              )}
+            </div>
+          )}
           <div className="relative mt-3">
             <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -562,6 +634,7 @@ function MonitoramentoPage() {
                 key={v.id}
                 className={cn(
                   "cursor-pointer p-3 transition hover:border-brand/50",
+                  atrasadasIds.has(v.id) && "border-amber-500/60 bg-amber-500/5",
                   selectedId === v.id && "border-brand ring-1 ring-brand/40",
                 )}
                 onClick={() => centralizar(v)}
@@ -625,6 +698,11 @@ function MonitoramentoPage() {
                     </div>
                     <div className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                       {l ? `Atualizado ${tempoDesde(l.created_at)} atrás` : "Sem posição ainda"}
+                      {atrasadasIds.has(v.id) && (
+                        <span className="ml-1 font-semibold text-amber-600 dark:text-amber-400">
+                          · sem posição há mais de 20 min
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
