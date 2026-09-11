@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2 } from "lucide-react";
+import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -264,16 +265,63 @@ function ViagensPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  /** Exclusão guardada na lixeira (viagem + roteiro + ajustes), permitindo restaurar depois. */
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("viagens").delete().eq("id", id);
+      const { error } = await supabase.rpc("viagem_excluir", { _viagem_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Viagem removida");
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      toast.success("Viagem movida para a lixeira");
+      invalidarViagens();
     },
     onError: (e: Error) => toast.error("Erro ao remover", { description: e.message }),
+  });
+
+  const invalidarViagens = () => {
+    qc.invalidateQueries({ queryKey: ["viagens"] });
+    qc.invalidateQueries({ queryKey: ["viagens-excluidas"] });
+    qc.invalidateQueries({ queryKey: ["viagens-ajustes"] });
+    qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+  };
+
+  const { data: excluidas = [], isLoading: excluidasCarregando } = useQuery({
+    queryKey: ["viagens-excluidas"],
+    enabled: canWrite,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagens_excluidas")
+        .select("id, viagem_id, codigo, cliente_nome, motorista_nome, veiculo_placa, dados, deleted_at")
+        .order("deleted_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const restaurar = useMutation({
+    mutationFn: async (arquivoId: string) => {
+      const { error } = await supabase.rpc("viagem_restaurar", { _arquivo_id: arquivoId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Viagem restaurada");
+      invalidarViagens();
+    },
+    onError: (e: Error) => toast.error("Erro ao restaurar", { description: e.message }),
+  });
+
+  const excluirDefinitivo = useMutation({
+    mutationFn: async (arquivoId: string) => {
+      const { error } = await supabase.from("viagens_excluidas").delete().eq("id", arquivoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Registro apagado definitivamente");
+      qc.invalidateQueries({ queryKey: ["viagens-excluidas"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao apagar", { description: e.message }),
   });
 
   const filtered = viagens.filter((v) => {
