@@ -455,6 +455,10 @@ function Linha({ label, valor, forte }: { label: string; valor: string; forte?: 
 function Historico() {
   const qc = useQueryClient();
   const [detalhe, setDetalhe] = useState<string | null>(null);
+  const [sub, setSub] = useState<"motorista" | "cliente">("motorista");
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
+  const [beneficiario, setBeneficiario] = useState("todos");
   const { data = [], isLoading } = useQuery({ queryKey: ["fechamentos"], queryFn: listarFechamentos });
 
   const cancelar = useMutation({
@@ -468,15 +472,98 @@ function Historico() {
     onError: (e: Error) => toast.error("Não foi possível cancelar", { description: e.message }),
   });
 
+  const doTipo = useMemo(() => data.filter((f) => f.tipo === sub), [data, sub]);
+
+  const nomes = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of doTipo) {
+      const n = f.cliente?.razao_social ?? f.motorista?.nome;
+      if (n) set.add(n);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [doTipo]);
+
+  const filtrados = useMemo(
+    () =>
+      doTipo.filter((f) => {
+        if (de && (f.periodo_fim ?? "") < de) return false;
+        if (ate && (f.periodo_inicio ?? "") > ate) return false;
+        if (beneficiario !== "todos" && (f.cliente?.razao_social ?? f.motorista?.nome ?? "") !== beneficiario) return false;
+        return true;
+      }),
+    [doTipo, de, ate, beneficiario],
+  );
+
+  const total = filtrados.reduce((s, f) => s + Number(f.valor ?? 0), 0);
+
+  const filtros = (
+    <Card className="mb-3 flex flex-wrap items-end gap-3 p-3">
+      <div className="space-y-1.5">
+        <Label className="text-xs">De</Label>
+        <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} className="w-[150px]" />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Até</Label>
+        <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} className="w-[150px]" />
+      </div>
+      <div className="min-w-[200px] flex-1 space-y-1.5">
+        <Label className="text-xs">{sub === "motorista" ? "Motorista" : "Cliente"}</Label>
+        <Select value={beneficiario} onValueChange={setBeneficiario}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            {nomes.map((n) => (
+              <SelectItem key={n} value={n}>{n}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          setDe("");
+          setAte("");
+          setBeneficiario("todos");
+        }}
+      >
+        Limpar filtros
+      </Button>
+      <div className="ml-auto text-right text-xs text-muted-foreground">
+        {filtrados.length} fechamento(s)
+        <div className="font-mono text-sm font-semibold text-foreground tabular-nums">{brl(total)}</div>
+      </div>
+    </Card>
+  );
+
   if (isLoading) {
     return <div className="grid place-items-center p-10"><Loader2 className="size-5 animate-spin text-brand" /></div>;
-  }
-  if (!data.length) {
-    return <Card className="p-10 text-center text-sm text-muted-foreground">Nenhum fechamento gerado ainda.</Card>;
   }
 
   return (
     <>
+      <Tabs
+        value={sub}
+        onValueChange={(v) => {
+          setSub(v as "motorista" | "cliente");
+          setBeneficiario("todos");
+        }}
+        className="mb-3"
+      >
+        <TabsList>
+          <TabsTrigger value="motorista">Motoristas ({data.filter((f) => f.tipo === "motorista").length})</TabsTrigger>
+          <TabsTrigger value="cliente">Clientes ({data.filter((f) => f.tipo === "cliente").length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {filtros}
+
+      {filtrados.length === 0 ? (
+        <Card className="p-10 text-center text-sm text-muted-foreground">
+          Nenhum fechamento de {sub === "motorista" ? "motorista" : "cliente"} para os filtros escolhidos.
+        </Card>
+      ) : (
+
       <Card className="max-w-full overflow-x-auto">
         <table className="w-full min-w-[860px] text-sm">
           <thead>
