@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2 } from "lucide-react";
+import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -264,16 +265,63 @@ function ViagensPage() {
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
   });
 
+  /** Exclusão guardada na lixeira (viagem + roteiro + ajustes), permitindo restaurar depois. */
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("viagens").delete().eq("id", id);
+      const { error } = await supabase.rpc("viagem_excluir", { _viagem_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Viagem removida");
-      qc.invalidateQueries({ queryKey: ["viagens"] }); qc.invalidateQueries({ queryKey: ["financeiro"] }); qc.invalidateQueries({ queryKey: ["admin-dashboard"] }); qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+      toast.success("Viagem movida para a lixeira");
+      invalidarViagens();
     },
     onError: (e: Error) => toast.error("Erro ao remover", { description: e.message }),
+  });
+
+  const invalidarViagens = () => {
+    qc.invalidateQueries({ queryKey: ["viagens"] });
+    qc.invalidateQueries({ queryKey: ["viagens-excluidas"] });
+    qc.invalidateQueries({ queryKey: ["viagens-ajustes"] });
+    qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
+    qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+  };
+
+  const { data: excluidas = [], isLoading: excluidasCarregando } = useQuery({
+    queryKey: ["viagens-excluidas"],
+    enabled: canWrite,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("viagens_excluidas")
+        .select("id, viagem_id, codigo, cliente_nome, motorista_nome, veiculo_placa, dados, deleted_at")
+        .order("deleted_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const restaurar = useMutation({
+    mutationFn: async (arquivoId: string) => {
+      const { error } = await supabase.rpc("viagem_restaurar", { _arquivo_id: arquivoId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Viagem restaurada");
+      invalidarViagens();
+    },
+    onError: (e: Error) => toast.error("Erro ao restaurar", { description: e.message }),
+  });
+
+  const excluirDefinitivo = useMutation({
+    mutationFn: async (arquivoId: string) => {
+      const { error } = await supabase.from("viagens_excluidas").delete().eq("id", arquivoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Registro apagado definitivamente");
+      qc.invalidateQueries({ queryKey: ["viagens-excluidas"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao apagar", { description: e.message }),
   });
 
   const filtered = viagens.filter((v) => {
@@ -387,6 +435,12 @@ function ViagensPage() {
         </div>
       </Card>
 
+      <Tabs defaultValue="ativas">
+        <TabsList>
+          <TabsTrigger value="ativas">Viagens</TabsTrigger>
+          {canWrite && <TabsTrigger value="excluidas">Excluídas ({excluidas.length})</TabsTrigger>}
+        </TabsList>
+        <TabsContent value="ativas" className="mt-3">
       <Card>
 
         {isLoading ? (
@@ -476,6 +530,99 @@ function ViagensPage() {
           </Table>
         )}
       </Card>
+        </TabsContent>
+
+        {canWrite && (
+          <TabsContent value="excluidas" className="mt-3">
+            <Card>
+              {excluidasCarregando ? (
+                <div className="grid place-items-center p-12">
+                  <Loader2 className="size-6 animate-spin text-brand" />
+                </div>
+              ) : excluidas.length === 0 ? (
+                <div className="p-12 text-center text-sm text-muted-foreground">Nenhuma viagem excluída.</div>
+              ) : (
+                <>
+                  {/* Lista em cartões no celular */}
+                  <div className="divide-y md:hidden">
+                    {excluidas.map((e) => (
+                      <div key={e.id} className="space-y-2 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs">{e.codigo ?? "—"}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {new Date(e.deleted_at).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        <div className="text-sm">{e.cliente_nome ?? "Sem cliente"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {e.motorista_nome ?? "Sem motorista"}{e.veiculo_placa ? ` · ${e.veiculo_placa}` : ""}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="flex-1" onClick={() => restaurar.mutate(e.id)}>
+                            <RotateCcw className="mr-1.5 size-4" /> Restaurar
+                          </Button>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => confirm("Apagar definitivamente? Não será possível restaurar.") && excluirDefinitivo.mutate(e.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Código</TableHead>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Motorista</TableHead>
+                          <TableHead>Veículo</TableHead>
+                          <TableHead>Excluída em</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {excluidas.map((e) => (
+                          <TableRow key={e.id}>
+                            <TableCell className="font-mono text-xs">{e.codigo ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{e.cliente_nome ?? "—"}</TableCell>
+                            <TableCell className="text-sm">{e.motorista_nome ?? "—"}</TableCell>
+                            <TableCell className="font-mono text-sm">{e.veiculo_placa ?? "—"}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {new Date(e.deleted_at).toLocaleString("pt-BR")}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" onClick={() => restaurar.mutate(e.id)}>
+                                <RotateCcw className="mr-1.5 size-4" /> Restaurar
+                              </Button>
+                              {isAdmin && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="ml-1"
+                                  onClick={() => confirm("Apagar definitivamente? Não será possível restaurar.") && excluirDefinitivo.mutate(e.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-3xl">

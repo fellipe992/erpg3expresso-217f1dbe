@@ -3323,6 +3323,48 @@ export type Database = {
           },
         ]
       }
+      viagens_excluidas: {
+        Row: {
+          ajustes: Json
+          cliente_nome: string | null
+          codigo: string | null
+          dados: Json
+          deleted_at: string
+          deleted_by: string | null
+          id: string
+          motorista_nome: string | null
+          paradas: Json
+          veiculo_placa: string | null
+          viagem_id: string
+        }
+        Insert: {
+          ajustes?: Json
+          cliente_nome?: string | null
+          codigo?: string | null
+          dados: Json
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          motorista_nome?: string | null
+          paradas?: Json
+          veiculo_placa?: string | null
+          viagem_id: string
+        }
+        Update: {
+          ajustes?: Json
+          cliente_nome?: string | null
+          codigo?: string | null
+          dados?: Json
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          motorista_nome?: string | null
+          paradas?: Json
+          veiculo_placa?: string | null
+          viagem_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -3357,6 +3399,8 @@ export type Database = {
           veiculo_placa: string
         }[]
       }
+      viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
+      viagem_restaurar: { Args: { _arquivo_id: string }; Returns: string }
       viagem_total_cliente: { Args: { _viagem_id: string }; Returns: number }
     }
     Enums: {
