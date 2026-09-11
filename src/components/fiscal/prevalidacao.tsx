@@ -50,8 +50,10 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, clien
       clienteDebounced,
     ],
     enabled,
-    staleTime: 30_000,
-    placeholderData: (prev) => prev,
+    // Sempre confere de novo ao abrir a tela: dados corrigidos no cadastro
+    // precisam refletir na hora, sem resposta antiga em cache.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: () =>
       validar({
         data: {
@@ -64,10 +66,13 @@ export function usePrevalidacao({ tipo, empresaId, viagemId, fechamentoId, clien
       }),
   });
 
+  const conferindo = q.isFetching || clienteDebounced !== clienteJson;
+
   return {
-    carregando: q.isPending,
-    ok: q.data?.ok ?? false,
-    pendencias: q.data?.pendencias ?? [],
+    carregando: conferindo,
+    // Enquanto confere, não libera a emissão nem mostra pendência antiga.
+    ok: !conferindo && (q.data?.ok ?? false),
+    pendencias: conferindo ? [] : (q.data?.pendencias ?? []),
     erro: q.error instanceof Error ? q.error.message : null,
     recarregar: q.refetch,
   };

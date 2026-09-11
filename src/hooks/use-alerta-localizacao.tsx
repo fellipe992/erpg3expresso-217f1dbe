@@ -33,6 +33,8 @@ export function useAlertaLocalizacaoMotorista() {
   const viagensRef = useRef<ViagemAlvo[]>([]);
   const aguardandoRedeRef = useRef(false);
   const ultimoAvisoRef = useRef(0);
+  /** Início da viagem em andamento mais recente (ms) — dá carência ao primeiro sinal. */
+  const inicioMaisRecenteRef = useRef<number | null>(null);
   const busyRef = useRef(false);
 
   useEffect(() => {
@@ -52,10 +54,20 @@ export function useAlertaLocalizacaoMotorista() {
       if (!mid) return [];
       const { data } = await supabase
         .from("viagens")
-        .select("id, motorista_id, veiculo_id")
+        .select("id, motorista_id, veiculo_id, data_saida")
         .eq("motorista_id", mid)
         .eq("status", "em_andamento");
-      return (data ?? []) as ViagemAlvo[];
+      const rows = (data ?? []) as Array<ViagemAlvo & { data_saida: string | null }>;
+      inicioMaisRecenteRef.current = rows.reduce<number | null>((maior, v) => {
+        const t = v.data_saida ? new Date(v.data_saida).getTime() : null;
+        if (t === null || Number.isNaN(t)) return maior;
+        return maior === null || t > maior ? t : maior;
+      }, null);
+      return rows.map(({ id, motorista_id, veiculo_id }) => ({
+        id,
+        motorista_id,
+        veiculo_id,
+      })) as ViagemAlvo[];
     };
 
     /** Idade (ms) da última posição gravada nas viagens ativas. */
@@ -95,7 +107,19 @@ export function useAlertaLocalizacaoMotorista() {
           return;
         }
 
-        const critico = idade > CRITICO_MS;
+        // Viagem que acabou de começar: tenta pegar o primeiro ponto em
+        // silêncio, sem alarmar o motorista antes da carência.
+        const inicio = inicioMaisRecenteRef.current;
+        const desdeInicio = inicio === null ? Number.POSITIVE_INFINITY : Date.now() - inicio;
+        const referencia = Math.min(idade, desdeInicio);
+        if (referencia <= SEM_POSICAO_MS) {
+          aguardandoRedeRef.current = false;
+          await cancelarLembretesGps();
+          await capturarEGravar(viagens);
+          return;
+        }
+
+        const critico = referencia > CRITICO_MS;
         aguardandoRedeRef.current = critico;
 
         if (Date.now() - ultimoAvisoRef.current > AVISO_INTERVALO_MS) {
