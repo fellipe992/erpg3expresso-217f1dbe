@@ -63,6 +63,18 @@ export type ViagemBi = {
   ref: string;
 };
 
+export type FechamentoBi = {
+  id: string;
+  numero: number | null;
+  tipo: string;
+  status: string;
+  periodo_inicio: string;
+  periodo_fim: string;
+  cliente_id: string | null;
+  motorista_id: string | null;
+  valor: number;
+};
+
 export type BiDados = {
   viagens: ViagemBi[];
   /** Gerencial — lançamentos cuja COMPETÊNCIA cai no período. */
