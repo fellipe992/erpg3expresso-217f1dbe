@@ -13,6 +13,19 @@ import {
 } from "@/components/ui/dialog";
 import { criarLinkRastreio, revogarLinkRastreio } from "@/lib/rastreio-publico.functions";
 
+/** Domínio público definitivo — links de rastreio nunca devem apontar para o preview do editor. */
+const DOMINIO_PUBLICO = "https://erpg3expresso.lovable.app";
+
+function baseUrlPublica() {
+  const origin = window.location.origin;
+  const interno =
+    origin.includes("lovableproject.com") ||
+    origin.includes("id-preview--") ||
+    origin.includes("-dev.lovable.app") ||
+    origin.includes("localhost");
+  return interno ? DOMINIO_PUBLICO : origin;
+}
+
 /**
  * Botão + diálogo para gerar o link público de rastreio de uma viagem.
  * O link mostra apenas o mapa com a posição do veículo.
