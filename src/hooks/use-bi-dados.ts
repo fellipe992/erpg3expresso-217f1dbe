@@ -379,6 +379,7 @@ export function useBiDados(de: string, ate: string) {
         lancamentos,
         lancamentosCaixa,
 
+        fechamentos: fechPeriodo.map(({ lancamento_id: _l, ...f }) => f),
         clientes,
         veiculos,
         motoristas,
