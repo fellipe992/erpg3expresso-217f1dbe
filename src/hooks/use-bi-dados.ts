@@ -331,7 +331,9 @@ export function useBiDados(de: string, ate: string) {
           }
         }
 
-        const receita = receitaLanc > 0 ? receitaLanc : frete;
+        // Viagem já faturada em fechamento de cliente: a receita entra pelo valor
+        // apurado do fechamento; usar o frete aqui dobraria a receita.
+        const receita = receitaLanc > 0 ? receitaLanc : viagensFaturadas.has(id) ? 0 : frete;
         const despesas = combustivel + pedagio + manutencao + outras;
         const lucro = receita - despesas;
         const vei = raw.veiculo_id ? veiMap.get(String(raw.veiculo_id)) : undefined;
