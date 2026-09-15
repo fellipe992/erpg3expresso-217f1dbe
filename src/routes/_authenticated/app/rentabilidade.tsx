@@ -453,6 +453,18 @@ function RentabilidadePage() {
         <KpiCard label="Viagens" value={String(totais.viagens)} sub={`${num(totais.km, 0)} km rodados`} />
       </div>
 
+      {pendencias.length > 0 && (
+        <Card className="border-orange-400/60 bg-orange-50 p-4 text-sm dark:bg-orange-950/30">
+          <p className="font-semibold text-orange-700 dark:text-orange-300">
+            Fechamento de motorista pendente no período
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Os custos destes motoristas ainda não foram apurados, então o lucro mostrado está incompleto:{" "}
+            {pendencias.join(", ")}.
+          </p>
+        </Card>
+      )}
+
       <div className="flex flex-wrap gap-2" data-export-ignore="true">
         <Button variant="outline" size="sm" onClick={exportarExcelRentabilidade}>
           <FileSpreadsheet className="mr-2 size-4" /> Excel
