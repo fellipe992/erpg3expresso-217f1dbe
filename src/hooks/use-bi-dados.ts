@@ -140,7 +140,9 @@ export function useBiDados(de: string, ate: string) {
       const fim = `${deslocarDia(ate, 1)}T23:59:59`;
 
       const COLS_LANC =
-        "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, numero_documento, descricao";
+        "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, fechamento_id, numero_documento, descricao";
+      const COLS_FECH =
+        "id, numero, tipo, status, periodo_inicio, periodo_fim, cliente_id, motorista_id, valor, lancamento_id";
 
       const [viagRes, lancRes, cliRes, veiRes, motRes] = await Promise.all([
         // COMPETÊNCIA operacional da viagem: data_saida (fallback created_at quando ainda não saiu)
