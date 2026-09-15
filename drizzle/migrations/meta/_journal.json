@@ -29,6 +29,13 @@
       "when": 1789131299753,
       "tag": "0003_create_viagens_excluidas_lixeira",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789474965872,
+      "tag": "0004_seguranca_company_assets_e_revoke_anon_rpc",
+      "breakpoints": true
     }
   ]
 }
