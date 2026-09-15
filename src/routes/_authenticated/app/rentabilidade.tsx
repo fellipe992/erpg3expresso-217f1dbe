@@ -230,6 +230,20 @@ function RentabilidadePage() {
   const origens = useMemo(() => agregar(viagens, (v) => ({ id: v.origem, nome: v.origem })), [viagens]);
   const destinos = useMemo(() => agregar(viagens, (v) => ({ id: v.destino, nome: v.destino })), [viagens]);
 
+  // Motoristas com viagens no período mas sem fechamento apurado: o custo deles ainda
+  // não existe no sistema, então o resultado aparece inflado.
+  const pendencias = useMemo(() => {
+    if (!data) return [] as string[];
+    const comFechamento = new Set(
+      data.fechamentos.filter((f) => f.tipo === "motorista" && f.motorista_id).map((f) => f.motorista_id as string),
+    );
+    const nomes = new Set<string>();
+    for (const v of viagens) {
+      if (v.motorista_id && !comFechamento.has(v.motorista_id)) nomes.add(v.motorista);
+    }
+    return Array.from(nomes).sort();
+  }, [data, viagens]);
+
   const totais = useMemo(() => {
     const receita = viagens.reduce((s, v) => s + v.receita, 0) + ajustes.reduce((s, a) => s + a.receita, 0);
     const despesas = viagens.reduce((s, v) => s + v.despesas, 0) + ajustes.reduce((s, a) => s + a.despesas, 0);
@@ -438,6 +452,18 @@ function RentabilidadePage() {
         <KpiCard label="Margem média" value={pct(totais.margem)} />
         <KpiCard label="Viagens" value={String(totais.viagens)} sub={`${num(totais.km, 0)} km rodados`} />
       </div>
+
+      {pendencias.length > 0 && (
+        <Card className="border-orange-400/60 bg-orange-50 p-4 text-sm dark:bg-orange-950/30">
+          <p className="font-semibold text-orange-700 dark:text-orange-300">
+            Fechamento de motorista pendente no período
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Os custos destes motoristas ainda não foram apurados, então o lucro mostrado está incompleto:{" "}
+            {pendencias.join(", ")}.
+          </p>
+        </Card>
+      )}
 
       <div className="flex flex-wrap gap-2" data-export-ignore="true">
         <Button variant="outline" size="sm" onClick={exportarExcelRentabilidade}>
