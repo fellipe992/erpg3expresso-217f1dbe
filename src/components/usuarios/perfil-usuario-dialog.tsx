@@ -79,7 +79,23 @@ export function PerfilUsuarioDialog({
         {alvo && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              {foto ? (
+              {podeTrocarFoto ? (
+                <AvatarUpload
+                  userId={alvo.id}
+                  nome={alvo.nome}
+                  avatarPath={alvo.avatar_url}
+                  onChange={(p) => {
+                    setFoto(null);
+                    if (!p.startsWith("http")) {
+                      void supabase.storage
+                        .from("avatars")
+                        .createSignedUrl(p, 60 * 60)
+                        .then(({ data }) => setFoto(data?.signedUrl ?? null));
+                    } else setFoto(p);
+                    onFotoChange?.();
+                  }}
+                />
+              ) : foto ? (
                 <img
                   src={foto}
                   alt={`Foto de ${alvo.nome}`}
