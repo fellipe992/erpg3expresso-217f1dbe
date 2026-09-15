@@ -17,6 +17,7 @@ export type LancBi = {
   viagem_id: string | null;
   veiculo_id: string | null;
   motorista_id: string | null;
+  fechamento_id: string | null;
   numero_documento: string | null;
   descricao: string;
   /** Regime de COMPETÊNCIA (gerencial): data em que a operação ocorreu.
@@ -72,6 +73,8 @@ export type BiDados = {
   clientes: { id: string; nome: string }[];
   veiculos: { id: string; placa: string; label: string }[];
   motoristas: { id: string; nome: string }[];
+  /** Fechamentos cujo período cruza o filtro (para avisar o que ainda falta fechar). */
+  fechamentos: FechamentoBi[];
   nomeCliente: (id: string | null) => string;
   nomeVeiculo: (id: string | null) => string;
   nomeMotorista: (id: string | null) => string;
