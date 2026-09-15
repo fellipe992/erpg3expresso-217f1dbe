@@ -44,7 +44,7 @@ export function CompartilharRastreio({ viagemId }: { viagemId: string }) {
     setBusy(true);
     try {
       const { token } = await criar({ data: { viagemId } });
-      setUrl(`${window.location.origin}/rastreio/${token}`);
+      setUrl(`${baseUrlPublica()}/rastreio/${token}`);
     } catch (e) {
       toast.error("Não foi possível gerar o link", { description: (e as Error).message });
       setOpen(false);
