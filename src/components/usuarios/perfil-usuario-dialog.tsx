@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
+import { AvatarUpload } from "@/components/perfil/avatar-upload";
 
 export type PerfilUsuarioAlvo = {
   id: string;
@@ -22,9 +23,14 @@ export type PerfilUsuarioAlvo = {
 export function PerfilUsuarioDialog({
   alvo,
   onClose,
+  podeTrocarFoto = false,
+  onFotoChange,
 }: {
   alvo: PerfilUsuarioAlvo | null;
   onClose: () => void;
+  /** Permite que a equipe interna troque a foto deste usuário. */
+  podeTrocarFoto?: boolean;
+  onFotoChange?: () => void;
 }) {
   const [foto, setFoto] = useState<string | null>(null);
 
@@ -73,7 +79,23 @@ export function PerfilUsuarioDialog({
         {alvo && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              {foto ? (
+              {podeTrocarFoto ? (
+                <AvatarUpload
+                  userId={alvo.id}
+                  nome={alvo.nome}
+                  avatarPath={alvo.avatar_url}
+                  onChange={(p) => {
+                    setFoto(null);
+                    if (!p.startsWith("http")) {
+                      void supabase.storage
+                        .from("avatars")
+                        .createSignedUrl(p, 60 * 60)
+                        .then(({ data }) => setFoto(data?.signedUrl ?? null));
+                    } else setFoto(p);
+                    onFotoChange?.();
+                  }}
+                />
+              ) : foto ? (
                 <img
                   src={foto}
                   alt={`Foto de ${alvo.nome}`}
