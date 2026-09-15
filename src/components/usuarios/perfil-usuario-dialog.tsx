@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
+import { AvatarUpload } from "@/components/perfil/avatar-upload";
 
 export type PerfilUsuarioAlvo = {
   id: string;
@@ -22,9 +23,14 @@ export type PerfilUsuarioAlvo = {
 export function PerfilUsuarioDialog({
   alvo,
   onClose,
+  podeTrocarFoto = false,
+  onFotoChange,
 }: {
   alvo: PerfilUsuarioAlvo | null;
   onClose: () => void;
+  /** Permite que a equipe interna troque a foto deste usuário. */
+  podeTrocarFoto?: boolean;
+  onFotoChange?: () => void;
 }) {
   const [foto, setFoto] = useState<string | null>(null);
 
