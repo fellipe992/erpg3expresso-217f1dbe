@@ -13,6 +13,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
         <Input
           ref={ref}
           type={visible ? "text" : "password"}
+          uppercase={false}
           className={cn("pr-10", className)}
           {...props}
         />
