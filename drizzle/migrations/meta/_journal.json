@@ -36,6 +36,13 @@
       "when": 1789474965872,
       "tag": "0004_seguranca_company_assets_e_revoke_anon_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789475937633,
+      "tag": "0005_avatars_staff_upload",
+      "breakpoints": true
     }
   ]
 }
