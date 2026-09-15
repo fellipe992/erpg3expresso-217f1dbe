@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
+import { CompartilharRastreio } from "@/components/monitoramento/compartilhar-rastreio";
 
 /** Acima disso a viagem entra em alerta na central. */
 const SEM_POSICAO_ALERTA_MS = 20 * 60_000;
@@ -718,6 +719,7 @@ function MonitoramentoPage() {
                   >
                     <Locate className="mr-1 size-3" /> Centralizar
                   </Button>
+                  <CompartilharRastreio viagemId={v.id} />
                   {!isMonitor && (
                     <Button
                       size="sm"
