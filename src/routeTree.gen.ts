@@ -55,6 +55,7 @@ import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 import { Route as AuthenticatedAppCrmLeadsRouteImport } from './routes/_authenticated/app/crm/leads'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
@@ -314,6 +315,11 @@ const LovableEmailTransactionalPreviewRoute =
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
+  id: '/api/public/rastreio/$token',
+  path: '/api/public/rastreio/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppViagensIdRoute =
   AuthenticatedAppViagensIdRouteImport.update({
     id: '/app/viagens/$id',
@@ -394,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -500,6 +508,7 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/_authenticated/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/app/crm/hunter'
     | '/app/crm/leads'
     | '/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/app/crm/hunter'
     | '/app/crm/leads'
     | '/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/hunter'
     | '/_authenticated/app/crm/leads'
     | '/_authenticated/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -676,6 +688,7 @@ export interface RootRouteChildren {
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
+  ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -1003,6 +1016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/rastreio/$token': {
+      id: '/api/public/rastreio/$token'
+      path: '/api/public/rastreio/$token'
+      fullPath: '/api/public/rastreio/$token'
+      preLoaderRoute: typeof ApiPublicRastreioTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/viagens/$id': {
       id: '/_authenticated/app/viagens/$id'
       path: '/app/viagens/$id'
@@ -1139,6 +1159,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
+  ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
