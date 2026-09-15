@@ -381,7 +381,12 @@ function UsuariosPage() {
         )}
       </Card>
 
-      <PerfilUsuarioDialog alvo={openView} onClose={() => setOpenView(null)} />
+      <PerfilUsuarioDialog
+        alvo={openView}
+        onClose={() => setOpenView(null)}
+        podeTrocarFoto={isAdmin}
+        onFotoChange={() => void qc.invalidateQueries({ queryKey: ["usuarios-admin"] })}
+      />
 
 
       {/* Novo usuário */}
