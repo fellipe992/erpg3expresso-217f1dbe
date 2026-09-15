@@ -14,6 +14,7 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RastreioTokenRouteImport } from './routes/rastreio.$token'
 import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiPlacesRouteImport } from './routes/api/places'
@@ -55,6 +56,7 @@ import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 import { Route as AuthenticatedAppCrmLeadsRouteImport } from './routes/_authenticated/app/crm/leads'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
@@ -83,6 +85,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RastreioTokenRoute = RastreioTokenRouteImport.update({
+  id: '/rastreio/$token',
+  path: '/rastreio/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
@@ -314,6 +321,11 @@ const LovableEmailTransactionalPreviewRoute =
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
+  id: '/api/public/rastreio/$token',
+  path: '/api/public/rastreio/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAppViagensIdRoute =
   AuthenticatedAppViagensIdRouteImport.update({
     id: '/app/viagens/$id',
@@ -356,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -394,6 +407,7 @@ export interface FileRoutesByFullPath {
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -408,6 +422,7 @@ export interface FileRoutesByTo {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -446,6 +461,7 @@ export interface FileRoutesByTo {
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -462,6 +478,7 @@ export interface FileRoutesById {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/rastreio/$token': typeof RastreioTokenRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
@@ -500,6 +517,7 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/_authenticated/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -516,6 +534,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -554,6 +573,7 @@ export interface FileRouteTypes {
     | '/app/crm/hunter'
     | '/app/crm/leads'
     | '/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -568,6 +588,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
     | '/app/assistente'
@@ -606,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/crm/hunter'
     | '/app/crm/leads'
     | '/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
@@ -621,6 +643,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/rastreio/$token'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
     | '/_authenticated/app/assistente'
@@ -659,6 +682,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/hunter'
     | '/_authenticated/app/crm/leads'
     | '/_authenticated/app/viagens/$id'
+    | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -675,7 +699,9 @@ export interface RootRouteChildren {
   ApiPlacesRoute: typeof ApiPlacesRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
+  RastreioTokenRoute: typeof RastreioTokenRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
+  ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -714,6 +740,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rastreio/$token': {
+      id: '/rastreio/$token'
+      path: '/rastreio/$token'
+      fullPath: '/rastreio/$token'
+      preLoaderRoute: typeof RastreioTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/roteirizador-geocode': {
@@ -1003,6 +1036,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/rastreio/$token': {
+      id: '/api/public/rastreio/$token'
+      path: '/api/public/rastreio/$token'
+      fullPath: '/api/public/rastreio/$token'
+      preLoaderRoute: typeof ApiPublicRastreioTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/app/viagens/$id': {
       id: '/_authenticated/app/viagens/$id'
       path: '/app/viagens/$id'
@@ -1138,7 +1178,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlacesRoute: ApiPlacesRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
+  RastreioTokenRoute: RastreioTokenRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
+  ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport

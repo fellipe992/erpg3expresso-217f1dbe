@@ -43,6 +43,13 @@
       "when": 1789475937633,
       "tag": "0005_avatars_staff_upload",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789476726293,
+      "tag": "0006_viagem_compartilhamentos",
+      "breakpoints": true
     }
   ]
 }

@@ -2994,6 +2994,41 @@ export type Database = {
           },
         ]
       }
+      viagem_compartilhamentos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          revogado_em: string | null
+          token: string
+          viagem_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revogado_em?: string | null
+          token: string
+          viagem_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revogado_em?: string | null
+          token?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_compartilhamentos_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagem_localizacoes: {
         Row: {
           bateria: number | null
