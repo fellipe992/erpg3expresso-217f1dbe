@@ -195,12 +195,69 @@ export function useBiDados(de: string, ate: string) {
         refViagem.set(String(raw.id), diaLocal((raw.data_saida as string) ?? (raw.created_at as string)));
       }
 
+      // ---- Fechamentos -----------------------------------------------------
+      // O fechamento é apurado depois do período (ex.: período 16–31/08 lançado em
+      // 10/09). A competência gerencial dele é o PERÍODO APURADO, não a emissão.
+      const fechRes = await supabase
+        .from("fechamentos")
+        .select(COLS_FECH)
+        .neq("status", "cancelado")
+        .lte("periodo_inicio", ate)
+        .gte("periodo_fim", de);
+      if (fechRes.error) throw fechRes.error;
+      const fechPeriodo = ((fechRes.data ?? []) as unknown as Array<FechamentoBi & { lancamento_id: string | null }>).map(
+        (f) => ({ ...f, valor: Number(f.valor ?? 0) }),
+      );
+
+      // Fechamentos referenciados por lançamentos já carregados (para tirá-los do
+      // mês de emissão quando o período apurado é outro).
+      const idsFechLanc = new Set<string>();
+      for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
+        if (l.fechamento_id) idsFechLanc.add(l.fechamento_id);
+      }
+      const idsFaltando = Array.from(idsFechLanc).filter((id) => !fechPeriodo.some((f) => f.id === id));
+      let fechOutros: FechamentoBi[] = [];
+      if (idsFaltando.length) {
+        const r = await supabase.from("fechamentos").select(COLS_FECH).in("id", idsFaltando);
+        if (r.error) throw r.error;
+        fechOutros = ((r.data ?? []) as unknown as FechamentoBi[]).map((f) => ({ ...f, valor: Number(f.valor ?? 0) }));
+      }
+      const fechTodos = [...fechPeriodo, ...fechOutros];
+      const fechRef = new Map(fechTodos.map((f) => [f.id, diaLocal(f.periodo_fim)]));
+
+      // Lançamentos dos fechamentos cujo período cruza o filtro, mesmo emitidos fora dele
+      const idsFechPeriodo = fechPeriodo.map((f) => f.id);
+      if (idsFechPeriodo.length) {
+        const r = await supabase.from("financeiro_lancamentos").select(COLS_LANC).in("fechamento_id", idsFechPeriodo);
+        if (r.error) throw r.error;
+        extras = [...extras, ...((r.data ?? []) as unknown as LancBi[])];
+      }
+
+      // Viagens já faturadas em fechamento de cliente: a receita delas é reconhecida
+      // pelo valor apurado do fechamento (com pedágios/adicionais/descontos), então o
+      // frete da viagem não pode ser somado de novo.
+      const viagensFaturadas = new Set<string>();
+      const idsFechCliente = fechPeriodo.filter((f) => f.tipo === "cliente").map((f) => f.id);
+      if (idsFechCliente.length) {
+        const r = await supabase.from("fechamento_viagens").select("viagem_id").in("fechamento_id", idsFechCliente);
+        if (r.error) throw r.error;
+        for (const row of (r.data ?? []) as Array<{ viagem_id: string }>) viagensFaturadas.add(row.viagem_id);
+      }
+
       const mapLanc = new Map<string, LancBi>();
       for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
+        const fechamentoRef = l.fechamento_id ? fechRef.get(l.fechamento_id) : undefined;
+        // Fechamento: competência = fim do período apurado.
         // Receita de frete pertence ao mês da viagem; despesas pertencem ao mês do fato (data_emissao).
         const competencia =
-          (l.tipo === "receber" ? viagemRef : undefined) ?? l.data_emissao ?? viagemRef ?? l.data_vencimento ?? l.data_pagamento ?? "";
+          fechamentoRef ??
+          (l.tipo === "receber" ? viagemRef : undefined) ??
+          l.data_emissao ??
+          viagemRef ??
+          l.data_vencimento ??
+          l.data_pagamento ??
+          "";
         const dataCaixa = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao ?? competencia;
         mapLanc.set(l.id, {
           ...l,
