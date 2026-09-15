@@ -230,6 +230,20 @@ function RentabilidadePage() {
   const origens = useMemo(() => agregar(viagens, (v) => ({ id: v.origem, nome: v.origem })), [viagens]);
   const destinos = useMemo(() => agregar(viagens, (v) => ({ id: v.destino, nome: v.destino })), [viagens]);
 
+  // Motoristas com viagens no período mas sem fechamento apurado: o custo deles ainda
+  // não existe no sistema, então o resultado aparece inflado.
+  const pendencias = useMemo(() => {
+    if (!data) return [] as string[];
+    const comFechamento = new Set(
+      data.fechamentos.filter((f) => f.tipo === "motorista" && f.motorista_id).map((f) => f.motorista_id as string),
+    );
+    const nomes = new Set<string>();
+    for (const v of viagens) {
+      if (v.motorista_id && !comFechamento.has(v.motorista_id)) nomes.add(v.motorista);
+    }
+    return Array.from(nomes).sort();
+  }, [data, viagens]);
+
   const totais = useMemo(() => {
     const receita = viagens.reduce((s, v) => s + v.receita, 0) + ajustes.reduce((s, a) => s + a.receita, 0);
     const despesas = viagens.reduce((s, v) => s + v.despesas, 0) + ajustes.reduce((s, a) => s + a.despesas, 0);
