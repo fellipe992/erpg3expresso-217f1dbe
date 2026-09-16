@@ -403,7 +403,7 @@ function FinanceiroPage() {
           <Card className="p-4 md:p-6">
             <div className="mb-4">
               <h2 className="font-display text-lg font-bold">Receitas × Despesas</h2>
-              <p className="text-xs text-muted-foreground">Por competência (pagamento, vencimento ou emissão)</p>
+              <p className="text-xs text-muted-foreground">Por competência de faturamento e custos</p>
             </div>
             {serie.length === 0 ? (
               <SecaoVazia />

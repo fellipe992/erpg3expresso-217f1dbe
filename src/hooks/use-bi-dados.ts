@@ -12,6 +12,7 @@ export type LancBi = {
   data_emissao: string | null;
   data_vencimento: string | null;
   data_pagamento: string | null;
+  data_competencia: string | null;
   cliente_id: string | null;
   fornecedor_id: string | null;
   viagem_id: string | null;
@@ -20,10 +21,9 @@ export type LancBi = {
   fechamento_id: string | null;
   numero_documento: string | null;
   descricao: string;
-  /** Regime de COMPETÊNCIA (gerencial): data em que a operação ocorreu.
-   *  Receita de frete = data da viagem; despesas = data do fato (abastecimento, manutenção, pedágio…). */
+  /** Regime de COMPETÊNCIA (gerencial): data do faturamento/custo, independente do vencimento. */
   competencia: string;
-  /** Regime de CAIXA (financeiro): pagamento, senão vencimento, senão emissão. */
+  /** Regime de CAIXA realizado: somente a data em que houve recebimento/pagamento. */
   dataCaixa: string;
 };
 
@@ -87,6 +87,8 @@ export type BiDados = {
   motoristas: { id: string; nome: string }[];
   /** Fechamentos cujo período cruza o filtro (para avisar o que ainda falta fechar). */
   fechamentos: FechamentoBi[];
+  /** Viagens do período que já integram um fechamento ativo de motorista. */
+  viagensFechadasMotorista: string[];
   nomeCliente: (id: string | null) => string;
   nomeVeiculo: (id: string | null) => string;
   nomeMotorista: (id: string | null) => string;
@@ -140,7 +142,7 @@ export function useBiDados(de: string, ate: string) {
       const fim = `${deslocarDia(ate, 1)}T23:59:59`;
 
       const COLS_LANC =
-        "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, fechamento_id, numero_documento, descricao";
+        "id, tipo, valor, status, categoria, centro_custo, data_emissao, data_vencimento, data_pagamento, data_competencia, cliente_id, fornecedor_id, viagem_id, veiculo_id, motorista_id, fechamento_id, numero_documento, descricao";
       const COLS_FECH =
         "id, numero, tipo, status, periodo_inicio, periodo_fim, cliente_id, motorista_id, valor, lancamento_id";
 
@@ -149,17 +151,17 @@ export function useBiDados(de: string, ate: string) {
         supabase
           .from("viagens")
           .select(
-            "id, codigo, status, created_at, data_saida, data_chegada, km_inicial, km_final, valor_frete, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf",
+            "id, codigo, status, created_at, data_saida, data_chegada, data_prevista_saida, km_inicial, km_final, valor_frete, cliente_id, veiculo_id, motorista_id, origem_cidade, origem_uf, destino_cidade, destino_uf",
           )
           .or(
-            `and(data_saida.gte.${inicioBusca},data_saida.lte.${fim}),and(data_saida.is.null,created_at.gte.${inicioBusca},created_at.lte.${fim})`,
+             `and(data_saida.gte.${inicioBusca},data_saida.lte.${fim}),and(data_saida.is.null,data_prevista_saida.gte.${inicioBusca},data_prevista_saida.lte.${fim}),and(data_saida.is.null,data_prevista_saida.is.null,created_at.gte.${inicioBusca},created_at.lte.${fim})`,
           ),
         // Superset: cobre competência (emissão) e caixa (vencimento/pagamento)
         supabase
           .from("financeiro_lancamentos")
           .select(COLS_LANC)
           .or(
-            `and(data_emissao.gte.${de},data_emissao.lte.${ate}),and(data_vencimento.gte.${de},data_vencimento.lte.${ate}),and(data_pagamento.gte.${de},data_pagamento.lte.${ate})`,
+            `and(data_competencia.gte.${de},data_competencia.lte.${ate}),and(data_emissao.gte.${de},data_emissao.lte.${ate}),and(data_vencimento.gte.${de},data_vencimento.lte.${ate}),and(data_pagamento.gte.${de},data_pagamento.lte.${ate})`,
           ),
         supabase.from("clientes").select("id, razao_social").order("razao_social"),
         supabase.from("veiculos").select("id, placa, modelo").order("placa"),
@@ -173,7 +175,7 @@ export function useBiDados(de: string, ate: string) {
 
       // Corte rigoroso pelo dia-calendário local (a consulta traz 1 dia de margem)
       const viagensRaw = ((viagRes.data ?? []) as Array<Record<string, unknown>>).filter((v) => {
-        const dia = diaLocal((v.data_saida as string) ?? (v.created_at as string));
+         const dia = diaLocal((v.data_saida as string) ?? (v.data_prevista_saida as string) ?? (v.created_at as string));
         return !!dia && dia >= de && dia <= ate;
       });
       const viagemIds = viagensRaw.map((v) => String(v.id));
@@ -192,7 +194,7 @@ export function useBiDados(de: string, ate: string) {
       // Data de competência operacional de cada viagem (data_saida > created_at)
       const refViagem = new Map<string, string>();
       for (const raw of viagensRaw) {
-        refViagem.set(String(raw.id), diaLocal((raw.data_saida as string) ?? (raw.created_at as string)));
+         refViagem.set(String(raw.id), diaLocal((raw.data_saida as string) ?? (raw.data_prevista_saida as string) ?? (raw.created_at as string)));
       }
 
       // ---- Fechamentos -----------------------------------------------------
@@ -233,32 +235,56 @@ export function useBiDados(de: string, ate: string) {
         extras = [...extras, ...((r.data ?? []) as unknown as LancBi[])];
       }
 
-      // Viagens já faturadas em fechamento de cliente: a receita delas é reconhecida
-      // pelo valor apurado do fechamento (com pedágios/adicionais/descontos), então o
-      // frete da viagem não pode ser somado de novo.
+       // O vínculo viagem → fechamento é a fonte correta para rankings. Um lançamento
+       // consolidado pode resumir vários motoristas/placas e não deve ser atribuído a
+       // apenas um deles.
       const viagensFaturadas = new Set<string>();
-      const idsFechCliente = fechPeriodo.filter((f) => f.tipo === "cliente").map((f) => f.id);
-      if (idsFechCliente.length) {
-        const r = await supabase.from("fechamento_viagens").select("viagem_id").in("fechamento_id", idsFechCliente);
+       const viagensFechadasMotorista = new Set<string>();
+       const receitaFechamentoPorViagem = new Map<string, number>();
+       const despesaFechamentoPorViagem = new Map<string, number>();
+       if (viagemIds.length) {
+         const r = await supabase
+           .from("fechamento_viagens")
+           .select("viagem_id, tipo, total, ativo, fechamento:fechamentos(status)")
+           .in("viagem_id", viagemIds)
+           .eq("ativo", true);
         if (r.error) throw r.error;
-        for (const row of (r.data ?? []) as Array<{ viagem_id: string }>) viagensFaturadas.add(row.viagem_id);
+         for (const row of (r.data ?? []) as unknown as Array<{
+           viagem_id: string;
+           tipo: string;
+           total: number;
+           fechamento: { status: string } | null;
+         }>) {
+           if (row.fechamento?.status === "cancelado") continue;
+           if (row.tipo === "cliente") {
+             viagensFaturadas.add(row.viagem_id);
+             receitaFechamentoPorViagem.set(
+               row.viagem_id,
+               (receitaFechamentoPorViagem.get(row.viagem_id) ?? 0) + Number(row.total ?? 0),
+             );
+           } else if (row.tipo === "motorista") {
+             viagensFechadasMotorista.add(row.viagem_id);
+             despesaFechamentoPorViagem.set(
+               row.viagem_id,
+               (despesaFechamentoPorViagem.get(row.viagem_id) ?? 0) + Number(row.total ?? 0),
+             );
+           }
+         }
       }
 
       const mapLanc = new Map<string, LancBi>();
       for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
         const fechamentoRef = l.fechamento_id ? fechRef.get(l.fechamento_id) : undefined;
-        // Fechamento: competência = fim do período apurado.
-        // Receita de frete pertence ao mês da viagem; despesas pertencem ao mês do fato (data_emissao).
+         // A competência é explícita e nunca usa vencimento/pagamento. Para registros
+         // antigos, ainda há fallback para o período do fechamento e para a emissão.
         const competencia =
-          fechamentoRef ??
-          (l.tipo === "receber" ? viagemRef : undefined) ??
+           l.data_competencia ??
+           fechamentoRef ??
           l.data_emissao ??
           viagemRef ??
-          l.data_vencimento ??
-          l.data_pagamento ??
           "";
-        const dataCaixa = l.data_pagamento ?? l.data_vencimento ?? l.data_emissao ?? competencia;
+         const dataCaixa = l.status === "pago" ? (l.data_pagamento ?? "") : "";
         mapLanc.set(l.id, {
           ...l,
           valor: Number(l.valor),
@@ -314,7 +340,7 @@ export function useBiDados(de: string, ate: string) {
         let combustivel = 0;
         let pedagio = 0;
         let manutencao = 0;
-        let outras = 0;
+         let outras = despesaFechamentoPorViagem.get(id) ?? 0;
 
         for (const l of ls) {
           if (l.tipo === "receber") {
@@ -333,7 +359,8 @@ export function useBiDados(de: string, ate: string) {
 
         // Viagem já faturada em fechamento de cliente: a receita entra pelo valor
         // apurado do fechamento; usar o frete aqui dobraria a receita.
-        const receita = receitaLanc > 0 ? receitaLanc : viagensFaturadas.has(id) ? 0 : frete;
+         const receitaFechamento = receitaFechamentoPorViagem.get(id) ?? 0;
+         const receita = receitaFechamento > 0 ? receitaFechamento : receitaLanc > 0 ? receitaLanc : viagensFaturadas.has(id) ? 0 : frete;
         const despesas = combustivel + pedagio + manutencao + outras;
         const lucro = receita - despesas;
         const vei = raw.veiculo_id ? veiMap.get(String(raw.veiculo_id)) : undefined;
@@ -370,7 +397,7 @@ export function useBiDados(de: string, ate: string) {
           despesas,
           lucro,
           margem: receita > 0 ? (lucro / receita) * 100 : 0,
-          ref: diaLocal((raw.data_saida as string) ?? (raw.created_at as string)),
+           ref: diaLocal((raw.data_saida as string) ?? (raw.data_prevista_saida as string) ?? (raw.created_at as string)),
         };
       });
 
@@ -380,6 +407,7 @@ export function useBiDados(de: string, ate: string) {
         lancamentosCaixa,
 
         fechamentos: fechPeriodo.map(({ lancamento_id: _l, ...f }) => f),
+         viagensFechadasMotorista: Array.from(viagensFechadasMotorista),
         clientes,
         veiculos,
         motoristas,

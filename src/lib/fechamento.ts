@@ -284,11 +284,12 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
       centro_custo: p.tipo === "cliente" ? "Receita Operacional" : "Operacional",
       valor: valorFinal,
       data_emissao: new Date().toISOString().slice(0, 10),
+      data_competencia: p.periodo.ate,
       data_vencimento: p.vencimento,
       status: "pendente",
       cliente_id: clienteUnico,
       motorista_id: motoristaUnico,
-      veiculo_id: p.veiculoId,
+      veiculo_id: veiculoVinculado,
       origem: "fechamento",
       origem_id: fech.id,
       fechamento_id: fech.id,
@@ -391,7 +392,7 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
     supabase
       .from("fechamento_viagens")
       .select(
-        "viagem_id, frete, pedagio, adicionais, descontos, total, viagem:viagens(codigo, created_at, data_saida, data_prevista_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, frete_faixa_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id))",
+        "viagem_id, frete, pedagio, adicionais, descontos, total, viagem:viagens(codigo, created_at, data_saida, data_prevista_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, frete_faixa_id, cliente_id, motorista_id, veiculo_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id))",
       )
       .eq("fechamento_id", fechamentoId),
     supabase.from("fechamento_descontos").select("descricao, valor").eq("fechamento_id", fechamentoId),
@@ -440,11 +441,11 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
       viagemId: String(i.viagem_id),
       codigo: v.codigo ?? null,
       data: diaOperacao(v),
-      clienteId: registro.cliente_id,
+      clienteId: v.cliente_id ?? registro.cliente_id,
       cliente: v.cliente?.razao_social ?? "—",
-      motoristaId: registro.motorista_id,
+      motoristaId: v.motorista_id ?? registro.motorista_id,
       motorista: v.motorista?.nome ?? "—",
-      veiculoId: null,
+      veiculoId: v.veiculo_id ?? null,
       placa: veic?.placa ?? "—",
       tipologia:
         (veic?.tipologia_id ? tipoNome.get(veic.tipologia_id) : undefined) ??

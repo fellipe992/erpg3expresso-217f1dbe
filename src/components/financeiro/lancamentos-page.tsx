@@ -37,6 +37,7 @@ export type Lancamento = {
   data_emissao: string;
   data_vencimento: string | null;
   data_pagamento: string | null;
+  data_competencia: string | null;
   forma_pagamento: FormaPagamento | null;
   status: "pendente" | "pago" | "atrasado" | "cancelado";
   cliente_id: string | null;
@@ -233,6 +234,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         plano_conta_id: plano.contaId,
         valor: Number(form.valor),
         data_emissao: form.data_emissao || new Date().toISOString().slice(0, 10),
+        data_competencia: form.data_competencia || form.data_emissao || new Date().toISOString().slice(0, 10),
         data_vencimento: form.data_vencimento || null,
         data_pagamento: form.data_pagamento || null,
         forma_pagamento: (form.forma_pagamento as Lancamento["forma_pagamento"]) || null,
@@ -516,6 +518,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           tipo,
           status: "pendente",
           data_emissao: new Date().toISOString().slice(0, 10),
+          data_competencia: new Date().toISOString().slice(0, 10),
         });
         setPlano({ grupoId: null, subgrupoId: null, contaId: null });
         setOpen(true);
@@ -772,6 +775,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             </F>
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
+            </F>
+            <F label="Competência">
+              <Input type="date" value={form.data_competencia ?? ""} onChange={(e) => setForm({ ...form, data_competencia: e.target.value || null })} />
             </F>
             <F label={parcelar ? "Vencimento da 1ª parcela" : isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
@@ -1100,6 +1106,7 @@ function ViewLancamentoDialog({
             <InfoRow label="Centro de Custo" value={l.centro_custo ?? "—"} />
             <InfoRow label="Forma de Pagamento" value={l.forma_pagamento ? FORMA_LABEL[l.forma_pagamento] ?? l.forma_pagamento : "—"} />
             <InfoRow label="Data de Emissão" value={fmtDate(l.data_emissao)} />
+            <InfoRow label="Data de Competência" value={fmtDate(l.data_competencia)} />
             <InfoRow label="Data de Vencimento" value={fmtDate(l.data_vencimento)} />
             <InfoRow label="Data de Pagamento" value={fmtDate(l.data_pagamento)} />
             <InfoRow label={isReceber ? "Cliente" : "Fornecedor"} value={parceiro ?? "—"} />

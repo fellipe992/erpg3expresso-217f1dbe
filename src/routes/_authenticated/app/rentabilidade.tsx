@@ -154,6 +154,7 @@ function RentabilidadePage() {
     const q = filtros.busca.trim().toLowerCase();
     return data.lancamentos
       .filter((l) => !l.viagem_id || !viagensDoPeriodo.has(l.viagem_id))
+      .filter((l) => !l.fechamento_id)
       .filter((l) => selecionado(filtros.clienteIds, l.cliente_id))
       .filter((l) => selecionado(filtros.veiculoIds, l.veiculo_id))
       .filter((l) => selecionado(filtros.motoristaIds, l.motorista_id))
@@ -211,20 +212,12 @@ function RentabilidadePage() {
     [viagens, ajustes, data],
   );
   const veiculos = useMemo(
-    () => aplicarAjustes(
-      agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
-      (a) => a.veiculoId,
-      (id) => data?.nomeVeiculo(id) ?? "—",
-    ),
-    [viagens, ajustes, data],
+    () => agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
+    [viagens],
   );
   const motoristas = useMemo(
-    () => aplicarAjustes(
-      agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
-      (a) => a.motoristaId,
-      (id) => data?.nomeMotorista(id) ?? "—",
-    ),
-    [viagens, ajustes, data],
+    () => agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
+    [viagens],
   );
   const rotas = useMemo(() => agregar(viagens, (v) => ({ id: v.rota, nome: v.rota })), [viagens]);
   const origens = useMemo(() => agregar(viagens, (v) => ({ id: v.origem, nome: v.origem })), [viagens]);
@@ -234,12 +227,10 @@ function RentabilidadePage() {
   // não existe no sistema, então o resultado aparece inflado.
   const pendencias = useMemo(() => {
     if (!data) return [] as string[];
-    const comFechamento = new Set(
-      data.fechamentos.filter((f) => f.tipo === "motorista" && f.motorista_id).map((f) => f.motorista_id as string),
-    );
+    const fechadas = new Set(data.viagensFechadasMotorista);
     const nomes = new Set<string>();
     for (const v of viagens) {
-      if (v.motorista_id && !comFechamento.has(v.motorista_id)) nomes.add(v.motorista);
+      if (v.motorista_id && !fechadas.has(v.id)) nomes.add(v.motorista);
     }
     return Array.from(nomes).sort();
   }, [data, viagens]);
