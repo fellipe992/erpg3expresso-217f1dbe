@@ -353,6 +353,32 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const categoriaNomes = useMemo(() => new Set(categoriasList.map((c) => c.nome)), [categoriasList]);
   void categoriaNomes;
 
+  // Períodos apurados dos fechamentos: a fatura consolidada pertence ao período
+  // das viagens, não ao dia em que foi gerada.
+  const { data: fechamentosPeriodo = [] } = useQuery({
+    queryKey: ["fechamentos-periodo-lite"],
+    queryFn: async () => {
+      const { data } = await supabase.from("fechamentos").select("id, periodo_inicio, periodo_fim");
+      return (data ?? []) as { id: string; periodo_inicio: string; periodo_fim: string }[];
+    },
+  });
+  const periodoFechamento = useMemo(
+    () => new Map(fechamentosPeriodo.map((f) => [f.id, { ini: f.periodo_inicio, fim: f.periodo_fim }])),
+    [fechamentosPeriodo],
+  );
+
+  /** Período de faturamento de um lançamento (viagem > fechamento > competência > emissão). */
+  const periodoFaturamento = (l: Lancamento): { ini: string; fim: string } | null => {
+    const diaViagem = l.viagem ? diaLocal(String(l.viagem.data_saida ?? l.viagem.data_chegada ?? "")) : "";
+    if (diaViagem) return { ini: diaViagem, fim: diaViagem };
+    if (l.fechamento_id) {
+      const p = periodoFechamento.get(l.fechamento_id);
+      if (p) return { ini: diaLocal(p.ini), fim: diaLocal(p.fim) };
+    }
+    const d = diaLocal(String(l.data_competencia ?? l.data_emissao ?? ""));
+    return d ? { ini: d, fim: d } : null;
+  };
+
   const filtered = lancamentos.filter((l) => {
     if (statusFilter !== "todos" && l.status !== statusFilter) return false;
     if (categoriaFilter !== "todas" && (l.categoria ?? "") !== categoriaFilter) return false;
