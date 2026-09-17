@@ -104,6 +104,21 @@ function somarMeses(iso: string, meses: number) {
   return `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
+/** Quinzena (1ª ou 2ª) de uma data de competência. */
+function quinzenaDe(d: string | null | undefined): "1" | "2" {
+  const dia = Number((d ?? "").slice(8, 10));
+  return dia > 15 ? "2" : "1";
+}
+
+/** Última data da quinzena escolhida — usada como competência do lançamento. */
+function dataDaQuinzena(mes: string, q: "1" | "2"): string {
+  const [ano, m] = mes.split("-").map(Number);
+  if (!ano || !m) return "";
+  if (q === "1") return `${mes}-15`;
+  const ultimo = new Date(Date.UTC(ano, m, 0)).getUTCDate();
+  return `${mes}-${String(ultimo).padStart(2, "0")}`;
+}
+
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { role } = useAuth();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
@@ -118,7 +133,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
   const [clienteOperacaoFilter, setClienteOperacaoFilter] = useState<string>("todos"); // rateio de despesa por cliente
   // Base da data do filtro de período: o que o usuário quer de fato consultar.
-  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento" | "viagem">("emissao");
+  // "faturamento" = período em que a operação aconteceu (viagens da fatura).
+  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento" | "faturamento">("vencimento");
   const [dataDe, setDataDe] = useState<string>("");
   const [dataAte, setDataAte] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -352,6 +368,32 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const categoriaNomes = useMemo(() => new Set(categoriasList.map((c) => c.nome)), [categoriasList]);
   void categoriaNomes;
 
+  // Períodos apurados dos fechamentos: a fatura consolidada pertence ao período
+  // das viagens, não ao dia em que foi gerada.
+  const { data: fechamentosPeriodo = [] } = useQuery({
+    queryKey: ["fechamentos-periodo-lite"],
+    queryFn: async () => {
+      const { data } = await supabase.from("fechamentos").select("id, periodo_inicio, periodo_fim");
+      return (data ?? []) as { id: string; periodo_inicio: string; periodo_fim: string }[];
+    },
+  });
+  const periodoFechamento = useMemo(
+    () => new Map(fechamentosPeriodo.map((f) => [f.id, { ini: f.periodo_inicio, fim: f.periodo_fim }])),
+    [fechamentosPeriodo],
+  );
+
+  /** Período de faturamento de um lançamento (viagem > fechamento > competência > emissão). */
+  const periodoFaturamento = (l: Lancamento): { ini: string; fim: string } | null => {
+    const diaViagem = l.viagem ? diaLocal(String(l.viagem.data_saida ?? l.viagem.data_chegada ?? "")) : "";
+    if (diaViagem) return { ini: diaViagem, fim: diaViagem };
+    if (l.fechamento_id) {
+      const p = periodoFechamento.get(l.fechamento_id);
+      if (p) return { ini: diaLocal(p.ini), fim: diaLocal(p.fim) };
+    }
+    const d = diaLocal(String(l.data_competencia ?? l.data_emissao ?? ""));
+    return d ? { ini: d, fim: d } : null;
+  };
+
   const filtered = lancamentos.filter((l) => {
     if (statusFilter !== "todos" && l.status !== statusFilter) return false;
     if (categoriaFilter !== "todas" && (l.categoria ?? "") !== categoriaFilter) return false;
@@ -364,21 +406,27 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     }
     if (!isReceber && clienteOperacaoFilter !== "todos" && l.cliente_id !== clienteOperacaoFilter) return false;
 
-    // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
+    // Filtro por período: pela data escolhida ou pelo período de faturamento
+    // (as viagens que compõem o lançamento/fatura), que é o que a operação usa.
     if (dataDe || dataAte) {
-      const refBruta =
-        dataBase === "pagamento"
-          ? l.data_pagamento
-          : dataBase === "vencimento"
-            ? l.data_vencimento
-            : dataBase === "viagem"
-              ? (l.viagem?.data_chegada ?? l.viagem?.data_saida ?? null)
+      if (dataBase === "faturamento") {
+        const per = periodoFaturamento(l);
+        if (!per) return false;
+        if (dataDe && per.fim < dataDe) return false;
+        if (dataAte && per.ini > dataAte) return false;
+      } else {
+        const refBruta =
+          dataBase === "pagamento"
+            ? l.data_pagamento
+            : dataBase === "vencimento"
+              ? l.data_vencimento
               : l.data_emissao;
-      // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
-      const ref = refBruta ? diaLocal(String(refBruta)) || null : null;
-      if (!ref) return false;
-      if (dataDe && ref < dataDe) return false;
-      if (dataAte && ref > dataAte) return false;
+        // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
+        const ref = refBruta ? diaLocal(String(refBruta)) || null : null;
+        if (!ref) return false;
+        if (dataDe && ref < dataDe) return false;
+        if (dataAte && ref > dataAte) return false;
+      }
     }
 
 
@@ -629,10 +677,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="emissao">Data do lançamento</SelectItem>
                 <SelectItem value="vencimento">Data de vencimento</SelectItem>
                 <SelectItem value="pagamento">Data de {isReceber ? "recebimento" : "pagamento"}</SelectItem>
-                <SelectItem value="viagem">Data da viagem (conclusão)</SelectItem>
+                <SelectItem value="faturamento">Faturamento (período das viagens)</SelectItem>
+                <SelectItem value="emissao">Data do lançamento</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -776,9 +824,45 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
             </F>
-            <F label="Competência">
+            <F label="Competência (data da operação)">
               <Input type="date" value={form.data_competencia ?? ""} onChange={(e) => setForm({ ...form, data_competencia: e.target.value || null })} />
             </F>
+            <div className="md:col-span-2 grid gap-2 sm:grid-cols-2">
+              <F label="Quinzena de referência">
+                <Input
+                  type="month"
+                  value={(form.data_competencia ?? "").slice(0, 7)}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      data_competencia: e.target.value
+                        ? dataDaQuinzena(e.target.value, quinzenaDe(form.data_competencia))
+                        : null,
+                    })
+                  }
+                />
+              </F>
+              <F label="1ª ou 2ª quinzena">
+                <Select
+                  value={quinzenaDe(form.data_competencia)}
+                  onValueChange={(v) =>
+                    setForm({
+                      ...form,
+                      data_competencia: dataDaQuinzena(
+                        (form.data_competencia ?? new Date().toISOString()).slice(0, 7),
+                        v as "1" | "2",
+                      ),
+                    })
+                  }
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1ª quinzena (01 a 15)</SelectItem>
+                    <SelectItem value="2">2ª quinzena (16 ao fim)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </F>
+            </div>
             <F label={parcelar ? "Vencimento da 1ª parcela" : isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>

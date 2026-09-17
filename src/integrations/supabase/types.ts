@@ -3437,9 +3437,11 @@ export type Database = {
           veiculo_placa: string
         }[]
       }
+      viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
       viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
       viagem_restaurar: { Args: { _arquivo_id: string }; Returns: string }
       viagem_total_cliente: { Args: { _viagem_id: string }; Returns: number }
+      viagem_total_motorista: { Args: { _viagem_id: string }; Returns: number }
     }
     Enums: {
       app_role:
