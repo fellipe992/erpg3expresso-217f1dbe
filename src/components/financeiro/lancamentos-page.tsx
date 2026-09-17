@@ -104,6 +104,21 @@ function somarMeses(iso: string, meses: number) {
   return `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
+/** Quinzena (1ª ou 2ª) de uma data de competência. */
+function quinzenaDe(d: string | null | undefined): "1" | "2" {
+  const dia = Number((d ?? "").slice(8, 10));
+  return dia > 15 ? "2" : "1";
+}
+
+/** Última data da quinzena escolhida — usada como competência do lançamento. */
+function dataDaQuinzena(mes: string, q: "1" | "2"): string {
+  const [ano, m] = mes.split("-").map(Number);
+  if (!ano || !m) return "";
+  if (q === "1") return `${mes}-15`;
+  const ultimo = new Date(Date.UTC(ano, m, 0)).getUTCDate();
+  return `${mes}-${String(ultimo).padStart(2, "0")}`;
+}
+
 export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const { role } = useAuth();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
