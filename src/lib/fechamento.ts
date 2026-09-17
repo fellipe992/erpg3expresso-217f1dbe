@@ -302,18 +302,22 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
 
   await supabase.from("fechamentos").update({ lancamento_id: lanc.data.id }).eq("id", fech.id);
 
-  // Consolidação: os "a receber" individuais das viagens saem do fluxo (sem apagar nada).
+  // Consolidação: os lançamentos avulsos das viagens saem do fluxo (sem apagar nada).
+  // Cliente: os "a receber" do frete. Motorista: os "a pagar" gerados por viagem.
+  const consolidacao = supabase
+    .from("financeiro_lancamentos")
+    .update({
+      status: "cancelado",
+      observacoes: `Consolidado na fatura do fechamento #${fech.numero}`,
+    })
+    .in("viagem_id", p.linhas.map((l) => l.viagemId))
+    .in("status", ["pendente", "atrasado"])
+    .is("fechamento_id", null);
+
   if (p.tipo === "cliente") {
-    await supabase
-      .from("financeiro_lancamentos")
-      .update({
-        status: "cancelado",
-        observacoes: `Consolidado na fatura do fechamento #${fech.numero}`,
-      })
-      .in("viagem_id", p.linhas.map((l) => l.viagemId))
-      .eq("tipo", "receber")
-      .in("status", ["pendente", "atrasado"])
-      .is("fechamento_id", null);
+    await consolidacao.eq("tipo", "receber");
+  } else {
+    await consolidacao.eq("tipo", "pagar").eq("origem", "viagem");
   }
 
   return fech as { id: string; numero: number };
