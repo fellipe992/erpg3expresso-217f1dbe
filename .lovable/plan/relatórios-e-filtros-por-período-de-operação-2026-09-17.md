@@ -1,10 +1,11 @@
 # Relatórios e filtros por período de operação
 
-Objetivo: todo filtro de período passar a entender duas leituras diferentes — o período em que a operação aconteceu (as viagens) e o período em que o dinheiro entra ou sai (vencimento/pagamento) — sem alterar valores nem registros já existentes.
+Objetivo: todo filtro de período passar a entender duas leituras diferentes — o período em que a operação aconteceu (as viagens) e o período em que o dinheiro entra ou sai (vencimento/pagamento) — sem alterar valores nem registros já existentes, mas já identificando os períodos e respondendo da forma correta ao planejamento 
 
 ## O que muda na prática
 
 ### 1. Contas a pagar e Contas a receber
+
 - O seletor de período passa a ter estas bases, com nomes claros:
   - **Vencimento** (padrão, como você pediu)
   - **Pagamento/recebimento realizado**
@@ -15,23 +16,27 @@ Objetivo: todo filtro de período passar a entender duas leituras diferentes —
 - Os totais do rodapé passam a refletir exatamente a base escolhida.
 
 ### 2. Lançamentos: quinzena de referência
+
 - No cadastro/edição de um lançamento, além das datas, um campo **Quinzena de referência** (mês + 1ª ou 2ª quinzena) que preenche a competência.
 - Serve para despesas fixas (escritório, funcionários, descontos) caírem no resultado da quinzena que elas se referem, mesmo que o pagamento aconteça depois.
-- Lançamentos antigos continuam como estão; a quinzena é derivada da competência já gravada.
+- Lançamentos antigos continuam como estão; a quinzena é derivada da competência já gravada, identificando a data de ocorrência e atribuindo a quinzena em que ela se refere, 1° ou 2° do mês.
 
 ### 3. Rentabilidade e relatórios (cliente, motorista, veículo/placa)
+
 - Passam a usar sempre o **período de faturamento/operação**: tudo que ocorreu entre as datas escolhidas, independentemente de quando vence ou é pago.
 - Receita: fretes das viagens do período, mais faturas consolidadas cujas viagens são do período (sem contar duas vezes).
 - Custos: fechamento do motorista das mesmas viagens, abastecimentos, manutenções, descontos e despesas com quinzena de referência no período.
 - Cada motorista/placa é atribuído pela viagem, nunca pelo resumo da fatura — assim placas e motoristas param de aparecer em quinzenas em que não rodaram.
 - Aviso já existente de "motorista sem fechamento no período" é mantido e estendido a cliente e veículo.
-- Fluxo de caixa continua separado, por recebimento/pagamento efetivo.
+- Fluxo de caixa continua separado, por recebimento/pagamento efetivo. ( preciso poder ver o fluxo pela quinzena, mas de forma fixa, ele deve apresentar os valores qur entraram e saíram na data selecionada, sem olhar a quinzena e sim a data de entrada e saida dos valores).
 
 ### 4. Dashboard
+
 - Os atalhos de 15/30/90 dias passam a usar a mesma regra de faturamento dos relatórios, então os cartões batem com a tela de rentabilidade.
 - Onde o número é de caixa (recebido/pago), o cartão diz isso no rótulo.
 
 ### 5. Viagem entrando direto no Contas a pagar do motorista
+
 - Ao lançar/apurar uma viagem, ela gera automaticamente uma conta a pagar do motorista com o valor da **tabela de frete do motorista** (faixa + adicionais − descontos).
 - Quando você faz o fechamento da quinzena, essas contas avulsas são canceladas e substituídas por uma única fatura do período, como já acontece hoje com o lado do cliente.
 - Cancelar o fechamento devolve as contas avulsas.
@@ -48,5 +53,6 @@ Objetivo: todo filtro de período passar a entender duas leituras diferentes —
 - Migração de dados: apenas normalizar `data_competencia` faltante e gerar as contas a pagar avulsas de viagens ainda sem fechamento. Nenhum valor, vencimento ou pagamento histórico é alterado.
 
 ## Validação
+
 - Conferir a quinzena 16–31/08 e 01–15/09 do cliente principal: receita, custo de motorista e margem iguais nos relatórios, na rentabilidade e no dashboard.
 - Conferir que um faturamento com vencimento em setembro aparece na quinzena de agosto no filtro de faturamento e em setembro no filtro de vencimento.
