@@ -1,6 +1,12 @@
 # Roadmap
 
-- [x] Separar competência gerencial, vencimento e caixa realizado nos relatórios.
-- [x] Corrigir o ranking para considerar a data prevista das viagens e não atribuir lançamentos ao motorista/placa errados.
-- [x] Corrigir os períodos históricos identificados de Luiz Leandro, Frediney e Willian.
-- [x] Validar a consistência do período de 16/08/2026 a 31/08/2026; a validação visual autenticada depende de sessão na prévia.
+## Concluído (relatórios e filtros por período de operação)
+- Competência operacional no banco (migration 0008): `viagem_dia_operacao`, `viagem_total_motorista`, gatilhos de abastecimento/manutenção/despesa com a data do fato.
+- Conta a pagar avulsa do motorista gerada pela viagem apurada; fechamento consolida (cancela avulsos) e o cancelamento devolve os avulsos.
+- Contas a pagar/receber: filtro de período por vencimento (padrão), pagamento/recebimento, faturamento (período das viagens) e data do lançamento.
+- Campo "Quinzena de referência" no lançamento (preenche a competência).
+- Rentabilidade/relatórios: competência = viagem > fechamento > competência digitada > emissão; caixa apenas com pagamento realizado.
+
+## Em aberto
+- Validar na tela as quinzenas 16–31/08 e 01–15/09 do cliente principal (receita/custo/margem iguais em relatórios, rentabilidade e dashboard).
+- Definir plano de pagamento por cliente (quinzenal +15, quinzenal imediato, à vista) para vencimento automático — aguarda decisão do usuário.
