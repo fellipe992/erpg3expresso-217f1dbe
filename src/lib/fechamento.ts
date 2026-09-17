@@ -333,9 +333,25 @@ export async function cancelarFechamento(fechamentoId: string) {
     .single();
   if (error) throw error;
 
+  const { data: itens } = await supabase
+    .from("fechamento_viagens")
+    .select("viagem_id")
+    .eq("fechamento_id", fechamentoId);
   await supabase.from("fechamento_viagens").update({ ativo: false }).eq("fechamento_id", fechamentoId);
   if (fech.lancamento_id) {
     await supabase.from("financeiro_lancamentos").update({ status: "cancelado" }).eq("id", fech.lancamento_id);
+  }
+
+  // Devolve ao fluxo os lançamentos avulsos que esse fechamento havia consolidado.
+  const viagemIds = (itens ?? []).map((i) => String(i.viagem_id));
+  if (viagemIds.length) {
+    await supabase
+      .from("financeiro_lancamentos")
+      .update({ status: "pendente", observacoes: null })
+      .in("viagem_id", viagemIds)
+      .eq("status", "cancelado")
+      .is("fechamento_id", null)
+      .eq("observacoes", `Consolidado na fatura do fechamento #${fech.numero}`);
   }
   const upd = await supabase
     .from("fechamentos")
