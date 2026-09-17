@@ -809,9 +809,45 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <F label="Emissão">
               <Input type="date" value={form.data_emissao ?? ""} onChange={(e) => setForm({ ...form, data_emissao: e.target.value })} />
             </F>
-            <F label="Competência">
+            <F label="Competência (data da operação)">
               <Input type="date" value={form.data_competencia ?? ""} onChange={(e) => setForm({ ...form, data_competencia: e.target.value || null })} />
             </F>
+            <div className="md:col-span-2 grid gap-2 sm:grid-cols-2">
+              <F label="Quinzena de referência">
+                <Input
+                  type="month"
+                  value={(form.data_competencia ?? "").slice(0, 7)}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      data_competencia: e.target.value
+                        ? dataDaQuinzena(e.target.value, quinzenaDe(form.data_competencia))
+                        : null,
+                    })
+                  }
+                />
+              </F>
+              <F label="1ª ou 2ª quinzena">
+                <Select
+                  value={quinzenaDe(form.data_competencia)}
+                  onValueChange={(v) =>
+                    setForm({
+                      ...form,
+                      data_competencia: dataDaQuinzena(
+                        (form.data_competencia ?? new Date().toISOString()).slice(0, 7),
+                        v as "1" | "2",
+                      ),
+                    })
+                  }
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1ª quinzena (01 a 15)</SelectItem>
+                    <SelectItem value="2">2ª quinzena (16 ao fim)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </F>
+            </div>
             <F label={parcelar ? "Vencimento da 1ª parcela" : isReceber ? "Vencimento (opcional)" : "Vencimento"}>
               <Input type="date" value={form.data_vencimento ?? ""} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value || null })} />
             </F>
