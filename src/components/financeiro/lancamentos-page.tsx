@@ -118,7 +118,8 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const [parceiroFilter, setParceiroFilter] = useState<string>("todos"); // cliente ou fornecedor
   const [clienteOperacaoFilter, setClienteOperacaoFilter] = useState<string>("todos"); // rateio de despesa por cliente
   // Base da data do filtro de período: o que o usuário quer de fato consultar.
-  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento" | "viagem">("emissao");
+  // "faturamento" = período em que a operação aconteceu (viagens da fatura).
+  const [dataBase, setDataBase] = useState<"emissao" | "vencimento" | "pagamento" | "faturamento">("vencimento");
   const [dataDe, setDataDe] = useState<string>("");
   const [dataAte, setDataAte] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -364,21 +365,27 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     }
     if (!isReceber && clienteOperacaoFilter !== "todos" && l.cliente_id !== clienteOperacaoFilter) return false;
 
-    // Filtro por período usa exatamente a data escolhida (lançamento, vencimento ou pagamento).
+    // Filtro por período: pela data escolhida ou pelo período de faturamento
+    // (as viagens que compõem o lançamento/fatura), que é o que a operação usa.
     if (dataDe || dataAte) {
-      const refBruta =
-        dataBase === "pagamento"
-          ? l.data_pagamento
-          : dataBase === "vencimento"
-            ? l.data_vencimento
-            : dataBase === "viagem"
-              ? (l.viagem?.data_chegada ?? l.viagem?.data_saida ?? null)
+      if (dataBase === "faturamento") {
+        const per = periodoFaturamento(l);
+        if (!per) return false;
+        if (dataDe && per.fim < dataDe) return false;
+        if (dataAte && per.ini > dataAte) return false;
+      } else {
+        const refBruta =
+          dataBase === "pagamento"
+            ? l.data_pagamento
+            : dataBase === "vencimento"
+              ? l.data_vencimento
               : l.data_emissao;
-      // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
-      const ref = refBruta ? diaLocal(String(refBruta)) || null : null;
-      if (!ref) return false;
-      if (dataDe && ref < dataDe) return false;
-      if (dataAte && ref > dataAte) return false;
+        // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
+        const ref = refBruta ? diaLocal(String(refBruta)) || null : null;
+        if (!ref) return false;
+        if (dataDe && ref < dataDe) return false;
+        if (dataAte && ref > dataAte) return false;
+      }
     }
 
 
@@ -629,10 +636,10 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
             <Select value={dataBase} onValueChange={(v) => setDataBase(v as typeof dataBase)}>
               <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="emissao">Data do lançamento</SelectItem>
                 <SelectItem value="vencimento">Data de vencimento</SelectItem>
                 <SelectItem value="pagamento">Data de {isReceber ? "recebimento" : "pagamento"}</SelectItem>
-                <SelectItem value="viagem">Data da viagem (conclusão)</SelectItem>
+                <SelectItem value="faturamento">Faturamento (período das viagens)</SelectItem>
+                <SelectItem value="emissao">Data do lançamento</SelectItem>
               </SelectContent>
             </Select>
           </div>
