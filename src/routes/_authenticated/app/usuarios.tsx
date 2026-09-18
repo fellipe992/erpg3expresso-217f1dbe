@@ -169,6 +169,7 @@ function UsuariosPage() {
           role: form.role,
           motorista_id: form.role === "motorista" ? form.motorista_id : null,
           cliente_ids: form.role === "monitor" ? [form.cliente_id] : null,
+          permissoes: form.roteirizador ? (["roteirizador"] as const).slice() : [],
         },
       });
     },
@@ -176,7 +177,7 @@ function UsuariosPage() {
       toast.success("Usuário criado");
       invalidateAll();
       setOpenNew(false);
-      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "", roteirizador: false });
 
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -184,7 +185,7 @@ function UsuariosPage() {
 
   // ------ Edição
   const [edit, setEdit] = useState<{
-    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string;
+    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string; roteirizador: boolean;
   } | null>(null);
   const [confirmRemoveLink, setConfirmRemoveLink] = useState<null | (() => void)>(null);
 
