@@ -61,10 +61,13 @@ export function useProjetosRoteirizacao() {
         autorNome = perfil?.nome ?? perfil?.email ?? null;
         const { data: vinculos } = await supabase
           .from("monitor_clientes")
-          .select("clientes:cliente_id (nome)")
+          .select("clientes:cliente_id (razao_social, nome_fantasia)")
           .eq("user_id", uid);
         const nomes = (vinculos ?? [])
-          .map((v) => (v as { clientes: { nome: string } | null }).clientes?.nome)
+          .map((v) => {
+            const c = (v as { clientes: { razao_social: string; nome_fantasia: string | null } | null }).clientes;
+            return c?.nome_fantasia || c?.razao_social;
+          })
           .filter(Boolean) as string[];
         autorCliente = nomes.length ? nomes.join(", ") : null;
       }
