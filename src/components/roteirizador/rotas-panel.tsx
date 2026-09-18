@@ -226,12 +226,18 @@ export function RotasPanel({
                   </Button>
                 </div>
 
-                <AtribuirRota
-                  rota={r}
-                  atribuicao={atribuicoes?.[r.id]}
-                  onChange={(a) => onAtribuir?.(r.id, a)}
-                  enviada={enviadas?.[r.id] ?? null}
-                />
+                {podeDespachar ? (
+                  <AtribuirRota
+                    rota={r}
+                    atribuicao={atribuicoes?.[r.id]}
+                    onChange={(a) => onAtribuir?.(r.id, a)}
+                    enviada={enviadas?.[r.id] ?? null}
+                  />
+                ) : (
+                  <p className="border-t border-border px-3 py-3 text-[11px] text-muted-foreground">
+                    Salve a roteirização — a distribuição dos motoristas é feita pela equipe G3.
+                  </p>
+                )}
 
               </CollapsibleContent>
             </Collapsible>
