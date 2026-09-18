@@ -297,6 +297,9 @@ export function useBiDados(de: string, ate: string) {
       const noPeriodo = (d: string) => !!d && d >= de && d <= ate;
       const lancamentos = todosLanc.filter((l) => noPeriodo(l.competencia));
       const lancamentosCaixa = todosLanc.filter((l) => noPeriodo(l.dataCaixa));
+      // Em aberto: aging e próximos vencimentos precisam de tudo que ainda não foi pago,
+      // independentemente do período do filtro (o vencimento pode ser fora dele).
+      const lancamentosAbertos = todosLanc.filter((l) => l.status !== "pago" && !!l.data_vencimento);
 
 
       const clientes = ((cliRes.data ?? []) as { id: string; razao_social: string }[]).map((c) => ({
