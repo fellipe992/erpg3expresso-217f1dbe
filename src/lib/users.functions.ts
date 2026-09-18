@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
+type Permissao = "roteirizador";
 
 type CreateInput = {
   email: string;
@@ -12,6 +13,8 @@ type CreateInput = {
   motorista_id?: string | null;
   // clientes monitorados (apenas para o perfil "monitor")
   cliente_ids?: string[] | null;
+  // permissões extras (ex.: roteirizador liberado para o cliente)
+  permissoes?: Permissao[] | null;
 };
 
 type UpdateInput = {
@@ -25,6 +28,8 @@ type UpdateInput = {
   motorista_id?: string | null;
   // clientes monitorados: array = substitui os vínculos; undefined = não alterar
   cliente_ids?: string[] | null;
+  // permissões extras: array = substitui; undefined = não alterar
+  permissoes?: Permissao[] | null;
 };
 
 
