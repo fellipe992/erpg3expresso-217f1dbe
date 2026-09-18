@@ -458,7 +458,18 @@ function UsuariosPage() {
                 </Select>
               </F>
             )}
-
+            <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
+              <div>
+                <div className="text-sm font-medium">Roteirizador inteligente</div>
+                <div className="text-xs text-muted-foreground">
+                  Libera a tela de roteirização. A distribuição para motoristas continua só com a equipe G3.
+                </div>
+              </div>
+              <Switch
+                checked={form.roteirizador}
+                onCheckedChange={(v) => setForm({ ...form, roteirizador: v })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
