@@ -197,6 +197,7 @@ function UsuariosPage() {
       ativo: r.ativo,
       motorista_id: r.motorista_id ?? "",
       cliente_id: vinculosMonitor[r.id] ?? "",
+      roteirizador: (permissoesMap[r.id] ?? []).includes("roteirizador"),
     });
     setOpenEdit(r);
   }
