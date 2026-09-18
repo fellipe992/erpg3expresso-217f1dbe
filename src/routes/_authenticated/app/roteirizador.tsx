@@ -269,7 +269,7 @@ function RoteirizadorPage() {
       return novo;
     });
 
-  if (!isStaff) {
+  if (!podeAcessar) {
     return (
       <Card className="p-8 text-center text-sm text-muted-foreground">
         Você não tem permissão para acessar o roteirizador.
@@ -391,7 +391,7 @@ function RoteirizadorPage() {
             Roteirizar
           </Button>
 
-          {plano.rotas.length > 0 && (
+          {podeDespachar && plano.rotas.length > 0 && (
             <Button
               variant="secondary"
               onClick={() => void dispararRotas()}
@@ -469,6 +469,7 @@ function RoteirizadorPage() {
                 onDividir={(id) => setPlano((p) => dividirRota(p, id, jornada))}
                 onMesclar={(o, d) => setPlano((p) => mesclarRotas(p, o, d, jornada))}
                 onExcluir={(id) => setPlano((p) => excluirRota(p, id))}
+                podeDespachar={podeDespachar}
                 atribuicoes={atribuicoes}
                 onAtribuir={(rotaId, a) => setAtribuicoes((prev) => ({ ...prev, [rotaId]: a }))}
                 enviadas={enviadas}
