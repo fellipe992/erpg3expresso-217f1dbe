@@ -223,6 +223,7 @@ function UsuariosPage() {
       nome?: string; email?: string; role?: Role; ativo?: boolean;
       motorista_id?: string | null;
       cliente_ids?: string[];
+      permissoes?: "roteirizador"[];
     }) => updateFn({ data: payload }),
     onSuccess: () => {
       toast.success("Alterações salvas");
