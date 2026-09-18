@@ -317,7 +317,19 @@ function RoteirizadorPage() {
                   }}
                   className="flex items-center gap-2"
                 >
-                  <span className="min-w-0 flex-1 truncate">{p.nome}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{p.nome}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                      {[
+                        p.data_operacao
+                          ? new Date(`${p.data_operacao}T12:00:00`).toLocaleDateString("pt-BR")
+                          : null,
+                        p.criado_por_cliente ?? p.criado_por_nome,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
                   <Trash2
                     className="size-3.5 text-muted-foreground hover:text-destructive"
                     role="button"
