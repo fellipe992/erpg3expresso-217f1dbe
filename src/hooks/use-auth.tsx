@@ -157,6 +157,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         role: role ?? null,
         roleLoading,
+        permissoes: permissoes ?? [],
+        permissoesLoading,
+        can: (p: AppPermissao) => (permissoes ?? []).includes(p),
         signOut,
       }}
     >
