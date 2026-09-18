@@ -2476,6 +2476,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          criado_por_cliente: string | null
+          criado_por_nome: string | null
           dados: Json
           data_operacao: string | null
           id: string
@@ -2485,6 +2487,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          criado_por_cliente?: string | null
+          criado_por_nome?: string | null
           dados?: Json
           data_operacao?: string | null
           id?: string
@@ -2494,6 +2498,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          criado_por_cliente?: string | null
+          criado_por_nome?: string | null
           dados?: Json
           data_operacao?: string | null
           id?: string
