@@ -100,8 +100,12 @@ export const Route = createFileRoute("/_authenticated/app/roteirizador")({
 });
 
 function RoteirizadorPage() {
-  const { role } = useAuth();
+  const { role, can } = useAuth();
   const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
+  // Cliente (monitor) com permissão: roteiriza, salva e exporta, mas não
+  // atribui motorista nem dispara viagens.
+  const podeAcessar = isStaff || can("roteirizador");
+  const podeDespachar = isStaff;
 
   const [nomeProjeto, setNomeProjeto] = useState("Roteirização do dia");
   const [depositos, setDepositos] = useState<Deposito[]>([]);
@@ -122,7 +126,7 @@ function RoteirizadorPage() {
   const [disparando, setDisparando] = useState(false);
   const carregandoProjeto = useRef(false);
 
-  const { data: motoristas = [] } = useMotoristasComVeiculo();
+  const { data: motoristas = [] } = useMotoristasComVeiculo(podeDespachar);
 
   const pendentes = useMemo(
     () =>
