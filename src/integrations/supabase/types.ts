@@ -2721,6 +2721,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissoes: {
+        Row: {
+          created_at: string
+          id: string
+          permissao: Database["public"]["Enums"]["app_permissao"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permissao: Database["public"]["Enums"]["app_permissao"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permissao?: Database["public"]["Enums"]["app_permissao"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3444,6 +3465,7 @@ export type Database = {
       viagem_total_motorista: { Args: { _viagem_id: string }; Returns: number }
     }
     Enums: {
+      app_permissao: "roteirizador"
       app_role:
         | "administrador"
         | "financeiro"
@@ -3612,6 +3634,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_permissao: ["roteirizador"],
       app_role: [
         "administrador",
         "financeiro",
