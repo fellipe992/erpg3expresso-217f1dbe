@@ -526,7 +526,7 @@ function RoteirizadorPage() {
             <TabsTrigger value="ia">
               <Sparkles className="mr-2 size-4" /> Assistente
             </TabsTrigger>
-            <TabsTrigger value="execucao">Execução</TabsTrigger>
+            {podeDespachar && <TabsTrigger value="execucao">Execução</TabsTrigger>}
           </TabsList>
           <TabsContent value="dashboard" className="mt-4">
             <DashboardExecutivo cenario={cenario} impostoPct={0} administrativoPct={0} />
@@ -534,9 +534,11 @@ function RoteirizadorPage() {
           <TabsContent value="ia" className="mt-4">
             <PainelIa sugestoes={sugestoes} onAplicar={onAplicarSugestao} />
           </TabsContent>
-          <TabsContent value="execucao" className="mt-4">
-            <RastreamentoPanel cenario={cenario} progresso={{}} />
-          </TabsContent>
+          {podeDespachar && (
+            <TabsContent value="execucao" className="mt-4">
+              <RastreamentoPanel cenario={cenario} progresso={{}} />
+            </TabsContent>
+          )}
         </Tabs>
       )}
 
