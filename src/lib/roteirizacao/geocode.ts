@@ -24,6 +24,8 @@ export async function geocodificar(enderecos: string[]): Promise<Geocodificado[]
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ enderecos: lote }),
     });
+    if (res.status === 401)
+      throw new Error("Sua sessão expirou. Recarregue a página e tente novamente.");
     if (!res.ok) throw new Error(await res.text());
     const json = (await res.json()) as { resultados: Geocodificado[] };
     resultados.push(...json.resultados);
