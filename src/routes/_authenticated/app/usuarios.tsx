@@ -533,6 +533,18 @@ function UsuariosPage() {
               )}
               <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
                 <div>
+                  <div className="text-sm font-medium">Roteirizador inteligente</div>
+                  <div className="text-xs text-muted-foreground">
+                    Libera a tela de roteirização. A distribuição para motoristas continua só com a equipe G3.
+                  </div>
+                </div>
+                <Switch
+                  checked={edit.roteirizador}
+                  onCheckedChange={(v) => setEdit({ ...edit, roteirizador: v })}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
+                <div>
                   <div className="text-sm font-medium">Status</div>
                   <div className="text-xs text-muted-foreground">
                     Usuários inativos não conseguem acessar o sistema.
