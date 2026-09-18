@@ -19,6 +19,8 @@ export type ProjetoResumo = {
   nome: string;
   data_operacao: string | null;
   updated_at: string;
+  criado_por_nome: string | null;
+  criado_por_cliente: string | null;
 };
 
 export function useProjetosRoteirizacao() {
