@@ -114,16 +114,31 @@ function UsuariosPage() {
   });
 
 
+  // Permissões extras por usuário (ex.: roteirizador liberado ao cliente)
+  const { data: permissoesMap = {} } = useQuery<Record<string, string[]>>({
+    queryKey: ["user-permissoes-map"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_permissoes").select("user_id, permissao");
+      if (error) throw error;
+      const map: Record<string, string[]> = {};
+      for (const p of data ?? []) map[p.user_id] = [...(map[p.user_id] ?? []), p.permissao];
+      return map;
+    },
+  });
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["usuarios-admin"] });
     qc.invalidateQueries({ queryKey: ["motoristas-livres"] });
     qc.invalidateQueries({ queryKey: ["monitor-clientes-map"] });
+    qc.invalidateQueries({ queryKey: ["user-permissoes-map"] });
+    qc.invalidateQueries({ queryKey: ["user-permissoes"] });
   };
 
   // ------ Novo usuário
   const [form, setForm] = useState<{
-    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string;
-  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string; roteirizador: boolean;
+  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "", roteirizador: false });
 
   const { data: clientesLista = [] } = useQuery({
     queryKey: ["clientes-monitor-select"],
@@ -154,6 +169,7 @@ function UsuariosPage() {
           role: form.role,
           motorista_id: form.role === "motorista" ? form.motorista_id : null,
           cliente_ids: form.role === "monitor" ? [form.cliente_id] : null,
+          permissoes: form.roteirizador ? (["roteirizador"] as const).slice() : [],
         },
       });
     },
@@ -161,7 +177,7 @@ function UsuariosPage() {
       toast.success("Usuário criado");
       invalidateAll();
       setOpenNew(false);
-      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+      setForm({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "", roteirizador: false });
 
     },
     onError: (e: Error) => toast.error("Erro", { description: e.message }),
@@ -169,7 +185,7 @@ function UsuariosPage() {
 
   // ------ Edição
   const [edit, setEdit] = useState<{
-    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string;
+    nome: string; email: string; role: Role; ativo: boolean; motorista_id: string; cliente_id: string; roteirizador: boolean;
   } | null>(null);
   const [confirmRemoveLink, setConfirmRemoveLink] = useState<null | (() => void)>(null);
 
@@ -181,6 +197,7 @@ function UsuariosPage() {
       ativo: r.ativo,
       motorista_id: r.motorista_id ?? "",
       cliente_id: vinculosMonitor[r.id] ?? "",
+      roteirizador: (permissoesMap[r.id] ?? []).includes("roteirizador"),
     });
     setOpenEdit(r);
   }
@@ -206,6 +223,7 @@ function UsuariosPage() {
       nome?: string; email?: string; role?: Role; ativo?: boolean;
       motorista_id?: string | null;
       cliente_ids?: string[];
+      permissoes?: "roteirizador"[];
     }) => updateFn({ data: payload }),
     onSuccess: () => {
       toast.success("Alterações salvas");
@@ -258,6 +276,11 @@ function UsuariosPage() {
 
     if (edit.role === "monitor" && edit.cliente_id) {
       payload.cliente_ids = [edit.cliente_id];
+    }
+
+    const antes = (permissoesMap[openEdit.id] ?? []).includes("roteirizador");
+    if (edit.roteirizador !== antes) {
+      payload.permissoes = edit.roteirizador ? ["roteirizador"] : [];
     }
     setConfirmRemoveLink(null);
     updateMut.mutate(payload);
@@ -435,7 +458,18 @@ function UsuariosPage() {
                 </Select>
               </F>
             )}
-
+            <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
+              <div>
+                <div className="text-sm font-medium">Roteirizador inteligente</div>
+                <div className="text-xs text-muted-foreground">
+                  Libera a tela de roteirização. A distribuição para motoristas continua só com a equipe G3.
+                </div>
+              </div>
+              <Switch
+                checked={form.roteirizador}
+                onCheckedChange={(v) => setForm({ ...form, roteirizador: v })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenNew(false)}>Cancelar</Button>
@@ -497,6 +531,18 @@ function UsuariosPage() {
                   </Select>
                 </F>
               )}
+              <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
+                <div>
+                  <div className="text-sm font-medium">Roteirizador inteligente</div>
+                  <div className="text-xs text-muted-foreground">
+                    Libera a tela de roteirização. A distribuição para motoristas continua só com a equipe G3.
+                  </div>
+                </div>
+                <Switch
+                  checked={edit.roteirizador}
+                  onCheckedChange={(v) => setEdit({ ...edit, roteirizador: v })}
+                />
+              </div>
               <div className="flex items-center justify-between rounded-md border border-border/60 p-3">
                 <div>
                   <div className="text-sm font-medium">Status</div>

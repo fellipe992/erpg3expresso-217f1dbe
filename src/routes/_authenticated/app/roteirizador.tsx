@@ -100,8 +100,12 @@ export const Route = createFileRoute("/_authenticated/app/roteirizador")({
 });
 
 function RoteirizadorPage() {
-  const { role } = useAuth();
+  const { role, can } = useAuth();
   const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
+  // Cliente (monitor) com permissão: roteiriza, salva e exporta, mas não
+  // atribui motorista nem dispara viagens.
+  const podeAcessar = isStaff || can("roteirizador");
+  const podeDespachar = isStaff;
 
   const [nomeProjeto, setNomeProjeto] = useState("Roteirização do dia");
   const [depositos, setDepositos] = useState<Deposito[]>([]);
@@ -122,7 +126,7 @@ function RoteirizadorPage() {
   const [disparando, setDisparando] = useState(false);
   const carregandoProjeto = useRef(false);
 
-  const { data: motoristas = [] } = useMotoristasComVeiculo();
+  const { data: motoristas = [] } = useMotoristasComVeiculo(podeDespachar);
 
   const pendentes = useMemo(
     () =>
@@ -265,7 +269,7 @@ function RoteirizadorPage() {
       return novo;
     });
 
-  if (!isStaff) {
+  if (!podeAcessar) {
     return (
       <Card className="p-8 text-center text-sm text-muted-foreground">
         Você não tem permissão para acessar o roteirizador.
@@ -313,7 +317,19 @@ function RoteirizadorPage() {
                   }}
                   className="flex items-center gap-2"
                 >
-                  <span className="min-w-0 flex-1 truncate">{p.nome}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{p.nome}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                      {[
+                        p.data_operacao
+                          ? new Date(`${p.data_operacao}T12:00:00`).toLocaleDateString("pt-BR")
+                          : null,
+                        p.criado_por_cliente ?? p.criado_por_nome,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </span>
                   <Trash2
                     className="size-3.5 text-muted-foreground hover:text-destructive"
                     role="button"
@@ -387,7 +403,7 @@ function RoteirizadorPage() {
             Roteirizar
           </Button>
 
-          {plano.rotas.length > 0 && (
+          {podeDespachar && plano.rotas.length > 0 && (
             <Button
               variant="secondary"
               onClick={() => void dispararRotas()}
@@ -465,6 +481,7 @@ function RoteirizadorPage() {
                 onDividir={(id) => setPlano((p) => dividirRota(p, id, jornada))}
                 onMesclar={(o, d) => setPlano((p) => mesclarRotas(p, o, d, jornada))}
                 onExcluir={(id) => setPlano((p) => excluirRota(p, id))}
+                podeDespachar={podeDespachar}
                 atribuicoes={atribuicoes}
                 onAtribuir={(rotaId, a) => setAtribuicoes((prev) => ({ ...prev, [rotaId]: a }))}
                 enviadas={enviadas}
@@ -521,7 +538,7 @@ function RoteirizadorPage() {
             <TabsTrigger value="ia">
               <Sparkles className="mr-2 size-4" /> Assistente
             </TabsTrigger>
-            <TabsTrigger value="execucao">Execução</TabsTrigger>
+            {podeDespachar && <TabsTrigger value="execucao">Execução</TabsTrigger>}
           </TabsList>
           <TabsContent value="dashboard" className="mt-4">
             <DashboardExecutivo cenario={cenario} impostoPct={0} administrativoPct={0} />
@@ -529,9 +546,11 @@ function RoteirizadorPage() {
           <TabsContent value="ia" className="mt-4">
             <PainelIa sugestoes={sugestoes} onAplicar={onAplicarSugestao} />
           </TabsContent>
-          <TabsContent value="execucao" className="mt-4">
-            <RastreamentoPanel cenario={cenario} progresso={{}} />
-          </TabsContent>
+          {podeDespachar && (
+            <TabsContent value="execucao" className="mt-4">
+              <RastreamentoPanel cenario={cenario} progresso={{}} />
+            </TabsContent>
+          )}
         </Tabs>
       )}
 

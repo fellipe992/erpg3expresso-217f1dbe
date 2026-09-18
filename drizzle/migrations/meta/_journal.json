@@ -64,6 +64,20 @@
       "when": 1789689294788,
       "tag": "0008_competencia_operacional_e_pagar_por_viagem",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789775218796,
+      "tag": "0009_user_permissoes_roteirizador",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789775398877,
+      "tag": "0010_roteirizacao_projetos_autor",
+      "breakpoints": true
     }
   ]
 }

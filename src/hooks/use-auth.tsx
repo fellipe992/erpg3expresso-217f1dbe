@@ -5,12 +5,18 @@ import type { Session, User } from "@supabase/supabase-js";
 
 export type AppRole = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
 
+/** Permissões extras concedidas por usuário, além do perfil (role). */
+export type AppPermissao = "roteirizador";
+
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
   loading: boolean;
   role: AppRole | null;
   roleLoading: boolean;
+  permissoes: AppPermissao[];
+  permissoesLoading: boolean;
+  can: (p: AppPermissao) => boolean;
   signOut: () => Promise<void>;
 };
 
@@ -122,6 +128,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Permissões extras (ex.: liberar o roteirizador para um usuário monitor).
+  const { data: permissoes, isLoading: permissoesLoading } = useQuery({
+    queryKey: ["user-permissoes", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<AppPermissao[]> => {
+      const { data, error } = await supabase
+        .from("user_permissoes")
+        .select("permissao")
+        .eq("user_id", userId!);
+      if (error || !data) return [];
+      return data.map((p) => p.permissao as AppPermissao);
+    },
+  });
+
   // "Sair" encerra apenas ESTA sessão (scope local) — o mesmo usuário continua
   // logado no celular e no computador ao mesmo tempo.
   const signOut = async () => {
@@ -137,6 +157,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         role: role ?? null,
         roleLoading,
+        permissoes: permissoes ?? [],
+        permissoesLoading,
+        can: (p: AppPermissao) => (permissoes ?? []).includes(p),
         signOut,
       }}
     >

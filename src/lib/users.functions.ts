@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Role = "administrador" | "financeiro" | "gestor" | "motorista" | "monitor";
+type Permissao = "roteirizador";
 
 type CreateInput = {
   email: string;
@@ -12,6 +13,8 @@ type CreateInput = {
   motorista_id?: string | null;
   // clientes monitorados (apenas para o perfil "monitor")
   cliente_ids?: string[] | null;
+  // permissões extras (ex.: roteirizador liberado para o cliente)
+  permissoes?: Permissao[] | null;
 };
 
 type UpdateInput = {
@@ -25,6 +28,8 @@ type UpdateInput = {
   motorista_id?: string | null;
   // clientes monitorados: array = substitui os vínculos; undefined = não alterar
   cliente_ids?: string[] | null;
+  // permissões extras: array = substitui; undefined = não alterar
+  permissoes?: Permissao[] | null;
 };
 
 
@@ -99,6 +104,14 @@ export const createUser = createServerFn({ method: "POST" })
         .insert(data.cliente_ids.map((cliente_id) => ({ user_id: uid, cliente_id })));
       if (mcErr) throw new Error(mcErr.message);
     }
+
+    if (data.permissoes?.length) {
+      const { error: permErr } = await supabaseAdmin
+        .from("user_permissoes")
+        .insert(data.permissoes.map((permissao) => ({ user_id: uid, permissao })));
+      if (permErr) throw new Error(permErr.message);
+    }
+
 
     const actor = { id: context.userId, email: context.claims?.email as string | undefined };
     await audit(supabaseAdmin, actor, uid, "criar_usuario", {
@@ -213,6 +226,19 @@ export const updateUser = createServerFn({ method: "POST" })
     // Ao deixar de ser monitor, remove os vínculos de clientes
     if (nextRole !== "monitor" && prevRole === "monitor") {
       await supabaseAdmin.from("monitor_clientes").delete().eq("user_id", data.user_id);
+    }
+
+    // Permissões extras (substitui o conjunto informado)
+    if (data.permissoes !== undefined) {
+      const perms = data.permissoes ?? [];
+      await supabaseAdmin.from("user_permissoes").delete().eq("user_id", data.user_id);
+      if (perms.length) {
+        const { error } = await supabaseAdmin
+          .from("user_permissoes")
+          .insert(perms.map((permissao) => ({ user_id: data.user_id, permissao })));
+        if (error) throw new Error(error.message);
+      }
+      await audit(supabaseAdmin, actor, data.user_id, "alterar_permissoes", { permissoes: perms });
     }
 
 

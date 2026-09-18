@@ -2476,6 +2476,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          criado_por_cliente: string | null
+          criado_por_nome: string | null
           dados: Json
           data_operacao: string | null
           id: string
@@ -2485,6 +2487,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          criado_por_cliente?: string | null
+          criado_por_nome?: string | null
           dados?: Json
           data_operacao?: string | null
           id?: string
@@ -2494,6 +2498,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          criado_por_cliente?: string | null
+          criado_por_nome?: string | null
           dados?: Json
           data_operacao?: string | null
           id?: string
@@ -2718,6 +2724,27 @@ export type Database = {
           nome?: string
           ordem?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_permissoes: {
+        Row: {
+          created_at: string
+          id: string
+          permissao: Database["public"]["Enums"]["app_permissao"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permissao: Database["public"]["Enums"]["app_permissao"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permissao?: Database["public"]["Enums"]["app_permissao"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -3444,6 +3471,7 @@ export type Database = {
       viagem_total_motorista: { Args: { _viagem_id: string }; Returns: number }
     }
     Enums: {
+      app_permissao: "roteirizador"
       app_role:
         | "administrador"
         | "financeiro"
@@ -3612,6 +3640,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_permissao: ["roteirizador"],
       app_role: [
         "administrador",
         "financeiro",

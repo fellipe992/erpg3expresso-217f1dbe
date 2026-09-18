@@ -19,6 +19,8 @@ export type ProjetoResumo = {
   nome: string;
   data_operacao: string | null;
   updated_at: string;
+  criado_por_nome: string | null;
+  criado_por_cliente: string | null;
 };
 
 export function useProjetosRoteirizacao() {
@@ -31,7 +33,7 @@ export function useProjetosRoteirizacao() {
   const listar = useCallback(async () => {
     const { data, error } = await supabase
       .from("roteirizacao_projetos")
-      .select("id, nome, data_operacao, updated_at")
+      .select("id, nome, data_operacao, updated_at, criado_por_nome, criado_por_cliente")
       .order("updated_at", { ascending: false })
       .limit(50);
     if (error) return;
@@ -45,13 +47,40 @@ export function useProjetosRoteirizacao() {
   const criar = useCallback(
     async (nome: string, dados: DadosProjeto, dataOperacao?: string) => {
       const { data: sessao } = await supabase.auth.getUser();
+      const uid = sessao.user?.id ?? null;
+
+      // Identificação de quem salvou (para a equipe saber a origem do projeto).
+      let autorNome: string | null = null;
+      let autorCliente: string | null = null;
+      if (uid) {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("nome, email")
+          .eq("id", uid)
+          .maybeSingle();
+        autorNome = perfil?.nome ?? perfil?.email ?? null;
+        const { data: vinculos } = await supabase
+          .from("monitor_clientes")
+          .select("clientes:cliente_id (razao_social, nome_fantasia)")
+          .eq("user_id", uid);
+        const nomes = (vinculos ?? [])
+          .map((v) => {
+            const c = (v as { clientes: { razao_social: string; nome_fantasia: string | null } | null }).clientes;
+            return c?.nome_fantasia || c?.razao_social;
+          })
+          .filter(Boolean) as string[];
+        autorCliente = nomes.length ? nomes.join(", ") : null;
+      }
+
       const { data, error } = await supabase
         .from("roteirizacao_projetos")
         .insert({
           nome,
           data_operacao: dataOperacao ?? new Date().toISOString().slice(0, 10),
           dados: JSON.parse(JSON.stringify(dados)),
-          created_by: sessao.user?.id ?? null,
+          created_by: uid,
+          criado_por_nome: autorNome,
+          criado_por_cliente: autorCliente,
         })
         .select("id")
         .single();
