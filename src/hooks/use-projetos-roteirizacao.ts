@@ -33,7 +33,7 @@ export function useProjetosRoteirizacao() {
   const listar = useCallback(async () => {
     const { data, error } = await supabase
       .from("roteirizacao_projetos")
-      .select("id, nome, data_operacao, updated_at")
+      .select("id, nome, data_operacao, updated_at, criado_por_nome, criado_por_cliente")
       .order("updated_at", { ascending: false })
       .limit(50);
     if (error) return;
