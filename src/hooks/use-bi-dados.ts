@@ -81,6 +81,8 @@ export type BiDados = {
   lancamentos: LancBi[];
   /** Financeiro — lançamentos cuja data de CAIXA (pagamento/vencimento) cai no período. */
   lancamentosCaixa: LancBi[];
+  /** Em aberto — tudo que ainda não foi pago e tem vencimento (aging/próximos vencimentos). */
+  lancamentosAbertos: LancBi[];
 
   clientes: { id: string; nome: string }[];
   veiculos: { id: string; placa: string; label: string }[];

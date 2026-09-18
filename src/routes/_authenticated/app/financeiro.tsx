@@ -123,6 +123,12 @@ function FinanceiroPage() {
     [data, filtrarComuns],
   );
 
+  /** Em aberto — base do aging e dos próximos vencimentos. */
+  const lancamentosAbertos = useMemo(
+    () => (data?.lancamentosAbertos ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
 
   const hoje = hojeLocal();
 
