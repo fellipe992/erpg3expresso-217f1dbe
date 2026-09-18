@@ -114,16 +114,31 @@ function UsuariosPage() {
   });
 
 
+  // Permissões extras por usuário (ex.: roteirizador liberado ao cliente)
+  const { data: permissoesMap = {} } = useQuery<Record<string, string[]>>({
+    queryKey: ["user-permissoes-map"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_permissoes").select("user_id, permissao");
+      if (error) throw error;
+      const map: Record<string, string[]> = {};
+      for (const p of data ?? []) map[p.user_id] = [...(map[p.user_id] ?? []), p.permissao];
+      return map;
+    },
+  });
+
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["usuarios-admin"] });
     qc.invalidateQueries({ queryKey: ["motoristas-livres"] });
     qc.invalidateQueries({ queryKey: ["monitor-clientes-map"] });
+    qc.invalidateQueries({ queryKey: ["user-permissoes-map"] });
+    qc.invalidateQueries({ queryKey: ["user-permissoes"] });
   };
 
   // ------ Novo usuário
   const [form, setForm] = useState<{
-    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string;
-  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "" });
+    email: string; password: string; nome: string; telefone: string; role: Role; motorista_id: string; cliente_id: string; roteirizador: boolean;
+  }>({ email: "", password: "", nome: "", telefone: "", role: "motorista", motorista_id: "", cliente_id: "", roteirizador: false });
 
   const { data: clientesLista = [] } = useQuery({
     queryKey: ["clientes-monitor-select"],
