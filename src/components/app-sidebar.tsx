@@ -146,7 +146,7 @@ export function AppSidebar() {
             label="Acompanhamento"
             items={
               can("roteirizador")
-                ? [...monitorNav, { label: "Roteirizador", to: "/app/roteirizador", icon: Crosshair }]
+                ? [...monitorNav, { label: "Roteirizador inteligente", to: "/app/roteirizador", icon: Crosshair }]
                 : monitorNav
             }
             pathname={location.pathname}
