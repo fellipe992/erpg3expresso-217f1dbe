@@ -28,10 +28,10 @@ export const Route = createFileRoute("/_authenticated")({
 
 
 function AuthenticatedLayout() {
-  const { role, roleLoading } = useAuth();
+  const { role, roleLoading, can, permissoesLoading } = useAuth();
   const location = useLocation();
 
-  if (roleLoading) {
+  if (roleLoading || (role === "monitor" && permissoesLoading)) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
         <Loader2 className="size-6 animate-spin text-brand" />
