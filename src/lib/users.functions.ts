@@ -105,6 +105,14 @@ export const createUser = createServerFn({ method: "POST" })
       if (mcErr) throw new Error(mcErr.message);
     }
 
+    if (data.permissoes?.length) {
+      const { error: permErr } = await supabaseAdmin
+        .from("user_permissoes")
+        .insert(data.permissoes.map((permissao) => ({ user_id: uid, permissao })));
+      if (permErr) throw new Error(permErr.message);
+    }
+
+
     const actor = { id: context.userId, email: context.claims?.email as string | undefined };
     await audit(supabaseAdmin, actor, uid, "criar_usuario", {
       email: data.email,
