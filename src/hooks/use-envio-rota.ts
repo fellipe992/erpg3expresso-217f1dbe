@@ -12,9 +12,14 @@ export type MotoristaOpcao = {
   marca: string | null;
 };
 
-/** Motoristas ativos com o veículo vinculado (para preencher placa/modelo). */
-export function useMotoristasComVeiculo() {
+/**
+ * Motoristas ativos com o veículo vinculado (para preencher placa/modelo).
+ * `enabled=false` evita que perfis sem permissão de despacho (cliente monitor)
+ * cheguem a consultar a lista de motoristas.
+ */
+export function useMotoristasComVeiculo(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["motoristas-com-veiculo"],
     queryFn: async (): Promise<MotoristaOpcao[]> => {
       const { data, error } = await supabase
