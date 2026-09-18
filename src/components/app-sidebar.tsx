@@ -123,7 +123,7 @@ const monitorNav: NavItem[] = [
 export function AppSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
-  const { role } = useAuth();
+  const { role, can } = useAuth();
   const collapsed = state === "collapsed";
   useRealtimeSync();
 
@@ -142,7 +142,16 @@ export function AppSidebar() {
 
       <SidebarContent>
         {isMonitor ? (
-          <Group label="Acompanhamento" items={monitorNav} pathname={location.pathname} collapsed={collapsed} />
+          <Group
+            label="Acompanhamento"
+            items={
+              can("roteirizador")
+                ? [...monitorNav, { label: "Roteirizador", to: "/app/roteirizador", icon: Crosshair }]
+                : monitorNav
+            }
+            pathname={location.pathname}
+            collapsed={collapsed}
+          />
         ) : (
           <>
             <>{!isGestor && <Group items={overview} pathname={location.pathname} collapsed={collapsed} />}</>

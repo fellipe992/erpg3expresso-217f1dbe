@@ -44,9 +44,13 @@ function AuthenticatedLayout() {
     return <MobileMotoristaShell><Outlet /></MobileMotoristaShell>;
   }
 
-  // Monitor (cliente): acesso exclusivo à Central de Monitoramento
-  if (role === "monitor" && location.pathname !== "/app/monitoramento") {
-    return <Navigate to="/app/monitoramento" replace />;
+  // Monitor (cliente): Central de Monitoramento + telas liberadas por permissão
+  if (role === "monitor") {
+    const liberadas = ["/app/monitoramento"];
+    if (can("roteirizador")) liberadas.push("/app/roteirizador");
+    if (!liberadas.includes(location.pathname)) {
+      return <Navigate to="/app/monitoramento" replace />;
+    }
   }
 
 
