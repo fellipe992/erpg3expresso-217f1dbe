@@ -123,6 +123,12 @@ function FinanceiroPage() {
     [data, filtrarComuns],
   );
 
+  /** Em aberto — base do aging e dos próximos vencimentos. */
+  const lancamentosAbertos = useMemo(
+    () => (data?.lancamentosAbertos ?? []).filter(filtrarComuns),
+    [data, filtrarComuns],
+  );
+
 
   const hoje = hojeLocal();
 
@@ -235,7 +241,7 @@ function FinanceiroPage() {
       { faixa: "31–60 dias", receber: 0, pagar: 0 },
       { faixa: "60+ dias", receber: 0, pagar: 0 },
     ];
-    for (const l of lancamentosCaixa) {
+    for (const l of lancamentosAbertos) {
       if (l.status === "pago" || !l.data_vencimento) continue;
       const dias = Math.floor((Date.parse(hoje) - Date.parse(l.data_vencimento)) / 86_400_000);
       const i = dias <= 0 ? 0 : dias <= 15 ? 1 : dias <= 30 ? 2 : dias <= 60 ? 3 : 4;
@@ -243,15 +249,15 @@ function FinanceiroPage() {
       else faixas[i].pagar += l.valor;
     }
     return faixas;
-  }, [lancamentosCaixa, hoje]);
+  }, [lancamentosAbertos, hoje]);
 
   const proximosVencer = useMemo(
     () =>
-      lancamentosCaixa
+      lancamentosAbertos
         .filter((l) => l.status !== "pago" && l.data_vencimento && l.data_vencimento >= hoje)
         .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
         .slice(0, 8),
-    [lancamentosCaixa, hoje],
+    [lancamentosAbertos, hoje],
   );
 
 

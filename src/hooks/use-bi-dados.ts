@@ -81,6 +81,8 @@ export type BiDados = {
   lancamentos: LancBi[];
   /** Financeiro — lançamentos cuja data de CAIXA (pagamento/vencimento) cai no período. */
   lancamentosCaixa: LancBi[];
+  /** Em aberto — tudo que ainda não foi pago e tem vencimento (aging/próximos vencimentos). */
+  lancamentosAbertos: LancBi[];
 
   clientes: { id: string; nome: string }[];
   veiculos: { id: string; placa: string; label: string }[];
@@ -276,13 +278,13 @@ export function useBiDados(de: string, ate: string) {
       for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
         const fechamentoRef = l.fechamento_id ? fechRef.get(l.fechamento_id) : undefined;
-         // Competência = período em que a operação ocorreu. A viagem manda; depois o
-         // período apurado do fechamento; depois a competência digitada; por último a emissão.
-         // Vencimento e pagamento nunca entram aqui (isso é caixa).
+          // Competência = período em que a operação ocorreu. A quinzena informada
+          // manualmente manda; depois a viagem; depois o período apurado do fechamento;
+          // por último a emissão. Vencimento e pagamento nunca entram aqui (isso é caixa).
         const competencia =
+           l.data_competencia ??
            viagemRef ??
            fechamentoRef ??
-           l.data_competencia ??
           l.data_emissao ??
           "";
          const dataCaixa = l.status === "pago" ? (l.data_pagamento ?? "") : "";
@@ -297,6 +299,9 @@ export function useBiDados(de: string, ate: string) {
       const noPeriodo = (d: string) => !!d && d >= de && d <= ate;
       const lancamentos = todosLanc.filter((l) => noPeriodo(l.competencia));
       const lancamentosCaixa = todosLanc.filter((l) => noPeriodo(l.dataCaixa));
+      // Em aberto: aging e próximos vencimentos precisam de tudo que ainda não foi pago,
+      // independentemente do período do filtro (o vencimento pode ser fora dele).
+      const lancamentosAbertos = todosLanc.filter((l) => l.status !== "pago" && !!l.data_vencimento);
 
 
       const clientes = ((cliRes.data ?? []) as { id: string; razao_social: string }[]).map((c) => ({
@@ -406,6 +411,7 @@ export function useBiDados(de: string, ate: string) {
         viagens,
         lancamentos,
         lancamentosCaixa,
+        lancamentosAbertos,
 
         fechamentos: fechPeriodo.map(({ lancamento_id: _l, ...f }) => f),
          viagensFechadasMotorista: Array.from(viagensFechadasMotorista),

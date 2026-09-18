@@ -419,7 +419,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
           dataBase === "pagamento"
             ? l.data_pagamento
             : dataBase === "vencimento"
-              ? l.data_vencimento
+              // Lançamentos automáticos de viagem nascem sem vencimento: não devem
+              // desaparecer da lista — caem na data da operação (competência/emissão).
+              ? (l.data_vencimento ?? l.data_competencia ?? l.data_emissao)
               : l.data_emissao;
         // Dia-calendário no fuso da operação: viagens após 21h não caem no dia seguinte.
         const ref = refBruta ? diaLocal(String(refBruta)) || null : null;

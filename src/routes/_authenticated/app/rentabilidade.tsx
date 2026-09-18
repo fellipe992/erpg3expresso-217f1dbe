@@ -212,12 +212,20 @@ function RentabilidadePage() {
     [viagens, ajustes, data],
   );
   const veiculos = useMemo(
-    () => agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
-    [viagens],
+    () => aplicarAjustes(
+      agregar(viagens, (v) => (v.veiculo_id ? { id: v.veiculo_id, nome: v.veiculo } : null)),
+      (a) => a.veiculoId,
+      (id) => data?.nomeVeiculo(id) ?? "—",
+    ),
+    [viagens, ajustes, data],
   );
   const motoristas = useMemo(
-    () => agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
-    [viagens],
+    () => aplicarAjustes(
+      agregar(viagens, (v) => (v.motorista_id ? { id: v.motorista_id, nome: v.motorista } : null)),
+      (a) => a.motoristaId,
+      (id) => data?.nomeMotorista(id) ?? "—",
+    ),
+    [viagens, ajustes, data],
   );
   const rotas = useMemo(() => agregar(viagens, (v) => ({ id: v.rota, nome: v.rota })), [viagens]);
   const origens = useMemo(() => agregar(viagens, (v) => ({ id: v.origem, nome: v.origem })), [viagens]);
