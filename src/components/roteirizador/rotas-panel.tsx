@@ -33,6 +33,7 @@ export function RotasPanel({
   onMesclar,
   onExcluir,
   projeto,
+  podeDespachar = true,
   atribuicoes,
   onAtribuir,
   enviadas,
