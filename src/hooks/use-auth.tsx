@@ -128,6 +128,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Permissões extras (ex.: liberar o roteirizador para um usuário monitor).
+  const { data: permissoes, isLoading: permissoesLoading } = useQuery({
+    queryKey: ["user-permissoes", userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<AppPermissao[]> => {
+      const { data, error } = await supabase
+        .from("user_permissoes")
+        .select("permissao")
+        .eq("user_id", userId!);
+      if (error || !data) return [];
+      return data.map((p) => p.permissao as AppPermissao);
+    },
+  });
+
   // "Sair" encerra apenas ESTA sessão (scope local) — o mesmo usuário continua
   // logado no celular e no computador ao mesmo tempo.
   const signOut = async () => {
