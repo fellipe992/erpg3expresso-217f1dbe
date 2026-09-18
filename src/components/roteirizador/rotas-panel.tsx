@@ -49,6 +49,7 @@ export function RotasPanel({
   onMesclar: (origemId: string, destinoId: string) => void;
   onExcluir: (rotaId: string) => void;
   projeto?: string;
+  podeDespachar?: boolean;
   atribuicoes?: Record<string, Atribuicao | undefined>;
   onAtribuir?: (rotaId: string, a: Atribuicao | undefined) => void;
   enviadas?: Record<string, string>;
