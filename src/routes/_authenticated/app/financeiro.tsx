@@ -253,11 +253,11 @@ function FinanceiroPage() {
 
   const proximosVencer = useMemo(
     () =>
-      lancamentosCaixa
+      lancamentosAbertos
         .filter((l) => l.status !== "pago" && l.data_vencimento && l.data_vencimento >= hoje)
         .sort((a, b) => (a.data_vencimento ?? "").localeCompare(b.data_vencimento ?? ""))
         .slice(0, 8),
-    [lancamentosCaixa, hoje],
+    [lancamentosAbertos, hoje],
   );
 
 
