@@ -276,13 +276,13 @@ export function useBiDados(de: string, ate: string) {
       for (const l of [...((lancRes.data ?? []) as unknown as LancBi[]), ...extras]) {
         const viagemRef = l.viagem_id ? refViagem.get(l.viagem_id) : undefined;
         const fechamentoRef = l.fechamento_id ? fechRef.get(l.fechamento_id) : undefined;
-         // Competência = período em que a operação ocorreu. A viagem manda; depois o
-         // período apurado do fechamento; depois a competência digitada; por último a emissão.
-         // Vencimento e pagamento nunca entram aqui (isso é caixa).
+          // Competência = período em que a operação ocorreu. A quinzena informada
+          // manualmente manda; depois a viagem; depois o período apurado do fechamento;
+          // por último a emissão. Vencimento e pagamento nunca entram aqui (isso é caixa).
         const competencia =
+           l.data_competencia ??
            viagemRef ??
            fechamentoRef ??
-           l.data_competencia ??
           l.data_emissao ??
           "";
          const dataCaixa = l.status === "pago" ? (l.data_pagamento ?? "") : "";
