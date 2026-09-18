@@ -276,6 +276,11 @@ function UsuariosPage() {
     if (edit.role === "monitor" && edit.cliente_id) {
       payload.cliente_ids = [edit.cliente_id];
     }
+
+    const antes = (permissoesMap[openEdit.id] ?? []).includes("roteirizador");
+    if (edit.roteirizador !== antes) {
+      payload.permissoes = edit.roteirizador ? ["roteirizador"] : [];
+    }
     setConfirmRemoveLink(null);
     updateMut.mutate(payload);
   }
