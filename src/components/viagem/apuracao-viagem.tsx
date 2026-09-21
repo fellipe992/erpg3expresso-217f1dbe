@@ -98,7 +98,11 @@ export function ApuracaoViagemSection({
     const v = viagem.veiculo;
     if (!v) return null;
     if (v.tipologia_id) return tipologias.find((t) => t.id === v.tipologia_id) ?? null;
-    return tipologias.find((t) => t.codigo === (v.tipo ?? "")) ?? null;
+    // Sem tipologia cadastrada: casa pelo tipo do veículo ignorando maiúsculas
+    // ("van" no cadastro do veículo x "VAN" no código da tipologia).
+    const tipo = (v.tipo ?? "").trim().toUpperCase();
+    if (!tipo) return null;
+    return tipologias.find((t) => (t.codigo ?? "").trim().toUpperCase() === tipo) ?? null;
   }, [viagem.veiculo, tipologias]);
 
   const faixaSelecionada = (tabCliente?.faixas ?? []).find((f) => f.id === faixaId) ?? null;
