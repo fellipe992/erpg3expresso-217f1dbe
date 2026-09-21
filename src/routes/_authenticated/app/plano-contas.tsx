@@ -430,7 +430,14 @@ function ContasTab({ canWrite }: { canWrite: boolean }) {
               </Select>
             </Field>
             <Field label="Centro de custo">
-              <Select value={form.centro_custo ?? "__none"} onValueChange={(v) => setForm({ ...form, centro_custo: v === "__none" ? null : v })}>
+              <Select
+                value={
+                  centros.find(
+                    (c) => (c.nome ?? "").trim().toUpperCase() === (form.centro_custo ?? "").trim().toUpperCase(),
+                  )?.nome ?? "__none"
+                }
+                onValueChange={(v) => setForm({ ...form, centro_custo: v === "__none" ? null : v })}
+              >
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none">—</SelectItem>
