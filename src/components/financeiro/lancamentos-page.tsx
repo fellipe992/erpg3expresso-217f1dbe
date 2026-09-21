@@ -396,8 +396,9 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const filtered = lancamentos.filter((l) => {
     if (statusFilter !== "todos" && l.status !== statusFilter) return false;
-    if (categoriaFilter !== "todas" && (l.categoria ?? "") !== categoriaFilter) return false;
-    if (centroCustoFilter !== "todos" && (l.centro_custo ?? "") !== centroCustoFilter) return false;
+    const mesmoTexto = (a: string | null, b: string) => (a ?? "").trim().toUpperCase() === b.trim().toUpperCase();
+    if (categoriaFilter !== "todas" && !mesmoTexto(l.categoria, categoriaFilter)) return false;
+    if (centroCustoFilter !== "todos" && !mesmoTexto(l.centro_custo, centroCustoFilter)) return false;
     if (veiculoFilter !== "todos" && l.veiculo_id !== veiculoFilter) return false;
     if (motoristaFilter !== "todos" && l.motorista_id !== motoristaFilter) return false;
     if (parceiroFilter !== "todos") {
