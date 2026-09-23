@@ -1,3 +1,4 @@
+import { RelatorioQuinzena } from "@/components/relatorios/relatorio-quinzena";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -324,6 +325,7 @@ function RelatoriosPage() {
               {canSeeFinance && <TabsTrigger value="frete-cliente">Frete por Cliente</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="fin-veiculo">Financeiro por Veículo</TabsTrigger>}
               {canSeeFinance && <TabsTrigger value="lucratividade">Lucratividade</TabsTrigger>}
+              {canSeeFinance && <TabsTrigger value="quinzena">Quinzena</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
@@ -332,6 +334,12 @@ function RelatoriosPage() {
             <TabsContent value="veiculo">
               <RelatorioVeiculo />
             </TabsContent>
+
+            {canSeeFinance && (
+              <TabsContent value="quinzena">
+                <RelatorioQuinzena />
+              </TabsContent>
+            )}
 
             <TabsContent value="medias">
               <RelatorioMedias />

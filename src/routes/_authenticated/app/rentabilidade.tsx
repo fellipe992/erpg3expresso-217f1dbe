@@ -1,3 +1,4 @@
+import { RelatorioQuinzena } from "@/components/relatorios/relatorio-quinzena";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { Building2, FileSpreadsheet, FileText, Gauge, Loader2, MapPin, Truck, TrendingUp, Users } from "lucide-react";
@@ -486,6 +487,7 @@ function RentabilidadePage() {
             <TabsTrigger value="motoristas">Motoristas</TabsTrigger>
             <TabsTrigger value="rotas"><MapPin className="mr-1 size-3.5" />Rotas</TabsTrigger>
             <TabsTrigger value="evolucao">Evolução</TabsTrigger>
+            <TabsTrigger value="quinzena">Quinzena</TabsTrigger>
             <TabsTrigger value="empresas"><Building2 className="mr-1 size-3.5" />Empresas</TabsTrigger>
           </TabsList>
 
@@ -727,6 +729,10 @@ function RentabilidadePage() {
                 </div>
               )}
             </Card>
+          </TabsContent>
+
+          <TabsContent value="quinzena" className="space-y-4">
+            <RelatorioQuinzena />
           </TabsContent>
         </Tabs>
       )}
