@@ -18,7 +18,7 @@ type Regra = { prazo_pagamento: string | null; prazo_dias: number | null };
 
 function situacao(l: LancBi, hoje: string) {
   if (l.status === "pago") return { txt: "Pago", tone: "secondary" as const };
-  if ((l.data_vencimento ?? "") < hoje) return { txt: "Atrasado", tone: "destructive" as const };
+  if (l.data_vencimento && l.data_vencimento < hoje) return { txt: "Atrasado", tone: "destructive" as const };
   return { txt: "A vencer", tone: "outline" as const };
 }
 
@@ -105,20 +105,33 @@ export function RelatorioQuinzena() {
     const porCliente = agrupar(rec, (l) => l.cliente_id ?? "", (k) => data.nomeCliente(k || null));
     const porMotorista = agrupar(pag.filter((l) => l.motorista_id && (l.fechamento_id || l.viagem_id)), (l) => l.motorista_id!, (k) => data.nomeMotorista(k));
 
-    const placas = new Map<string, { placa: string; receita: number; comb: number; manut: number; outras: number; lucro: number }>();
-    for (const v of viagens) {
-      const k = v.veiculo_id ?? "";
-      if (!placas.has(k)) placas.set(k, { placa: v.placa || "—", receita: 0, comb: 0, manut: 0, outras: 0, lucro: 0 });
-      const p = placas.get(k)!;
-      p.receita += v.receita; p.comb += v.combustivel; p.manut += v.manutencao;
-      p.outras += v.outrasDespesas + v.pedagio; p.lucro += v.lucro;
-    }
+    type Rent = { nome: string; clientes: Set<string>; viagens: number; faturado: number; motorista: number; comb: number; manut: number; outras: number; lucro: number };
+    const rent = (chave: (v: typeof viagens[number]) => string, nome: (v: typeof viagens[number]) => string) => {
+      const m = new Map<string, Rent>();
+      for (const v of viagens) {
+        const k = chave(v);
+        if (!m.has(k)) m.set(k, { nome: nome(v), clientes: new Set(), viagens: 0, faturado: 0, motorista: 0, comb: 0, manut: 0, outras: 0, lucro: 0 });
+        const p = m.get(k)!;
+        if (v.cliente && v.cliente !== "—") p.clientes.add(v.cliente);
+        p.viagens += 1;
+        p.faturado += v.receita; p.motorista += v.freteMotorista; p.comb += v.combustivel; p.manut += v.manutencao;
+        p.outras += v.outrasDespesas - v.freteMotorista + v.pedagio; p.lucro += v.lucro;
+      }
+      return Array.from(m.values()).sort((a, b) => b.faturado - a.faturado);
+    };
+    const placas = rent((v) => v.veiculo_id ?? "", (v) => v.placa || "—");
+    const motoristasRent = rent((v) => v.motorista_id ?? "", (v) => v.motorista || "—");
 
-    const agenda = new Map<string, { rec: number; pag: number }>();
+    const quem = (l: LancBi) => l.tipo === "receber"
+      ? data.nomeCliente(l.cliente_id)
+      : l.motorista_id ? data.nomeMotorista(l.motorista_id) : l.descricao;
+    const agenda = new Map<string, { rec: number; pag: number; itens: { tipo: string; quem: string; desc: string; valor: number; sit: string }[] }>();
     for (const l of lancs) {
       const d = l.status === "pago" && l.data_pagamento ? l.data_pagamento : previsto(l);
-      if (!agenda.has(d)) agenda.set(d, { rec: 0, pag: 0 });
-      agenda.get(d)![l.tipo === "receber" ? "rec" : "pag"] += l.valor;
+      if (!agenda.has(d)) agenda.set(d, { rec: 0, pag: 0, itens: [] });
+      const a = agenda.get(d)!;
+      a[l.tipo === "receber" ? "rec" : "pag"] += l.valor;
+      a.itens.push({ tipo: l.tipo === "receber" ? "Recebo" : "Pago", quem: quem(l), desc: l.descricao, valor: l.valor, sit: situacao(l, hoje).txt });
     }
 
     return {
@@ -126,8 +139,7 @@ export function RelatorioQuinzena() {
       margem: entradas ? ((entradas - saidas) / entradas) * 100 : 0,
       recebido: soma(rec.filter((l) => l.status === "pago")),
       pago: soma(pag.filter((l) => l.status === "pago")),
-      porCliente, porMotorista,
-      placas: Array.from(placas.values()).sort((a, b) => b.receita - a.receita),
+      porCliente, porMotorista, placas, motoristasRent,
       despesas: pag.sort((a, b) => a.competencia.localeCompare(b.competencia)),
       agenda: Array.from(agenda.entries()).sort(([a], [b]) => a.localeCompare(b)),
       previsto,
@@ -137,17 +149,22 @@ export function RelatorioQuinzena() {
   const tabelas = r ? {
     clientes: r.porCliente.map((g) => [g.nome, brl(g.total), brl(g.pago), brl(g.atrasado), [...g.datas].sort().map(dt).join(", ")]),
     motoristas: r.porMotorista.map((g) => [g.nome, brl(g.total), brl(g.pago), brl(g.atrasado), [...g.datas].sort().map(dt).join(", ")]),
-    placas: r.placas.map((p) => [p.placa, brl(p.receita), brl(p.comb), brl(p.manut), brl(p.outras), brl(p.lucro)]),
+    placas: r.placas.map((p) => [p.nome, [...p.clientes].join(", ") || "—", p.viagens, brl(p.faturado), brl(p.motorista), brl(p.comb), brl(p.manut), brl(p.outras), brl(p.lucro)]),
+    rentMotoristas: r.motoristasRent.map((p) => [p.nome, [...p.clientes].join(", ") || "—", p.viagens, brl(p.faturado), brl(p.motorista), brl(p.comb), brl(p.manut), brl(p.outras), brl(p.lucro)]),
     despesas: r.despesas.map((l) => [dt(l.competencia), categoriaDespesa(l.categoria) === "Outros" ? l.categoria ?? "—" : categoriaDespesa(l.categoria), l.descricao, brl(l.valor), l.status === "pago" ? `Pago ${dt(l.data_pagamento)}` : `Previsto ${dt(r.previsto(l))}`]),
-    agenda: r.agenda.map(([d, v]) => [dt(d), brl(v.rec), brl(v.pag), brl(v.rec - v.pag)]),
+    agenda: r.agenda.flatMap(([d, v]) => v.itens
+      .sort((a, b) => a.tipo.localeCompare(b.tipo) || b.valor - a.valor)
+      .map((i) => [dt(d), i.tipo, i.quem, i.desc, brl(i.valor), i.sit])
+      .concat([[dt(d), "SALDO DO DIA", `Recebo ${brl(v.rec)} · Pago ${brl(v.pag)}`, "", brl(v.rec - v.pag), ""]])),
   } : null;
 
   const C = {
     clientes: ["Cliente", "Faturado", "Recebido", "Atrasado", "Data(s) de recebimento"],
     motoristas: ["Motorista", "A pagar", "Pago", "Atrasado", "Data(s) de pagamento"],
-    placas: ["Placa", "Receita", "Diesel/Arla", "Manutenção", "Outras despesas", "Resultado"],
+    placas: ["Placa", "Cliente(s)", "Viagens", "Faturou ao cliente", "Pago ao motorista", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
+    rentMotoristas: ["Motorista", "Cliente(s)", "Viagens", "Faturou ao cliente", "Recebeu (motorista)", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
     despesas: ["Data", "Categoria", "Descrição", "Valor", "Pagamento"],
-    agenda: ["Data", "Recebo", "Pago", "Saldo do dia"],
+    agenda: ["Data", "Tipo", "Cliente / Motorista / Fornecedor", "Referente a", "Valor", "Situação"],
   };
   const nome = `quinzena-${q}-${mes}`;
   const titulo = `Relatório da ${per.label} (${dt(per.de)} a ${dt(per.ate)})`;
@@ -184,7 +201,8 @@ export function RelatorioQuinzena() {
               secoes: [
                 { titulo: "Entradas por cliente", colunas: C.clientes, linhas: tabelas.clientes },
                 { titulo: "Saídas por motorista", colunas: C.motoristas, linhas: tabelas.motoristas },
-                { titulo: "Por placa", colunas: C.placas, linhas: tabelas.placas },
+                { titulo: "Rentabilidade por placa", colunas: C.placas, linhas: tabelas.placas },
+                { titulo: "Rentabilidade por motorista", colunas: C.rentMotoristas, linhas: tabelas.rentMotoristas },
                 { titulo: "Todas as despesas", colunas: C.despesas, linhas: tabelas.despesas },
                 { titulo: "Agenda de recebimentos e pagamentos", colunas: C.agenda, linhas: tabelas.agenda },
               ],
@@ -200,14 +218,15 @@ export function RelatorioQuinzena() {
             <KpiCard label="Já pago" value={brl(r.pago)} sub={`Falta ${brl(r.saidas - r.pago)}`} />
             <KpiCard label="Período" value={per.label} sub={`${dt(per.de)} a ${dt(per.ate)}`} />
           </div>
-          <Tabela titulo="Agenda: quando recebo e quando pago" colunas={C.agenda} linhas={tabelas.agenda} />
+          <Tabela titulo={`Agenda: o que desta quinzena (${dt(per.de)} a ${dt(per.ate)}) recebo e pago em cada dia`} colunas={C.agenda} linhas={tabelas.agenda} />
           <Tabela titulo="Entradas por cliente" colunas={[...C.clientes, "Prazo"]} linhas={r.porCliente.map((g, i) => {
             const id = data!.clientes.find((c) => c.nome === g.nome)?.id;
             const rg = id ? regras?.cli.get(id) : undefined;
             return [...tabelas.clientes[i], prazoLabel(rg?.prazo_pagamento, rg?.prazo_dias)];
           })} />
           <Tabela titulo="Saídas por motorista" colunas={C.motoristas} linhas={tabelas.motoristas} />
-          <Tabela titulo="Por placa" colunas={C.placas} linhas={tabelas.placas} />
+          <Tabela titulo="Rentabilidade por placa (faturado ao cliente − motorista − custos da placa)" colunas={C.placas} linhas={tabelas.placas} />
+          <Tabela titulo="Rentabilidade por motorista (quanto fez faturar × quanto recebeu)" colunas={C.rentMotoristas} linhas={tabelas.rentMotoristas} />
           <Tabela titulo="Todas as despesas e saídas" colunas={[...C.despesas, "Situação"]} linhas={r.despesas.map((l, i) => {
             const s = situacao(l, hoje);
             return [...tabelas.despesas[i], <Badge key="s" variant={s.tone}>{s.txt}</Badge>];
