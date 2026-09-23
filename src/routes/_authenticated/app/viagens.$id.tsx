@@ -515,7 +515,14 @@ function ViagemDetalheePage() {
               <h2 className="font-display text-lg font-bold">Trajeto percorrido</h2>
               <p className="text-xs text-muted-foreground">Histórico de GPS registrado durante a viagem.</p>
             </div>
-            <RotaViagemButton viagemId={id} />
+            <div className="flex flex-wrap gap-2">
+              <NavegacaoButton
+                viagemId={id}
+                destinoCidade={viagem.destino_cidade}
+                destinoUf={viagem.destino_uf}
+              />
+              <RotaViagemButton viagemId={id} />
+            </div>
           </div>
         </Card>
       )}
