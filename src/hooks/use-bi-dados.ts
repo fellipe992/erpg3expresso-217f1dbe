@@ -249,7 +249,7 @@ export function useBiDados(de: string, ate: string) {
        if (viagemIds.length) {
          const r = await supabase
            .from("fechamento_viagens")
-           .select("viagem_id, tipo, total, ativo, fechamento:fechamentos(status)")
+            .select("viagem_id, tipo, total, ativo, fechamento:fechamentos(id, status, valor, valor_viagens)")
            .in("viagem_id", viagemIds)
            .eq("ativo", true);
         if (r.error) throw r.error;
@@ -257,14 +257,23 @@ export function useBiDados(de: string, ate: string) {
            viagem_id: string;
            tipo: string;
            total: number;
-           fechamento: { status: string } | null;
+            fechamento: { id: string; status: string; valor: number; valor_viagens: number } | null;
          }>) {
            if (row.fechamento?.status === "cancelado") continue;
            if (row.tipo === "cliente") {
              viagensFaturadas.add(row.viagem_id);
+              // O item guarda o valor bruto da viagem. A receita reconhecida precisa
+              // acompanhar o líquido da fatura, rateando os descontos extras entre
+              // as viagens sem perder o vínculo com motorista e placa.
+              const brutoFatura = Number(row.fechamento?.valor_viagens ?? 0);
+              const liquidoFatura = Number(row.fechamento?.valor ?? 0);
+              const totalItem = Number(row.total ?? 0);
+              const totalLiquidoItem = brutoFatura > 0
+                ? totalItem * (liquidoFatura / brutoFatura)
+                : totalItem;
              receitaFechamentoPorViagem.set(
                row.viagem_id,
-               (receitaFechamentoPorViagem.get(row.viagem_id) ?? 0) + Number(row.total ?? 0),
+                (receitaFechamentoPorViagem.get(row.viagem_id) ?? 0) + totalLiquidoItem,
              );
            } else if (row.tipo === "motorista") {
              viagensFechadasMotorista.add(row.viagem_id);
