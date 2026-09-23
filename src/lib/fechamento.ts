@@ -41,14 +41,14 @@ export type LinhaFechamento = {
 const dia = (v: string | null | undefined) => diaLocal(v);
 
 /**
- * Dia em que a viagem aconteceu: usa a saída real, depois a saída prevista e
- * só cai na data de lançamento quando a viagem não tem nenhuma data de operação.
+ * Dia da viagem no fechamento: a data prevista informada para a viagem.
+ * Só usa a saída real (ou o lançamento) quando não há data prevista.
  */
 const diaOperacao = (v: {
   data_saida?: string | null;
   data_prevista_saida?: string | null;
   created_at?: string | null;
-}) => dia(v.data_saida ?? v.data_prevista_saida ?? v.created_at);
+}) => dia(v.data_prevista_saida ?? v.data_saida ?? v.created_at);
 
 /** Viagens elegíveis a fechamento, já apuradas pelo lado escolhido. */
 export async function carregarViagensFechamento(
