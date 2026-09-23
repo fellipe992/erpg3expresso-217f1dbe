@@ -297,7 +297,19 @@ export function useBiDados(de: string, ate: string) {
           dataCaixa: diaLocal(dataCaixa),
         });
       }
-      const todosLanc = Array.from(mapLanc.values()).filter((l) => l.status !== "cancelado");
+      const todosLanc = Array.from(mapLanc.values()).filter((l) => {
+        if (l.status === "cancelado") return false;
+        // Um frete avulso do motorista deixa de representar obrigação/caixa quando
+        // a viagem já integra uma fatura ativa. O fechamento consolidado é a fonte única.
+        if (
+          l.tipo === "pagar" &&
+          l.viagem_id &&
+          !l.fechamento_id &&
+          viagensFechadasMotorista.has(l.viagem_id) &&
+          /motorista|agregado/i.test(l.categoria ?? "")
+        ) return false;
+        return true;
+      });
       const noPeriodo = (d: string) => !!d && d >= de && d <= ate;
       const lancamentos = todosLanc.filter((l) => noPeriodo(l.competencia));
       const lancamentosCaixa = todosLanc.filter((l) => noPeriodo(l.dataCaixa));
