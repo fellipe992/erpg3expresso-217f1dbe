@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
 import { AvatarUpload } from "@/components/perfil/avatar-upload";
+import { ContratoCard } from "@/components/perfil/contrato-card";
 
 export type PerfilUsuarioAlvo = {
   id: string;
@@ -160,6 +161,7 @@ export function PerfilUsuarioDialog({
               </CardContent>
             </Card>
 
+            {alvo.motorista_id && <ContratoCard motoristaId={alvo.motorista_id} podeAssinar={false} />}
             {alvo.motorista_id ? (
               <DocsOneDrive motoristaId={alvo.motorista_id} />
             ) : (

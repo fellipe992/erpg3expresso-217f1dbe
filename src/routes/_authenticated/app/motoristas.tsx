@@ -8,6 +8,7 @@ import { Users, Pencil, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageShell } from "@/components/crud/page-shell";
+import { baixarContrato } from "@/components/perfil/contrato-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,15 @@ function MotoristasPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Motorista>>(empty);
+  const { data: contratos = {} } = useQuery({
+    queryKey: ["motorista-contratos-lista"],
+    queryFn: async () => {
+      const { data } = await supabase.from("motorista_contratos").select("motorista_id, pdf_path, assinado_em").eq("status", "assinado").order("assinado_em");
+      const m: Record<string, string> = {};
+      (data ?? []).forEach((c) => { m[c.motorista_id] = c.pdf_path; });
+      return m;
+    },
+  });
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["motoristas"],
@@ -158,6 +168,7 @@ function MotoristasPage() {
                 <TableHead>Veículo</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Contrato</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -172,6 +183,11 @@ function MotoristasPage() {
                   <TableCell className="text-xs">{v ? `${v.placa} · ${v.modelo}` : <span className="text-muted-foreground">Sem vínculo</span>}</TableCell>
                   <TableCell>{m.telefone ?? "—"}</TableCell>
                   <TableCell><Badge variant={m.ativo ? "default" : "outline"}>{m.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
+                  <TableCell>
+                    {contratos[m.id] ? (
+                      <Button size="sm" variant="ghost" className="h-7 text-success" onClick={() => baixarContrato(contratos[m.id])}>Assinado ↓</Button>
+                    ) : <span className="text-xs text-warning">Pendente</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(m); setOpen(true); }}><Pencil className="size-4" /></Button>}
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${m.nome}?`) && del.mutate(m.id)}><Trash2 className="size-4" /></Button>}
