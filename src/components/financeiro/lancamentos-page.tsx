@@ -1,3 +1,4 @@
+import { quinzenaDe as quinzenaRef } from "@/lib/prazo-pagamento";
 import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -465,15 +466,43 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     { key: "vencimento", dir: "asc" },
   );
 
+  const hojeStr = diaLocal(new Date().toISOString());
+  const diasAtraso = (l: Lancamento) => {
+    if (l.status === "pago" || l.status === "cancelado" || !l.data_vencimento || l.data_vencimento >= hojeStr) return 0;
+    return Math.round((Date.parse(hojeStr) - Date.parse(l.data_vencimento)) / 86_400_000);
+  };
+  const referenteA = (l: Lancamento) => {
+    const per = periodoFaturamento(l);
+    if (per && per.ini !== per.fim) {
+      const a = quinzenaRef(per.ini), b = quinzenaRef(per.fim);
+      return a.label === b.label ? a.label : `${a.label} – ${b.label}`;
+    }
+    if (l.viagem?.codigo) return `OS ${l.viagem.codigo}`;
+    const base = per?.ini ?? l.data_competencia ?? l.data_emissao;
+    return base ? quinzenaRef(String(base)).label : "—";
+  };
+  const aplicarAtalho = (k: "hoje" | "semana" | "proxima" | "atrasados") => {
+    const d = new Date(`${hojeStr}T12:00:00Z`);
+    const iso = (x: Date) => x.toISOString().slice(0, 10);
+    const seg = new Date(d); seg.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    const add = (x: Date, n: number) => { const y = new Date(x); y.setUTCDate(y.getUTCDate() + n); return y; };
+    setDataBase("vencimento");
+    if (k === "hoje") { setDataDe(hojeStr); setDataAte(hojeStr); setStatusFilter("todos"); }
+    if (k === "semana") { setDataDe(iso(seg)); setDataAte(iso(add(seg, 6))); setStatusFilter("todos"); }
+    if (k === "proxima") { setDataDe(iso(add(seg, 7))); setDataAte(iso(add(seg, 13))); setStatusFilter("todos"); }
+    if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("pendente"); }
+  };
+
   const totais = filtered.reduce(
     (acc, l) => {
+      if (l.status === "cancelado") return acc;
       acc.total += Number(l.valor);
-      if (l.status === "pago") acc.pago += Number(l.valor);
-      else if (l.status === "atrasado") acc.atrasado += Number(l.valor);
-      else if (l.status === "pendente") acc.pendente += Number(l.valor);
+      if (l.status === "pago") { acc.pago += Number(l.valor); acc.qPago++; }
+      else if (diasAtraso(l) > 0 || l.status === "atrasado") { acc.atrasado += Number(l.valor); acc.qAtrasado++; }
+      else { acc.pendente += Number(l.valor); acc.qAberto++; }
       return acc;
     },
-    { total: 0, pago: 0, pendente: 0, atrasado: 0 },
+    { total: 0, pago: 0, pendente: 0, atrasado: 0, qPago: 0, qAtrasado: 0, qAberto: 0 },
   );
 
   const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -577,14 +606,25 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     >
       {/* Cards resumo */}
       <div className="grid gap-3 md:grid-cols-4">
-        <ResumoCard label="Total" value={fmtBRL(totais.total)} />
-        <ResumoCard label={isReceber ? "Recebido" : "Pago"} value={fmtBRL(totais.pago)} tone="success" />
-        <ResumoCard label="Pendente" value={fmtBRL(totais.pendente)} />
-        <ResumoCard label="Atrasado" value={fmtBRL(totais.atrasado)} tone="danger" />
+        <ResumoCard label={`A ${isReceber ? "receber" : "pagar"} no período (${totais.qAberto})`} value={fmtBRL(totais.pendente)} />
+        <ResumoCard label={`Atrasado (${totais.qAtrasado})`} value={fmtBRL(totais.atrasado)} tone="danger" />
+        <ResumoCard label={`Já ${isReceber ? "recebido" : "pago"} (${totais.qPago})`} value={fmtBRL(totais.pago)} tone="success" />
+        <ResumoCard label={`Total (${filtered.length})`} value={fmtBRL(totais.total)} />
       </div>
 
       {/* Filtros */}
       <Card className="p-3 space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Vencimento:</span>
+          {([
+            ["hoje", "Hoje"],
+            ["semana", "Esta semana"],
+            ["proxima", "Próxima semana"],
+            ["atrasados", "Atrasados"],
+          ] as const).map(([k, rot]) => (
+            <Button key={k} variant="secondary" size="sm" onClick={() => aplicarAtalho(k)}>{rot}</Button>
+          ))}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["todos", "pendente", "atrasado", "pago", "cancelado"] as const).map((s) => (
             <Button
@@ -757,7 +797,14 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
                     {l.motorista?.nome && <div className="text-muted-foreground">{l.motorista.nome}</div>}
                     {!l.veiculo?.placa && !l.motorista?.nome && "—"}
                   </TableCell>
-                  <TableCell className="text-sm">{fmtDate(l.data_vencimento)}</TableCell>
+                  <TableCell className="text-sm">
+                    <div>{fmtDate(l.data_vencimento)}</div>
+                    {(() => {
+                      const d = diasAtraso(l);
+                      return d > 0 ? <div className="text-[10px] font-semibold text-destructive">{d} dia(s) em atraso</div> : null;
+                    })()}
+                    <div className="text-[10px] text-muted-foreground">Ref.: {referenteA(l)}</div>
+                  </TableCell>
                   <TableCell className="text-right font-mono font-semibold">
                     {fmtBRL(Number(l.valor))}
                   </TableCell>

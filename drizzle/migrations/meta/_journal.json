@@ -92,6 +92,13 @@
       "when": 1790175712862,
       "tag": "0012_abastecimento_competencia_orfaos",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790177177912,
+      "tag": "0013_prazo_pagamento_clientes_motoristas",
+      "breakpoints": true
     }
   ]
 }
