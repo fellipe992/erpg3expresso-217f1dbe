@@ -3464,6 +3464,7 @@ export type Database = {
           veiculo_placa: string
         }[]
       }
+      quinzena_fim: { Args: { _d: string }; Returns: string }
       viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
       viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
       viagem_restaurar: { Args: { _arquivo_id: string }; Returns: string }
