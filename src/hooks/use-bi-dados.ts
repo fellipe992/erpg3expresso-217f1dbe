@@ -56,6 +56,8 @@ export type ViagemBi = {
   pedagio: number;
   manutencao: number;
   outrasDespesas: number;
+  /** Frete/pagamento do motorista (fechamento do motorista ou lançamento avulso da viagem) */
+  freteMotorista: number;
   despesas: number;
   lucro: number;
   margem: number;
@@ -346,7 +348,9 @@ export function useBiDados(de: string, ate: string) {
         let combustivel = 0;
         let pedagio = 0;
         let manutencao = 0;
-         let outras = despesaFechamentoPorViagem.get(id) ?? 0;
+         const fechMot = despesaFechamentoPorViagem.get(id) ?? 0;
+         let motAvulso = 0;
+         let outras = 0;
 
         for (const l of ls) {
           if (l.tipo === "receber") {
@@ -359,6 +363,7 @@ export function useBiDados(de: string, ate: string) {
             if (cat === "Combustível") combustivel += l.valor;
             else if (cat === "Manutenção") manutencao += l.valor;
             else if (cat === "Pedágio") pedagio += l.valor;
+            else if (/motorista|agregado/i.test(l.categoria ?? "")) motAvulso += l.valor;
             else outras += l.valor;
           }
         }
@@ -367,7 +372,9 @@ export function useBiDados(de: string, ate: string) {
         // apurado do fechamento; usar o frete aqui dobraria a receita.
          const receitaFechamento = receitaFechamentoPorViagem.get(id) ?? 0;
          const receita = receitaFechamento > 0 ? receitaFechamento : receitaLanc > 0 ? receitaLanc : viagensFaturadas.has(id) ? 0 : frete;
-        const despesas = combustivel + pedagio + manutencao + outras;
+        // Motorista já fechado: vale o valor do fechamento (avulsos foram cancelados na consolidação).
+        const freteMotorista = fechMot > 0 ? fechMot : motAvulso;
+        const despesas = combustivel + pedagio + manutencao + outras + freteMotorista;
         const lucro = receita - despesas;
         const vei = raw.veiculo_id ? veiMap.get(String(raw.veiculo_id)) : undefined;
         const origem = [raw.origem_cidade, raw.origem_uf].filter(Boolean).join("/") || "—";
@@ -399,7 +406,8 @@ export function useBiDados(de: string, ate: string) {
           combustivel,
           pedagio,
           manutencao,
-          outrasDespesas: outras,
+          outrasDespesas: outras + freteMotorista,
+          freteMotorista,
           despesas,
           lucro,
           margem: receita > 0 ? (lucro / receita) * 100 : 0,
