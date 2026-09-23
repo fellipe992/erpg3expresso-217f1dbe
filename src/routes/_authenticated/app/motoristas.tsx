@@ -158,6 +158,7 @@ function MotoristasPage() {
                 <TableHead>Veículo</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Contrato</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -172,6 +173,11 @@ function MotoristasPage() {
                   <TableCell className="text-xs">{v ? `${v.placa} · ${v.modelo}` : <span className="text-muted-foreground">Sem vínculo</span>}</TableCell>
                   <TableCell>{m.telefone ?? "—"}</TableCell>
                   <TableCell><Badge variant={m.ativo ? "default" : "outline"}>{m.ativo ? "Ativo" : "Inativo"}</Badge></TableCell>
+                  <TableCell>
+                    {contratos[m.id] ? (
+                      <Button size="sm" variant="ghost" className="h-7 text-success" onClick={() => baixarContrato(contratos[m.id])}>Assinado ↓</Button>
+                    ) : <span className="text-xs text-warning">Pendente</span>}
+                  </TableCell>
                   <TableCell className="text-right">
                     {canWrite && <Button variant="ghost" size="icon" onClick={() => { setForm(m); setOpen(true); }}><Pencil className="size-4" /></Button>}
                     {isAdmin && <Button variant="ghost" size="icon" onClick={() => confirm(`Excluir ${m.nome}?`) && del.mutate(m.id)}><Trash2 className="size-4" /></Button>}

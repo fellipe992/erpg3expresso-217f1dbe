@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { AvatarUpload } from "@/components/perfil/avatar-upload";
 import { DocsOneDrive } from "@/components/perfil/docs-onedrive";
+import { ContratoCard } from "@/components/perfil/contrato-card";
 
 
 export const Route = createFileRoute("/_authenticated/app/perfil")({
@@ -89,6 +90,7 @@ function PerfilPage() {
         </CardContent>
       </Card>
 
+      {data?.motorista && <ContratoCard motoristaId={data.motorista.id} podeAssinar />}
       {data?.motorista && <DocsOneDrive />}
 
 
