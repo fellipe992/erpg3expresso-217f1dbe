@@ -10,6 +10,8 @@
 ## Em aberto
 - Validar na tela as quinzenas 16–31/08 e 01–15/09 do cliente principal (receita/custo/margem iguais em relatórios, rentabilidade e dashboard).
 
-## Em andamento
-- Corrigir a divergência de atraso entre Contas a pagar e Rentabilidade, incluindo o atalho de atrasados.
-- Impedir e corrigir lançamentos avulsos de motorista quando a viagem já estiver em fechamento ativo (OS 288).
+## Concluído (consistência financeiro × rentabilidade)
+- Atalho de atrasados mostra pendentes vencidos e lançamentos com status atrasado; pagamentos atualizam imediatamente os relatórios.
+- Valores de fechamento na rentabilidade são identificados como custo/valor do motorista, sem sugerir pagamento realizado.
+- Lançamentos avulsos de viagens já consolidadas são ignorados no BI, e novos pagamentos/fechamentos duplicados ficam bloqueados.
+- OS 288: duplicidade avulsa cancelada com justificativa, preservando o fechamento #26 e o histórico.

@@ -226,6 +226,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["bi-dados"] });
     qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
     qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });

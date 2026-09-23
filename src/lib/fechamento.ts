@@ -332,9 +332,11 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
     .is("fechamento_id", null);
 
   if (p.tipo === "cliente") {
-    await consolidacao.eq("tipo", "receber");
+    const resultado = await consolidacao.eq("tipo", "receber");
+    if (resultado.error) throw resultado.error;
   } else {
-    await consolidacao.eq("tipo", "pagar").eq("origem", "viagem");
+    const resultado = await consolidacao.eq("tipo", "pagar").eq("origem", "viagem");
+    if (resultado.error) throw resultado.error;
   }
 
   return fech as { id: string; numero: number };
