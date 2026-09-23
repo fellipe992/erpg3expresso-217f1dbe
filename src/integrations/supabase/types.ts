@@ -2004,6 +2004,65 @@ export type Database = {
           },
         ]
       }
+      motorista_contratos: {
+        Row: {
+          assinado_em: string
+          assinatura_path: string
+          cnpj: string
+          created_at: string
+          dados_snapshot: Json
+          id: string
+          motorista_id: string
+          pdf_path: string
+          razao_social: string
+          rntrc: string
+          status: string
+          user_agent: string | null
+          user_id: string
+          versao: string
+        }
+        Insert: {
+          assinado_em?: string
+          assinatura_path: string
+          cnpj: string
+          created_at?: string
+          dados_snapshot?: Json
+          id?: string
+          motorista_id: string
+          pdf_path: string
+          razao_social: string
+          rntrc: string
+          status?: string
+          user_agent?: string | null
+          user_id: string
+          versao?: string
+        }
+        Update: {
+          assinado_em?: string
+          assinatura_path?: string
+          cnpj?: string
+          created_at?: string
+          dados_snapshot?: Json
+          id?: string
+          motorista_id?: string
+          pdf_path?: string
+          razao_social?: string
+          rntrc?: string
+          status?: string
+          user_agent?: string | null
+          user_id?: string
+          versao?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motorista_contratos_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motorista_veiculo_historico: {
         Row: {
           created_at: string
@@ -2059,6 +2118,7 @@ export type Database = {
           cnh: string | null
           cnh_categoria: string | null
           cnh_validade: string | null
+          cnpj_empresa: string | null
           cpf: string | null
           created_at: string
           email: string | null
@@ -2068,6 +2128,8 @@ export type Database = {
           observacoes: string | null
           prazo_dias: number | null
           prazo_pagamento: Database["public"]["Enums"]["prazo_pagamento"]
+          razao_social: string | null
+          rntrc: string | null
           telefone: string | null
           uf: string | null
           updated_at: string
@@ -2080,6 +2142,7 @@ export type Database = {
           cnh?: string | null
           cnh_categoria?: string | null
           cnh_validade?: string | null
+          cnpj_empresa?: string | null
           cpf?: string | null
           created_at?: string
           email?: string | null
@@ -2089,6 +2152,8 @@ export type Database = {
           observacoes?: string | null
           prazo_dias?: number | null
           prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
+          razao_social?: string | null
+          rntrc?: string | null
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -2101,6 +2166,7 @@ export type Database = {
           cnh?: string | null
           cnh_categoria?: string | null
           cnh_validade?: string | null
+          cnpj_empresa?: string | null
           cpf?: string | null
           created_at?: string
           email?: string | null
@@ -2110,6 +2176,8 @@ export type Database = {
           observacoes?: string | null
           prazo_dias?: number | null
           prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
+          razao_social?: string | null
+          rntrc?: string | null
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -3475,6 +3543,10 @@ export type Database = {
           veiculo_modelo: string
           veiculo_placa: string
         }[]
+      }
+      motorista_salvar_empresa: {
+        Args: { _cnpj: string; _razao: string; _rntrc: string }
+        Returns: undefined
       }
       quinzena_fim: { Args: { _d: string }; Returns: string }
       viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
