@@ -97,7 +97,7 @@ export function RelatorioQuinzena() {
         const g = m.get(k)!;
         g.total += l.valor;
         if (l.status === "pago") g.pago += l.valor;
-        else if (previsto(l) < hoje) g.atrasado += l.valor;
+        else if (l.data_vencimento && l.data_vencimento < hoje) g.atrasado += l.valor;
         g.datas.add(l.status === "pago" && l.data_pagamento ? l.data_pagamento : previsto(l));
       }
       return Array.from(m.values()).sort((x, y) => y.total - x.total);
