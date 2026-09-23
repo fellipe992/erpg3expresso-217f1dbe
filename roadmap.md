@@ -9,4 +9,7 @@
 
 ## Em aberto
 - Validar na tela as quinzenas 16–31/08 e 01–15/09 do cliente principal (receita/custo/margem iguais em relatórios, rentabilidade e dashboard).
-- Definir plano de pagamento por cliente (quinzenal +15, quinzenal imediato, à vista) para vencimento automático — aguarda decisão do usuário.
+
+## Em andamento
+- Corrigir a divergência de atraso entre Contas a pagar e Rentabilidade, incluindo o atalho de atrasados.
+- Impedir e corrigir lançamentos avulsos de motorista quando a viagem já estiver em fechamento ativo (OS 288).

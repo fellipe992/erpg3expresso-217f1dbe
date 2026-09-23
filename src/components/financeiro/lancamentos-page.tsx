@@ -338,6 +338,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const marcarPago = useMutation({
     mutationFn: async (l: Lancamento) => {
+      if (!isReceber && l.origem === "viagem" && l.viagem_id) {
+        const { data: vinculos, error: vinculoError } = await supabase
+          .from("fechamento_viagens")
+          .select("fechamento:fechamentos(numero, status)")
+          .eq("viagem_id", l.viagem_id)
+          .eq("tipo", "motorista")
+          .eq("ativo", true);
+        if (vinculoError) throw vinculoError;
+        const fechamentoAtivo = (vinculos ?? []).find((v: any) => v.fechamento?.status !== "cancelado");
+        if (fechamentoAtivo) {
+          throw new Error(
+            `Esta viagem já está no fechamento #${fechamentoAtivo.fechamento?.numero}. Registre o pagamento pela fatura consolidada.`,
+          );
+        }
+      }
       const { error } = await supabase
         .from("financeiro_lancamentos")
         .update({
@@ -490,7 +505,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (k === "hoje") { setDataDe(hojeStr); setDataAte(hojeStr); setStatusFilter("todos"); }
     if (k === "semana") { setDataDe(iso(seg)); setDataAte(iso(add(seg, 6))); setStatusFilter("todos"); }
     if (k === "proxima") { setDataDe(iso(add(seg, 7))); setDataAte(iso(add(seg, 13))); setStatusFilter("todos"); }
-    if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("pendente"); }
+    if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("todos"); }
   };
 
   const totais = filtered.reduce(
