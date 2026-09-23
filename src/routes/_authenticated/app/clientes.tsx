@@ -1,3 +1,4 @@
+import { PRAZO_OPCOES, type PrazoPagamento } from "@/lib/prazo-pagamento";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,8 @@ type Cliente = {
   cep: string | null;
   ativo: boolean;
   observacoes: string | null;
+  prazo_pagamento?: string | null;
+  prazo_dias?: number | null;
 };
 
 const empty: Partial<Cliente> = { tipo: "pj", razao_social: "", ativo: true };
@@ -129,6 +132,8 @@ function ClientesPage() {
         cep: form.cep || null,
         ativo: form.ativo ?? true,
         observacoes: form.observacoes || null,
+        prazo_pagamento: (form.prazo_pagamento ?? "quinzenal_casa") as PrazoPagamento,
+        prazo_dias: form.prazo_dias ?? null,
       };
       if (form.id) {
         const { error } = await supabase.from("clientes").update(payload).eq("id", form.id);
@@ -284,6 +289,15 @@ function ClientesPage() {
               <Switch checked={form.ativo ?? true} onCheckedChange={(v) => setForm({ ...form, ativo: v })} />
               <Label>Ativo</Label>
             </div>
+            <F label="Prazo de recebimento">
+              <Select value={form.prazo_pagamento ?? "quinzenal_casa"} onValueChange={(v) => setForm({ ...form, prazo_pagamento: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PRAZO_OPCOES.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </F>
+            {(form.prazo_pagamento ?? "quinzenal_casa") === "dias" && (
+              <F label="Dias após o período"><Input type="number" value={form.prazo_dias ?? 30} onChange={(e) => setForm({ ...form, prazo_dias: Number(e.target.value) || 0 })} /></F>
+            )}
             <div className="md:col-span-2"><F label="Observações"><Textarea rows={2} value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></F></div>
           </div>
           <DialogFooter>

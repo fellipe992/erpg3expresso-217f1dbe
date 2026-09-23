@@ -1,3 +1,4 @@
+import { PRAZO_OPCOES, type PrazoPagamento } from "@/lib/prazo-pagamento";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +32,8 @@ type Motorista = {
   cnh_categoria: string | null;
   cnh_validade: string | null;
   telefone: string | null;
+  prazo_pagamento?: string | null;
+  prazo_dias?: number | null;
   email: string | null;
   endereco: string | null;
   cidade: string | null;
@@ -85,6 +88,8 @@ function MotoristasPage() {
         cnh_categoria: form.cnh_categoria || null,
         cnh_validade: form.cnh_validade || null,
         telefone: form.telefone || null,
+        prazo_pagamento: (form.prazo_pagamento ?? "dias") as PrazoPagamento,
+        prazo_dias: form.prazo_dias ?? 30,
         email: form.email || null,
         endereco: form.endereco || null,
         cidade: form.cidade || null,
@@ -185,6 +190,15 @@ function MotoristasPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2"><F label="Nome *"><Input value={form.nome ?? ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></F></div>
             <F label="CPF"><Input value={form.cpf ?? ""} onChange={(e) => setForm({ ...form, cpf: e.target.value })} placeholder="000.000.000-00" /></F>
+            <F label="Prazo de pagamento">
+              <Select value={form.prazo_pagamento ?? "dias"} onValueChange={(v) => setForm({ ...form, prazo_pagamento: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PRAZO_OPCOES.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </F>
+            {(form.prazo_pagamento ?? "dias") === "dias" && (
+              <F label="Dias após o período"><Input type="number" value={form.prazo_dias ?? 30} onChange={(e) => setForm({ ...form, prazo_dias: Number(e.target.value) || 0 })} /></F>
+            )}
             <F label="Telefone"><Input value={form.telefone ?? ""} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></F>
             <F label="CNH"><Input value={form.cnh ?? ""} onChange={(e) => setForm({ ...form, cnh: e.target.value })} /></F>
             <F label="Categoria CNH"><Input value={form.cnh_categoria ?? ""} onChange={(e) => setForm({ ...form, cnh_categoria: e.target.value })} placeholder="B, C, D, E..." /></F>
