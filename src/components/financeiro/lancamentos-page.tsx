@@ -1,3 +1,4 @@
+import { quinzenaDe as quinzenaRef } from "@/lib/prazo-pagamento";
 import { useState, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -473,12 +474,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
   const referenteA = (l: Lancamento) => {
     const per = periodoFaturamento(l);
     if (per && per.ini !== per.fim) {
-      const a = quinzenaDe(per.ini), b = quinzenaDe(per.fim);
+      const a = quinzenaRef(per.ini), b = quinzenaRef(per.fim);
       return a.label === b.label ? a.label : `${a.label} – ${b.label}`;
     }
     if (l.viagem?.codigo) return `OS ${l.viagem.codigo}`;
     const base = per?.ini ?? l.data_competencia ?? l.data_emissao;
-    return base ? quinzenaDe(String(base)).label : "—";
+    return base ? quinzenaRef(String(base)).label : "—";
   };
   const aplicarAtalho = (k: "hoje" | "semana" | "proxima" | "atrasados") => {
     const d = new Date(`${hojeStr}T12:00:00Z`);
