@@ -8,6 +8,7 @@ import { Users, Pencil, Trash2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { PageShell } from "@/components/crud/page-shell";
+import { baixarContrato } from "@/components/perfil/contrato-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,15 @@ function MotoristasPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<Motorista>>(empty);
+  const { data: contratos = {} } = useQuery({
+    queryKey: ["motorista-contratos-lista"],
+    queryFn: async () => {
+      const { data } = await supabase.from("motorista_contratos").select("motorista_id, pdf_path, assinado_em").eq("status", "assinado").order("assinado_em");
+      const m: Record<string, string> = {};
+      (data ?? []).forEach((c) => { m[c.motorista_id] = c.pdf_path; });
+      return m;
+    },
+  });
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["motoristas"],
