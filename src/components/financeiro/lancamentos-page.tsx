@@ -226,6 +226,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["financeiro"] });
+    qc.invalidateQueries({ queryKey: ["bi-dados"] });
     qc.invalidateQueries({ queryKey: ["admin-dashboard"] });
     qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
     qc.invalidateQueries({ queryKey: ["viagem-financeiro"] });
@@ -338,6 +339,21 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const marcarPago = useMutation({
     mutationFn: async (l: Lancamento) => {
+      if (!isReceber && l.origem === "viagem" && l.viagem_id) {
+        const { data: vinculos, error: vinculoError } = await supabase
+          .from("fechamento_viagens")
+          .select("fechamento:fechamentos(numero, status)")
+          .eq("viagem_id", l.viagem_id)
+          .eq("tipo", "motorista")
+          .eq("ativo", true);
+        if (vinculoError) throw vinculoError;
+        const fechamentoAtivo = (vinculos ?? []).find((v: any) => v.fechamento?.status !== "cancelado");
+        if (fechamentoAtivo) {
+          throw new Error(
+            `Esta viagem já está no fechamento #${fechamentoAtivo.fechamento?.numero}. Registre o pagamento pela fatura consolidada.`,
+          );
+        }
+      }
       const { error } = await supabase
         .from("financeiro_lancamentos")
         .update({
@@ -395,8 +411,12 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     return d ? { ini: d, fim: d } : null;
   };
 
+  const hojeStr = diaLocal(new Date().toISOString());
   const filtered = lancamentos.filter((l) => {
-    if (statusFilter !== "todos" && l.status !== statusFilter) return false;
+    if (statusFilter === "atrasado") {
+      const vencidoEmAberto = l.status === "pendente" && Boolean(l.data_vencimento) && String(l.data_vencimento) < hojeStr;
+      if (l.status !== "atrasado" && !vencidoEmAberto) return false;
+    } else if (statusFilter !== "todos" && l.status !== statusFilter) return false;
     const mesmoTexto = (a: string | null, b: string) => (a ?? "").trim().toUpperCase() === b.trim().toUpperCase();
     if (categoriaFilter !== "todas" && !mesmoTexto(l.categoria, categoriaFilter)) return false;
     if (centroCustoFilter !== "todos" && !mesmoTexto(l.centro_custo, centroCustoFilter)) return false;
@@ -466,7 +486,6 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     { key: "vencimento", dir: "asc" },
   );
 
-  const hojeStr = diaLocal(new Date().toISOString());
   const diasAtraso = (l: Lancamento) => {
     if (l.status === "pago" || l.status === "cancelado" || !l.data_vencimento || l.data_vencimento >= hojeStr) return 0;
     return Math.round((Date.parse(hojeStr) - Date.parse(l.data_vencimento)) / 86_400_000);
@@ -490,7 +509,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (k === "hoje") { setDataDe(hojeStr); setDataAte(hojeStr); setStatusFilter("todos"); }
     if (k === "semana") { setDataDe(iso(seg)); setDataAte(iso(add(seg, 6))); setStatusFilter("todos"); }
     if (k === "proxima") { setDataDe(iso(add(seg, 7))); setDataAte(iso(add(seg, 13))); setStatusFilter("todos"); }
-    if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("pendente"); }
+    if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("atrasado"); }
   };
 
   const totais = filtered.reduce(

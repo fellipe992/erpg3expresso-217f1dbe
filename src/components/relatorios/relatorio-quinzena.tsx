@@ -161,8 +161,8 @@ export function RelatorioQuinzena() {
   const C = {
     clientes: ["Cliente", "Faturado", "Recebido", "Atrasado", "Data(s) de recebimento"],
     motoristas: ["Motorista", "A pagar", "Pago", "Atrasado", "Data(s) de pagamento"],
-    placas: ["Placa", "Cliente(s)", "Viagens", "Faturou ao cliente", "Pago ao motorista", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
-    rentMotoristas: ["Motorista", "Cliente(s)", "Viagens", "Faturou ao cliente", "Recebeu (motorista)", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
+    placas: ["Placa", "Cliente(s)", "Viagens", "Faturou ao cliente", "Custo do motorista", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
+    rentMotoristas: ["Motorista", "Cliente(s)", "Viagens", "Faturou ao cliente", "Valor do motorista", "Diesel/Arla", "Manutenção", "Descontos/outras", "Resultado"],
     despesas: ["Data", "Categoria", "Descrição", "Valor", "Pagamento"],
     agenda: ["Data", "Tipo", "Cliente / Motorista / Fornecedor", "Referente a", "Valor", "Situação"],
   };
@@ -226,7 +226,7 @@ export function RelatorioQuinzena() {
           })} />
           <Tabela titulo="Saídas por motorista" colunas={C.motoristas} linhas={tabelas.motoristas} />
           <Tabela titulo="Rentabilidade por placa (faturado ao cliente − motorista − custos da placa)" colunas={C.placas} linhas={tabelas.placas} />
-          <Tabela titulo="Rentabilidade por motorista (quanto fez faturar × quanto recebeu)" colunas={C.rentMotoristas} linhas={tabelas.rentMotoristas} />
+           <Tabela titulo="Rentabilidade por motorista (quanto fez faturar × valor do frete do motorista)" colunas={C.rentMotoristas} linhas={tabelas.rentMotoristas} />
           <Tabela titulo="Todas as despesas e saídas" colunas={[...C.despesas, "Situação"]} linhas={r.despesas.map((l, i) => {
             const s = situacao(l, hoje);
             return [...tabelas.despesas[i], <Badge key="s" variant={s.tone}>{s.txt}</Badge>];
