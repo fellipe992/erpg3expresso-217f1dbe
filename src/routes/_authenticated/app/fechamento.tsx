@@ -185,9 +185,11 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
       <Card className="max-w-full overflow-x-auto">
         {isLoading ? (
           <div className="grid place-items-center p-10"><Loader2 className="size-5 animate-spin text-brand" /></div>
-        ) : linhas.length === 0 ? (
+        ) : disponiveis.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">
-            Nenhuma viagem encontrada para os filtros informados.
+            {linhas.length
+              ? "Todas as viagens deste filtro já estão em fechamentos. Consulte o histórico."
+              : "Nenhuma viagem encontrada para os filtros informados."}
           </div>
         ) : (
           <table className="w-full min-w-[980px] text-sm">
@@ -204,6 +206,7 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
                 <th className="px-3 py-2 font-semibold">OS</th>
                 <th className="px-3 py-2 font-semibold">Data</th>
                 <th className="px-3 py-2 font-semibold">{tipo === "cliente" ? "Cliente" : "Motorista"}</th>
+                {tipo === "motorista" && <th className="px-3 py-2 font-semibold">Cliente</th>}
                 <th className="px-3 py-2 font-semibold">Placa</th>
                 <th className="px-3 py-2 font-semibold">Rota</th>
                 <th className="px-3 py-2 font-semibold">Raio</th>
@@ -215,8 +218,8 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
               </tr>
             </thead>
             <tbody>
-              {linhas.map((l) => {
-                const fechada = l.fechamentoNumero != null;
+              {disponiveis.map((l) => {
+                const fechada = false;
                 return (
                   <tr key={l.viagemId} className="border-b border-border/40 last:border-0">
                     <td className="px-3 py-2">
@@ -232,6 +235,7 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
                     <td className="px-3 py-2 font-mono text-xs">{l.codigo ?? "—"}</td>
                     <td className="whitespace-nowrap px-3 py-2">{dt(l.data)}</td>
                     <td className="px-3 py-2">{tipo === "cliente" ? l.cliente : l.motorista}</td>
+                    {tipo === "motorista" && <td className="px-3 py-2 text-xs">{l.cliente}</td>}
                     <td className="px-3 py-2 font-mono text-xs">{l.placa}</td>
                     <td className="px-3 py-2 text-xs">{l.origem} → {l.destino}</td>
                     <td className="px-3 py-2 text-xs">{l.raio}</td>
@@ -330,21 +334,45 @@ function DialogConfirmar({
   const totalExtras = extras.reduce((s, e) => s + e.valor, 0);
   const sugestao = `${tipo === "cliente" ? "Fatura" : "Pagamento"} ${nome} — ${dt(periodo.de)} a ${dt(periodo.ate)} (${linhas.length} viagens)`;
 
+  // Motorista sem cliente filtrado: um fechamento por cliente, em sequência.
+  const grupos = useMemo(() => {
+    if (tipo !== "motorista" || clienteId) return [{ clienteId, cliente: "", linhas }];
+    const m = new Map<string, { clienteId: string | null; cliente: string; linhas: LinhaFechamento[] }>();
+    for (const l of linhas) {
+      const k = l.clienteId ?? "sem";
+      if (!m.has(k)) m.set(k, { clienteId: l.clienteId, cliente: l.cliente, linhas: [] });
+      m.get(k)!.linhas.push(l);
+    }
+    return Array.from(m.values());
+  }, [tipo, clienteId, linhas]);
+  const multiplos = grupos.length > 1;
+
   const gerar = useMutation({
-    mutationFn: () =>
-      confirmarFechamento({
-        tipo,
-        linhas,
-        descricao: descricao.trim() || sugestao,
-        vencimento: vencimento || null,
-        periodo,
-        descontosExtras: extras,
-        clienteId,
-        motoristaId,
-        veiculoId,
-      }),
-    onSuccess: (f) => {
-      toast.success(`Fechamento #${f.numero} gerado`, {
+    mutationFn: async () => {
+      const criados: { id: string; numero: number }[] = [];
+      for (const [i, g] of grupos.entries()) {
+        const base = descricao.trim() || sugestao;
+        criados.push(
+          await confirmarFechamento({
+            tipo,
+            linhas: g.linhas,
+            descricao: multiplos
+              ? `${base.replace(/\(\d+ viagens\)$/, "").trim()} — ${g.cliente} (${g.linhas.length} viagens)`
+              : base,
+            vencimento: vencimento || null,
+            periodo,
+            descontosExtras: i === 0 ? extras : [],
+            clienteId: g.clienteId,
+            motoristaId,
+            veiculoId,
+          }),
+        );
+      }
+      return criados;
+    },
+    onSuccess: (fs) => {
+      const f = { numero: fs.map((x) => x.numero).join(", #") };
+      toast.success(`Fechamento${fs.length > 1 ? "s" : ""} #${f.numero} gerado${fs.length > 1 ? "s" : ""}`, {
         description:
           tipo === "cliente"
             ? "Conta a receber criada e lançamentos individuais consolidados."
@@ -370,6 +398,20 @@ function DialogConfirmar({
             <div className="text-muted-foreground">
               {dt(periodo.de)} a {dt(periodo.ate)} · {linhas.length} viagem(ns)
             </div>
+            {multiplos && (
+              <div className="mt-2 space-y-1 border-t border-border/60 pt-2 text-xs">
+                <div className="font-semibold">Serão gerados {grupos.length} fechamentos, um por cliente:</div>
+                {grupos.map((g) => (
+                  <div key={g.clienteId ?? "sem"} className="flex justify-between gap-2">
+                    <span className="truncate">{g.cliente} · {g.linhas.length} viagem(ns)</span>
+                    <span className="font-mono tabular-nums">{brl(g.linhas.reduce((s, l) => s + l.total, 0))}</span>
+                  </div>
+                ))}
+                {extras.length > 0 && (
+                  <div className="text-muted-foreground">Descontos do fechamento serão lançados no primeiro ({grupos[0].cliente}).</div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
