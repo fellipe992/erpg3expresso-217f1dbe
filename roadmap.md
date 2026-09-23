@@ -10,9 +10,9 @@
 ## Em aberto
 - Validar na tela as quinzenas 16–31/08 e 01–15/09 do cliente principal (receita/custo/margem iguais em relatórios, rentabilidade e dashboard).
 
-## Em andamento (rentabilidade líquida por quinzena)
-- Usar o valor líquido da fatura do cliente, rateando descontos extras entre as viagens para manter motorista e placa corretos.
-- Manter o fechamento bruto do motorista como custo e usar a viagem avulsa somente quando não existir fatura ativa.
+## Concluído (rentabilidade líquida por quinzena)
+- O valor líquido da fatura do cliente é rateado entre as viagens, mantendo motorista e placa corretos.
+- O fechamento bruto do motorista permanece como custo; a viagem avulsa só é usada quando não existe fatura ativa.
 
 ## Concluído (consistência financeiro × rentabilidade)
 - Atalho de atrasados mostra pendentes vencidos e lançamentos com status atrasado; pagamentos atualizam imediatamente os relatórios.
