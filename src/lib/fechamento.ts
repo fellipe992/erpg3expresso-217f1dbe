@@ -202,6 +202,23 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
     );
   }
 
+  // Uma viagem paga avulsa não pode ser cobrada novamente dentro de uma fatura
+  // consolidada. Exigir correção explícita preserva a trilha financeira.
+  if (p.tipo === "motorista") {
+    const { data: avulsosPagos, error: erroAvulsos } = await supabase
+      .from("financeiro_lancamentos")
+      .select("viagem_id, numero_documento")
+      .eq("tipo", "pagar")
+      .eq("origem", "viagem")
+      .eq("status", "pago")
+      .in("viagem_id", p.linhas.map((l) => l.viagemId));
+    if (erroAvulsos) throw erroAvulsos;
+    if (avulsosPagos?.length) {
+      const oss = avulsosPagos.map((l) => l.numero_documento).filter(Boolean).join(", ");
+      throw new Error(`A(s) viagem(ns) OS ${oss} já possui(em) pagamento avulso. Cancele esse pagamento antes de fechar.`);
+    }
+  }
+
   const valorViagens = p.linhas.reduce((s, l) => s + l.total, 0);
   const totalExtras = p.descontosExtras.reduce((s, d) => s + nnum(d.valor), 0);
   const valorFinal = valorViagens - totalExtras;
