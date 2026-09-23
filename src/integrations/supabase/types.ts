@@ -318,6 +318,8 @@ export type Database = {
           inscricao_estadual: string | null
           nome_fantasia: string | null
           observacoes: string | null
+          prazo_dias: number | null
+          prazo_pagamento: Database["public"]["Enums"]["prazo_pagamento"]
           razao_social: string
           telefone: string | null
           tipo: Database["public"]["Enums"]["pessoa_tipo"]
@@ -339,6 +341,8 @@ export type Database = {
           inscricao_estadual?: string | null
           nome_fantasia?: string | null
           observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
           razao_social: string
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["pessoa_tipo"]
@@ -360,6 +364,8 @@ export type Database = {
           inscricao_estadual?: string | null
           nome_fantasia?: string | null
           observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
           razao_social?: string
           telefone?: string | null
           tipo?: Database["public"]["Enums"]["pessoa_tipo"]
@@ -2060,6 +2066,8 @@ export type Database = {
           id: string
           nome: string
           observacoes: string | null
+          prazo_dias: number | null
+          prazo_pagamento: Database["public"]["Enums"]["prazo_pagamento"]
           telefone: string | null
           uf: string | null
           updated_at: string
@@ -2079,6 +2087,8 @@ export type Database = {
           id?: string
           nome: string
           observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -2098,6 +2108,8 @@ export type Database = {
           id?: string
           nome?: string
           observacoes?: string | null
+          prazo_dias?: number | null
+          prazo_pagamento?: Database["public"]["Enums"]["prazo_pagamento"]
           telefone?: string | null
           uf?: string | null
           updated_at?: string
@@ -3501,6 +3513,12 @@ export type Database = {
         | "outros"
       pessoa_tipo: "pf" | "pj"
       plano_tipo: "receita" | "despesa" | "outros"
+      prazo_pagamento:
+        | "a_vista"
+        | "semanal"
+        | "quinzenal_imediato"
+        | "quinzenal_casa"
+        | "dias"
       veiculo_tipo:
         | "cavalo"
         | "carreta"
@@ -3673,6 +3691,13 @@ export const Constants = {
       ],
       pessoa_tipo: ["pf", "pj"],
       plano_tipo: ["receita", "despesa", "outros"],
+      prazo_pagamento: [
+        "a_vista",
+        "semanal",
+        "quinzenal_imediato",
+        "quinzenal_casa",
+        "dias",
+      ],
       veiculo_tipo: [
         "cavalo",
         "carreta",
