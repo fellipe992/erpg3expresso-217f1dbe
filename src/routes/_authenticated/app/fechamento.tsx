@@ -1,3 +1,4 @@
+import { calcularVencimento } from "@/lib/prazo-pagamento";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -340,6 +341,21 @@ function DialogConfirmar({
   const [descricao, setDescricao] = useState("");
   const [vencimento, setVencimento] = useState("");
   const [extras, setExtras] = useState<DescontoExtra[]>([]);
+  const regraId = tipo === "cliente" ? clienteId : motoristaId;
+  const { data: regra } = useQuery({
+    queryKey: ["prazo-regra", tipo, regraId],
+    enabled: open && !!regraId,
+    queryFn: async () => {
+      const tabela = tipo === "cliente" ? "clientes" : "motoristas";
+      const { data } = await supabase.from(tabela).select("prazo_pagamento, prazo_dias").eq("id", regraId!).maybeSingle();
+      return data as { prazo_pagamento: string | null; prazo_dias: number | null } | null;
+    },
+  });
+  useEffect(() => {
+    if (open && regra && periodo.ate && !vencimento)
+      setVencimento(calcularVencimento(regra.prazo_pagamento, periodo.ate, regra.prazo_dias));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, regra, periodo.ate]);
   const [novoExtra, setNovoExtra] = useState({ descricao: "", valor: "" });
 
   const valorViagens = linhas.reduce((s, l) => s + l.total, 0);
