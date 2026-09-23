@@ -232,7 +232,19 @@ function PainelFechamento({ tipo }: { tipo: TipoFechamento }) {
                         />
                       )}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">{l.codigo ?? "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {l.codigo ?? "—"}
+                      {tipo === "cliente" && l.fechadoMotorista != null && (
+                        <Badge variant="outline" className="ml-1 whitespace-nowrap text-[10px]">
+                          Motorista #{l.fechadoMotorista}
+                        </Badge>
+                      )}
+                      {tipo === "motorista" && l.fechadoCliente != null && (
+                        <Badge variant="outline" className="ml-1 whitespace-nowrap text-[10px]">
+                          Cliente #{l.fechadoCliente}
+                        </Badge>
+                      )}
+                    </td>
                     <td className="whitespace-nowrap px-3 py-2">{dt(l.data)}</td>
                     <td className="px-3 py-2">{tipo === "cliente" ? l.cliente : l.motorista}</td>
                     {tipo === "motorista" && <td className="px-3 py-2 text-xs">{l.cliente}</td>}
