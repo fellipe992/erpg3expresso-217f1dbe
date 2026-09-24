@@ -94,11 +94,16 @@ export function DocsOneDrive({ motoristaId }: { motoristaId?: string }) {
                   </div>
                 </div>
                 {f.url && (
-                  <a href={f.url} target="_blank" rel="noreferrer" download={f.name}>
-                    <Button variant="outline" size="sm">
-                      <Download className="size-4" />
-                    </Button>
-                  </a>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const { baixarArquivo } = await import("@/lib/baixar-arquivo");
+                      await baixarArquivo(f.url!, f.name);
+                    }}
+                  >
+                    <Download className="size-4" />
+                  </Button>
                 )}
               </li>
             ))}

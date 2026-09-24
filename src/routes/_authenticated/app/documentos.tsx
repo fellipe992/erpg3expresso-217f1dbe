@@ -141,7 +141,8 @@ function DocumentosPage() {
       toast.error("Não foi possível gerar link");
       return;
     }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    const { baixarArquivo } = await import("@/lib/baixar-arquivo");
+    await baixarArquivo(data.signedUrl, obj.path.split("/").pop() || "arquivo");
   };
 
   if (!isStaff) {
