@@ -378,27 +378,36 @@ function DialogConfirmar({
   const gerar = useMutation({
     mutationFn: async () => {
       const criados: { id: string; numero: number }[] = [];
+      const falhas: string[] = [];
       for (const [i, g] of grupos.entries()) {
         const base = descricao.trim() || sugestao;
-        criados.push(
-          await confirmarFechamento({
-            tipo,
-            linhas: g.linhas,
-            descricao: multiplos
-              ? `${base.replace(/\(\d+ viagens\)$/, "").trim()} — ${g.cliente} (${g.linhas.length} viagens)`
-              : base,
-            vencimento: vencimento || null,
-            periodo,
-            descontosExtras: i === 0 ? extras : [],
-            clienteId: g.clienteId,
-            motoristaId,
-            veiculoId,
-          }),
-        );
+        try {
+          criados.push(
+            await confirmarFechamento({
+              tipo,
+              linhas: g.linhas,
+              descricao: multiplos
+                ? `${base.replace(/\(\d+ viagens\)$/, "").trim()} — ${g.cliente} (${g.linhas.length} viagens)`
+                : base,
+              vencimento: vencimento || null,
+              periodo,
+              // Descontos vão no primeiro fechamento criado com sucesso.
+              descontosExtras: criados.length === 0 ? extras : [],
+              clienteId: g.clienteId,
+              motoristaId,
+              veiculoId,
+            }),
+          );
+        } catch (e) {
+          if (!multiplos) throw e;
+          falhas.push(`${g.cliente}: ${(e as Error).message}`);
+        }
+        void i;
       }
-      return criados;
+      if (criados.length === 0 && falhas.length) throw new Error(falhas.join(" | "));
+      return { criados, falhas };
     },
-    onSuccess: (fs) => {
+    onSuccess: ({ criados: fs, falhas }) => {
       const f = { numero: fs.map((x) => x.numero).join(", #") };
       toast.success(`Fechamento${fs.length > 1 ? "s" : ""} #${f.numero} gerado${fs.length > 1 ? "s" : ""}`, {
         description:
@@ -406,12 +415,21 @@ function DialogConfirmar({
             ? "Conta a receber criada e lançamentos individuais consolidados."
             : "Conta a pagar criada para o motorista.",
       });
+      if (falhas.length) {
+        toast.error(`${falhas.length} fechamento(s) não foram gerados`, {
+          description: `${falhas.join(" | ")}. As viagens desses clientes continuam na lista para gerar de novo.`,
+          duration: 15000,
+        });
+      }
       setExtras([]);
       setDescricao("");
       setVencimento("");
       onDone();
     },
-    onError: (e: Error) => toast.error("Não foi possível gerar o fechamento", { description: e.message }),
+    onError: (e: Error) => {
+      toast.error("Não foi possível gerar o fechamento", { description: e.message });
+      onDone();
+    },
   });
 
   return (
