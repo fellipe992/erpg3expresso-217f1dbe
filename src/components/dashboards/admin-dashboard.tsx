@@ -93,6 +93,7 @@ export function AdminDashboard() {
         supabase
           .from("financeiro_lancamentos")
           .select("tipo, valor, status, data_emissao, data_vencimento, data_pagamento, categoria, veiculo_id")
+          .neq("status", "cancelado")
           .or(`data_emissao.gte.${desdeStr},data_vencimento.gte.${desdeStr}`),
         // Viagens pela data operacional (data_saida), com fallback para created_at
         supabase
