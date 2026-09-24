@@ -514,14 +514,15 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
 
   const totais = filtered.reduce(
     (acc, l) => {
-      if (l.status === "cancelado") return acc;
+      if (l.status === "cancelado") { acc.qCancelado++; acc.cancelado += Number(l.valor); return acc; }
       acc.total += Number(l.valor);
+      acc.qTotal++;
       if (l.status === "pago") { acc.pago += Number(l.valor); acc.qPago++; }
       else if (diasAtraso(l) > 0 || l.status === "atrasado") { acc.atrasado += Number(l.valor); acc.qAtrasado++; }
       else { acc.pendente += Number(l.valor); acc.qAberto++; }
       return acc;
     },
-    { total: 0, pago: 0, pendente: 0, atrasado: 0, qPago: 0, qAtrasado: 0, qAberto: 0 },
+    { total: 0, pago: 0, pendente: 0, atrasado: 0, cancelado: 0, qPago: 0, qAtrasado: 0, qAberto: 0, qTotal: 0, qCancelado: 0 },
   );
 
   const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -628,7 +629,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <ResumoCard label={`A ${isReceber ? "receber" : "pagar"} no período (${totais.qAberto})`} value={fmtBRL(totais.pendente)} />
         <ResumoCard label={`Atrasado (${totais.qAtrasado})`} value={fmtBRL(totais.atrasado)} tone="danger" />
         <ResumoCard label={`Já ${isReceber ? "recebido" : "pago"} (${totais.qPago})`} value={fmtBRL(totais.pago)} tone="success" />
-        <ResumoCard label={`Total (${filtered.length})`} value={fmtBRL(totais.total)} />
+        <ResumoCard label={`Total (${totais.qTotal})${totais.qCancelado ? ` · ${totais.qCancelado} cancelado(s) fora da soma` : ""}`} value={fmtBRL(totais.total)} />
       </div>
 
       {/* Filtros */}

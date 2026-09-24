@@ -38,7 +38,8 @@ export function useContratoMotorista(motoristaId: string | null | undefined) {
 export async function baixarContrato(path: string) {
   const { data, error } = await supabase.storage.from("contratos").createSignedUrl(path, 300);
   if (error || !data) return toast.error("Não foi possível abrir o contrato");
-  window.open(data.signedUrl, "_blank");
+  const { baixarArquivo } = await import("@/lib/baixar-arquivo");
+  await baixarArquivo(data.signedUrl, path.split("/").pop() || "contrato.pdf");
 }
 
 /** Cartão do contrato. `podeAssinar` = o próprio motorista. */
