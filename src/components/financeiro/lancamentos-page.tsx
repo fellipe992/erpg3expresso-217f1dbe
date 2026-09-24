@@ -629,7 +629,7 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
         <ResumoCard label={`A ${isReceber ? "receber" : "pagar"} no período (${totais.qAberto})`} value={fmtBRL(totais.pendente)} />
         <ResumoCard label={`Atrasado (${totais.qAtrasado})`} value={fmtBRL(totais.atrasado)} tone="danger" />
         <ResumoCard label={`Já ${isReceber ? "recebido" : "pago"} (${totais.qPago})`} value={fmtBRL(totais.pago)} tone="success" />
-        <ResumoCard label={`Total (${filtered.length})`} value={fmtBRL(totais.total)} />
+        <ResumoCard label={`Total (${totais.qTotal})${totais.qCancelado ? ` · ${totais.qCancelado} cancelado(s) fora da soma` : ""}`} value={fmtBRL(totais.total)} />
       </div>
 
       {/* Filtros */}
