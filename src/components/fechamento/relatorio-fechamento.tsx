@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2, Printer } from "lucide-react";
 
 import { carregarDetalheFechamento, type DetalheFechamento } from "@/lib/fechamento";
 import { brl, dt, exportarExcel, exportarPdf, type Celula } from "@/lib/export-utils";
@@ -91,8 +91,15 @@ const nomeArquivoDe = (d: DetalheFechamento) => {
   return ["fechamento", String(d.fechamento.numero), slug, per].filter(Boolean).join("-");
 };
 
-export function baixarPdfFechamento(d: DetalheFechamento) {
+export function baixarPdfFechamento(d: DetalheFechamento, imprimir = false) {
   exportarPdf({
+    imprimir,
+    assinaturas: [
+      "G3 EXPRESSO",
+      d.fechamento.tipo === "motorista"
+        ? `MOTORISTA: ${d.fechamento.motorista?.nome ?? ""}`
+        : `CLIENTE: ${d.fechamento.cliente?.razao_social ?? ""}`,
+    ],
     nomeArquivo: nomeArquivoDe(d),
     titulo: tituloDe(d),
     subtitulo: subtituloDe(d),
@@ -237,8 +244,11 @@ export function RelatorioFechamentoDialog({
           <Button variant="outline" onClick={() => data && baixarExcelFechamento(data)} disabled={!data}>
             <FileSpreadsheet className="mr-2 size-4" /> Excel
           </Button>
+          <Button variant="outline" onClick={() => data && baixarPdfFechamento(data, true)} disabled={!data}>
+            <Printer className="mr-2 size-4" /> Imprimir
+          </Button>
           <Button onClick={() => data && baixarPdfFechamento(data)} disabled={!data}>
-            <FileText className="mr-2 size-4" /> PDF
+            <Download className="mr-2 size-4" /> Baixar PDF
           </Button>
         </DialogFooter>
       </DialogContent>

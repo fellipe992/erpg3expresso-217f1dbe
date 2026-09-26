@@ -72,8 +72,13 @@ export function exportarPdf(opts: {
   imagens?: PdfImagem[];
   secoes: PdfSecao[];
   orientacao?: "portrait" | "landscape";
+  /** Linhas de assinatura no final (ex.: ["G3 Expresso", "Motorista"]) */
+  assinaturas?: string[];
+  /** Abre a impressão em vez de baixar */
+  imprimir?: boolean;
 }) {
   const doc = new jsPDF({ orientation: opts.orientacao ?? "landscape", unit: "mm", format: "a4" });
+  const alturaPagina = doc.internal.pageSize.getHeight();
   const largura = doc.internal.pageSize.getWidth();
 
   doc.setFontSize(15);
@@ -106,7 +111,6 @@ export function exportarPdf(opts: {
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   }
 
-  const alturaPagina = doc.internal.pageSize.getHeight();
   for (const img of opts.imagens ?? []) {
     const props = doc.getImageProperties(img.dataUrl);
     const larguraImg = largura - 28;
@@ -142,5 +146,47 @@ export function exportarPdf(opts: {
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
   }
 
-  doc.save(opts.nomeArquivo.endsWith(".pdf") ? opts.nomeArquivo : `${opts.nomeArquivo}.pdf`);
+  if (opts.assinaturas?.length) {
+    if (y + 30 > alturaPagina) {
+      doc.addPage();
+      y = 20;
+    }
+    y += 18;
+    const n = opts.assinaturas.length;
+    const w = (largura - 28 - (n - 1) * 12) / n;
+    opts.assinaturas.forEach((a, i) => {
+      const x = 14 + i * (w + 12);
+      doc.line(x, y, x + w, y);
+      doc.setFontSize(8);
+      doc.text(a, x + w / 2, y + 4, { align: "center" });
+    });
+    doc.text(`Data: ____/____/______`, 14, y + 14);
+  }
+
+  const nome = opts.nomeArquivo.endsWith(".pdf") ? opts.nomeArquivo : `${opts.nomeArquivo}.pdf`;
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  if (opts.imprimir) {
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+    iframe.src = url;
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch {
+        window.location.href = url;
+      }
+    };
+    document.body.appendChild(iframe);
+    setTimeout(() => { iframe.remove(); URL.revokeObjectURL(url); }, 120_000);
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

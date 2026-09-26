@@ -66,6 +66,7 @@ const financeiro: NavItem[] = [
   { label: "Fechamento de viagens", to: "/app/fechamento", icon: FileCheck2 },
   { label: "Documentos fiscais", to: "/app/fiscal", icon: FileText },
   { label: "Contas a receber", to: "/app/receber", icon: Receipt },
+  { label: "Pagamentos por cliente", to: "/app/pagamentos-clientes", icon: Users },
   { label: "Contas a pagar", to: "/app/pagar", icon: Receipt },
   { label: "Rentabilidade", to: "/app/rentabilidade", icon: Gauge },
   { label: "Plano de contas", to: "/app/plano-contas", icon: BookOpen },
