@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2, Printer } from "lucide-react";
 
 import { carregarDetalheFechamento, type DetalheFechamento } from "@/lib/fechamento";
 import { brl, dt, exportarExcel, exportarPdf, type Celula } from "@/lib/export-utils";
