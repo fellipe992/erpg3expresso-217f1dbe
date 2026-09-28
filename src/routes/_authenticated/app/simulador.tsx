@@ -635,6 +635,7 @@ function PlanejadorPage() {
                   paradas,
                   veiculo: VEICULOS.find((v) => v.id === tipoVeiculo)?.nome ?? tipoVeiculo,
                   duracao: formatarDuracao(resultado.minutos),
+                  polyline: resultado.polyline,
                 }}
                 custos={custos}
               />

@@ -19,3 +19,7 @@
 - Valores de fechamento na rentabilidade são identificados como custo/valor do motorista, sem sugerir pagamento realizado.
 - Lançamentos avulsos de viagens já consolidadas são ignorados no BI, e novos pagamentos/fechamentos duplicados ficam bloqueados.
 - OS 288: duplicidade avulsa cancelada com justificativa, preservando o fechamento #26 e o histórico.
+
+## Concluído (PDF do planejador de viagens)
+- O mapa do PDF usa o traçado calculado da viagem, evitando cidades homônimas em outros países.
+- O PDF inclui o quadro de margem, receita por km, custo por km e lucro por km do planejador.
