@@ -23,6 +23,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VeiculoDrilldownDialog, type VeiculoDrilldownState } from "@/components/dashboards/veiculo-drilldown-dialog";
 import { useMediasPorViagem, ultimaMediaPorVeiculo } from "@/lib/medias-viagem";
+import { CopilotoOperacional } from "@/components/dashboards/copiloto-operacional";
 
 const roleLabel: Record<string, string> = {
   administrador: "Administrador",
