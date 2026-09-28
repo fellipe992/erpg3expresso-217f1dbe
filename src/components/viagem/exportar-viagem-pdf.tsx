@@ -60,7 +60,9 @@ function decodificarPolyline(encoded: string): PontoMapa[] {
 function pontosDoTracado(polyline: string, quantidadeMarcadores: number) {
   const todos = decodificarPolyline(polyline);
   if (todos.length < 2) return null;
-  const limite = 90;
+  // A API de mapa estático limita o tamanho da URL. Uma amostra de 36 pontos
+  // preserva o desenho geral da rota sem ultrapassar esse limite.
+  const limite = 36;
   const passo = Math.max(1, Math.ceil(todos.length / limite));
   const rota = todos.filter((_, i) => i % passo === 0);
   const ultimo = todos[todos.length - 1];
