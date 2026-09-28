@@ -329,6 +329,7 @@ function RelatoriosPage() {
               {canSeeFinance && <TabsTrigger value="quinzena">Quinzena</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
+              <TabsTrigger value="esg">ESG / CO₂</TabsTrigger>
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
 
