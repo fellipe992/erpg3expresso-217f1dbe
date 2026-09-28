@@ -28,6 +28,7 @@ import { RelatorioFreteCliente } from "@/components/relatorios/relatorio-frete-c
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
 import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
+import { RelatorioEsg } from "@/components/relatorios/relatorio-esg";
 
 
 
@@ -328,6 +329,7 @@ function RelatoriosPage() {
               {canSeeFinance && <TabsTrigger value="quinzena">Quinzena</TabsTrigger>}
               <TabsTrigger value="operacional">Operacional</TabsTrigger>
               {canSeeFinance && <TabsTrigger value="financeiro">Financeiro</TabsTrigger>}
+              <TabsTrigger value="esg">ESG / CO₂</TabsTrigger>
               <TabsTrigger value="exportar">Exportar</TabsTrigger>
             </TabsList>
 
@@ -343,6 +345,10 @@ function RelatoriosPage() {
 
             <TabsContent value="medias">
               <RelatorioMedias />
+            </TabsContent>
+
+            <TabsContent value="esg">
+              <RelatorioEsg />
             </TabsContent>
 
 
