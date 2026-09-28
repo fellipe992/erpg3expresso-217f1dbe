@@ -1,0 +1,1 @@
+ALTER TABLE public.viagem_anexos ADD COLUMN IF NOT EXISTS auditoria_ia jsonb;
