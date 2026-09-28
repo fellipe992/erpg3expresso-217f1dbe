@@ -29,7 +29,7 @@ async function carregarMapa(origem: string, destino: string, paradas: Parada[]):
     const { key } = await getGoogleMapsConfig();
     const pontos = [origem, ...paradas.map(pt), destino].filter((s) => s && s !== "—").slice(0, 25);
     if (!pontos.length) return null;
-    const q = new URLSearchParams({ size: "640x360", scale: "2", maptype: "roadmap", key });
+    const q = new URLSearchParams({ size: "640x360", scale: "2", maptype: "roadmap", key: key ?? "" });
     const params = [q.toString()];
     pontos.forEach((p, i) => {
       const label = i === 0 ? "A" : i === pontos.length - 1 ? "B" : String(Math.min(i, 9));
