@@ -3263,6 +3263,7 @@ export type Database = {
       viagem_paradas: {
         Row: {
           chegada_prevista: string | null
+          chegou_doca_em: string | null
           cliente: string | null
           created_at: string
           endereco: string
@@ -3280,6 +3281,7 @@ export type Database = {
         }
         Insert: {
           chegada_prevista?: string | null
+          chegou_doca_em?: string | null
           cliente?: string | null
           created_at?: string
           endereco: string
@@ -3297,6 +3299,7 @@ export type Database = {
         }
         Update: {
           chegada_prevista?: string | null
+          chegou_doca_em?: string | null
           cliente?: string | null
           created_at?: string
           endereco?: string
