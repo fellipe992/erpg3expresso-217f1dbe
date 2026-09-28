@@ -58,7 +58,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadFotos } from "@/components/viagem/upload-fotos";
 import { DemonstrativoViagem, calcularProvisao, brl } from "@/components/viagem/demonstrativo-viagem";
-import { ExportarViagemPdfButton, type InfoViagemPdf } from "@/components/viagem/exportar-viagem-pdf";
 import { apurarViagem, listarAjustes } from "@/lib/frete";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/$id")({
@@ -587,17 +586,7 @@ function ViagemDetalheePage() {
 
         <ProvisionamentosSection
           viagemId={id}
-          infoPdf={{
-            id,
-            codigo: viagem.codigo ?? null,
-            origem: `${viagem.origem_cidade ?? "—"}${viagem.origem_uf ? `/${viagem.origem_uf}` : ""}`,
-            destino: `${viagem.destino_cidade ?? "—"}${viagem.destino_uf ? `/${viagem.destino_uf}` : ""}`,
-            cliente: viagem.cliente?.razao_social ?? "—",
-            motorista: viagem.motorista?.nome ?? "—",
-            veiculo: viagem.veiculo ? `${viagem.veiculo.placa} — ${viagem.veiculo.modelo}` : "—",
-            saidaPrevista: viagem.data_prevista_saida ? new Date(viagem.data_prevista_saida).toLocaleString("pt-BR") : "—",
-            chegadaPrevista: viagem.data_prevista_chegada ? new Date(viagem.data_prevista_chegada).toLocaleString("pt-BR") : "—",
-          }}
+
 
 
           km={kmRodado ?? (viagem.distancia_estimada_km ? Number(viagem.distancia_estimada_km) : null)}
@@ -1314,7 +1303,6 @@ function ProvisionamentosSection({
   manutencaoSalva,
   pneusSalvo,
   onSaved,
-  infoPdf,
 }: {
   viagemId: string;
   km: number | null;
@@ -1328,7 +1316,6 @@ function ProvisionamentosSection({
   manutencaoSalva: number | null;
   pneusSalvo: number | null;
   onSaved: () => void;
-  infoPdf?: InfoViagemPdf;
 }) {
   const [manutKm, setManutKm] = useState<string>(manutencaoSalva ? String(manutencaoSalva) : "");
   const [pneusKm, setPneusKm] = useState<string>(pneusSalvo ? String(pneusSalvo) : "");
@@ -1423,10 +1410,7 @@ function ProvisionamentosSection({
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="font-display text-lg font-bold">Demonstrativo financeiro</h2>
-        {infoPdf && <ExportarViagemPdfButton info={infoPdf} custos={custos} />}
-      </div>
+      <h2 className="font-display text-lg font-bold">Demonstrativo financeiro</h2>
       <DemonstrativoViagem custos={custos} />
     </div>
   );

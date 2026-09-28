@@ -24,7 +24,7 @@ type Parada = { ordem: number; cliente: string | null; endereco: string; nf: str
 
 const pt = (p: Parada) => (p.latitude != null && p.longitude != null ? `${p.latitude},${p.longitude}` : p.endereco);
 
-async function carregarMapa(origem: string, destino: string, paradas: Parada[]): Promise<string | null> {
+export async function carregarMapa(origem: string, destino: string, paradas: Parada[]): Promise<string | null> {
   try {
     const { key } = await getGoogleMapsConfig();
     const pontos = [origem, ...paradas.map(pt), destino].filter((s) => s && s !== "—").slice(0, 25);

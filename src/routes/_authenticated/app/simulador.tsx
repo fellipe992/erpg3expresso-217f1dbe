@@ -37,6 +37,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LocalInput } from "@/components/planejador/local-input";
 import { MapaRota } from "@/components/planejador/mapa-rota";
+import { ExportarSimulacaoPdfButton } from "@/components/planejador/exportar-simulacao-pdf";
 import {
   DemonstrativoViagem,
   brl,
@@ -626,6 +627,18 @@ function PlanejadorPage() {
             <Button onClick={() => setConverterOpen(true)} disabled={!resultado}>
               <Truck className="mr-2 size-4" /> Converter em viagem
             </Button>
+            {resultado && (
+              <ExportarSimulacaoPdfButton
+                info={{
+                  origem,
+                  destino,
+                  paradas,
+                  veiculo: VEICULOS.find((v) => v.id === tipoVeiculo)?.nome ?? tipoVeiculo,
+                  duracao: formatarDuracao(resultado.minutos),
+                }}
+                custos={custos}
+              />
+            )}
           </div>
 
           <Card className="p-4">
