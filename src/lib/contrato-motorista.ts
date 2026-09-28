@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import logoAsset from "@/assets/g3-expresso-logo.png.asset.json";
 
-export const CONTRATO_VERSAO = "v1";
+export const CONTRATO_VERSAO = "v2";
 
 export type DadosContrato = {
   razao_social: string;
@@ -54,12 +54,14 @@ export function clausulas(d: DadosContrato): { titulo: string; itens: string[] }
         "4.1. As viagens serão apuradas e fechadas por quinzena (01 a 15 e 16 ao fim do mês).",
         `4.2. O pagamento do fechamento será realizado conforme a condição acordada: ${d.prazo_texto}, após a conferência dos serviços e a entrega dos canhotos e comprovantes de entrega.`,
         "4.3. O CONTRATADO declara aceitar esta condição de pagamento, que se aplica a todas as viagens realizadas na vigência do contrato.",
+        "4.4. Valores adicionais ao frete previamente autorizados pela CONTRATANTE, tais como serviços extras, espera e despesas extraordinárias que não constituam Vale-Pedágio obrigatório, serão apurados mediante comprovantes e pagos juntamente com o frete da quinzena correspondente, na data de pagamento prevista na cláusula 4.2. Quando comprovados após o fechamento, serão incluídos no fechamento seguinte, com identificação no demonstrativo.",
+        "4.5. O acerto posterior de diferenças de pedágio limita-se às hipóteses admitidas pela regulamentação, inclusive diferença decorrente de alteração de rota por caso fortuito ou força maior, a ser acertada entre as partes ao fim da viagem e discriminada no demonstrativo. Esta regra não autoriza substituir por reembolso posterior a antecipação do Vale-Pedágio obrigatório da rota originalmente contratada.",
       ],
     },
     {
       titulo: "5. VALE-PEDÁGIO OBRIGATÓRIO",
       itens: [
-        "5.1. O Vale-Pedágio será fornecido antecipadamente pela CONTRATANTE por meio de pagamento eletrônico (Tag), conforme as rotas executadas, e não integra o valor do frete, não sendo pago em reembolso ou em espécie (Lei nº 10.209/2001).",
+        "5.1. Nas operações sujeitas ao Vale-Pedágio obrigatório, a CONTRATANTE disponibilizará ao CONTRATADO, até o momento do embarque, mecanismo habilitado por Fornecedora de Vale-Pedágio Obrigatório (FVPO) credenciada pela ANTT, inclusive TAG quando aplicável, que assegure a livre circulação na rota contratada e vincule à CONTRATANTE a responsabilidade pelo pagamento dos pedágios, independentemente do frete. O valor correspondente não integra o frete e não será substituído por pagamento em espécie ou reembolso posterior. Alterações de rota serão tratadas nos termos do item 4.5. Nas operações legalmente dispensadas de antecipação, observar-se-á a regra específica aplicável.",
         "5.2. A Tag destina-se exclusivamente às rotas ordenadas pela CONTRATANTE. O uso em fretes de terceiros ou fora das rotas autorizadas será descontado no acerto quinzenal seguinte.",
       ],
     },
@@ -82,13 +84,13 @@ export function clausulas(d: DadosContrato): { titulo: string; itens: string[] }
       titulo: "8. EXCLUSIVIDADE E NÃO CONCORRÊNCIA",
       itens: [
         "8.1. Durante a vigência deste contrato, o CONTRATADO não poderá prestar serviços para outras transportadoras nem negociar ou prestar serviços diretamente aos clientes da CONTRATANTE, salvo autorização prévia e por escrito da CONTRATANTE.",
-        "8.2. Pelo prazo de 1 (um) ano após o encerramento deste contrato, o CONTRATADO não poderá prestar serviços, direta ou indiretamente (inclusive por terceiros, parentes ou outra empresa), aos clientes da CONTRATANTE para os quais tenha operado.",
+        "8.2. Durante a vigência e por 6 (seis) meses após o encerramento, o CONTRATADO se absterá de captar ou contratar diretamente, para o mesmo serviço de transporte antes intermediado pela CONTRATANTE, os clientes identificados em relação escrita entregue ao CONTRATADO e para os quais tenha efetivamente realizado viagens pela CONTRATANTE nos 6 (seis) meses anteriores ao encerramento. A restrição não alcança relações comerciais comprovadamente anteriores a este contrato, clientes não relacionados, serviços de outra natureza nem negócios iniciados pelo cliente sem uso de informação confidencial ou captação ativa do CONTRATADO.",
       ],
     },
     {
       titulo: "9. MULTA",
       itens: [
-        "9.1. O descumprimento da cláusula 8 sujeitará o CONTRATADO ao pagamento de multa compensatória equivalente à soma dos fretes recebidos da CONTRATANTE nos 12 (doze) meses anteriores à infração, sem prejuízo da apuração de perdas e danos.",
+        "9.1. Comprovada a violação dolosa da cláusula 8.1 quanto ao atendimento direto de cliente ou da cláusula 8.2, após notificação escrita que identifique cliente, operação, data e documentos de suporte, o CONTRATADO pagará multa compensatória equivalente a 20% (vinte por cento) do valor do frete da operação irregular comprovada, limitada ao valor da obrigação principal afetada. Havendo operações sucessivas no mesmo negócio, a multa incidirá uma única vez sobre o valor total comprovado dessas operações, sem duplicidade por viagem. O CONTRATADO terá 10 (dez) dias corridos para apresentar esclarecimentos. A multa não será descontada unilateralmente de fretes incontroversos; eventual compensação dependerá de concordância escrita posterior das partes ou de decisão competente. Indenização suplementar somente poderá ser exigida mediante prova de dano excedente, deduzido o valor da multa paga.",
       ],
     },
     {
