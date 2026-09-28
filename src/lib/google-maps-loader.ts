@@ -18,7 +18,7 @@ declare global {
   }
 }
 
-async function getGoogleMapsConfig(): Promise<GoogleMapsConfig> {
+export async function getGoogleMapsConfig(): Promise<GoogleMapsConfig> {
   const connectorKey = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY as
     | string
     | undefined;
