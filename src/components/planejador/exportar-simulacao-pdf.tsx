@@ -13,6 +13,7 @@ export type InfoSimulacaoPdf = {
   paradas: string[];
   veiculo: string;
   duracao: string;
+  polyline: string;
 };
 
 export function ExportarSimulacaoPdfButton({ info, custos }: { info: InfoSimulacaoPdf; custos: CustosViagem }) {
@@ -29,7 +30,7 @@ export function ExportarSimulacaoPdfButton({ info, custos }: { info: InfoSimulac
         latitude: null,
         longitude: null,
       }));
-      const mapa = await carregarMapa(info.origem, info.destino, paradas);
+      const mapa = await carregarMapa(info.origem, info.destino, paradas, info.polyline);
       if (!mapa) toast.warning("Mapa indisponível — o PDF será gerado sem ele.");
       const r = resumoViagem(custos);
       const linhasCusto: [string, number][] = [
@@ -58,6 +59,16 @@ export function ExportarSimulacaoPdfButton({ info, custos }: { info: InfoSimulac
         ],
         imagens: mapa ? [{ titulo: "Mapa da rota", dataUrl: mapa }] : [],
         secoes: [
+          {
+            titulo: "Margens da viagem",
+            colunas: ["Margem de lucro", "Receita por km", "Custo por km", "Lucro por km"],
+            linhas: [[
+              `${r.margem.toFixed(1)}%`,
+              r.receitaKm != null ? brl(r.receitaKm) : "—",
+              r.custoKm != null ? brl(r.custoKm) : "—",
+              r.lucroKm != null ? brl(r.lucroKm) : "—",
+            ]],
+          },
           { titulo: "Demonstrativo financeiro", colunas: ["Item", "Valor"], linhas: linhasCusto.map(([l, v]) => [l, brl(v)]) },
           ...(paradas.length
             ? [{

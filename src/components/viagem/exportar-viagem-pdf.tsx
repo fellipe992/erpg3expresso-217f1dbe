@@ -24,19 +24,78 @@ type Parada = { ordem: number; cliente: string | null; endereco: string; nf: str
 
 const pt = (p: Parada) => (p.latitude != null && p.longitude != null ? `${p.latitude},${p.longitude}` : p.endereco);
 
-export async function carregarMapa(origem: string, destino: string, paradas: Parada[]): Promise<string | null> {
+type PontoMapa = { lat: number; lng: number };
+
+function decodificarPolyline(encoded: string): PontoMapa[] {
+  const pontos: PontoMapa[] = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < encoded.length) {
+    let shift = 0;
+    let result = 0;
+    let byte: number;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    lat += result & 1 ? ~(result >> 1) : result >> 1;
+
+    shift = 0;
+    result = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    lng += result & 1 ? ~(result >> 1) : result >> 1;
+    pontos.push({ lat: lat / 1e5, lng: lng / 1e5 });
+  }
+
+  return pontos;
+}
+
+function pontosDoTracado(polyline: string, quantidadeMarcadores: number) {
+  const todos = decodificarPolyline(polyline);
+  if (todos.length < 2) return null;
+  const limite = 90;
+  const passo = Math.max(1, Math.ceil(todos.length / limite));
+  const rota = todos.filter((_, i) => i % passo === 0);
+  const ultimo = todos[todos.length - 1];
+  if (ultimo && rota[rota.length - 1] !== ultimo) rota.push(ultimo);
+  const marcadores = Array.from({ length: quantidadeMarcadores }, (_, i) =>
+    todos[Math.round((i / Math.max(1, quantidadeMarcadores - 1)) * (todos.length - 1))],
+  ).filter((p): p is PontoMapa => Boolean(p));
+  return { rota, marcadores };
+}
+
+export async function carregarMapa(
+  origem: string,
+  destino: string,
+  paradas: Parada[],
+  polyline?: string,
+): Promise<string | null> {
   try {
     const { key } = await getGoogleMapsConfig();
     const pontos = [origem, ...paradas.map(pt), destino].filter((s) => s && s !== "—").slice(0, 25);
     if (!pontos.length) return null;
     const q = new URLSearchParams({ size: "640x360", scale: "2", maptype: "roadmap", key: key ?? "" });
     const params = [q.toString()];
-    pontos.forEach((p, i) => {
+    const tracado = polyline ? pontosDoTracado(polyline, pontos.length) : null;
+    const posicoesMarcadores = tracado?.marcadores.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`) ?? pontos;
+    posicoesMarcadores.forEach((p, i) => {
       const label = i === 0 ? "A" : i === pontos.length - 1 ? "B" : String(Math.min(i, 9));
       const cor = i === 0 ? "green" : i === pontos.length - 1 ? "red" : "orange";
       params.push(`markers=${encodeURIComponent(`color:${cor}|label:${label}|${p}`)}`);
     });
-    if (pontos.length > 1) params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|${pontos.join("|")}`)}`);
+    if (tracado) {
+      const rota = tracado.rota.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join("|");
+      params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|${rota}`)}`);
+    } else if (pontos.length > 1) {
+      params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|${pontos.join("|")}`)}`);
+    }
     const url = `https://maps.googleapis.com/maps/api/staticmap?${params.join("&")}`;
     const res = await fetch(url);
     if (!res.ok) return null;
