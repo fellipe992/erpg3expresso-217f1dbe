@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isNative } from "@/lib/native";
+import { useServerFn } from "@tanstack/react-start";
+import { auditarFoto, type AuditoriaFoto } from "@/lib/auditor-fotos.functions";
 
 export type UploadedFile = {
   path: string;
@@ -81,6 +83,8 @@ export function UploadFotos({
 }: Props) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [auditorias, setAuditorias] = useState<Record<string, AuditoriaFoto | "carregando" | string>>({});
+  const auditar = useServerFn(auditarFoto);
   const aceitaImagem = accept.trim() === "image/*";
   const usarCameraNativa = isNative() && aceitaImagem;
 
@@ -108,6 +112,14 @@ export function UploadFotos({
             mime_type: file.type,
             created_by: userData.user?.id,
           });
+        }
+      }
+      if (persist && (categoria === "canhoto" || categoria === "entrega")) {
+        for (const u of uploaded.filter((x) => x.mime.startsWith("image/"))) {
+          setAuditorias((p) => ({ ...p, [u.path]: "carregando" }));
+          auditar({ data: { path: u.path, mime: u.mime } })
+            .then((r) => setAuditorias((p) => ({ ...p, [u.path]: r })))
+            .catch((e: Error) => setAuditorias((p) => ({ ...p, [u.path]: e.message })));
         }
       }
       setFiles((prev) => {
@@ -222,6 +234,28 @@ export function UploadFotos({
           ))}
         </div>
       )}
+      {Object.entries(auditorias).map(([path, a]) => (
+        <div
+          key={path}
+          className={`rounded-md border p-2 text-xs ${a === "carregando" || typeof a === "string" ? "border-border" : a.aprovada ? "border-primary/40 bg-primary/5" : "border-destructive/40 bg-destructive/5"}`}
+        >
+          {a === "carregando" ? (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" /> Auditando foto com IA...
+            </span>
+          ) : typeof a === "string" ? (
+            <span className="text-muted-foreground">Auditoria indisponível: {a}</span>
+          ) : (
+            <div className="space-y-1">
+              <p className="font-semibold">{a.aprovada ? "FOTO APROVADA" : "ATENÇÃO NA FOTO"}</p>
+              <p>Nitidez: {a.nitidez.toUpperCase()} · Iluminação: {a.iluminacao.toUpperCase()}</p>
+              {a.ressalvas.length > 0 && <p className="text-destructive">Ressalvas: {a.ressalvas.join("; ")}</p>}
+              <p className="text-muted-foreground">{a.resumo}</p>
+              {!a.aprovada && <p>Se possível, tire a foto novamente.</p>}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

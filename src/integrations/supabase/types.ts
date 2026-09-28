@@ -3020,6 +3020,7 @@ export type Database = {
       }
       viagem_anexos: {
         Row: {
+          auditoria_ia: Json | null
           categoria: string
           created_at: string
           created_by: string | null
@@ -3031,6 +3032,7 @@ export type Database = {
           viagem_id: string
         }
         Insert: {
+          auditoria_ia?: Json | null
           categoria: string
           created_at?: string
           created_by?: string | null
@@ -3042,6 +3044,7 @@ export type Database = {
           viagem_id: string
         }
         Update: {
+          auditoria_ia?: Json | null
           categoria?: string
           created_at?: string
           created_by?: string | null
