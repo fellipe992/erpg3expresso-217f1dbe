@@ -60,17 +60,10 @@ function decodificarPolyline(encoded: string): PontoMapa[] {
 function pontosDoTracado(polyline: string, quantidadeMarcadores: number) {
   const todos = decodificarPolyline(polyline);
   if (todos.length < 2) return null;
-  // A API de mapa estático limita o tamanho da URL. Uma amostra de 36 pontos
-  // preserva o desenho geral da rota sem ultrapassar esse limite.
-  const limite = 36;
-  const passo = Math.max(1, Math.ceil(todos.length / limite));
-  const rota = todos.filter((_, i) => i % passo === 0);
-  const ultimo = todos[todos.length - 1];
-  if (ultimo && rota[rota.length - 1] !== ultimo) rota.push(ultimo);
   const marcadores = Array.from({ length: quantidadeMarcadores }, (_, i) =>
     todos[Math.round((i / Math.max(1, quantidadeMarcadores - 1)) * (todos.length - 1))],
   ).filter((p): p is PontoMapa => Boolean(p));
-  return { rota, marcadores };
+  return { marcadores };
 }
 
 export async function carregarMapa(
@@ -93,8 +86,7 @@ export async function carregarMapa(
       params.push(`markers=${encodeURIComponent(`color:${cor}|label:${label}|${p}`)}`);
     });
     if (tracado) {
-      const rota = tracado.rota.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join("|");
-      params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|${rota}`)}`);
+      params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|enc:${polyline}`)}`);
     } else if (pontos.length > 1) {
       params.push(`path=${encodeURIComponent(`color:0xF15A24ff|weight:4|${pontos.join("|")}`)}`);
     }
