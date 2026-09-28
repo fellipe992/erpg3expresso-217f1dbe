@@ -347,6 +347,10 @@ function RelatoriosPage() {
               <RelatorioMedias />
             </TabsContent>
 
+            <TabsContent value="esg">
+              <RelatorioEsg />
+            </TabsContent>
+
 
             {canSeeFinance && (
               <>
