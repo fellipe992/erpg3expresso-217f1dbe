@@ -28,6 +28,7 @@ import { RelatorioFreteCliente } from "@/components/relatorios/relatorio-frete-c
 import { RelatorioFinanceiroVeiculo } from "@/components/relatorios/relatorio-financeiro-veiculo";
 import { RelatorioLucratividade } from "@/components/relatorios/relatorio-lucratividade";
 import { RelatorioMedias } from "@/components/relatorios/relatorio-medias";
+import { RelatorioEsg } from "@/components/relatorios/relatorio-esg";
 
 
 
