@@ -150,7 +150,7 @@ export function CopilotoOperacional() {
   );
 }
 
-function Mini({ icon: Icon, label, value, danger, to, search }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; danger?: boolean; to?: "/app/receber" | "/app/pagar"; search?: { atalho: "hoje" | "atrasados" } }) {
+function Mini({ icon: Icon, label, value, danger, to, search }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; danger?: boolean; to?: "/app/receber" | "/app/pagar"; search?: { atalho: "hoje" | "atrasados" } | null }) {
   const corpo = (
     <>
       <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
