@@ -89,9 +89,9 @@ export function CopilotoOperacional() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <Mini icon={Truck} label="Em viagem agora" value={String(r.emRota.length)} />
           <Mini icon={AlertTriangle} label="Planejadas sem iniciar" value={String(r.naoIniciadas.length)} danger={r.naoIniciadas.length > 0} />
-          <Mini icon={CalendarClock} label="Receber hoje" value={mask(moeda(r.receberHoje))} />
-          <Mini icon={CalendarClock} label="Pagar hoje" value={mask(moeda(r.pagarHoje))} />
-          <Mini icon={AlertTriangle} label="A receber vencido" value={mask(moeda(r.vencido))} danger={r.vencido > 0} />
+          <Mini icon={CalendarClock} label="Receber hoje" value={mask(moeda(r.receberHoje))} link={{ to: "/app/receber", search: { atalho: "hoje" } }} />
+          <Mini icon={CalendarClock} label="Pagar hoje" value={mask(moeda(r.pagarHoje))} link={{ to: "/app/pagar", search: { atalho: "hoje" } }} />
+          <Mini icon={AlertTriangle} label="A receber vencido" value={mask(moeda(r.vencido))} danger={r.vencido > 0} link={{ to: "/app/receber", search: { atalho: "atrasados" } }} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -150,15 +150,23 @@ export function CopilotoOperacional() {
   );
 }
 
-function Mini({ icon: Icon, label, value, danger }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; danger?: boolean }) {
-  return (
-    <div className="rounded-lg border border-border/60 p-3">
+function Mini({ icon: Icon, label, value, danger, link }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; danger?: boolean; link?: { to: "/app/receber" | "/app/pagar"; search: { atalho: "hoje" | "atrasados" } } }) {
+  const corpo = (
+    <>
       <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
         {label} <Icon className={`size-3.5 ${danger ? "text-destructive" : "text-brand"}`} />
       </div>
       <div className={`mt-1 font-display text-lg font-bold ${danger ? "text-destructive" : ""}`}>{value}</div>
-    </div>
+    </>
   );
+  if (link) {
+    return (
+      <Link to={link.to} search={link.search} className="block rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted">
+        {corpo}
+      </Link>
+    );
+  }
+  return <div className="rounded-lg border border-border/60 p-3">{corpo}</div>;
 }
 
 function Bloco({ titulo, vazio, children, icon: Icon }: { titulo: string; vazio: string; children: React.ReactNode[]; icon?: React.ComponentType<{ className?: string }> }) {
