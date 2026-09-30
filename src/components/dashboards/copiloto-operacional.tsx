@@ -4,12 +4,14 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CalendarClock, Gauge, Route as RouteIcon, Truck, Wrench, Trophy, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useHideValues } from "@/hooks/use-hide-values";
 import { supabase } from "@/integrations/supabase/client";
 
 const moeda = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const hojeSP = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 
 export function CopilotoOperacional() {
+  const { mask } = useHideValues();
   const { data } = useQuery({
     queryKey: ["copiloto-operacional"],
     refetchInterval: 60_000,
@@ -87,9 +89,9 @@ export function CopilotoOperacional() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <Mini icon={Truck} label="Em viagem agora" value={String(r.emRota.length)} />
           <Mini icon={AlertTriangle} label="Planejadas sem iniciar" value={String(r.naoIniciadas.length)} danger={r.naoIniciadas.length > 0} />
-          <Mini icon={CalendarClock} label="Receber hoje" value={moeda(r.receberHoje)} />
-          <Mini icon={CalendarClock} label="Pagar hoje" value={moeda(r.pagarHoje)} />
-          <Mini icon={AlertTriangle} label="A receber vencido" value={moeda(r.vencido)} danger={r.vencido > 0} />
+          <Mini icon={CalendarClock} label="Receber hoje" value={mask(moeda(r.receberHoje))} />
+          <Mini icon={CalendarClock} label="Pagar hoje" value={mask(moeda(r.pagarHoje))} />
+          <Mini icon={AlertTriangle} label="A receber vencido" value={mask(moeda(r.vencido))} danger={r.vencido > 0} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
