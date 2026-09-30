@@ -1,5 +1,5 @@
 import { quinzenaDe as quinzenaRef } from "@/lib/prazo-pagamento";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
