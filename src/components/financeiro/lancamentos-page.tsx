@@ -120,7 +120,7 @@ function dataDaQuinzena(mes: string, q: "1" | "2"): string {
   return `${mes}-${String(ultimo).padStart(2, "0")}`;
 }
 
-export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
+export function LancamentosPage({ tipo, atalhoInicial }: { tipo: "receber" | "pagar"; atalhoInicial?: "hoje" | "atrasados" }) {
   const { role } = useAuth();
   const canWrite = role === "administrador" || role === "gestor" || role === "financeiro";
   const isAdmin = role === "administrador";
@@ -511,6 +511,16 @@ export function LancamentosPage({ tipo }: { tipo: "receber" | "pagar" }) {
     if (k === "proxima") { setDataDe(iso(add(seg, 7))); setDataAte(iso(add(seg, 13))); setStatusFilter("todos"); }
     if (k === "atrasados") { setDataDe(""); setDataAte(iso(add(d, -1))); setStatusFilter("atrasado"); }
   };
+
+  // Atalho vindo de outra tela (ex.: Copiloto operacional) aplicado uma única vez na abertura.
+  const useEffectRef = useRef(atalhoInicial);
+  useEffect(() => {
+    if (useEffectRef.current) {
+      aplicarAtalho(useEffectRef.current);
+      useEffectRef.current = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totais = filtered.reduce(
     (acc, l) => {
