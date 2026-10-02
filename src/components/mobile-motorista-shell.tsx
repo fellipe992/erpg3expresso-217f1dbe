@@ -10,6 +10,7 @@ import { usePedidoPosicaoMotorista } from "@/hooks/use-pedido-posicao";
 import { useAlertaLocalizacaoMotorista } from "@/hooks/use-alerta-localizacao";
 import { useHeartbeatGpsMotorista } from "@/hooks/use-heartbeat-gps";
 import type { ReactNode } from "react";
+import { ConsentimentoLocalizacaoDialog } from "@/components/consentimento-localizacao-dialog";
 
 const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
@@ -27,6 +28,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   useHeartbeatGpsMotorista();
   return (
     <div className="flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden bg-background">
+      <ConsentimentoLocalizacaoDialog />
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/80 px-3 pt-safe backdrop-blur-md sm:px-4">
         <Logo size="sm" />
         <div className="ml-auto flex shrink-0 items-center gap-1">
