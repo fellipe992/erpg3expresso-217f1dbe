@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { isNative } from "@/lib/native";
 import { notifyLocal } from "@/lib/notifications";
 import { G3Tracking, type ViagemTracking } from "@/lib/tracking-native";
+import { garantirConsentimento } from "@/lib/consentimento-localizacao";
 
 const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] as string;
 const SUPABASE_KEY = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string;
@@ -138,6 +139,9 @@ export function useMotoristaAutoTracking() {
             viagens: payload.viagens,
           });
         } else {
+          // Declaração em Destaque (Google Play) antes de pedir a permissão nativa.
+          const aceitou = await garantirConsentimento();
+          if (!aceitou || cancelled) return;
           await G3Tracking.start(payload);
         }
       } catch (e) {
