@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Loader2, Mail, MessageCircle, Mic, MicOff, Sparkles, BookOpen, Reply, Crosshair } from "lucide-react";
+import { Copy, Loader2, Mail, MessageCircle, Mic, MicOff, Sparkles, BookOpen, Reply, Crosshair, History, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -135,11 +137,13 @@ function Porques({ itens }: { itens: { topico: string; explicacao: string; livro
 
 function RespondendoCliente() {
   const fn = useServerFn(responderCliente);
+  const qc = useQueryClient();
   const [mensagem, setMensagem] = useState("");
   const [contexto, setContexto] = useState("");
   const [canal, setCanal] = useState<"email" | "whatsapp">("whatsapp");
   const m = useMutation({
     mutationFn: () => fn({ data: { mensagem, contexto, canal } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["treinador-historico"] }),
     onError: (e: Error) => toast.error(e.message),
   });
   const r = m.data;
@@ -180,16 +184,7 @@ function RespondendoCliente() {
         <CardHeader><CardTitle>Sugestão</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           {!r && <p className="text-sm text-muted-foreground">A resposta aparece aqui.</p>}
-          {r && (
-            <>
-              {r.objecao && <Badge>Objeção: {r.objecao}</Badge>}
-              {canal === "email" && r.assunto && <BlocoTexto titulo="Assunto" texto={r.assunto} />}
-              <BlocoTexto titulo="Resposta" texto={r.resposta} whatsapp={canal === "whatsapp"} />
-              <BlocoTexto titulo="Versão curta" texto={r.versao_curta} whatsapp={canal === "whatsapp"} />
-              <Porques itens={r.porques} />
-              <div className="rounded-md bg-primary/10 p-3 text-sm"><b>Próximo passo:</b> {r.proximo_passo}</div>
-            </>
-          )}
+          {r && <RespostaView r={r} canal={canal} />}
         </CardContent>
       </Card>
     </div>
@@ -266,10 +261,12 @@ function Abordagem() {
 
 function Biblioteca() {
   const fn = useServerFn(aulaLivro);
+  const qc = useQueryClient();
   const [livro, setLivro] = useState(LIVROS[0]!);
   const [foco, setFoco] = useState("");
   const m = useMutation({
     mutationFn: () => fn({ data: { livro, foco } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["treinador-historico"] }),
     onError: (e: Error) => toast.error(e.message),
   });
   const r = m.data;
@@ -298,8 +295,31 @@ function Biblioteca() {
           </Button>
         </CardContent>
       </Card>
-      {r && (
-        <Card>
+      {r && <AulaView r={r} />}
+    </div>
+  );
+}
+
+
+type RespostaR = Awaited<ReturnType<typeof responderCliente>>;
+type AulaR = Awaited<ReturnType<typeof aulaLivro>>;
+
+function RespostaView({ r, canal }: { r: RespostaR; canal: "email" | "whatsapp" }) {
+  return (
+    <>
+              {r.objecao && <Badge>Objeção: {r.objecao}</Badge>}
+              {canal === "email" && r.assunto && <BlocoTexto titulo="Assunto" texto={r.assunto} />}
+              <BlocoTexto titulo="Resposta" texto={r.resposta} whatsapp={canal === "whatsapp"} />
+              <BlocoTexto titulo="Versão curta" texto={r.versao_curta} whatsapp={canal === "whatsapp"} />
+              <Porques itens={r.porques} />
+              <div className="rounded-md bg-primary/10 p-3 text-sm"><b>Próximo passo:</b> {r.proximo_passo}</div>
+            </>
+  );
+}
+
+function AulaView({ r }: { r: AulaR }) {
+  return (
+    <Card>
           <CardContent className="space-y-5 pt-6">
             <p className="text-sm">{r.resumo}</p>
             <section className="space-y-2">
@@ -340,8 +360,81 @@ function Biblioteca() {
             </section>
           </CardContent>
         </Card>
-      )}
-    </div>
+  );
+}
+
+type ItemHist = { id: string; tipo: string; titulo: string; entrada: any; resultado: any; created_at: string };
+
+function Historico() {
+  const qc = useQueryClient();
+  const [filtro, setFiltro] = useState<"todos" | "aula" | "resposta">("todos");
+  const [aberto, setAberto] = useState<ItemHist | null>(null);
+  const q = useQuery({
+    queryKey: ["treinador-historico"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("treinador_historico")
+        .select("id, tipo, titulo, entrada, resultado, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data as ItemHist[];
+    },
+  });
+  const excluir = async (id: string) => {
+    const { error } = await supabase.from("treinador_historico").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["treinador-historico"] });
+    setAberto(null);
+  };
+  const itens = (q.data ?? []).filter((i) => filtro === "todos" || i.tipo === filtro);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><History className="size-5" /> O que já aprendi</CardTitle>
+        <CardDescription>Todas as aulas e respostas ficam guardadas aqui.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          {(["todos", "aula", "resposta"] as const).map((f) => (
+            <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
+              {f === "todos" ? "Todos" : f === "aula" ? "Aulas" : "Respostas"}
+            </Button>
+          ))}
+        </div>
+        {q.isLoading && <Loader2 className="size-4 animate-spin" />}
+        {!q.isLoading && itens.length === 0 && <p className="text-sm text-muted-foreground">Nada guardado ainda.</p>}
+        <div className="divide-y rounded-md border">
+          {itens.map((i) => (
+            <button key={i.id} className="flex w-full items-center gap-3 p-3 text-left hover:bg-muted/50" onClick={() => setAberto(i)}>
+              <Badge variant={i.tipo === "aula" ? "secondary" : "outline"}>{i.tipo === "aula" ? "Aula" : "Resposta"}</Badge>
+              <span className="flex-1 truncate text-sm">{i.titulo}</span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(i.created_at).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+              </span>
+            </button>
+          ))}
+        </div>
+      </CardContent>
+      <Dialog open={!!aberto} onOpenChange={(o) => !o && setAberto(null)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader><DialogTitle>{aberto?.titulo}</DialogTitle></DialogHeader>
+          {aberto?.tipo === "resposta" && (
+            <div className="space-y-3">
+              <BlocoTexto titulo="Mensagem do cliente" texto={aberto.entrada?.mensagem ?? ""} />
+              {aberto.entrada?.contexto && <BlocoTexto titulo="Contexto" texto={aberto.entrada.contexto} />}
+              <RespostaView r={aberto.resultado} canal={aberto.entrada?.canal === "email" ? "email" : "whatsapp"} />
+            </div>
+          )}
+          {aberto?.tipo === "aula" && <AulaView r={aberto.resultado} />}
+          {aberto && (
+            <Button variant="outline" className="text-destructive" onClick={() => excluir(aberto.id)}>
+              <Trash2 className="mr-2 size-4" /> Excluir do histórico
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
 
@@ -357,10 +450,12 @@ function TreinadorPage() {
           <TabsTrigger value="responder">Respondendo o cliente</TabsTrigger>
           <TabsTrigger value="abordagem">Abordagem e-mail / WhatsApp</TabsTrigger>
           <TabsTrigger value="biblioteca">Biblioteca</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
         <TabsContent value="responder"><RespondendoCliente /></TabsContent>
         <TabsContent value="abordagem"><Abordagem /></TabsContent>
         <TabsContent value="biblioteca"><Biblioteca /></TabsContent>
+        <TabsContent value="historico"><Historico /></TabsContent>
       </Tabs>
     </div>
   );
