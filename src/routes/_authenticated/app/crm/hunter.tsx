@@ -1,3 +1,4 @@
+import { AbordagemHunter } from "@/components/crm/abordagem-hunter";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -540,6 +541,7 @@ function HunterPage() {
           </SheetHeader>
 
           <div className="space-y-4 px-4 pb-8">
+            {selecionada && <AbordagemHunter empresa={selecionada} decisores={decisores} />}
             <div className="flex flex-wrap gap-1.5">
               {CARGOS_ALVO.map((c) => (
                 <Badge key={c} variant="secondary" className="text-[10px] font-normal">
