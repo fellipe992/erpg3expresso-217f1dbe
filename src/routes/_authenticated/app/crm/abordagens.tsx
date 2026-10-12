@@ -35,6 +35,8 @@ type Row = {
   enviado_em: string | null;
   observacao: string | null;
   mensagens: any;
+  resposta_cliente: string | null;
+  respondido_em: string | null;
   updated_at: string;
 };
 
@@ -57,12 +59,15 @@ function AbordagensPage() {
   const qc = useQueryClient();
   const [aberto, setAberto] = useState<Row | null>(null);
   const [obs, setObs] = useState("");
+  const [resp, setResp] = useState("");
   const q = useQuery({
     queryKey: ["hunter-abordagens"],
     queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("hunter_abordagens")
-        .select("id, empresa, contato, cargo, whatsapp, email, status, enviado_em, observacao, mensagens, updated_at")
+        .select("id, empresa, contato, cargo, whatsapp, email, status, enviado_em, observacao, mensagens, updated_at, resposta_cliente, respondido_em")
+        .eq("user_id", u.user?.id ?? "")
         .order("updated_at", { ascending: false })
         .limit(500);
       if (error) throw error;
@@ -110,7 +115,7 @@ function AbordagensPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {itens.map((r) => (
-                  <button key={r.id} onClick={() => { setAberto(r); setObs(r.observacao ?? ""); }}
+                  <button key={r.id} onClick={() => { setAberto(r); setObs(r.observacao ?? ""); setResp(r.resposta_cliente ?? ""); }}
                     className="w-full rounded-md border p-2.5 text-left hover:bg-muted/50">
                     <p className="truncate text-sm font-medium">{r.empresa}</p>
                     <p className="truncate text-xs text-muted-foreground">
@@ -169,6 +174,17 @@ function AbordagensPage() {
                   <p className="whitespace-pre-wrap text-sm">{v}</p>
                 </div>
               ))}
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">Resposta do cliente</p>
+                <Textarea rows={3} value={resp} onChange={(e) => setResp(e.target.value)} placeholder="Cole aqui o que o cliente respondeu"
+                  onBlur={() => {
+                    if (resp === (aberto.resposta_cliente ?? "")) return;
+                    const patch: Partial<Row> = { resposta_cliente: resp, respondido_em: new Date().toISOString() };
+                    if (resp && aberto.status === "em_abordagem") patch.status = "resposta_pendente";
+                    atualizar(aberto.id, patch);
+                    setAberto({ ...aberto, ...patch });
+                  }} />
+              </div>
               <div className="space-y-1.5">
                 <p className="text-sm font-medium">Anotações</p>
                 <Textarea rows={3} value={obs} onChange={(e) => setObs(e.target.value)}
