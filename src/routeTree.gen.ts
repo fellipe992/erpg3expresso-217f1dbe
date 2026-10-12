@@ -64,6 +64,7 @@ import { Route as AuthenticatedAppCrmEnviosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
 import { Route as AuthenticatedAppCrmLeadsRouteImport } from './routes/_authenticated/app/crm/leads'
+import { Route as AuthenticatedAppCrmMetricasConversaoRouteImport } from './routes/_authenticated/app/crm/metricas-conversao'
 import { Route as AuthenticatedAppCrmTreinadorRouteImport } from './routes/_authenticated/app/crm/treinador'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
@@ -375,6 +376,12 @@ const AuthenticatedAppCrmLeadsRoute =
     path: '/app/crm/leads',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppCrmMetricasConversaoRoute =
+  AuthenticatedAppCrmMetricasConversaoRouteImport.update({
+    id: '/app/crm/metricas-conversao',
+    path: '/app/crm/metricas-conversao',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppCrmTreinadorRoute =
   AuthenticatedAppCrmTreinadorRouteImport.update({
     id: '/app/crm/treinador',
@@ -460,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
+  '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
@@ -521,6 +529,7 @@ export interface FileRoutesByTo {
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
+  '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
@@ -584,6 +593,7 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
   '/_authenticated/app/crm/leads': typeof AuthenticatedAppCrmLeadsRoute
+  '/_authenticated/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/_authenticated/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/crm/leads'
+    | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
     | '/api/public/rastreio/$token'
@@ -708,6 +719,7 @@ export interface FileRouteTypes {
     | '/app/crm/funil'
     | '/app/crm/hunter'
     | '/app/crm/leads'
+    | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
     | '/api/public/rastreio/$token'
@@ -770,6 +782,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
     | '/_authenticated/app/crm/leads'
+    | '/_authenticated/app/crm/metricas-conversao'
     | '/_authenticated/app/crm/treinador'
     | '/_authenticated/app/viagens/$id'
     | '/api/public/rastreio/$token'
@@ -1183,6 +1196,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCrmLeadsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/crm/metricas-conversao': {
+      id: '/_authenticated/app/crm/metricas-conversao'
+      path: '/app/crm/metricas-conversao'
+      fullPath: '/app/crm/metricas-conversao'
+      preLoaderRoute: typeof AuthenticatedAppCrmMetricasConversaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/crm/treinador': {
       id: '/_authenticated/app/crm/treinador'
       path: '/app/crm/treinador'
@@ -1263,6 +1283,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppCrmFunilRoute: typeof AuthenticatedAppCrmFunilRoute
   AuthenticatedAppCrmHunterRoute: typeof AuthenticatedAppCrmHunterRoute
   AuthenticatedAppCrmLeadsRoute: typeof AuthenticatedAppCrmLeadsRoute
+  AuthenticatedAppCrmMetricasConversaoRoute: typeof AuthenticatedAppCrmMetricasConversaoRoute
   AuthenticatedAppCrmTreinadorRoute: typeof AuthenticatedAppCrmTreinadorRoute
   AuthenticatedAppViagensIdRoute: typeof AuthenticatedAppViagensIdRoute
   AuthenticatedAppViagensIndexRoute: typeof AuthenticatedAppViagensIndexRoute
@@ -1313,6 +1334,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppCrmFunilRoute: AuthenticatedAppCrmFunilRoute,
   AuthenticatedAppCrmHunterRoute: AuthenticatedAppCrmHunterRoute,
   AuthenticatedAppCrmLeadsRoute: AuthenticatedAppCrmLeadsRoute,
+  AuthenticatedAppCrmMetricasConversaoRoute:
+    AuthenticatedAppCrmMetricasConversaoRoute,
   AuthenticatedAppCrmTreinadorRoute: AuthenticatedAppCrmTreinadorRoute,
   AuthenticatedAppViagensIdRoute: AuthenticatedAppViagensIdRoute,
   AuthenticatedAppViagensIndexRoute: AuthenticatedAppViagensIndexRoute,
