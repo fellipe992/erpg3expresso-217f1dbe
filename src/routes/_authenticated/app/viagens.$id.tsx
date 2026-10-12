@@ -829,6 +829,8 @@ function AnexosGrid({ anexos, className, canDelete, onDeleted }: { anexos: any[]
 
 // ============ Checklist de Saída ============
 function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
+  const { role: roleAtual } = useAuth();
+  const isStaffUser = roleAtual !== "motorista";
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const openedOnce = useRef(false);
@@ -921,8 +923,18 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-brand text-white hover:bg-brand/90"
-              onClick={() => {
+              onClick={async () => {
                 setConfirmOpen(false);
+                const { garantirConsentimento, consentimentoAceito } = await import("@/lib/consentimento-localizacao");
+                if (!isStaffUser && !consentimentoAceito()) {
+                  const ok = await garantirConsentimento("");
+                  if (!ok) {
+                    toast.error("Localização obrigatória", {
+                      description: "Para iniciar a viagem é preciso aceitar o envio da localização.",
+                    });
+                    return;
+                  }
+                }
                 setOpen(true);
               }}
             >
