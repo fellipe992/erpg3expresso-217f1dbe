@@ -140,7 +140,9 @@ export function useMotoristaAutoTracking() {
           });
         } else {
           // Declaração em Destaque (Google Play) antes de pedir a permissão nativa.
-          const aceitou = await garantirConsentimento();
+          // A recusa é gravada por viagem: não reabre o modal nesta viagem,
+          // só pergunta de novo quando o conjunto de viagens ativas mudar.
+          const aceitou = await garantirConsentimento(viagensKey);
           if (!aceitou || cancelled) return;
           await G3Tracking.start(payload);
         }

@@ -29,10 +29,14 @@ function recusaDaViagem(viagensKey: string): boolean {
  * Se o motorista já recusou nesta viagem (mesma viagensKey), resolve false
  * sem reabrir o modal — a pergunta só volta quando o conjunto de viagens muda.
  */
+/** Chave da viagem que disparou o pedido atual — usada para gravar a recusa. */
+let chaveAtual = "";
+
 export function garantirConsentimento(viagensKey = ""): Promise<boolean> {
   if (consentimentoAceito()) return Promise.resolve(true);
   if (viagensKey && recusaDaViagem(viagensKey)) return Promise.resolve(false);
   if (pendente) return pendente;
+  chaveAtual = viagensKey;
   pendente = new Promise<boolean>((res) => {
     resolver = res;
   });
@@ -40,13 +44,13 @@ export function garantirConsentimento(viagensKey = ""): Promise<boolean> {
   return pendente;
 }
 
-export function responderConsentimento(aceitou: boolean, viagensKey = "") {
+export function responderConsentimento(aceitou: boolean) {
   try {
     if (aceitou) {
       localStorage.setItem(KEY, "aceito");
       localStorage.removeItem(REFUSAL_KEY);
-    } else if (viagensKey) {
-      localStorage.setItem(REFUSAL_KEY, viagensKey);
+    } else if (chaveAtual) {
+      localStorage.setItem(REFUSAL_KEY, chaveAtual);
     }
   } catch {
     /* noop */
