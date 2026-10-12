@@ -13,7 +13,7 @@ ${BASE_CONHECIMENTO}`;
 
 type Schema = Record<string, unknown>;
 
-async function chamarIA(instrucoes: string, entrada: string, nome: string, schema: Schema) {
+async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("IA não configurada.");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
@@ -29,7 +29,7 @@ async function chamarIA(instrucoes: string, entrada: string, nome: string, schem
       stream: true,
       store: false,
       reasoning: { effort: "low" },
-      instructions: `${PERSONA}\n\n${instrucoes}`,
+      instructions: `${PERSONA}\n${memoria}\n\n${instrucoes}`,
       input: entrada,
       text: { format: { type: "json_schema", name: nome, strict: true, schema } },
     }),
@@ -67,6 +67,32 @@ async function chamarIA(instrucoes: string, entrada: string, nome: string, schem
   return JSON.parse(texto);
 }
 
+type Ctx = { supabase: any; userId: string };
+/** Memória própria: respostas/aulas anteriores do vendedor e respostas reais de clientes, para manter consistência. */
+async function memoria(ctx: Ctx) {
+  try {
+    const [h, a] = await Promise.all([
+      ctx.supabase.from("treinador_historico").select("tipo, titulo, resultado").eq("user_id", ctx.userId)
+        .in("tipo", ["resposta", "aula"]).order("created_at", { ascending: false }).limit(8),
+      ctx.supabase.from("hunter_abordagens").select("empresa, cargo, status, resposta_cliente, mensagens")
+        .eq("user_id", ctx.userId).not("resposta_cliente", "is", null).order("respondido_em", { ascending: false }).limit(8),
+    ]);
+    const linhas: string[] = [];
+    for (const i of h.data ?? []) {
+      const r = i.resultado ?? {};
+      linhas.push(i.tipo === "aula" ? `AULA JÁ DADA (${i.titulo}): ${String(r.resumo ?? "").slice(0, 300)}`
+        : `RESPOSTA JÁ USADA (${i.titulo}): ${String(r.resposta ?? "").slice(0, 300)}`);
+    }
+    for (const x of a.data ?? []) {
+      linhas.push(`CONVERSA REAL — ${x.empresa} (${x.cargo ?? "?"}, status ${x.status}). Enviamos: "${String(x.mensagens?.whatsapp ?? "").slice(0, 200)}". Cliente respondeu: "${String(x.resposta_cliente).slice(0, 300)}"`);
+    }
+    if (!linhas.length) return "";
+    return `\n=== HISTÓRICO DO VENDEDOR (mantenha o mesmo estilo e conceitos; aprenda com o que gerou resposta) ===\n${linhas.join("\n")}\n=== FIM DO HISTÓRICO ===`;
+  } catch {
+    return "";
+  }
+}
+
 const str = { type: "string" };
 const arr = (items: Schema) => ({ type: "array", items });
 const obj = (properties: Record<string, Schema>) => ({
@@ -87,6 +113,7 @@ export const responderCliente = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.mensagem.trim()) throw new Error("Cole a mensagem do cliente.");
     const r = (await chamarIA(
+      await memoria(context),
       `Tarefa: ajudar o vendedor a responder um cliente/prospect pelo canal ${data.canal === "email" ? "E-MAIL (inclua assunto)" : "WHATSAPP (curto, sem assunto, até ~6 linhas)"}.
 Escreva a resposta como se fosse o próprio vendedor (Fellipe) falando, em primeira pessoa, humana e empática.
 Identifique se há objeção e o tipo. Depois explique, em tópicos didáticos, POR QUE essa resposta funciona, citando a técnica e o livro de origem,
@@ -138,6 +165,7 @@ export const gerarAbordagem = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.empresa.trim()) throw new Error("Informe a empresa.");
     const r = (await chamarIA(
+      await memoria(context),
       `Tarefa: criar abordagem de prospecção consultiva (ABM/social selling) para transporte de cargas.
 Adapte o gancho à dor típica do cargo e do segmento (ex.: compras = custo total e previsibilidade; logística = SLA, avarias, agendamento de doca;
 diretoria = risco e continuidade). Nada de pitch genérico: provoque uma reflexão (Venda Desafiadora) e peça um micro-sim, não uma reunião longa.
@@ -187,6 +215,7 @@ export const aulaLivro = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.livro.trim()) throw new Error("Informe o livro.");
     const r = (await chamarIA(
+      await memoria(context),
       `Tarefa: dar uma aula sobre o livro indicado em DUAS camadas:
 1) Conhecimento GERAL e universal (aplicável a qualquer área, para o vendedor poder ensinar e ajudar outras pessoas e negócios).
 2) Aplicação prática em TRANSPORTE rodoviário de cargas.
@@ -232,6 +261,7 @@ export const gerarCartoes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (!data.livro.trim()) throw new Error("Informe o livro.");
     const r = (await chamarIA(
+      await memoria(context),
       `Tarefa: criar 10 cartões de memorização (flashcards) sobre o livro, misturando conceitos gerais e aplicação em transporte.
 Cada cartão tem uma pergunta curta, 4 alternativas (apenas uma correta), o índice da correta (0 a 3) e uma explicação curta de por que é a correta.
 Varie a posição da resposta correta.`,
