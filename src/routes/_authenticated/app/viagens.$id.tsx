@@ -830,7 +830,7 @@ function AnexosGrid({ anexos, className, canDelete, onDeleted }: { anexos: any[]
 // ============ Checklist de Saída ============
 function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viagemId: string; kmSugerido: number | null; onDone: () => void; autoOpen?: boolean }) {
   const { role: roleAtual } = useAuth();
-  const isStaffUser = roleAtual !== "driver";
+  const isStaffUser = roleAtual !== "motorista";
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const openedOnce = useRef(false);
