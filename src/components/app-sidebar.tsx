@@ -93,6 +93,7 @@ const comercial: NavItem[] = [
   { label: "Leads pendentes", to: "/app/crm/leads", icon: MailPlus },
   { label: "Envios por dia", to: "/app/crm/envios", icon: CalendarDays },
   { label: "Hunter", to: "/app/crm/hunter", icon: Crosshair },
+  { label: "Treinador de vendas", to: "/app/crm/treinador", icon: Sparkles },
   { label: "Captação de parceiros", to: "/app/parceiros", icon: Handshake },
 ];
 
