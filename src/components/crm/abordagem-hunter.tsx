@@ -86,16 +86,16 @@ export function AbordagemHunter({ empresa, decisores }: { empresa: Empresa; deci
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empresa.id]);
 
-  const marcarEnviado = async () => {
-    if (!rowId) return;
+  const marcarEnviado = async (canal?: string) => {
+    if (!rowId || enviado) return;
     const { error } = await supabase
       .from("hunter_abordagens")
-      .update({ enviado_em: new Date().toISOString(), status: "em_abordagem" })
+      .update({ enviado_em: new Date().toISOString(), status: "em_abordagem", canal_envio: canal ?? "manual" })
       .eq("id", rowId);
     if (error) return toast.error(error.message);
     setEnviado(true);
     qc.invalidateQueries({ queryKey: ["hunter-abordagens"] });
-    toast.success("Marcado como enviado. Acompanhe em Acompanhamento de abordagens.");
+    toast.success("Envio registrado com data e hora.");
   };
 
   const copiar = (t: string) => navigator.clipboard.writeText(t).then(() => toast.success("Copiado!"));
@@ -148,12 +148,12 @@ export function AbordagemHunter({ empresa, decisores }: { empresa: Empresa; deci
                 </Button>
                 {b.wa ? (
                   <Button size="sm" variant="ghost" className="h-6 px-2" asChild>
-                    <a href={waLink(b.v, numero)} target="_blank" rel="noreferrer"><MessageCircle className="size-3" /></a>
+                    <a href={waLink(b.v, numero)} target="_blank" rel="noreferrer" onClick={() => marcarEnviado("whatsapp")}><MessageCircle className="size-3" /></a>
                   </Button>
                 ) : (
                   alvo?.email && (
                     <Button size="sm" variant="ghost" className="h-6 px-2" asChild>
-                      <a href={`mailto:${alvo.email}?subject=${encodeURIComponent(msgs.email_assunto)}&body=${encodeURIComponent(msgs.email_corpo)}`}>
+                      <a onClick={() => marcarEnviado("email")} href={`mailto:${alvo.email}?subject=${encodeURIComponent(msgs.email_assunto)}&body=${encodeURIComponent(msgs.email_corpo)}`}>
                         <Mail className="size-3" />
                       </a>
                     </Button>
@@ -167,7 +167,7 @@ export function AbordagemHunter({ empresa, decisores }: { empresa: Empresa; deci
             <Button size="sm" variant="outline" onClick={() => gerar(alvo)}>
               <RefreshCw className="mr-1.5 size-3.5" /> Gerar outra
             </Button>
-            <Button size="sm" onClick={marcarEnviado} disabled={enviado || !rowId}>
+            <Button size="sm" onClick={() => marcarEnviado()} disabled={enviado || !rowId}>
               <Send className="mr-1.5 size-3.5" /> {enviado ? "Enviada" : "Marcar como enviada"}
             </Button>
           </div>

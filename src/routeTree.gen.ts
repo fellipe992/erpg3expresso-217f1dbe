@@ -20,6 +20,7 @@ import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiPlacesRouteImport } from './routes/api/places'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
+import { Route as ApiTreinadorMapaRouteImport } from './routes/api/treinador-mapa'
 import { Route as RastreioTokenRouteImport } from './routes/rastreio.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
@@ -56,6 +57,8 @@ import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
 import { Route as ApiPublicParceirosRouteImport } from './routes/api/public/parceiros'
 import { Route as AuthenticatedAppCrmAbordagensRouteImport } from './routes/_authenticated/app/crm/abordagens'
+import { Route as AuthenticatedAppCrmAbordagensEquipeRouteImport } from './routes/_authenticated/app/crm/abordagens-equipe'
+import { Route as AuthenticatedAppCrmClientesHunterRouteImport } from './routes/_authenticated/app/crm/clientes-hunter'
 import { Route as AuthenticatedAppCrmEnviosRouteImport } from './routes/_authenticated/app/crm/envios'
 import { Route as AuthenticatedAppCrmFunilRouteImport } from './routes/_authenticated/app/crm/funil'
 import { Route as AuthenticatedAppCrmHunterRouteImport } from './routes/_authenticated/app/crm/hunter'
@@ -118,6 +121,11 @@ const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
 const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
   id: '/api/roteirizador-geocode',
   path: '/api/roteirizador-geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTreinadorMapaRoute = ApiTreinadorMapaRouteImport.update({
+  id: '/api/treinador-mapa',
+  path: '/api/treinador-mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RastreioTokenRoute = RastreioTokenRouteImport.update({
@@ -324,6 +332,18 @@ const AuthenticatedAppCrmAbordagensRoute =
     path: '/app/crm/abordagens',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppCrmAbordagensEquipeRoute =
+  AuthenticatedAppCrmAbordagensEquipeRouteImport.update({
+    id: '/app/crm/abordagens-equipe',
+    path: '/app/crm/abordagens-equipe',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppCrmClientesHunterRoute =
+  AuthenticatedAppCrmClientesHunterRouteImport.update({
+    id: '/app/crm/clientes-hunter',
+    path: '/app/crm/clientes-hunter',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppCrmEnviosRoute =
   AuthenticatedAppCrmEnviosRouteImport.update({
     id: '/app/crm/envios',
@@ -389,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -425,6 +446,8 @@ export interface FileRoutesByFullPath {
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
+  '/app/crm/abordagens-equipe': typeof AuthenticatedAppCrmAbordagensEquipeRoute
+  '/app/crm/clientes-hunter': typeof AuthenticatedAppCrmClientesHunterRoute
   '/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -446,6 +469,7 @@ export interface FileRoutesByTo {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -482,6 +506,8 @@ export interface FileRoutesByTo {
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
+  '/app/crm/abordagens-equipe': typeof AuthenticatedAppCrmAbordagensEquipeRoute
+  '/app/crm/clientes-hunter': typeof AuthenticatedAppCrmClientesHunterRoute
   '/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -505,6 +531,7 @@ export interface FileRoutesById {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -541,6 +568,8 @@ export interface FileRoutesById {
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
+  '/_authenticated/app/crm/abordagens-equipe': typeof AuthenticatedAppCrmAbordagensEquipeRoute
+  '/_authenticated/app/crm/clientes-hunter': typeof AuthenticatedAppCrmClientesHunterRoute
   '/_authenticated/app/crm/envios': typeof AuthenticatedAppCrmEnviosRoute
   '/_authenticated/app/crm/funil': typeof AuthenticatedAppCrmFunilRoute
   '/_authenticated/app/crm/hunter': typeof AuthenticatedAppCrmHunterRoute
@@ -564,6 +593,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
@@ -600,6 +630,8 @@ export interface FileRouteTypes {
     | '/api/public/parceiros'
     | '/app/'
     | '/app/crm/abordagens'
+    | '/app/crm/abordagens-equipe'
+    | '/app/crm/clientes-hunter'
     | '/app/crm/envios'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -621,6 +653,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
@@ -657,6 +690,8 @@ export interface FileRouteTypes {
     | '/api/public/parceiros'
     | '/app'
     | '/app/crm/abordagens'
+    | '/app/crm/abordagens-equipe'
+    | '/app/crm/clientes-hunter'
     | '/app/crm/envios'
     | '/app/crm/funil'
     | '/app/crm/hunter'
@@ -679,6 +714,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
@@ -715,6 +751,8 @@ export interface FileRouteTypes {
     | '/api/public/parceiros'
     | '/_authenticated/app/'
     | '/_authenticated/app/crm/abordagens'
+    | '/_authenticated/app/crm/abordagens-equipe'
+    | '/_authenticated/app/crm/clientes-hunter'
     | '/_authenticated/app/crm/envios'
     | '/_authenticated/app/crm/funil'
     | '/_authenticated/app/crm/hunter'
@@ -738,6 +776,7 @@ export interface RootRouteChildren {
   ApiPlacesRoute: typeof ApiPlacesRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
+  ApiTreinadorMapaRoute: typeof ApiTreinadorMapaRoute
   RastreioTokenRoute: typeof RastreioTokenRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
@@ -821,6 +860,13 @@ declare module '@tanstack/react-router' {
       path: '/api/roteirizador-geocode'
       fullPath: '/api/roteirizador-geocode'
       preLoaderRoute: typeof ApiRoteirizadorGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/treinador-mapa': {
+      id: '/api/treinador-mapa'
+      path: '/api/treinador-mapa'
+      fullPath: '/api/treinador-mapa'
+      preLoaderRoute: typeof ApiTreinadorMapaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rastreio/$token': {
@@ -1075,6 +1121,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCrmAbordagensRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/crm/abordagens-equipe': {
+      id: '/_authenticated/app/crm/abordagens-equipe'
+      path: '/app/crm/abordagens-equipe'
+      fullPath: '/app/crm/abordagens-equipe'
+      preLoaderRoute: typeof AuthenticatedAppCrmAbordagensEquipeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/crm/clientes-hunter': {
+      id: '/_authenticated/app/crm/clientes-hunter'
+      path: '/app/crm/clientes-hunter'
+      fullPath: '/app/crm/clientes-hunter'
+      preLoaderRoute: typeof AuthenticatedAppCrmClientesHunterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/crm/envios': {
       id: '/_authenticated/app/crm/envios'
       path: '/app/crm/envios'
@@ -1176,6 +1236,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppCrmAbordagensRoute: typeof AuthenticatedAppCrmAbordagensRoute
+  AuthenticatedAppCrmAbordagensEquipeRoute: typeof AuthenticatedAppCrmAbordagensEquipeRoute
+  AuthenticatedAppCrmClientesHunterRoute: typeof AuthenticatedAppCrmClientesHunterRoute
   AuthenticatedAppCrmEnviosRoute: typeof AuthenticatedAppCrmEnviosRoute
   AuthenticatedAppCrmFunilRoute: typeof AuthenticatedAppCrmFunilRoute
   AuthenticatedAppCrmHunterRoute: typeof AuthenticatedAppCrmHunterRoute
@@ -1221,6 +1283,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppCrmAbordagensRoute: AuthenticatedAppCrmAbordagensRoute,
+  AuthenticatedAppCrmAbordagensEquipeRoute:
+    AuthenticatedAppCrmAbordagensEquipeRoute,
+  AuthenticatedAppCrmClientesHunterRoute:
+    AuthenticatedAppCrmClientesHunterRoute,
   AuthenticatedAppCrmEnviosRoute: AuthenticatedAppCrmEnviosRoute,
   AuthenticatedAppCrmFunilRoute: AuthenticatedAppCrmFunilRoute,
   AuthenticatedAppCrmHunterRoute: AuthenticatedAppCrmHunterRoute,
@@ -1245,6 +1311,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlacesRoute: ApiPlacesRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
+  ApiTreinadorMapaRoute: ApiTreinadorMapaRoute,
   RastreioTokenRoute: RastreioTokenRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,

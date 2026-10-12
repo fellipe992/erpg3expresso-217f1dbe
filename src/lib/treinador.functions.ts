@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { BASE_CONHECIMENTO } from "@/lib/treinador-conhecimento";
 
 const PERSONA = `Você é o Treinador de Vendas da G3 Expresso, transportadora rodoviária brasileira (carga seca, fracionada, dedicada).
 Você domina: Alcançando a Excelência em Vendas (SPIN Selling, Neil Rackham), Receita Previsível (Aaron Ross), As Armas da Persuasão (Cialdini),
@@ -7,7 +8,8 @@ A Venda Desafiadora (Dixon & Adamson), A Bíblia de Vendas (Jeffrey Gitomer), Co
 Never Split the Difference (Chris Voss), Gap Selling (Keenan), Fanatical Prospecting (Jeb Blount) e outros clássicos.
 Escreva SEMPRE em português do Brasil, como um ser humano real escreveria: natural, direto, caloroso, sem clichês de robô
 ("Espero que esteja bem", "Prezado", listas excessivas, emojis em excesso). Frases curtas, tom de conversa entre profissionais.
-Nunca invente números, clientes ou certificações da G3.`;
+Nunca invente números, clientes ou certificações da G3. Baseie-se primeiro na base de conhecimento abaixo; mantenha os mesmos conceitos e nomes em todas as respostas.
+${BASE_CONHECIMENTO}`;
 
 type Schema = Record<string, unknown>;
 
@@ -213,6 +215,35 @@ e indique 2 livros complementares com o porquê.`,
     await context.supabase.from("treinador_historico").insert({
       user_id: context.userId,
       tipo: "aula",
+      titulo: data.livro.slice(0, 200),
+      entrada: data,
+      resultado: r,
+    });
+    return r;
+  });
+
+/* ---------- Cartões de treino (flashcards) ---------- */
+export const gerarCartoes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { livro: string; foco: string }) => ({
+    livro: String(d.livro ?? "").slice(0, 200),
+    foco: String(d.foco ?? "").slice(0, 500),
+  }))
+  .handler(async ({ data, context }) => {
+    if (!data.livro.trim()) throw new Error("Informe o livro.");
+    const r = (await chamarIA(
+      `Tarefa: criar 10 cartões de memorização (flashcards) sobre o livro, misturando conceitos gerais e aplicação em transporte.
+Cada cartão tem uma pergunta curta, 4 alternativas (apenas uma correta), o índice da correta (0 a 3) e uma explicação curta de por que é a correta.
+Varie a posição da resposta correta.`,
+      `LIVRO: ${data.livro}\nFOCO: ${data.foco || "conceitos principais"}`,
+      "cartoes",
+      obj({
+        cartoes: arr(obj({ pergunta: str, alternativas: arr(str), correta: { type: "integer" }, explicacao: str })),
+      }),
+    )) as { cartoes: { pergunta: string; alternativas: string[]; correta: number; explicacao: string }[] };
+    await context.supabase.from("treinador_historico").insert({
+      user_id: context.userId,
+      tipo: "cartoes",
       titulo: data.livro.slice(0, 200),
       entrada: data,
       resultado: r,

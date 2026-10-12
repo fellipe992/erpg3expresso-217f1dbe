@@ -93,6 +93,7 @@ const comercial: NavItem[] = [
   { label: "Leads pendentes", to: "/app/crm/leads", icon: MailPlus },
   { label: "Envios por dia", to: "/app/crm/envios", icon: CalendarDays },
   { label: "Hunter", to: "/app/crm/hunter", icon: Crosshair },
+  { label: "Clientes do Hunter", to: "/app/crm/clientes-hunter", icon: Building2 },
   { label: "Acompanhamento", to: "/app/crm/abordagens", icon: CalendarDays },
   { label: "Treinador de vendas", to: "/app/crm/treinador", icon: Sparkles },
   { label: "Captação de parceiros", to: "/app/parceiros", icon: Handshake },
@@ -111,6 +112,7 @@ const gestao: NavItem[] = [
 const administracao: NavItem[] = [
   { label: "Empresas", to: "/app/empresa", icon: Building2 },
   { label: "Usuários", to: "/app/usuarios", icon: Users },
+  { label: "Abordagens da equipe", to: "/app/crm/abordagens-equipe", icon: Crosshair },
   { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck },
   { label: "Configurações", to: "/app/configuracoes", icon: Settings },
 ];

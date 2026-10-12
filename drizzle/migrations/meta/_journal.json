@@ -134,6 +134,13 @@
       "when": 1791846693863,
       "tag": "0018_treinador_historico_abordagens",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791848262161,
+      "tag": "0019_hunter_respostas_clientes_mapas",
+      "breakpoints": true
     }
   ]
 }
