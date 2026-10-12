@@ -114,6 +114,7 @@ const administracao: NavItem[] = [
   { label: "Empresas", to: "/app/empresa", icon: Building2 },
   { label: "Usuários", to: "/app/usuarios", icon: Users },
   { label: "Abordagens da equipe", to: "/app/crm/abordagens-equipe", icon: Crosshair },
+  { label: "Métricas de conversão", to: "/app/crm/metricas-conversao", icon: BarChart3 },
   { label: "Auditoria", to: "/app/auditoria", icon: ShieldCheck },
   { label: "Configurações", to: "/app/configuracoes", icon: Settings },
 ];
