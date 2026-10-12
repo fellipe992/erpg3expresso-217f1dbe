@@ -1882,7 +1882,9 @@ export type Database = {
       }
       hunter_abordagens: {
         Row: {
+          canal_envio: string | null
           cargo: string | null
+          cliente_id: string | null
           company_id: string | null
           contato: string | null
           created_at: string
@@ -1892,6 +1894,8 @@ export type Database = {
           id: string
           mensagens: Json
           observacao: string | null
+          respondido_em: string | null
+          resposta_cliente: string | null
           segmento: string | null
           status: string
           updated_at: string
@@ -1899,7 +1903,9 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          canal_envio?: string | null
           cargo?: string | null
+          cliente_id?: string | null
           company_id?: string | null
           contato?: string | null
           created_at?: string
@@ -1909,6 +1915,8 @@ export type Database = {
           id?: string
           mensagens?: Json
           observacao?: string | null
+          respondido_em?: string | null
+          resposta_cliente?: string | null
           segmento?: string | null
           status?: string
           updated_at?: string
@@ -1916,7 +1924,9 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          canal_envio?: string | null
           cargo?: string | null
+          cliente_id?: string | null
           company_id?: string | null
           contato?: string | null
           created_at?: string
@@ -1926,11 +1936,64 @@ export type Database = {
           id?: string
           mensagens?: Json
           observacao?: string | null
+          respondido_em?: string | null
+          resposta_cliente?: string | null
           segmento?: string | null
           status?: string
           updated_at?: string
           user_id?: string
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      hunter_clientes: {
+        Row: {
+          cargo: string | null
+          cidade: string | null
+          contato: string | null
+          created_at: string
+          email: string | null
+          empresa: string
+          id: string
+          observacao: string | null
+          segmento: string | null
+          telefone: string | null
+          tipo_frete: string | null
+          ultima_abordagem_em: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cargo?: string | null
+          cidade?: string | null
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          empresa: string
+          id?: string
+          observacao?: string | null
+          segmento?: string | null
+          telefone?: string | null
+          tipo_frete?: string | null
+          ultima_abordagem_em?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          cargo?: string | null
+          cidade?: string | null
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          empresa?: string
+          id?: string
+          observacao?: string | null
+          segmento?: string | null
+          telefone?: string | null
+          tipo_frete?: string | null
+          ultima_abordagem_em?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
