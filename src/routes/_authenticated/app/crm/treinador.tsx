@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { aulaLivro, gerarAbordagem, responderCliente } from "@/lib/treinador.functions";
+import { CartoesTreino, MapaVisual } from "@/components/crm/treinador-extras";
 
 export const Route = createFileRoute("/_authenticated/app/crm/treinador")({
   head: () => ({
@@ -450,11 +451,15 @@ function TreinadorPage() {
           <TabsTrigger value="responder">Respondendo o cliente</TabsTrigger>
           <TabsTrigger value="abordagem">Abordagem e-mail / WhatsApp</TabsTrigger>
           <TabsTrigger value="biblioteca">Biblioteca</TabsTrigger>
+          <TabsTrigger value="mapa">Mapa visual</TabsTrigger>
+          <TabsTrigger value="cartoes">Cartões de treino</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
         <TabsContent value="responder"><RespondendoCliente /></TabsContent>
         <TabsContent value="abordagem"><Abordagem /></TabsContent>
         <TabsContent value="biblioteca"><Biblioteca /></TabsContent>
+        <TabsContent value="mapa"><MapaVisual livros={LIVROS} /></TabsContent>
+        <TabsContent value="cartoes"><CartoesTreino livros={LIVROS} /></TabsContent>
         <TabsContent value="historico"><Historico /></TabsContent>
       </Tabs>
     </div>

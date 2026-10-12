@@ -20,6 +20,7 @@ import { Route as ApiOtimizarRotaRouteImport } from './routes/api/otimizar-rota'
 import { Route as ApiPlacesRouteImport } from './routes/api/places'
 import { Route as ApiPlanejadorRotaRouteImport } from './routes/api/planejador-rota'
 import { Route as ApiRoteirizadorGeocodeRouteImport } from './routes/api/roteirizador-geocode'
+import { Route as ApiTreinadorMapaRouteImport } from './routes/api/treinador-mapa'
 import { Route as RastreioTokenRouteImport } from './routes/rastreio.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
@@ -118,6 +119,11 @@ const ApiPlanejadorRotaRoute = ApiPlanejadorRotaRouteImport.update({
 const ApiRoteirizadorGeocodeRoute = ApiRoteirizadorGeocodeRouteImport.update({
   id: '/api/roteirizador-geocode',
   path: '/api/roteirizador-geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTreinadorMapaRoute = ApiTreinadorMapaRouteImport.update({
+  id: '/api/treinador-mapa',
+  path: '/api/treinador-mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RastreioTokenRoute = RastreioTokenRouteImport.update({
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -505,6 +513,7 @@ export interface FileRoutesById {
   '/api/places': typeof ApiPlacesRoute
   '/api/planejador-rota': typeof ApiPlanejadorRotaRoute
   '/api/roteirizador-geocode': typeof ApiRoteirizadorGeocodeRoute
+  '/api/treinador-mapa': typeof ApiTreinadorMapaRoute
   '/rastreio/$token': typeof RastreioTokenRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
@@ -621,6 +631,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/api/places'
     | '/api/planejador-rota'
     | '/api/roteirizador-geocode'
+    | '/api/treinador-mapa'
     | '/rastreio/$token'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
@@ -738,6 +750,7 @@ export interface RootRouteChildren {
   ApiPlacesRoute: typeof ApiPlacesRoute
   ApiPlanejadorRotaRoute: typeof ApiPlanejadorRotaRoute
   ApiRoteirizadorGeocodeRoute: typeof ApiRoteirizadorGeocodeRoute
+  ApiTreinadorMapaRoute: typeof ApiTreinadorMapaRoute
   RastreioTokenRoute: typeof RastreioTokenRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
@@ -821,6 +834,13 @@ declare module '@tanstack/react-router' {
       path: '/api/roteirizador-geocode'
       fullPath: '/api/roteirizador-geocode'
       preLoaderRoute: typeof ApiRoteirizadorGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/treinador-mapa': {
+      id: '/api/treinador-mapa'
+      path: '/api/treinador-mapa'
+      fullPath: '/api/treinador-mapa'
+      preLoaderRoute: typeof ApiTreinadorMapaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rastreio/$token': {
@@ -1245,6 +1265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlacesRoute: ApiPlacesRoute,
   ApiPlanejadorRotaRoute: ApiPlanejadorRotaRoute,
   ApiRoteirizadorGeocodeRoute: ApiRoteirizadorGeocodeRoute,
+  ApiTreinadorMapaRoute: ApiTreinadorMapaRoute,
   RastreioTokenRoute: RastreioTokenRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
