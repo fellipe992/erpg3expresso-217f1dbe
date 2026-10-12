@@ -1880,6 +1880,60 @@ export type Database = {
           },
         ]
       }
+      hunter_abordagens: {
+        Row: {
+          cargo: string | null
+          company_id: string | null
+          contato: string | null
+          created_at: string
+          email: string | null
+          empresa: string
+          enviado_em: string | null
+          id: string
+          mensagens: Json
+          observacao: string | null
+          segmento: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          company_id?: string | null
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          empresa: string
+          enviado_em?: string | null
+          id?: string
+          mensagens?: Json
+          observacao?: string | null
+          segmento?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          company_id?: string | null
+          contato?: string | null
+          created_at?: string
+          email?: string | null
+          empresa?: string
+          enviado_em?: string | null
+          id?: string
+          mensagens?: Json
+          observacao?: string | null
+          segmento?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       manutencoes: {
         Row: {
           created_at: string
@@ -2804,6 +2858,36 @@ export type Database = {
           nome?: string
           ordem?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      treinador_historico: {
+        Row: {
+          created_at: string
+          entrada: Json
+          id: string
+          resultado: Json
+          tipo: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entrada?: Json
+          id?: string
+          resultado?: Json
+          tipo: string
+          titulo?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          entrada?: Json
+          id?: string
+          resultado?: Json
+          tipo?: string
+          titulo?: string
+          user_id?: string
         }
         Relationships: []
       }
