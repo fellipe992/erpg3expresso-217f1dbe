@@ -18,7 +18,7 @@ function SeletorLivro({ livros, livro, setLivro }: { livros: string[]; livro: st
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
         {livros.map((l) => (
-          <Button key={l} size="sm" variant={l === livro ? "default" : "outline"} onClick={() => setLivro(l)}>
+          <Button key={l} size="sm" className="h-auto max-w-full whitespace-normal py-2 text-left" variant={l === livro ? "default" : "outline"} onClick={() => setLivro(l)}>
             {l.split(" — ")[0]}
           </Button>
         ))}

@@ -169,8 +169,8 @@ function RespondendoCliente() {
             <Textarea rows={6} value={mensagem} onChange={(e) => setMensagem(e.target.value)} placeholder="Ex.: Achei o valor alto, a transportadora atual cobra 12% menos..." />
           </div>
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label>Contexto (quem é, histórico, o que você quer)</Label>
+            <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <Label className="min-w-0">Contexto (quem é, histórico, o que você quer)</Label>
               <BotaoVoz onTexto={(t) => setContexto((c) => (c ? `${c} ${t}` : t))} />
             </div>
             <Textarea rows={5} value={contexto} onChange={(e) => setContexto(e.target.value)} placeholder="Ex.: Comprador de indústria de alimentos, já fizemos 2 cotações, quero fechar um teste de 1 carga..." />
@@ -216,8 +216,8 @@ function Abordagem() {
           <div className="space-y-1.5"><Label>Segmento</Label><Input value={f.segmento} onChange={set("segmento")} placeholder="ALIMENTOS, E-COMMERCE..." /></div>
           <div className="space-y-1.5 sm:col-span-2"><Label>WhatsApp do contato (opcional)</Label><Input value={f.whatsapp} onChange={set("whatsapp")} placeholder="(11) 99999-9999" /></div>
           <div className="space-y-1.5 sm:col-span-2">
-            <div className="flex items-center justify-between">
-              <Label>O que você sabe sobre eles</Label>
+            <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <Label className="min-w-0">O que você sabe sobre eles</Label>
               <BotaoVoz onTexto={(t) => setF((s) => ({ ...s, contexto: s.contexto ? `${s.contexto} ${t}` : t }))} />
             </div>
             <Textarea rows={4} value={f.contexto} onChange={set("contexto")} placeholder="Ex.: abriram novo CD em Cajamar, postaram vaga de analista de transportes..." />
@@ -281,7 +281,7 @@ function Biblioteca() {
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
             {LIVROS.map((l) => (
-              <Button key={l} size="sm" variant={l === livro ? "default" : "outline"} onClick={() => setLivro(l)}>
+              <Button key={l} size="sm" className="h-auto max-w-full whitespace-normal py-2 text-left" variant={l === livro ? "default" : "outline"} onClick={() => setLivro(l)}>
                 {l.split(" — ")[0]}
               </Button>
             ))}
@@ -441,13 +441,13 @@ function Historico() {
 
 function TreinadorPage() {
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="min-w-0 space-y-4 p-4 md:p-6 [&_[data-slot=card]]:min-w-0 [&_[data-slot=card-header]]:px-4 sm:[&_[data-slot=card-header]]:px-6 [&_[data-slot=card-content]]:px-4 sm:[&_[data-slot=card-content]]:px-6">
       <div>
         <h1 className="text-2xl font-bold">Treinador de Vendas</h1>
         <p className="text-sm text-muted-foreground">Responda clientes, crie abordagens para o Hunter e aprenda com os melhores livros de vendas.</p>
       </div>
-      <Tabs defaultValue="responder">
-        <TabsList className="flex-wrap">
+      <Tabs defaultValue="responder" className="min-w-0">
+        <TabsList aria-label="Opções do Treinador" className="grid h-auto w-full grid-cols-2 gap-1 overflow-visible md:grid-cols-3 xl:grid-cols-6 [&>button]:min-h-11 [&>button]:min-w-0 [&>button]:whitespace-normal [&>button]:px-2 [&>button]:py-2">
           <TabsTrigger value="responder">Respondendo o cliente</TabsTrigger>
           <TabsTrigger value="abordagem">Abordagem e-mail / WhatsApp</TabsTrigger>
           <TabsTrigger value="biblioteca">Biblioteca</TabsTrigger>
