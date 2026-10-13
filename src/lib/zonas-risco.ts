@@ -123,6 +123,9 @@ export function rotuloRisco(nota: number) {
   return NIVEIS[4];
 }
 
+const esc = (t: string) =>
+  t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 /** Desenha as zonas como círculos coloridos num mapa Google. */
 export function desenharZonas(
   map: google.maps.Map,
@@ -146,10 +149,10 @@ export function desenharZonas(
     if (info) {
       c.addListener("click", (e: google.maps.MapMouseEvent) => {
         info.setContent(
-          `<div style="font:13px sans-serif;max-width:240px;color:#111"><b>${z.nome}</b><br/>` +
+          `<div style="font:13px sans-serif;max-width:240px;color:#111"><b>${esc(z.nome)}</b><br/>` +
             `<span style="color:${cor};font-weight:600">Risco ${NIVEIS[z.nivel]?.label}</span> · ${TIPOS_RISCO[z.tipo] ?? z.tipo}<br/>` +
-            (z.horario_critico ? `Horário crítico: ${z.horario_critico}<br/>` : "") +
-            (z.recomendacao ? `<i>${z.recomendacao}</i>` : "") +
+            (z.horario_critico ? `Horário crítico: ${esc(z.horario_critico)}<br/>` : "") +
+            (z.recomendacao ? `<i>${esc(z.recomendacao)}</i>` : "") +
             `</div>`,
         );
         info.setPosition(e.latLng ?? { lat: z.lat, lng: z.lng });
