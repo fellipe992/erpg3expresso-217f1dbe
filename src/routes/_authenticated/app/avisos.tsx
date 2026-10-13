@@ -87,6 +87,7 @@ function AvisosPage() {
       const { data, error } = await supabase
         .from("avisos")
         .select("id, created_by, categoria, assunto, mensagem, status, created_at, updated_at")
+        .neq("categoria", "pedido_posicao")
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;

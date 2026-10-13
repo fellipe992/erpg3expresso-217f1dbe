@@ -1,4 +1,5 @@
 import { AbordagemHunter } from "@/components/crm/abordagem-hunter";
+import { SugestoesClientes } from "@/components/crm/sugestoes-clientes";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -384,6 +385,8 @@ function HunterPage() {
           </p>
         </div>
       </div>
+
+      <SugestoesClientes />
 
       {/* Etapa 1 — buscador de empresas */}
       <Card>
