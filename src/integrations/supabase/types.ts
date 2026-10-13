@@ -3663,6 +3663,119 @@ export type Database = {
         }
         Relationships: []
       }
+      zonas_risco: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          horario_critico: string | null
+          id: string
+          lat: number
+          lng: number
+          nivel: number
+          nome: string
+          origem: string
+          raio_m: number
+          recomendacao: string | null
+          tipo: string
+          uf: string | null
+          updated_at: string
+          validado_em: string | null
+          validado_por: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          horario_critico?: string | null
+          id?: string
+          lat: number
+          lng: number
+          nivel?: number
+          nome: string
+          origem?: string
+          raio_m?: number
+          recomendacao?: string | null
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+          validado_em?: string | null
+          validado_por?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          horario_critico?: string | null
+          id?: string
+          lat?: number
+          lng?: number
+          nivel?: number
+          nome?: string
+          origem?: string
+          raio_m?: number
+          recomendacao?: string | null
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+          validado_em?: string | null
+          validado_por?: string | null
+        }
+        Relationships: []
+      }
+      zonas_risco_reportes: {
+        Row: {
+          bairro: string | null
+          comentario: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          nivel_sugerido: number
+          revisado_em: string | null
+          revisado_por: string | null
+          status: string
+          tipo: string
+          user_id: string
+          zona_id: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nivel_sugerido?: number
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: string
+          tipo?: string
+          user_id?: string
+          zona_id?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          nivel_sugerido?: number
+          revisado_em?: string | null
+          revisado_por?: string | null
+          status?: string
+          tipo?: string
+          user_id?: string
+          zona_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zonas_risco_reportes_zona_id_fkey"
+            columns: ["zona_id"]
+            isOneToOne: false
+            referencedRelation: "zonas_risco"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
