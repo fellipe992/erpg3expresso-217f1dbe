@@ -3666,6 +3666,8 @@ export type Database = {
       zonas_risco: {
         Row: {
           ativo: boolean
+          bairro: string | null
+          cidade: string | null
           created_at: string
           horario_critico: string | null
           id: string
@@ -3674,6 +3676,7 @@ export type Database = {
           nivel: number
           nome: string
           origem: string
+          place_id: string | null
           raio_m: number
           recomendacao: string | null
           tipo: string
@@ -3684,6 +3687,8 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          bairro?: string | null
+          cidade?: string | null
           created_at?: string
           horario_critico?: string | null
           id?: string
@@ -3692,6 +3697,7 @@ export type Database = {
           nivel?: number
           nome: string
           origem?: string
+          place_id?: string | null
           raio_m?: number
           recomendacao?: string | null
           tipo?: string
@@ -3702,6 +3708,8 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          bairro?: string | null
+          cidade?: string | null
           created_at?: string
           horario_critico?: string | null
           id?: string
@@ -3710,6 +3718,7 @@ export type Database = {
           nivel?: number
           nome?: string
           origem?: string
+          place_id?: string | null
           raio_m?: number
           recomendacao?: string | null
           tipo?: string

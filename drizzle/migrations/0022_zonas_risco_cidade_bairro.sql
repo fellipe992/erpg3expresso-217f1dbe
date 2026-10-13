@@ -1,0 +1,2 @@
+ALTER TABLE public.zonas_risco ADD COLUMN IF NOT EXISTS cidade text, ADD COLUMN IF NOT EXISTS bairro text, ADD COLUMN IF NOT EXISTS place_id text;
+CREATE INDEX IF NOT EXISTS zonas_risco_cidade_idx ON public.zonas_risco (uf, cidade);
