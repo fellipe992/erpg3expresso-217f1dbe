@@ -55,6 +55,7 @@ import { Route as AuthenticatedAppRoteirizadorRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
+import { Route as AuthenticatedAppZonasRiscoRouteImport } from './routes/_authenticated/app/zonas-risco'
 import { Route as ApiPublicParceirosRouteImport } from './routes/api/public/parceiros'
 import { Route as AuthenticatedAppCrmAbordagensRouteImport } from './routes/_authenticated/app/crm/abordagens'
 import { Route as AuthenticatedAppCrmAbordagensEquipeRouteImport } from './routes/_authenticated/app/crm/abordagens-equipe'
@@ -323,6 +324,12 @@ const AuthenticatedAppVeiculosRoute =
     path: '/app/veiculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppZonasRiscoRoute =
+  AuthenticatedAppZonasRiscoRouteImport.update({
+    id: '/app/zonas-risco',
+    path: '/app/zonas-risco',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicParceirosRoute = ApiPublicParceirosRouteImport.update({
   id: '/api/public/parceiros',
   path: '/api/public/parceiros',
@@ -457,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
@@ -519,6 +527,7 @@ export interface FileRoutesByTo {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
@@ -583,6 +592,7 @@ export interface FileRoutesById {
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/_authenticated/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/crm/abordagens': typeof AuthenticatedAppCrmAbordagensRoute
@@ -647,6 +657,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/app/zonas-risco'
     | '/api/public/parceiros'
     | '/app/'
     | '/app/crm/abordagens'
@@ -709,6 +720,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/app/zonas-risco'
     | '/api/public/parceiros'
     | '/app'
     | '/app/crm/abordagens'
@@ -772,6 +784,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
+    | '/_authenticated/app/zonas-risco'
     | '/api/public/parceiros'
     | '/_authenticated/app/'
     | '/_authenticated/app/crm/abordagens'
@@ -1133,6 +1146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppVeiculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/zonas-risco': {
+      id: '/_authenticated/app/zonas-risco'
+      path: '/app/zonas-risco'
+      fullPath: '/app/zonas-risco'
+      preLoaderRoute: typeof AuthenticatedAppZonasRiscoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/parceiros': {
       id: '/api/public/parceiros'
       path: '/api/public/parceiros'
@@ -1274,6 +1294,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppSimuladorRoute: typeof AuthenticatedAppSimuladorRoute
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
+  AuthenticatedAppZonasRiscoRoute: typeof AuthenticatedAppZonasRiscoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppCrmAbordagensRoute: typeof AuthenticatedAppCrmAbordagensRoute
   AuthenticatedAppCrmAbordagensEquipeRoute: typeof AuthenticatedAppCrmAbordagensEquipeRoute
@@ -1323,6 +1344,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppSimuladorRoute: AuthenticatedAppSimuladorRoute,
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
+  AuthenticatedAppZonasRiscoRoute: AuthenticatedAppZonasRiscoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppCrmAbordagensRoute: AuthenticatedAppCrmAbordagensRoute,
   AuthenticatedAppCrmAbordagensEquipeRoute:
