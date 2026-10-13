@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/planejador-rota")({
           intermediates: pontos.slice(1, -1).map((address) => ({ address })),
           travelMode: "DRIVE",
           routingPreference: "TRAFFIC_AWARE",
-          computeAlternativeRoutes: parsed.tipoRota === "curta",
+          computeAlternativeRoutes: pontos.length === 2,
           extraComputations: ["TOLLS"],
           routeModifiers: {
             avoidTolls: parsed.tipoRota === "sem_pedagio",
@@ -129,6 +129,15 @@ export const Route = createFileRoute("/api/planejador-rota")({
             pedagioTotal,
             trechos: legs,
             fatorEixos: fator,
+            alternativas: rotas.map((r: any) => ({
+              km: (r.distanceMeters ?? 0) / 1000,
+              minutos: Math.round(Number(String(r.duration ?? "0s").replace("s", "")) / 60),
+              polyline: r.polyline?.encodedPolyline ?? "",
+              pedagioTotal:
+                toNumber(r.travelAdvisory?.tollInfo?.estimatedPrice?.[0] as Money) * fator,
+              descricao: r.description ?? "",
+              principal: r === rota,
+            })),
           },
           { headers: { "Cache-Control": "no-store" } },
         );
