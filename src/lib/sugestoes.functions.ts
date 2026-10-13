@@ -55,8 +55,8 @@ export const pontuarSugestoes = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data, context }) => {
     if (!data.candidatos.length) return { sugestoes: [] as Sugestao[] };
-    const { data: clientes } = await context.supabase.from("clientes").select("nome").limit(40);
-    const carteira = (clientes ?? []).map((c: { nome: string | null }) => c.nome).filter(Boolean).join(", ");
+    const { data: clientes } = await context.supabase.from("clientes").select("razao_social").limit(40);
+    const carteira = (clientes ?? []).map((c: { razao_social: string | null }) => c.razao_social).filter(Boolean).join(", ");
     const r = (await ia(
       `${BASE}
 Tarefa: dar um Fit Score (0-100) a cada empresa candidata para o perfil "${data.perfil}" da G3, comparando com o padrão da carteira atual.

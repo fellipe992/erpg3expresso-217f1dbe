@@ -141,6 +141,13 @@
       "when": 1791848262161,
       "tag": "0019_hunter_respostas_clientes_mapas",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791850521464,
+      "tag": "0020_silenciar_pedido_posicao",
+      "breakpoints": true
     }
   ]
 }
