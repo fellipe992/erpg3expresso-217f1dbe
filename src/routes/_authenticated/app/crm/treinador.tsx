@@ -151,11 +151,11 @@ function RespondendoCliente() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2"><Reply className="size-5" /> Respondendo o cliente</CardTitle>
           <CardDescription>Cole a mensagem do cliente, explique o contexto (escrevendo ou falando) e receba uma resposta humana.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           <div className="flex gap-2">
             <Button size="sm" variant={canal === "whatsapp" ? "default" : "outline"} onClick={() => setCanal("whatsapp")}>
               <MessageCircle className="mr-1.5 size-3.5" /> WhatsApp
@@ -182,8 +182,8 @@ function RespondendoCliente() {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Sugestão</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
+        <CardHeader className="px-4 sm:px-6"><CardTitle>Sugestão</CardTitle></CardHeader>
+        <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           {!r && <p className="text-sm text-muted-foreground">A resposta aparece aqui.</p>}
           {r && <RespostaView r={r} canal={canal} />}
         </CardContent>
@@ -205,11 +205,11 @@ function Abordagem() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2"><Crosshair className="size-5" /> Abordagem para o Hunter</CardTitle>
           <CardDescription>Gera e-mail, WhatsApp e follow-up personalizados pelo cargo e segmento.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="min-w-0 grid gap-3 px-4 sm:grid-cols-2 sm:px-6">
           <div className="space-y-1.5"><Label>Empresa</Label><Input value={f.empresa} onChange={set("empresa")} /></div>
           <div className="space-y-1.5"><Label>Contato</Label><Input value={f.contato} onChange={set("contato")} /></div>
           <div className="space-y-1.5"><Label>Cargo</Label><Input value={f.cargo} onChange={set("cargo")} /></div>
@@ -229,8 +229,8 @@ function Abordagem() {
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Mensagens</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
+        <CardHeader className="px-4 sm:px-6"><CardTitle>Mensagens</CardTitle></CardHeader>
+        <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           {!r && <p className="text-sm text-muted-foreground">As mensagens aparecem aqui.</p>}
           {r && (
             <>
@@ -274,7 +274,7 @@ function Biblioteca() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2"><BookOpen className="size-5" /> Biblioteca e aula da semana</CardTitle>
           <CardDescription>Cada aula traz o conhecimento geral do livro (para qualquer área) e a aplicação em transporte.</CardDescription>
         </CardHeader>
@@ -391,7 +391,7 @@ function Historico() {
   const itens = (q.data ?? []).filter((i) => filtro === "todos" || i.tipo === filtro);
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="px-4 sm:px-6">
         <CardTitle className="flex items-center gap-2"><History className="size-5" /> O que já aprendi</CardTitle>
         <CardDescription>Todas as aulas e respostas ficam guardadas aqui.</CardDescription>
       </CardHeader>
@@ -441,7 +441,7 @@ function Historico() {
 
 function TreinadorPage() {
   return (
-    <div className="min-w-0 space-y-4 p-4 md:p-6 [&_[data-slot=card]]:min-w-0 [&_[data-slot=card-header]]:px-4 sm:[&_[data-slot=card-header]]:px-6 [&_[data-slot=card-content]]:px-4 sm:[&_[data-slot=card-content]]:px-6">
+    <div className="min-w-0 space-y-4 p-4 md:p-6 [&_p]:break-words">
       <div>
         <h1 className="text-2xl font-bold">Treinador de Vendas</h1>
         <p className="text-sm text-muted-foreground">Responda clientes, crie abordagens para o Hunter e aprenda com os melhores livros de vendas.</p>
