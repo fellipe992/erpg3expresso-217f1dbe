@@ -118,17 +118,6 @@ export function usePedidoPosicaoMotorista() {
       if (readHandled().includes(pedido.id)) return;
       markHandled(pedido.id);
 
-      // Avisa o motorista no aparelho ANTES de tentar o GPS: assim ele sabe do
-      // pedido mesmo quando a localização está desligada ou sem sinal.
-      void notifyLocal({
-        titulo: "A operação pediu sua localização",
-        mensagem: "Estamos enviando sua posição atual. Mantenha a localização ativa.",
-        categoria: "monitoramento",
-        prioridade: "alta",
-        tag: `pedido-recebido-${pedido.id}`,
-        link: "/app",
-      });
-
       const coords = await capturarPosicao();
       if (!coords) {
         void responderPedido(
@@ -159,13 +148,6 @@ export function usePedidoPosicaoMotorista() {
         });
       }
       await responderPedido(pedido.id, "Posição atual enviada à operação.");
-      void notifyLocal({
-        titulo: "Posição enviada",
-        mensagem: "A operação solicitou sua localização e ela foi enviada.",
-        categoria: "monitoramento",
-        prioridade: "alta",
-        tag: `pedido-${pedido.id}`,
-      });
     };
 
     const verificar = async () => {
