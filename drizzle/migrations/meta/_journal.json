@@ -148,6 +148,13 @@
       "when": 1791850521464,
       "tag": "0020_silenciar_pedido_posicao",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791926882991,
+      "tag": "0021_zonas_risco",
+      "breakpoints": true
     }
   ]
 }

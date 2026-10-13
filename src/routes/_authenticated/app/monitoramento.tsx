@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
 import { CompartilharRastreio } from "@/components/monitoramento/compartilhar-rastreio";
+import { useZonasRisco, desenharZonas, zonaNoPonto, NIVEIS } from "@/lib/zonas-risco";
 
 /** Acima disso a viagem entra em alerta na central. */
 const SEM_POSICAO_ALERTA_MS = 20 * 60_000;
@@ -119,6 +120,11 @@ function MonitoramentoPage() {
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<Record<string, google.maps.Marker>>({});
   const infoRef = useRef<google.maps.InfoWindow | null>(null);
+  const [mapPronto, setMapPronto] = useState(false);
+  const [mostrarZonas, setMostrarZonas] = useState(true);
+  const { data: zonas = [] } = useZonasRisco();
+  const circlesRef = useRef<google.maps.Circle[]>([]);
+  const alertadosRef = useRef<Set<string>>(new Set());
 
   const {
     data: viagens = [],
@@ -272,6 +278,7 @@ function MonitoramentoPage() {
           styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
         });
         infoRef.current = new google.maps.InfoWindow();
+        setMapPronto(true);
       })
       .catch((err) => {
         console.error("[monitoramento] maps error", err);
@@ -338,6 +345,33 @@ function MonitoramentoPage() {
       mapHasBeenFitRef.current = true;
     }
   }, [viagens, locsByViagem, fotoUrls]);
+
+  // Camada de zonas de risco.
+  useEffect(() => {
+    circlesRef.current.forEach((c) => c.setMap(null));
+    circlesRef.current = [];
+    const map = mapRef.current;
+    if (!mapPronto || !map || !mostrarZonas) return;
+    circlesRef.current = desenharZonas(map, zonas, infoRef.current ?? undefined);
+  }, [mapPronto, mostrarZonas, zonas]);
+
+  // Alerta para a operação quando um veículo entra em zona laranja/vermelha.
+  useEffect(() => {
+    if (!zonas.length) return;
+    for (const v of viagens) {
+      const l = locsByViagem[v.id];
+      if (!l) continue;
+      const z = zonaNoPonto(zonas, { lat: l.latitude, lng: l.longitude });
+      if (!z || z.nivel < 3) continue;
+      const chave = `${v.id}:${z.id}`;
+      if (alertadosRef.current.has(chave)) continue;
+      alertadosRef.current.add(chave);
+      toast.warning(`${v.veiculo?.placa ?? "Veículo"} em zona de risco ${NIVEIS[z.nivel].label.toLowerCase()}`, {
+        description: `${z.nome}. Intensifique o monitoramento.`,
+        duration: 15000,
+      });
+    }
+  }, [viagens, locsByViagem, zonas]);
 
   const mapHasBeenFitRef = useRef(false);
   const fotoIconsRef = useRef<Record<string, string>>({});
@@ -766,6 +800,23 @@ function MonitoramentoPage() {
         )}
       >
         <div ref={mapDivRef} className="absolute inset-0" />
+        <Card className="absolute bottom-3 left-3 z-10 space-y-1.5 p-2.5 text-xs shadow-lg">
+          <label className="flex cursor-pointer items-center gap-2 font-semibold">
+            <input
+              type="checkbox"
+              checked={mostrarZonas}
+              onChange={(e) => setMostrarZonas(e.target.checked)}
+            />
+            Zonas de risco
+          </label>
+          {mostrarZonas &&
+            [1, 2, 3, 4].map((n) => (
+              <div key={n} className="flex items-center gap-2">
+                <span className="size-3 rounded-full" style={{ background: NIVEIS[n].cor }} />
+                {NIVEIS[n].label}
+              </div>
+            ))}
+        </Card>
         {viagens.length === 0 && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
             <Card className="pointer-events-auto p-4 text-center text-sm text-muted-foreground shadow-lg">

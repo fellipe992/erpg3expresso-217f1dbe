@@ -2,8 +2,18 @@
 import { useEffect, useRef, useState } from "react";
 import { loadGoogleMaps } from "@/lib/google-maps-loader";
 import { Loader2, MapPin } from "lucide-react";
+import { desenharZonas, type ZonaRisco } from "@/lib/zonas-risco";
 
-export function MapaRota({ polyline, pontos }: { polyline: string; pontos: string[] }) {
+export function MapaRota({
+  polyline,
+  pontos,
+  zonas = [],
+}: {
+  polyline: string;
+  pontos: string[];
+  zonas?: ZonaRisco[];
+}) {
+  const circlesRef = useRef<google.maps.Circle[]>([]);
   const divRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const lineRef = useRef<google.maps.Polyline | null>(null);
@@ -26,6 +36,8 @@ export function MapaRota({ polyline, pontos }: { polyline: string; pontos: strin
             mapTypeControl: false,
           });
         }
+        circlesRef.current.forEach((c) => c.setMap(null));
+        circlesRef.current = desenharZonas(mapRef.current, zonas, new google.maps.InfoWindow());
         const path = google.maps.geometry.encoding.decodePath(polyline);
         lineRef.current?.setMap(null);
         lineRef.current = new google.maps.Polyline({
@@ -68,7 +80,7 @@ export function MapaRota({ polyline, pontos }: { polyline: string; pontos: strin
     return () => {
       cancelado = true;
     };
-  }, [polyline, pontos]);
+  }, [polyline, pontos, zonas]);
 
   return (
     <div className="relative h-[320px] w-full overflow-hidden rounded-xl border border-border/60 md:h-[460px]">

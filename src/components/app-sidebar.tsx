@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   LayoutDashboard,
   Truck,
   Users,
@@ -76,6 +77,7 @@ const financeiro: NavItem[] = [
 
 const operacional: NavItem[] = [
   { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
+  { label: "Zonas de risco", to: "/app/zonas-risco", icon: AlertTriangle },
   { label: "Veículos", to: "/app/veiculos", icon: Truck },
   { label: "Frota por veículo", to: "/app/frota", icon: Gauge },
   { label: "Motoristas", to: "/app/motoristas", icon: Users },

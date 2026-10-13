@@ -45,6 +45,7 @@ import {
   num,
 } from "@/components/viagem/demonstrativo-viagem";
 import { cn } from "@/lib/utils";
+import { useZonasRisco, avaliarRota, rotuloRisco, TIPOS_CARGA, NIVEIS } from "@/lib/zonas-risco";
 import { aplicarOrdem, otimizarParadas } from "@/lib/otimizar-paradas";
 
 export const Route = createFileRoute("/_authenticated/app/simulador")({
@@ -76,6 +77,15 @@ type Resultado = {
   pedagioTotal: number;
   trechos: Trecho[];
   fatorEixos: number;
+  alternativas?: Alternativa[];
+};
+type Alternativa = {
+  km: number;
+  minutos: number;
+  polyline: string;
+  pedagioTotal: number;
+  descricao: string;
+  principal: boolean;
 };
 
 const VEICULOS = [
@@ -122,7 +132,30 @@ function PlanejadorPage() {
   const [pneusKm, setPneusKm] = useState("");
 
   const [otimizando, setOtimizando] = useState(false);
-  const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [resultadoApi, setResultadoApiRaw] = useState<Resultado | null>(null);
+  const [opcao, setOpcao] = useState(0);
+  const [tipoCarga, setTipoCarga] = useState("geral");
+  const { data: zonas = [] } = useZonasRisco();
+  const setResultado = (r: Resultado | null) => {
+    setResultadoApiRaw(r);
+    setOpcao(0);
+  };
+  const opcoes = useMemo(() => {
+    if (!resultadoApi) return [];
+    const alts: Alternativa[] = resultadoApi.alternativas?.length
+      ? resultadoApi.alternativas
+      : [{ km: resultadoApi.km, minutos: resultadoApi.minutos, polyline: resultadoApi.polyline, pedagioTotal: resultadoApi.pedagioTotal, descricao: "", principal: true }];
+    const ordenadas = [...alts].sort((a, b) => Number(b.principal) - Number(a.principal));
+    const avaliadas = ordenadas.map((a) => ({ ...a, risco: avaliarRota(a.polyline, zonas, tipoCarga) }));
+    const menorRisco = Math.min(...avaliadas.map((a) => a.risco.nota));
+    return avaliadas.map((a, i) => ({ ...a, maisSegura: a.risco.nota === menorRisco && avaliadas.length > 1 && avaliadas[0].risco.nota > menorRisco, idx: i }));
+  }, [resultadoApi, zonas, tipoCarga]);
+  const resultado = useMemo<Resultado | null>(() => {
+    if (!resultadoApi) return null;
+    const o = opcoes[opcao];
+    if (!o || o.principal) return resultadoApi;
+    return { ...resultadoApi, km: o.km, minutos: o.minutos, polyline: o.polyline, pedagioTotal: o.pedagioTotal || resultadoApi.pedagioTotal, trechos: [] };
+  }, [resultadoApi, opcoes, opcao]);
   const [converterOpen, setConverterOpen] = useState(false);
   const [clienteId, setClienteId] = useState("__none");
   const [motoristaId, setMotoristaId] = useState("__none");
@@ -511,6 +544,16 @@ function PlanejadorPage() {
                   </SelectContent>
                 </Select>
               </Campo>
+              <Campo label="Tipo de carga (risco)">
+                <Select value={tipoCarga} onValueChange={setTipoCarga}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TIPOS_CARGA).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Campo>
               <Campo label="Veículo do ERP (provisões)">
                 <Select value={veiculoId} onValueChange={setVeiculoId}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -572,7 +615,58 @@ function PlanejadorPage() {
         </div>
 
         <div className="min-w-0 space-y-4">
-          <MapaRota polyline={resultado?.polyline ?? ""} pontos={pontos} />
+          <MapaRota polyline={resultado?.polyline ?? ""} pontos={pontos} zonas={zonas} />
+
+          {opcoes.length > 0 && (
+            <Card className="space-y-2 p-4">
+              <p className="text-sm font-semibold">Rotas e risco</p>
+              {opcoes[0].risco.temVermelha && (TIPOS_CARGA[tipoCarga]?.peso ?? 1) >= 1.5 && (
+                <p className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">
+                  A rota mais eficiente passa por zona vermelha e a carga é visada. Prefira a rota mais segura ou programe escolta.
+                </p>
+              )}
+              <div className="grid gap-2 sm:grid-cols-2">
+                {opcoes.map((o, i) => {
+                  const r = rotuloRisco(o.risco.nota);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setOpcao(i)}
+                      className={cn(
+                        "rounded-lg border p-3 text-left text-sm transition",
+                        opcao === i ? "border-brand bg-brand/5" : "border-border/60 hover:bg-muted/50",
+                      )}
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-semibold">{o.principal ? "Mais eficiente" : `Alternativa ${i}`}</span>
+                        {o.maisSegura && <Badge variant="outline">Mais segura</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {o.km.toFixed(0)} km · {formatarDuracao(o.minutos)}
+                        {o.descricao ? ` · via ${o.descricao}` : ""}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs">
+                        <span className="size-2.5 rounded-full" style={{ background: r.cor }} />
+                        Risco {r.label.toLowerCase()} ({o.risco.nota} pts)
+                      </p>
+                      {o.risco.zonas.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Passa por: {o.risco.zonas.slice(0, 3).map((z) => `${z.nome} (${NIVEIS[z.nivel].label})`).join("; ")}
+                          {o.risco.zonas.length > 3 ? ` e +${o.risco.zonas.length - 3}` : ""}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {opcoes.length === 1 && (
+                <p className="text-xs text-muted-foreground">
+                  O Google só sugere rotas alternativas sem paradas intermediárias.
+                </p>
+              )}
+            </Card>
+          )}
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Indicador icon={RouteIcon} label="Distância" valor={km ? `${km.toFixed(0)} km` : "—"} />
