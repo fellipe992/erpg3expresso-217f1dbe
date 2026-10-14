@@ -11,6 +11,7 @@ import { useAlertaLocalizacaoMotorista } from "@/hooks/use-alerta-localizacao";
 import { useHeartbeatGpsMotorista } from "@/hooks/use-heartbeat-gps";
 import type { ReactNode } from "react";
 import { useAlertaZonaRisco, ReportarRiscoButton } from "@/components/zonas-risco-motorista";
+import { SolicitarMonitoramentoButton } from "@/components/sos-monitoramento";
 import { ConsentimentoLocalizacaoDialog } from "@/components/consentimento-localizacao-dialog";
 
 const tabs = [
@@ -34,6 +35,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/80 px-3 pt-safe backdrop-blur-md sm:px-4">
         <Logo size="sm" />
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          <SolicitarMonitoramentoButton />
           <ReportarRiscoButton />
           <ThemeToggle />
           <NotificationsBell />
