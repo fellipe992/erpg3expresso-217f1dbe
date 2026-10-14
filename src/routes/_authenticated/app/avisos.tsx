@@ -77,7 +77,8 @@ type Aviso = {
 
 function AvisosPage() {
   const { user, role } = useAuth();
-  const isStaff = role === "administrador" || role === "gestor" || role === "financeiro";
+  const isStaff =
+    role === "administrador" || role === "gestor" || role === "financeiro" || role === "monitor";
   const qc = useQueryClient();
   const [aberto, setAberto] = useState<string | null>(null);
 
