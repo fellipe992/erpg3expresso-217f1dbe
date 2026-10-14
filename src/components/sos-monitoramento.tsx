@@ -199,6 +199,35 @@ export function SolicitarMonitoramentoButton() {
     }
   };
 
+  /** Motorista cancela o pedido quando a situação está controlada. */
+  const cancelar = async () => {
+    if (!user || !pedidoAberto) return;
+    setCancelando(true);
+    try {
+      const { error } = await supabase
+        .from("avisos")
+        .update({ status: "resolvido" })
+        .eq("id", pedidoAberto.id);
+      if (error) throw error;
+      // Marca como lidas as notificações que a equipe recebeu deste pedido.
+      await supabase
+        .from("notificacoes")
+        .update({ lida_em: new Date().toISOString() })
+        .eq("origem_id", pedidoAberto.id)
+        .is("lida_em", null);
+      toast.success("Solicitação cancelada", {
+        description: "A operação foi avisada de que a situação está controlada.",
+      });
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["avisos"] });
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
+    } catch (e) {
+      toast.error("Não foi possível cancelar", { description: (e as Error).message });
+    } finally {
+      setCancelando(false);
+    }
+  };
+
   return (
     <>
       <Button
