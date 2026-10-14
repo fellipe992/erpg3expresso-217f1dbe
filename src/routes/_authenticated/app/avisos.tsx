@@ -109,9 +109,29 @@ function AvisosPage() {
   });
 
   const mudarStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("avisos").update({ status }).eq("id", id);
+    mutationFn: async ({ aviso, status }: { aviso: Aviso; status: string }) => {
+      const { error } = await supabase.from("avisos").update({ status }).eq("id", aviso.id);
       if (error) throw error;
+      // Pedido de monitoramento do motorista encerrado pela operação:
+      // avisa o motorista e marca como lidas as notificações da equipe.
+      if (status === "resolvido" && aviso.categoria === "risco_motorista") {
+        await supabase.from("notificacoes").insert({
+          user_id: aviso.created_by,
+          tipo: "risco_motorista",
+          titulo: "Monitoramento encerrado",
+          mensagem: "A operação encerrou o acompanhamento: situação controlada.",
+          categoria: "monitoramento",
+          prioridade: "normal",
+          link: "/app/avisos",
+          origem: "operacao",
+          origem_id: aviso.id,
+        });
+        await supabase
+          .from("notificacoes")
+          .update({ lida_em: new Date().toISOString() })
+          .eq("origem_id", aviso.id)
+          .is("lida_em", null);
+      }
     },
     onSuccess: () => {
       toast.success("Status atualizado");
@@ -154,7 +174,9 @@ function AvisosPage() {
               <CardContent className="space-y-2 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="text-[10px]">
-                    {CATEGORIAS.find((c) => c.value === a.categoria)?.label ?? a.categoria}
+                    {a.categoria === "risco_motorista"
+                      ? "Risco (motorista)"
+                      : (CATEGORIAS.find((c) => c.value === a.categoria)?.label ?? a.categoria)}
                   </Badge>
                   <Badge
                     className={
