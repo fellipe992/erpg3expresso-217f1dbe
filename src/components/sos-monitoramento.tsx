@@ -275,11 +275,28 @@ export function SolicitarMonitoramentoButton() {
               />
             </div>
           </div>
-          <DialogFooter>
+          {acionado && (
+            <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+              Monitoramento acionado. A operação está acompanhando seu trajeto. Se a situação
+              estiver controlada, cancele abaixo.
+            </p>
+          )}
+          <DialogFooter className="flex-col gap-2">
             <Button onClick={enviar} disabled={enviando} className="w-full">
               {enviando && <Loader2 className="mr-2 size-4 animate-spin" />}
-              Acionar monitoramento
+              {acionado ? "Enviar atualização" : "Acionar monitoramento"}
             </Button>
+            {acionado && (
+              <Button
+                variant="outline"
+                onClick={cancelar}
+                disabled={cancelando}
+                className="w-full"
+              >
+                {cancelando && <Loader2 className="mr-2 size-4 animate-spin" />}
+                Situação controlada — cancelar solicitação
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
