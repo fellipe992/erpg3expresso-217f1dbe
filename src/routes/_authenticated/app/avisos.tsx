@@ -212,7 +212,7 @@ function AvisosPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => mudarStatus.mutate({ id: a.id, status: "resolvido" })}
+                      onClick={() => mudarStatus.mutate({ aviso: a, status: "resolvido" })}
                     >
                       <CheckCircle2 className="mr-1 size-4" /> Marcar como resolvido
                     </Button>
@@ -221,7 +221,7 @@ function AvisosPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => mudarStatus.mutate({ id: a.id, status: "em_andamento" })}
+                      onClick={() => mudarStatus.mutate({ aviso: a, status: "em_andamento" })}
                     >
                       Em tratamento
                     </Button>
