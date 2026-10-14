@@ -64,11 +64,32 @@ export function SolicitarMonitoramentoButton() {
   const viagem = viagens[0] ?? null;
   const semViagem = isMotorista && viagens.length === 0;
 
+  // Pedido de monitoramento ainda aberto deste motorista (para permitir cancelar).
+  const { data: pedidoAberto = null } = useQuery<{ id: string } | null>({
+    queryKey: ["sos-monitoramento-aberto", user?.id],
+    enabled: !!user?.id && isMotorista,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avisos")
+        .select("id")
+        .eq("created_by", user!.id)
+        .eq("categoria", "risco_motorista")
+        .neq("status", "resolvido")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [open, setOpen] = useState(false);
   const [motivo, setMotivo] = useState(MOTIVOS[0]);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [acionado, setAcionado] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const acionado = !!pedidoAberto;
 
   // Ao encerrar a viagem, resolve os pedidos de monitoramento ainda abertos.
   const limpandoRef = useRef(false);
@@ -82,9 +103,9 @@ export function SolicitarMonitoramentoButton() {
         .eq("created_by", user.id)
         .eq("categoria", "risco_motorista")
         .neq("status", "resolvido");
-      setAcionado(false);
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
     })();
-  }, [semViagem, user]);
+  }, [semViagem, user, qc]);
 
   useEffect(() => {
     if (viagem) limpandoRef.current = false;
@@ -167,14 +188,43 @@ export function SolicitarMonitoramentoButton() {
         description: "A operação foi avisada e vai acompanhar seu trajeto de perto.",
         duration: 10000,
       });
-      setAcionado(true);
       setOpen(false);
       setComentario("");
       qc.invalidateQueries({ queryKey: ["avisos"] });
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
     } catch (e) {
       toast.error("Não foi possível acionar", { description: (e as Error).message });
     } finally {
       setEnviando(false);
+    }
+  };
+
+  /** Motorista cancela o pedido quando a situação está controlada. */
+  const cancelar = async () => {
+    if (!user || !pedidoAberto) return;
+    setCancelando(true);
+    try {
+      const { error } = await supabase
+        .from("avisos")
+        .update({ status: "resolvido" })
+        .eq("id", pedidoAberto.id);
+      if (error) throw error;
+      // Marca como lidas as notificações que a equipe recebeu deste pedido.
+      await supabase
+        .from("notificacoes")
+        .update({ lida_em: new Date().toISOString() })
+        .eq("origem_id", pedidoAberto.id)
+        .is("lida_em", null);
+      toast.success("Solicitação cancelada", {
+        description: "A operação foi avisada de que a situação está controlada.",
+      });
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["avisos"] });
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
+    } catch (e) {
+      toast.error("Não foi possível cancelar", { description: (e as Error).message });
+    } finally {
+      setCancelando(false);
     }
   };
 
@@ -225,11 +275,28 @@ export function SolicitarMonitoramentoButton() {
               />
             </div>
           </div>
-          <DialogFooter>
+          {acionado && (
+            <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+              Monitoramento acionado. A operação está acompanhando seu trajeto. Se a situação
+              estiver controlada, cancele abaixo.
+            </p>
+          )}
+          <DialogFooter className="flex-col gap-2">
             <Button onClick={enviar} disabled={enviando} className="w-full">
               {enviando && <Loader2 className="mr-2 size-4 animate-spin" />}
-              Acionar monitoramento
+              {acionado ? "Enviar atualização" : "Acionar monitoramento"}
             </Button>
+            {acionado && (
+              <Button
+                variant="outline"
+                onClick={cancelar}
+                disabled={cancelando}
+                className="w-full"
+              >
+                {cancelando && <Loader2 className="mr-2 size-4 animate-spin" />}
+                Situação controlada — cancelar solicitação
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
