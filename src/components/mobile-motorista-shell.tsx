@@ -11,6 +11,7 @@ import { useAlertaLocalizacaoMotorista } from "@/hooks/use-alerta-localizacao";
 import { useHeartbeatGpsMotorista } from "@/hooks/use-heartbeat-gps";
 import type { ReactNode } from "react";
 import { useAlertaZonaRisco, ReportarRiscoButton } from "@/components/zonas-risco-motorista";
+import { SolicitarMonitoramentoButton } from "@/components/sos-monitoramento";
 import { ConsentimentoLocalizacaoDialog } from "@/components/consentimento-localizacao-dialog";
 
 const tabs = [
