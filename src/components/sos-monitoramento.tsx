@@ -64,6 +64,26 @@ export function SolicitarMonitoramentoButton() {
   const viagem = viagens[0] ?? null;
   const semViagem = isMotorista && viagens.length === 0;
 
+  // Pedido de monitoramento ainda aberto deste motorista (para permitir cancelar).
+  const { data: pedidoAberto = null } = useQuery<{ id: string } | null>({
+    queryKey: ["sos-monitoramento-aberto", user?.id],
+    enabled: !!user?.id && isMotorista,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avisos")
+        .select("id")
+        .eq("created_by", user!.id)
+        .eq("categoria", "risco_motorista")
+        .neq("status", "resolvido")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [open, setOpen] = useState(false);
   const [motivo, setMotivo] = useState(MOTIVOS[0]);
   const [comentario, setComentario] = useState("");
