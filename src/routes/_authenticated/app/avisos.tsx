@@ -214,7 +214,10 @@ function AvisosPage() {
                       variant="ghost"
                       onClick={() => mudarStatus.mutate({ aviso: a, status: "resolvido" })}
                     >
-                      <CheckCircle2 className="mr-1 size-4" /> Marcar como resolvido
+                      <CheckCircle2 className="mr-1 size-4" />
+                      {a.categoria === "risco_motorista"
+                        ? "Situação controlada — encerrar monitoramento"
+                        : "Marcar como resolvido"}
                     </Button>
                   )}
                   {isStaff && a.status === "aberto" && (
