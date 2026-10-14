@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, X, ExternalLink } from "lucide-react";
+import { Check, X, ExternalLink, Plus } from "lucide-react";
+import { buscarSugestoesEndereco, detalhesEndereco, novoSessionToken, type SugestaoLocal } from "@/lib/places";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -156,10 +157,124 @@ function ZonaLinha({ z }: { z: ZonaRisco }) {
     <div className="flex flex-wrap items-center gap-2 py-2 text-sm">
       <span className="size-3 rounded-full" style={{ background: NIVEIS[z.nivel].cor }} />
       <span className="min-w-0 flex-1 font-medium">{z.nome}</span>
-      <span className="text-xs text-muted-foreground">{z.uf} · {TIPOS_RISCO[z.tipo] ?? z.tipo}{z.origem === "motorista" ? " · reportada" : ""}</span>
+      <span className="text-xs text-muted-foreground">{[z.bairro, z.cidade, z.uf].filter(Boolean).join(" / ")} · {TIPOS_RISCO[z.tipo] ?? z.tipo}{z.origem === "motorista" ? " · reportada" : z.origem === "manual" ? " · manual" : ""}</span>
       <NivelPicker value={z.nivel} onChange={(n) => salvar.mutate({ nivel: n })} />
       <Button size="sm" variant="ghost" onClick={() => salvar.mutate({ ativo: false })}>Desativar</Button>
     </div>
+  );
+}
+
+function NovaZona() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [texto, setTexto] = useState("");
+  const [sugs, setSugs] = useState<SugestaoLocal[]>([]);
+  const [local, setLocal] = useState<null | { placeId: string; lat: number; lng: number; bairro: string | null; cidade: string | null; uf: string | null }>(null);
+  const [nome, setNome] = useState("");
+  const [raio, setRaio] = useState("1500");
+  const [nivel, setNivel] = useState(3);
+  const [tipo, setTipo] = useState("roubo");
+  const [horario, setHorario] = useState("");
+  const [recomendacao, setRecomendacao] = useState("");
+  const token = useRef(novoSessionToken());
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    if (local || texto.trim().length < 3) return setSugs([]);
+    timer.current = setTimeout(() => {
+      buscarSugestoesEndereco(texto, { sessionToken: token.current }).then(setSugs).catch(() => setSugs([]));
+    }, 350);
+  }, [texto, local]);
+
+  const escolher = async (s: SugestaoLocal) => {
+    try {
+      const d = await detalhesEndereco(s.placeId, token.current);
+      token.current = novoSessionToken();
+      if (d.lat == null || d.lng == null) throw new Error("O Google não retornou a posição desse local.");
+      setSugs([]);
+      setTexto(d.endereco);
+      setLocal({ placeId: s.placeId, lat: d.lat, lng: d.lng, bairro: d.bairro?.toUpperCase() ?? null, cidade: d.cidade?.toUpperCase() ?? null, uf: d.uf?.toUpperCase() ?? null });
+      const padrao = [d.cidade, d.bairro ?? d.nome].filter(Boolean).join(" - ").toUpperCase();
+      setNome(padrao);
+      if (d.raio) setRaio(String(Math.max(300, Math.min(20000, d.raio))));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao buscar o local");
+    }
+  };
+
+  const salvar = useMutation({
+    mutationFn: async () => {
+      if (!local) throw new Error("Escolha o bairro na lista do Google.");
+      const { error } = await supabase.from("zonas_risco").insert({
+        nome: (nome.trim() || "ZONA MANUAL").toUpperCase(),
+        tipo,
+        nivel,
+        lat: local.lat,
+        lng: local.lng,
+        raio_m: Math.max(300, Math.min(50000, Number(raio) || 1500)),
+        uf: local.uf,
+        cidade: local.cidade,
+        bairro: local.bairro,
+        place_id: local.placeId,
+        horario_critico: horario.trim().toUpperCase() || null,
+        recomendacao: recomendacao.trim().toUpperCase() || null,
+        origem: "manual",
+        validado_por: user?.id,
+        validado_em: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Zona cadastrada no mapa");
+      qc.invalidateQueries({ queryKey: ["zonas-risco"] });
+      setTexto(""); setLocal(null); setNome(""); setHorario(""); setRecomendacao("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card className="space-y-3 p-4 text-sm">
+      <h2 className="font-semibold">Cadastrar zona manualmente</h2>
+      <div className="relative">
+        <Input
+          value={texto}
+          onChange={(e) => { setTexto(e.target.value); setLocal(null); }}
+          placeholder="Digite o bairro e a cidade (ex.: Pari, São Paulo)"
+        />
+        {sugs.length > 0 && (
+          <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border bg-popover shadow">
+            {sugs.map((s) => (
+              <button key={s.placeId} type="button" onClick={() => escolher(s)} className="block w-full px-3 py-2 text-left hover:bg-muted">
+                {s.texto}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {local && (
+        <p className="text-xs text-muted-foreground">
+          Google: {local.bairro ?? "—"} · {local.cidade ?? "—"} / {local.uf ?? "—"}
+        </p>
+      )}
+      <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
+        <Input value={nome} onChange={(e) => setNome(e.target.value.toUpperCase())} placeholder="NOME DA ZONA" />
+        <Input value={raio} onChange={(e) => setRaio(e.target.value.replace(/\D/g, ""))} placeholder="Raio (m)" />
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {Object.entries(TIPOS_RISCO).map(([k, v]) => (
+          <button key={k} type="button" onClick={() => setTipo(k)} className={`rounded-md border px-2 py-1 text-xs ${tipo === k ? "border-foreground font-semibold" : "border-border/60"}`}>{v}</button>
+        ))}
+      </div>
+      <NivelPicker value={nivel} onChange={setNivel} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input value={horario} onChange={(e) => setHorario(e.target.value.toUpperCase())} placeholder="HORÁRIO CRÍTICO (EX.: 19H-05H)" />
+        <Input value={recomendacao} onChange={(e) => setRecomendacao(e.target.value.toUpperCase())} placeholder="RECOMENDAÇÃO AO MOTORISTA" />
+      </div>
+      <Button size="sm" onClick={() => salvar.mutate()} disabled={!local || salvar.isPending}>
+        <Plus className="mr-1 size-4" /> Adicionar ao mapa
+      </Button>
+    </Card>
   );
 }
 
@@ -196,7 +311,7 @@ function ZonasRiscoPage() {
   if (!allowed) return <p className="p-6 text-sm text-muted-foreground">Acesso restrito à operação.</p>;
 
   const filtradas = zonas
-    .filter((z) => `${z.nome} ${z.uf}`.toLowerCase().includes(busca.toLowerCase()))
+    .filter((z) => `${z.nome} ${z.uf} ${z.cidade ?? ""} ${z.bairro ?? ""}`.toLowerCase().includes(busca.toLowerCase()))
     .sort((a, b) => b.nivel - a.nivel);
 
   return (
@@ -207,6 +322,8 @@ function ZonasRiscoPage() {
           Valide os reportes dos motoristas e ajuste o nível das zonas. Aprovadas entram no mapa na hora.
         </p>
       </div>
+
+      <NovaZona />
 
       <section className="space-y-2">
         <h2 className="font-semibold">Reportes pendentes ({reportes.length})</h2>
@@ -221,7 +338,7 @@ function ZonasRiscoPage() {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="font-semibold">Zonas ativas ({zonas.length})</h2>
-          <Input className="ml-auto max-w-xs" placeholder="Buscar zona ou UF" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <Input className="ml-auto max-w-xs" placeholder="Buscar zona, bairro, cidade ou UF" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <Card className="divide-y divide-border/60 px-3">
           {filtradas.map((z) => (
