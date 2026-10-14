@@ -88,7 +88,8 @@ export function SolicitarMonitoramentoButton() {
   const [motivo, setMotivo] = useState(MOTIVOS[0]);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [acionado, setAcionado] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
+  const acionado = !!pedidoAberto;
 
   // Ao encerrar a viagem, resolve os pedidos de monitoramento ainda abertos.
   const limpandoRef = useRef(false);
@@ -102,9 +103,9 @@ export function SolicitarMonitoramentoButton() {
         .eq("created_by", user.id)
         .eq("categoria", "risco_motorista")
         .neq("status", "resolvido");
-      setAcionado(false);
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
     })();
-  }, [semViagem, user]);
+  }, [semViagem, user, qc]);
 
   useEffect(() => {
     if (viagem) limpandoRef.current = false;
