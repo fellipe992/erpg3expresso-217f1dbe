@@ -188,10 +188,10 @@ export function SolicitarMonitoramentoButton() {
         description: "A operação foi avisada e vai acompanhar seu trajeto de perto.",
         duration: 10000,
       });
-      setAcionado(true);
       setOpen(false);
       setComentario("");
       qc.invalidateQueries({ queryKey: ["avisos"] });
+      qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
     } catch (e) {
       toast.error("Não foi possível acionar", { description: (e as Error).message });
     } finally {
