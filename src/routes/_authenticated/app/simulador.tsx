@@ -45,7 +45,7 @@ import {
   num,
 } from "@/components/viagem/demonstrativo-viagem";
 import { cn } from "@/lib/utils";
-import { useZonasRisco, avaliarRota, rotuloRisco, TIPOS_CARGA, NIVEIS } from "@/lib/zonas-risco";
+import { useZonasRisco, avaliarRota, rotuloRisco, observacaoRisco, TIPOS_CARGA, NIVEIS } from "@/lib/zonas-risco";
 import { aplicarOrdem, otimizarParadas } from "@/lib/otimizar-paradas";
 
 export const Route = createFileRoute("/_authenticated/app/simulador")({
@@ -150,6 +150,11 @@ function PlanejadorPage() {
     const menorRisco = Math.min(...avaliadas.map((a) => a.risco.nota));
     return avaliadas.map((a, i) => ({ ...a, maisSegura: a.risco.nota === menorRisco && avaliadas.length > 1 && avaliadas[0].risco.nota > menorRisco, idx: i }));
   }, [resultadoApi, zonas, tipoCarga]);
+  // Sugere automaticamente a rota mais segura ao escolher a carga / recalcular.
+  useEffect(() => {
+    const i = opcoes.findIndex((o) => o.maisSegura);
+    setOpcao(i >= 0 ? i : 0);
+  }, [opcoes]);
   const resultado = useMemo<Resultado | null>(() => {
     if (!resultadoApi) return null;
     const o = opcoes[opcao];
@@ -372,6 +377,13 @@ function PlanejadorPage() {
             `Distância: ${resultado.km.toFixed(0)} km · Tempo: ${formatarDuracao(resultado.minutos)}`,
             paradas.length ? `Paradas: ${paradas.join(" | ")}` : null,
             `Combustível estimado: ${litros.toFixed(0)} L · Pedágios: ${eixos} eixos`,
+            opcoes[opcao]
+              ? observacaoRisco(opcoes[opcao].risco, {
+                  descricao: opcoes[opcao].descricao,
+                  tipoCarga,
+                  sugerida: !!opcoes[opcao].maisSegura,
+                })
+              : null,
           ]
             .filter(Boolean)
             .join("\n"),
@@ -640,7 +652,7 @@ function PlanejadorPage() {
                     >
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold">{o.principal ? "Mais eficiente" : `Alternativa ${i}`}</span>
-                        {o.maisSegura && <Badge variant="outline">Mais segura</Badge>}
+                        {o.maisSegura && <Badge variant="outline">Mais segura · sugerida</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {o.km.toFixed(0)} km · {formatarDuracao(o.minutos)}
@@ -655,6 +667,17 @@ function PlanejadorPage() {
                           Passa por: {o.risco.zonas.slice(0, 3).map((z) => `${z.nome} (${NIVEIS[z.nivel].label})`).join("; ")}
                           {o.risco.zonas.length > 3 ? ` e +${o.risco.zonas.length - 3}` : ""}
                         </p>
+                      )}
+                      {o.risco.trechos.length > 0 && (
+                        <ul className="mt-2 space-y-0.5 text-[11px]">
+                          {o.risco.trechos.slice(0, 6).map((t, k) => (
+                            <li key={k} className="flex items-center gap-1.5">
+                              <span className="size-2 shrink-0 rounded-full" style={{ background: NIVEIS[t.zona.nivel].cor }} />
+                              <span className="min-w-0 truncate">km {t.kmInicio.toFixed(0)}–{(t.kmInicio + t.km).toFixed(0)} · {t.zona.nome}</span>
+                            </li>
+                          ))}
+                          {o.risco.trechos.length > 6 && <li className="text-muted-foreground">+{o.risco.trechos.length - 6} trechos</li>}
+                        </ul>
                       )}
                     </button>
                   );

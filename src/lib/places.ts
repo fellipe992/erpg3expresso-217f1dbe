@@ -35,7 +35,7 @@ export async function buscarSugestoesEndereco(
 }
 
 export async function detalhesEndereco(placeId: string, sessionToken?: string) {
-  return chamar<{ endereco: string; lat: number | null; lng: number | null }>({
+  return chamar<{ endereco: string; lat: number | null; lng: number | null; nome?: string | null; bairro?: string | null; cidade?: string | null; uf?: string | null; raio?: number | null }>({
     acao: "detalhes",
     placeId,
     sessionToken,

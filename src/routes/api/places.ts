@@ -118,7 +118,7 @@ export const Route = createFileRoute("/api/places")({
           {
             headers: {
               ...baseHeaders,
-              "X-Goog-FieldMask": "id,displayName,formattedAddress,location",
+              "X-Goog-FieldMask": "id,displayName,formattedAddress,location,addressComponents,viewport",
             },
           },
         );
@@ -127,12 +127,30 @@ export const Route = createFileRoute("/api/places")({
           formattedAddress?: string;
           displayName?: { text?: string };
           location?: { latitude?: number; longitude?: number };
+          addressComponents?: Array<{ longText?: string; shortText?: string; types?: string[] }>;
+          viewport?: { low?: { latitude?: number; longitude?: number }; high?: { latitude?: number; longitude?: number } };
         };
+        const comp = (t: string, curto = false) => {
+          const c = json.addressComponents?.find((a) => a.types?.includes(t));
+          return (curto ? c?.shortText : c?.longText) ?? null;
+        };
+        const lo = json.viewport?.low, hi = json.viewport?.high;
+        let raio: number | null = null;
+        if (lo?.latitude != null && hi?.latitude != null && lo.longitude != null && hi.longitude != null) {
+          const dLat = (hi.latitude - lo.latitude) * 111000;
+          const dLng = (hi.longitude - lo.longitude) * 111000 * Math.cos((lo.latitude * Math.PI) / 180);
+          raio = Math.round(Math.sqrt(dLat * dLat + dLng * dLng) / 2);
+        }
         return Response.json(
           {
             endereco: json.formattedAddress ?? json.displayName?.text ?? "",
             lat: json.location?.latitude ?? null,
             lng: json.location?.longitude ?? null,
+            nome: json.displayName?.text ?? null,
+            bairro: comp("sublocality_level_1") ?? comp("sublocality") ?? comp("neighborhood"),
+            cidade: comp("administrative_area_level_2") ?? comp("locality"),
+            uf: comp("administrative_area_level_1", true),
+            raio,
           },
           { headers: { "Cache-Control": "no-store" } },
         );
