@@ -13,6 +13,8 @@ export type ZonaRisco = {
   horario_critico: string | null;
   recomendacao: string | null;
   origem: string;
+  cidade?: string | null;
+  bairro?: string | null;
 };
 
 export const NIVEIS: Record<number, { label: string; cor: string }> = {
@@ -46,7 +48,7 @@ export function useZonasRisco() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("zonas_risco")
-        .select("id,nome,tipo,nivel,lat,lng,raio_m,uf,horario_critico,recomendacao,origem")
+        .select("id,nome,tipo,nivel,lat,lng,raio_m,uf,cidade,bairro,horario_critico,recomendacao,origem")
         .eq("ativo", true);
       if (error) throw error;
       return (data ?? []) as ZonaRisco[];
@@ -98,13 +100,22 @@ export function avaliarRota(polyline: string, zonas: ZonaRisco[], tipoCarga = "g
   const pts = decodePolyline(polyline);
   const kmPorNivel = [0, 0, 0, 0, 0];
   const atravessadas = new Map<string, ZonaRisco>();
+  const trechos: { zona: ZonaRisco; kmInicio: number; km: number }[] = [];
+  let acumulado = 0;
+  let atual: (typeof trechos)[number] | null = null;
   for (let i = 1; i < pts.length; i++) {
     const seg = distM(pts[i - 1], pts[i]) / 1000;
     const z = zonaNoPonto(zonas, pts[i]);
     if (z) {
       kmPorNivel[z.nivel] += seg;
       atravessadas.set(z.id, z);
-    }
+      if (atual && atual.zona.id === z.id) atual.km += seg;
+      else {
+        atual = { zona: z, kmInicio: acumulado, km: seg };
+        trechos.push(atual);
+      }
+    } else atual = null;
+    acumulado += seg;
   }
   const peso = TIPOS_CARGA[tipoCarga]?.peso ?? 1;
   const pontos = kmPorNivel.reduce((s, km, n) => s + km * PESO_NIVEL[n], 0) * peso;
@@ -113,6 +124,7 @@ export function avaliarRota(polyline: string, zonas: ZonaRisco[], tipoCarga = "g
     kmPorNivel,
     zonas: [...atravessadas.values()].sort((a, b) => b.nivel - a.nivel),
     temVermelha: kmPorNivel[4] > 0,
+    trechos: trechos.filter((t) => t.zona.nivel >= 2),
   };
 }
 
@@ -161,4 +173,22 @@ export function desenharZonas(
     }
     return c;
   });
+}
+
+/** Texto de orientação de rota para o motorista (vai na observação da viagem). */
+export function observacaoRisco(
+  r: ReturnType<typeof avaliarRota>,
+  opts: { descricao?: string; tipoCarga: string; sugerida: boolean },
+) {
+  const linhas = [
+    `ROTA ${opts.sugerida ? "MAIS SEGURA SUGERIDA" : "SELECIONADA"}${opts.descricao ? ` — VIA ${opts.descricao.toUpperCase()}` : ""}. SIGA ESTE TRAJETO.`,
+    `Carga: ${TIPOS_CARGA[opts.tipoCarga]?.label ?? opts.tipoCarga} · Risco ${rotuloRisco(r.nota).label.toLowerCase()} (${r.nota} pts)`,
+  ];
+  const criticos = r.trechos.filter((t) => t.zona.nivel >= 3).slice(0, 8);
+  if (criticos.length) {
+    linhas.push("Trechos de atenção (não parar):");
+    for (const t of criticos)
+      linhas.push(`• km ${t.kmInicio.toFixed(0)} — ${t.zona.nome} (${NIVEIS[t.zona.nivel].label}${t.zona.horario_critico ? `, ${t.zona.horario_critico}` : ""})`);
+  }
+  return linhas.join("\n");
 }
