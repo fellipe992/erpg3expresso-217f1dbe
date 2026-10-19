@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RotaViagemButton } from "@/components/viagem/rota-viagem-dialog";
 import { NavegacaoButton } from "@/components/viagem/navegacao-dialog";
 import { ParadasRotaCard } from "@/components/viagem/paradas-rota";
+import { ConfirmacaoEntregasCard } from "@/components/viagem/confirmacao-entregas";
 import { ApuracaoViagemSection } from "@/components/viagem/apuracao-viagem";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -448,6 +449,8 @@ function ViagemDetalheePage() {
           );
         })()}
       </Card>
+
+      {viagem.status === "em_andamento" && <ConfirmacaoEntregasCard viagemId={id} />}
 
       {(viagem.status === "planejada" || viagem.status === "em_andamento") && (
         <ParadasRotaCard viagemId={id} />
