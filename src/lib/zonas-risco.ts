@@ -13,6 +13,7 @@ export type ZonaRisco = {
   horario_critico: string | null;
   recomendacao: string | null;
   origem: string;
+  periodo?: string | null;
   cidade?: string | null;
   bairro?: string | null;
 };
@@ -41,17 +42,38 @@ export const TIPOS_CARGA: Record<string, { label: string; peso: number }> = {
   combustivel: { label: "Combustível", peso: 1.5 },
 };
 
+/** Origem de cada zona, mostrada no dossiê e no filtro do Monitoramento. */
+export const FONTES: Record<string, string> = {
+  base_g3: "G3",
+  base: "G3",
+  manual: "G3",
+  motorista: "Motoristas",
+  prf: "Oficial · PRF",
+  ssp: "Oficial · SSP-SP",
+};
+
+export const grupoFonte = (origem: string) =>
+  origem === "prf" || origem === "ssp" ? "oficial" : origem === "motorista" ? "motorista" : "g3";
+
 export function useZonasRisco() {
   return useQuery({
     queryKey: ["zonas-risco"],
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("zonas_risco")
-        .select("id,nome,tipo,nivel,lat,lng,raio_m,uf,cidade,bairro,horario_critico,recomendacao,origem")
-        .eq("ativo", true);
-      if (error) throw error;
-      return (data ?? []) as ZonaRisco[];
+      // Com os dados oficiais são milhares de zonas: lê em páginas de 1000.
+      const todas: ZonaRisco[] = [];
+      for (let de = 0; ; de += 1000) {
+        const { data, error } = await supabase
+          .from("zonas_risco")
+          .select("id,nome,tipo,nivel,lat,lng,raio_m,uf,cidade,bairro,horario_critico,recomendacao,origem,periodo")
+          .eq("ativo", true)
+          .order("id")
+          .range(de, de + 999);
+        if (error) throw error;
+        todas.push(...((data ?? []) as ZonaRisco[]));
+        if (!data || data.length < 1000) break;
+      }
+      return todas;
     },
   });
 }
@@ -64,10 +86,15 @@ export function distM(a: { lat: number; lng: number }, b: { lat: number; lng: nu
   return 2 * 6371000 * Math.asin(Math.sqrt(h));
 }
 
-/** Zona mais grave que contém o ponto (ou está a até `folgaM` metros da borda). */
+/**
+ * Zona mais grave que contém o ponto (ou está a até `folgaM` metros da borda).
+ * As regiões da SSP-SP cobrem dezenas de km: servem de contexto no mapa e não
+ * disparam alertas nem pontuam trechos de rota.
+ */
 export function zonaNoPonto(zonas: ZonaRisco[], p: { lat: number; lng: number }, folgaM = 0) {
   let pior: ZonaRisco | null = null;
   for (const z of zonas) {
+    if (z.origem === "ssp") continue;
     if (distM(p, z) <= z.raio_m + folgaM && (!pior || z.nivel > pior.nivel)) pior = z;
   }
   return pior;
