@@ -107,8 +107,14 @@ export function ReportarRiscoButton() {
 
   return (
     <>
-      <Button variant="ghost" size="icon" aria-label="Reportar zona de risco" onClick={() => setOpen(true)}>
-        <ShieldAlert className="size-5 text-destructive" />
+      <Button
+        variant="outline"
+        aria-label="Reportar zona de risco"
+        onClick={() => setOpen(true)}
+        className="h-14 flex-1 gap-2 border-2 border-destructive/60 bg-background text-sm font-bold text-destructive shadow-lg"
+      >
+        <ShieldAlert className="size-6" />
+        ZONA DE RISCO
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">

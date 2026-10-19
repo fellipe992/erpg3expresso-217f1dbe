@@ -425,6 +425,47 @@ function MonitoramentoPage() {
     }
     root.appendChild(body);
 
+    // Entregas confirmadas pelo motorista: finalizadas e próximo cliente.
+    const entregas = document.createElement("div");
+    entregas.style.cssText = "margin-top:8px; padding-top:6px; border-top:1px solid #eee; font-size:12px; color:#141414;";
+    entregas.textContent = "Carregando entregas…";
+    root.appendChild(entregas);
+    void supabase
+      .from("viagem_paradas")
+      .select("ordem, cliente, endereco, chegou_doca_em, entregue_em, a_caminho_em")
+      .eq("viagem_id", v.id)
+      .order("ordem")
+      .then(({ data }) => {
+        entregas.textContent = "";
+        const ps = data ?? [];
+        if (!ps.length) {
+          entregas.textContent = "Sem entregas cadastradas.";
+          return;
+        }
+        const nome = (p: (typeof ps)[number]) => p.cliente || p.endereco;
+        const hora = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const feitas = ps.filter((p) => p.entregue_em);
+        const atual = ps.find((p) => !p.entregue_em && (p.a_caminho_em || p.chegou_doca_em));
+        const add = (txt: string, css = "") => {
+          const d = document.createElement("div");
+          d.style.cssText = css;
+          d.textContent = txt;
+          entregas.appendChild(d);
+        };
+        add(`Entregas: ${feitas.length}/${ps.length} finalizadas`, "font-weight:700;");
+        for (const p of feitas) add(`✓ ${nome(p)} · ${hora(p.entregue_em!)}`, "color:#16A34A;");
+        if (atual) {
+          add(
+            atual.chegou_doca_em
+              ? `● No cliente: ${nome(atual)} (descarregando desde ${hora(atual.chegou_doca_em)})`
+              : `➜ Indo para: ${nome(atual)} (confirmado ${hora(atual.a_caminho_em!)})`,
+            "color:#F15A24; font-weight:700; margin-top:2px;",
+          );
+        } else if (feitas.length < ps.length) {
+          add("Próximo destino ainda não confirmado pelo motorista.", "color:#7C7C7C;");
+        }
+      });
+
     if (!isMonitor) {
       const link = document.createElement("a");
       link.href = `/app/viagens/${encodeURIComponent(v.id)}`;

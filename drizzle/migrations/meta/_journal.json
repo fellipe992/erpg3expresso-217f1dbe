@@ -169,6 +169,13 @@
       "when": 1792425954059,
       "tag": "0023_sos_monitoramento_encerrar",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792426333872,
+      "tag": "0024_paradas_confirmacao_entrega",
+      "breakpoints": true
     }
   ]
 }
