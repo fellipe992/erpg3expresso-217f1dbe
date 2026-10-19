@@ -110,11 +110,12 @@ function AvisosPage() {
 
   const mudarStatus = useMutation({
     mutationFn: async ({ aviso, status }: { aviso: Aviso; status: string }) => {
-      const { error } = await supabase.from("avisos").update({ status }).eq("id", aviso.id);
-      if (error) throw error;
-      // Pedido de monitoramento do motorista encerrado pela operação:
-      // avisa o motorista e marca como lidas as notificações da equipe.
+      // Pedido de monitoramento do motorista encerrado pela operação (inclui monitor):
+      // encerra via função protegida, marca lidas as notificações e avisa o motorista.
       if (status === "resolvido" && aviso.categoria === "risco_motorista") {
+        const { data: n, error } = await supabase.rpc("sos_encerrar", { _aviso_id: aviso.id });
+        if (error) throw error;
+        if (!n) throw new Error("Solicitação já encerrada ou sem permissão.");
         await supabase.from("notificacoes").insert({
           user_id: aviso.created_by,
           tipo: "risco_motorista",
@@ -126,12 +127,11 @@ function AvisosPage() {
           origem: "operacao",
           origem_id: aviso.id,
         });
-        await supabase
-          .from("notificacoes")
-          .update({ lida_em: new Date().toISOString() })
-          .eq("origem_id", aviso.id)
-          .is("lida_em", null);
+        return;
       }
+      const { data, error } = await supabase.from("avisos").update({ status }).eq("id", aviso.id).select("id");
+      if (error) throw error;
+      if (!data?.length) throw new Error("Sem permissão para alterar este aviso.");
     },
     onSuccess: () => {
       toast.success("Status atualizado");
