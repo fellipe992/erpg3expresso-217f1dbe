@@ -2,12 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function exigirGestor(supabase: any, userId: string) {
-  const [a, g] = await Promise.all([
-    supabase.rpc("has_role", { _user_id: userId, _role: "administrador" }),
-    supabase.rpc("has_role", { _user_id: userId, _role: "gestor" }),
-  ]);
-  if (!a.data && !g.data) throw new Error("Apenas administradores ou gestores.");
+  const { data } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["administrador", "gestor"]);
+  if (!data?.length) throw new Error("Apenas administradores ou gestores.");
 }
 
 export const testarTelegram = createServerFn({ method: "POST" })
