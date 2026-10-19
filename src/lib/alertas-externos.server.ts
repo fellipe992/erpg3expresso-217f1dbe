@@ -83,6 +83,66 @@ const EMOJI: Record<string, string> = {
   sistema: "ℹ️",
 };
 
+/** Só estes eventos vão para o Telegram; o resto (pedido de posição, financeiro, avisos
+ *  sistêmicos) fica apenas na central/push. Monitoramento (SOS, zonas de risco) sempre vai. */
+export const TIPOS_TELEGRAM = new Set([
+  "viagem_iniciada_gestao",
+  "viagem_concluida_gestao",
+  "parada_a_caminho",
+  "parada_chegada",
+  "parada_descarregada",
+  "ocorrencia_motorista",
+  "checklist_saida",
+  "checklist_chegada",
+  "aviso_motorista",
+]);
+
+export function vaiParaTelegram(n: { categoria: string; tipo: string; titulo: string; mensagem: string | null }) {
+  if (/pedido de posi/i.test(`${n.titulo} ${n.mensagem ?? ""}`)) return false;
+  return n.categoria === "monitoramento" || TIPOS_TELEGRAM.has(n.tipo);
+}
+
+async function urlFoto(admin: SupabaseClient, path: string) {
+  if (/^https?:\/\//.test(path)) return path;
+  const { data } = await admin.storage.from("viagem-fotos").createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}
+
+/** Fotos que acompanham o alerta: checklist, ocorrência ou entregas da viagem concluída. */
+async function fotosDoAlerta(admin: SupabaseClient, n: Notif): Promise<string[]> {
+  if (!n.origem_id) return [];
+  const paths: string[] = [];
+  if (n.tipo === "viagem_concluida_gestao") {
+    const { data } = await admin.from("viagem_anexos").select("storage_path, mime_type")
+      .eq("viagem_id", n.origem_id).in("categoria", ["entrega", "canhoto"]).order("created_at").limit(10);
+    paths.push(...(data ?? []).filter((a) => !a.mime_type || a.mime_type.startsWith("image")).map((a) => a.storage_path));
+  } else if (n.tipo === "ocorrencia_motorista") {
+    const { data } = await admin.from("viagem_anexos").select("storage_path, mime_type").eq("ocorrencia_id", n.origem_id).limit(10);
+    paths.push(...(data ?? []).filter((a) => !a.mime_type || a.mime_type.startsWith("image")).map((a) => a.storage_path));
+  } else if (n.tipo.startsWith("checklist_")) {
+    const { data: c } = await admin.from("checklists").select("foto_url, viagem_id").eq("id", n.origem_id).maybeSingle();
+    if (c?.foto_url) paths.push(c.foto_url);
+    if (c?.viagem_id && n.tipo === "checklist_saida") {
+      const { data } = await admin.from("viagem_anexos").select("storage_path, mime_type")
+        .eq("viagem_id", c.viagem_id).eq("categoria", "checklist_saida").limit(9);
+      paths.push(...(data ?? []).filter((a) => !a.mime_type || a.mime_type.startsWith("image")).map((a) => a.storage_path));
+    }
+  }
+  const urls = await Promise.all(paths.slice(0, 10).map((p) => urlFoto(admin, p)));
+  return urls.filter((u): u is string => !!u);
+}
+
+async function enviarFotosTelegram(chatId: number, urls: string[]) {
+  const h = headers(process.env.TELEGRAM_API_KEY);
+  if (!h || !urls.length) return;
+  const r = await fetch(`${TG}/sendMediaGroup`, {
+    method: "POST",
+    headers: h,
+    body: JSON.stringify({ chat_id: chatId, media: urls.map((u) => ({ type: "photo", media: u })) }),
+  });
+  if (!r.ok) console.error(`Telegram fotos [${r.status}]: ${await r.text()}`);
+}
+
 export async function processarFilaAlertas(admin: SupabaseClient) {
   const { data: fila } = await admin
     .from("alertas_externos_fila")
@@ -120,8 +180,10 @@ export async function processarFilaAlertas(admin: SupabaseClient) {
         }
       }
       // Telegram: uma vez por evento (vários usuários recebem a mesma notificação)
+      const telegram = vaiParaTelegram(n);
+      let fotos: string[] | null = null;
       const chave = `${n.tipo}|${n.origem_id ?? ""}|${n.titulo}|${n.mensagem ?? ""}`.slice(0, 500);
-      for (const d of destinos ?? []) {
+      for (const d of telegram ? destinos ?? [] : []) {
         if (!d.categorias.includes(n.categoria)) continue;
         if (d.somente_alta && !alta) continue;
         const { error: dup } = await admin.from("telegram_enviados").insert({ chave, chat_id: d.chat_id });
@@ -132,6 +194,8 @@ export async function processarFilaAlertas(admin: SupabaseClient) {
           (n.link ? `\n\n<a href="${APP_URL}${esc(n.link)}">Abrir no sistema</a>` : "");
         try {
           await enviarTelegram(d.chat_id, texto);
+          fotos ??= await fotosDoAlerta(admin, n).catch(() => []);
+          await enviarFotosTelegram(d.chat_id, fotos);
         } catch (e) {
           await admin.from("telegram_enviados").delete().eq("chave", chave).eq("chat_id", d.chat_id);
           erros.push((e as Error).message);
