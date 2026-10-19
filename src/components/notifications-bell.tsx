@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { ensureNotificationsReady, notifyLocal, type NotifCategoria } from "@/lib/notifications";
+import { ensureNotificationsReady, notifyLocal, registerPushToken, type NotifCategoria } from "@/lib/notifications";
+import { isNative } from "@/lib/native";
 import {
   CATEGORIA_ICON,
   NOTIF_SELECT,
