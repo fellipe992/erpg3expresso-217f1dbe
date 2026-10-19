@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep the sales trainer's six tabs in an auto-height responsive grid, and allow book selectors to wrap; every option must remain visible on phones without horizontal scrolling.
-- Official risk zones (origem `prf`/`ssp` in `zonas_risco`) are rebuilt only by `recalcular_zonas_oficiais()` from the aggregate tables, fed by `src/lib/zonas-oficiais.server.ts` (monthly cron route + admin button); never hand-edit them, and keep SSP regional zones out of point alerts/route scoring — they are too large to be actionable.
+- Official risk zones (origem `prf`/`ssp` in `zonas_risco`) are rebuilt only by `recalcular_zonas_oficiais()` from the aggregate tables, fed by `src/lib/zonas-oficiais.server.ts` (monthly cron route + admin button); never hand-edit them, and keep SSP regional zones out of point alerts/route scoring — they are too large to be actionable. The `zonas_oficiais_ssp_*` tables are multi-state despite the name: cargo-theft aggregates per UF (SP regions via SEADE, RJ municipalities via ISP-RJ, other states via SINESP), each UF with its own 3-year window, levels vs the national rate.
