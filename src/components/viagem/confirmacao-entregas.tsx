@@ -168,7 +168,7 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
                   onClick={() => irPara(p)}
                 >
                   <span className="font-semibold">
-                    {p.ordem}. {nome(p)} {p.id === sugerido?.id && "· próximo do roteiro"}
+                    {p.ordem}. {nome(p)} {p.id === sugerido?.id && (feitas === 0 ? "· primeiro do roteiro" : "· próximo do roteiro")}
                   </span>
                   {p.cliente && <span className="text-xs opacity-80">{p.endereco}</span>}
                 </Button>
