@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { NIVEIS, TIPOS_RISCO, useZonasRisco, type ZonaRisco } from "@/lib/zonas-risco";
+import { useServerFn } from "@tanstack/react-start";
+import { atualizarZonasOficiaisAgora } from "@/lib/zonas-oficiais.functions";
 
 export const Route = createFileRoute("/_authenticated/app/zonas-risco")({
   head: () => ({
@@ -278,6 +280,79 @@ function NovaZona() {
   );
 }
 
+/** Quadro dos dados oficiais (PRF + SSP-SP): contagem por nível e última atualização. */
+function DadosOficiais({ zonas, isAdmin }: { zonas: ZonaRisco[]; isAdmin: boolean }) {
+  const qc = useQueryClient();
+  const atualizar = useServerFn(atualizarZonasOficiaisAgora);
+  const { data: ultima } = useQuery({
+    queryKey: ["zonas-importacoes"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("zonas_risco_importacoes")
+        .select("fonte, referencia, status, erro, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+  });
+  const mut = useMutation({
+    mutationFn: () => atualizar(),
+    onSuccess: () => {
+      toast.success("Dados oficiais atualizados");
+      qc.invalidateQueries({ queryKey: ["zonas-risco"] });
+      qc.invalidateQueries({ queryKey: ["zonas-importacoes"] });
+    },
+    onError: (e) => {
+      toast.error("Não foi possível atualizar", { description: (e as Error).message });
+      qc.invalidateQueries({ queryKey: ["zonas-importacoes"] });
+    },
+  });
+  const oficiais = zonas.filter((z) => z.origem === "prf" || z.origem === "ssp");
+  const conta = (origem: string, n: number) => oficiais.filter((z) => z.origem === origem && z.nivel === n).length;
+  const ok = ultima?.find((u) => u.fonte === "recalculo" && u.status === "ok");
+  const erro = ultima?.[0]?.status === "erro" ? ultima[0] : null;
+  const periodo = (o: string) => oficiais.find((z) => z.origem === o)?.periodo ?? "—";
+
+  return (
+    <Card className="space-y-3 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="font-semibold">Dados oficiais</h2>
+        {isAdmin && (
+          <Button size="sm" variant="outline" className="ml-auto" disabled={mut.isPending} onClick={() => mut.mutate()}>
+            {mut.isPending ? "Atualizando…" : "Atualizar agora"}
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-3 text-sm sm:grid-cols-2">
+        <div>
+          <p className="font-medium">Acidentes PRF · {periodo("prf")}</p>
+          <p className="text-muted-foreground">
+            {conta("prf", 4)} vermelhas · {conta("prf", 3)} laranjas (as 15% áreas de 2 km com mais acidentes das rodovias federais)
+          </p>
+        </div>
+        <div>
+          <p className="font-medium">Roubo de carga SSP-SP · {periodo("ssp")}</p>
+          <p className="text-muted-foreground">
+            {[4, 3, 2, 1].map((n) => `${conta("ssp", n)} ${NIVEIS[n].label.toLowerCase()}`).join(" · ")} (16 regiões do estado)
+          </p>
+        </div>
+      </div>
+      {isAdmin && (
+        <p className="text-xs text-muted-foreground">
+          Atualização automática todo dia 5.{" "}
+          {ok ? `Última: ${new Date(ok.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}.` : ""}
+        </p>
+      )}
+      {erro && (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          Última tentativa falhou ({erro.erro}). As cores anteriores foram mantidas.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 function ZonasRiscoPage() {
   const { role } = useAuth();
   const allowed = role === "administrador" || role === "gestor" || role === "monitor";
@@ -323,6 +398,8 @@ function ZonasRiscoPage() {
         </p>
       </div>
 
+      <DadosOficiais zonas={zonas} isAdmin={role === "administrador"} />
+
       <NovaZona />
 
       <section className="space-y-2">
@@ -341,10 +418,15 @@ function ZonasRiscoPage() {
           <Input className="ml-auto max-w-xs" placeholder="Buscar zona, bairro, cidade ou UF" value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <Card className="divide-y divide-border/60 px-3">
-          {filtradas.map((z) => (
+          {filtradas.slice(0, 200).map((z) => (
             <ZonaLinha key={z.id} z={z} />
           ))}
         </Card>
+        {filtradas.length > 200 && (
+          <p className="text-xs text-muted-foreground">
+            Mostrando as 200 mais graves de {filtradas.length}. Use a busca para encontrar uma rodovia, cidade ou UF.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           A base inicial é uma estimativa a partir de informações públicas de roubo de carga e acidentes; ajuste conforme a experiência da operação.
         </p>

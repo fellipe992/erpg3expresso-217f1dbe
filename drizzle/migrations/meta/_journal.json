@@ -176,6 +176,13 @@
       "when": 1792426333872,
       "tag": "0024_paradas_confirmacao_entrega",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792428313821,
+      "tag": "0025_zonas_risco_dados_oficiais",
+      "breakpoints": true
     }
   ]
 }

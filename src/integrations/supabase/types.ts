@@ -3666,19 +3666,114 @@ export type Database = {
         }
         Relationships: []
       }
+      zonas_oficiais_prf_celulas: {
+        Row: {
+          acidentes: number
+          ano: number
+          br: string | null
+          chave: string
+          com_feridos: number
+          com_mortos: number
+          km: string | null
+          lat: number
+          lng: number
+          municipio: string | null
+          pontos: number
+          uf: string | null
+        }
+        Insert: {
+          acidentes?: number
+          ano: number
+          br?: string | null
+          chave: string
+          com_feridos?: number
+          com_mortos?: number
+          km?: string | null
+          lat: number
+          lng: number
+          municipio?: string | null
+          pontos?: number
+          uf?: string | null
+        }
+        Update: {
+          acidentes?: number
+          ano?: number
+          br?: string | null
+          chave?: string
+          com_feridos?: number
+          com_mortos?: number
+          km?: string | null
+          lat?: number
+          lng?: number
+          municipio?: string | null
+          pontos?: number
+          uf?: string | null
+        }
+        Relationships: []
+      }
+      zonas_oficiais_ssp_anos: {
+        Row: {
+          ano: number
+          gid: number
+          populacao: number | null
+          roubos: number
+        }
+        Insert: {
+          ano: number
+          gid: number
+          populacao?: number | null
+          roubos: number
+        }
+        Update: {
+          ano?: number
+          gid?: number
+          populacao?: number | null
+          roubos?: number
+        }
+        Relationships: []
+      }
+      zonas_oficiais_ssp_regioes: {
+        Row: {
+          gid: number
+          lat: number
+          lng: number
+          nome: string
+          raio_m: number
+        }
+        Insert: {
+          gid: number
+          lat: number
+          lng: number
+          nome: string
+          raio_m: number
+        }
+        Update: {
+          gid?: number
+          lat?: number
+          lng?: number
+          nome?: string
+          raio_m?: number
+        }
+        Relationships: []
+      }
       zonas_risco: {
         Row: {
           ativo: boolean
+          atualizado_em: string | null
           bairro: string | null
+          chave: string | null
           cidade: string | null
           created_at: string
           horario_critico: string | null
           id: string
+          indice: number | null
           lat: number
           lng: number
           nivel: number
           nome: string
+          ocorrencias: number | null
           origem: string
+          periodo: string | null
           place_id: string | null
           raio_m: number
           recomendacao: string | null
@@ -3690,16 +3785,21 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          atualizado_em?: string | null
           bairro?: string | null
+          chave?: string | null
           cidade?: string | null
           created_at?: string
           horario_critico?: string | null
           id?: string
+          indice?: number | null
           lat: number
           lng: number
           nivel?: number
           nome: string
+          ocorrencias?: number | null
           origem?: string
+          periodo?: string | null
           place_id?: string | null
           raio_m?: number
           recomendacao?: string | null
@@ -3711,16 +3811,21 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          atualizado_em?: string | null
           bairro?: string | null
+          chave?: string | null
           cidade?: string | null
           created_at?: string
           horario_critico?: string | null
           id?: string
+          indice?: number | null
           lat?: number
           lng?: number
           nivel?: number
           nome?: string
+          ocorrencias?: number | null
           origem?: string
+          periodo?: string | null
           place_id?: string | null
           raio_m?: number
           recomendacao?: string | null
@@ -3729,6 +3834,36 @@ export type Database = {
           updated_at?: string
           validado_em?: string | null
           validado_por?: string | null
+        }
+        Relationships: []
+      }
+      zonas_risco_importacoes: {
+        Row: {
+          created_at: string
+          erro: string | null
+          fonte: string
+          id: string
+          linhas: number | null
+          referencia: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          erro?: string | null
+          fonte: string
+          id?: string
+          linhas?: number | null
+          referencia?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          erro?: string | null
+          fonte?: string
+          id?: string
+          linhas?: number | null
+          referencia?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -3827,6 +3962,7 @@ export type Database = {
         Returns: undefined
       }
       quinzena_fim: { Args: { _d: string }; Returns: string }
+      recalcular_zonas_oficiais: { Args: never; Returns: Json }
       sos_encerrar: { Args: { _aviso_id?: string }; Returns: number }
       viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
       viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
