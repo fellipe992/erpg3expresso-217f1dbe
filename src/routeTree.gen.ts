@@ -69,6 +69,7 @@ import { Route as AuthenticatedAppCrmMetricasConversaoRouteImport } from './rout
 import { Route as AuthenticatedAppCrmTreinadorRouteImport } from './routes/_authenticated/app/crm/treinador'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
+import { Route as ApiPublicHooksZonasOficiaisRouteImport } from './routes/api/public/hooks/zonas-oficiais'
 import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
@@ -407,6 +408,12 @@ const AuthenticatedAppViagensIdRoute =
     path: '/app/viagens/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksZonasOficiaisRoute =
+  ApiPublicHooksZonasOficiaisRouteImport.update({
+    id: '/api/public/hooks/zonas-oficiais',
+    path: '/api/public/hooks/zonas-oficiais',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
   id: '/api/public/rastreio/$token',
   path: '/api/public/rastreio/$token',
@@ -478,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
@@ -541,6 +549,7 @@ export interface FileRoutesByTo {
   '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
@@ -606,6 +615,7 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/_authenticated/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
     | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
+    | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
@@ -734,6 +745,7 @@ export interface FileRouteTypes {
     | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
+    | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
@@ -798,6 +810,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/metricas-conversao'
     | '/_authenticated/app/crm/treinador'
     | '/_authenticated/app/viagens/$id'
+    | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
@@ -818,6 +831,7 @@ export interface RootRouteChildren {
   ApiTreinadorMapaRoute: typeof ApiTreinadorMapaRoute
   RastreioTokenRoute: typeof RastreioTokenRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
+  ApiPublicHooksZonasOficiaisRoute: typeof ApiPublicHooksZonasOficiaisRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
@@ -1244,6 +1258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppViagensIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/zonas-oficiais': {
+      id: '/api/public/hooks/zonas-oficiais'
+      path: '/api/public/hooks/zonas-oficiais'
+      fullPath: '/api/public/hooks/zonas-oficiais'
+      preLoaderRoute: typeof ApiPublicHooksZonasOficiaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/rastreio/$token': {
       id: '/api/public/rastreio/$token'
       path: '/api/public/rastreio/$token'
@@ -1381,6 +1402,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTreinadorMapaRoute: ApiTreinadorMapaRoute,
   RastreioTokenRoute: RastreioTokenRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
+  ApiPublicHooksZonasOficiaisRoute: ApiPublicHooksZonasOficiaisRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
