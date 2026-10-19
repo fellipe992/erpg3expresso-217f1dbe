@@ -64,6 +64,7 @@ export function NotificationsBell() {
     if (!user?.id || bootstrapped.current) return;
     bootstrapped.current = true;
     void ensureNotificationsReady();
+    if (isNative()) void registerPushToken();
   }, [user?.id]);
 
 

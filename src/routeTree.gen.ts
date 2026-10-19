@@ -25,6 +25,7 @@ import { Route as RastreioTokenRouteImport } from './routes/rastreio.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authenticated/app/alertas'
+import { Route as AuthenticatedAppAlertasExternosRouteImport } from './routes/_authenticated/app/alertas-externos'
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
@@ -155,6 +156,12 @@ const AuthenticatedAppAlertasRoute = AuthenticatedAppAlertasRouteImport.update({
   path: '/app/alertas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppAlertasExternosRoute =
+  AuthenticatedAppAlertasExternosRouteImport.update({
+    id: '/app/alertas-externos',
+    path: '/app/alertas-externos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppAssistenteRoute =
   AuthenticatedAppAssistenteRouteImport.update({
     id: '/app/assistente',
@@ -455,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -521,6 +529,7 @@ export interface FileRoutesByTo {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -589,6 +598,7 @@ export interface FileRoutesById {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/_authenticated/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -657,6 +667,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
+    | '/app/alertas-externos'
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
+    | '/app/alertas-externos'
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
@@ -790,6 +802,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
+    | '/_authenticated/app/alertas-externos'
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/auditoria'
     | '/_authenticated/app/avisos'
@@ -976,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/app/alertas'
       fullPath: '/app/alertas'
       preLoaderRoute: typeof AuthenticatedAppAlertasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/alertas-externos': {
+      id: '/_authenticated/app/alertas-externos'
+      path: '/app/alertas-externos'
+      fullPath: '/app/alertas-externos'
+      preLoaderRoute: typeof AuthenticatedAppAlertasExternosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/assistente': {
@@ -1327,6 +1347,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAbastecimentosRoute: typeof AuthenticatedAppAbastecimentosRoute
   AuthenticatedAppAlertasRoute: typeof AuthenticatedAppAlertasRoute
+  AuthenticatedAppAlertasExternosRoute: typeof AuthenticatedAppAlertasExternosRoute
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
   AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
@@ -1376,6 +1397,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAbastecimentosRoute: AuthenticatedAppAbastecimentosRoute,
   AuthenticatedAppAlertasRoute: AuthenticatedAppAlertasRoute,
+  AuthenticatedAppAlertasExternosRoute: AuthenticatedAppAlertasExternosRoute,
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
   AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
