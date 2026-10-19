@@ -173,25 +173,29 @@ export function desenharZonas(
 ): google.maps.Circle[] {
   return zonas.map((z) => {
     const cor = NIVEIS[z.nivel]?.cor ?? "#EAB308";
+    const regional = z.origem === "ssp";
     const c = new google.maps.Circle({
       map,
       center: { lat: z.lat, lng: z.lng },
       radius: z.raio_m,
       strokeColor: cor,
-      strokeOpacity: 0.8,
+      strokeOpacity: regional ? 0.5 : 0.8,
       strokeWeight: 1,
       fillColor: cor,
-      fillOpacity: 0.22 + z.nivel * 0.04,
+      // Regiões da SSP ficam bem claras, por baixo das zonas pontuais.
+      fillOpacity: regional ? 0.06 : 0.22 + z.nivel * 0.04,
       clickable: !!info,
-      zIndex: z.nivel,
+      zIndex: regional ? 0 : z.nivel,
     });
     if (info) {
       c.addListener("click", (e: google.maps.MapMouseEvent) => {
+        const fonte = (FONTES[z.origem] ?? "G3") + (z.periodo ? ` (${z.periodo.replace(/^\S+\s/, "")})` : "");
         info.setContent(
           `<div style="font:13px sans-serif;max-width:240px;color:#111"><b>${esc(z.nome)}</b><br/>` +
             `<span style="color:${cor};font-weight:600">Risco ${NIVEIS[z.nivel]?.label}</span> · ${TIPOS_RISCO[z.tipo] ?? z.tipo}<br/>` +
             (z.horario_critico ? `Horário crítico: ${esc(z.horario_critico)}<br/>` : "") +
-            (z.recomendacao ? `<i>${esc(z.recomendacao)}</i>` : "") +
+            (z.recomendacao ? `<i>${esc(z.recomendacao)}</i><br/>` : "") +
+            `<span style="color:#666;font-size:11px">Fonte: ${esc(fonte)}</span>` +
             `</div>`,
         );
         info.setPosition(e.latLng ?? { lat: z.lat, lng: z.lng });
