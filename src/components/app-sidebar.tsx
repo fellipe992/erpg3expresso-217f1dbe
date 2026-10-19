@@ -109,6 +109,7 @@ const gestao: NavItem[] = [
   { label: "Documentos", to: "/app/documentos", icon: FileText },
   { label: "Avisos dos motoristas", to: "/app/avisos", icon: MessagesSquare },
   { label: "Notificações", to: "/app/notificacoes", icon: Bell },
+  { label: "Alertas externos", to: "/app/alertas-externos", icon: Bell },
 ];
 
 
