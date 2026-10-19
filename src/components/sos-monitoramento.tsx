@@ -97,12 +97,7 @@ export function SolicitarMonitoramentoButton() {
     if (!semViagem || !user || limpandoRef.current) return;
     limpandoRef.current = true;
     void (async () => {
-      await supabase
-        .from("avisos")
-        .update({ status: "resolvido" })
-        .eq("created_by", user.id)
-        .eq("categoria", "risco_motorista")
-        .neq("status", "resolvido");
+      await supabase.rpc("sos_encerrar", { _aviso_id: null as unknown as string });
       qc.invalidateQueries({ queryKey: ["sos-monitoramento-aberto"] });
     })();
   }, [semViagem, user, qc]);
@@ -204,17 +199,10 @@ export function SolicitarMonitoramentoButton() {
     if (!user || !pedidoAberto) return;
     setCancelando(true);
     try {
-      const { error } = await supabase
-        .from("avisos")
-        .update({ status: "resolvido" })
-        .eq("id", pedidoAberto.id);
+      // Função protegida: encerra o pedido e marca lidas as notificações da equipe.
+      const { data: n, error } = await supabase.rpc("sos_encerrar", { _aviso_id: pedidoAberto.id });
       if (error) throw error;
-      // Marca como lidas as notificações que a equipe recebeu deste pedido.
-      await supabase
-        .from("notificacoes")
-        .update({ lida_em: new Date().toISOString() })
-        .eq("origem_id", pedidoAberto.id)
-        .is("lida_em", null);
+      if (!n) throw new Error("A solicitação já estava encerrada.");
       toast.success("Solicitação cancelada", {
         description: "A operação foi avisada de que a situação está controlada.",
       });

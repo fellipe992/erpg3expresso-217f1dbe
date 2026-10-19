@@ -162,6 +162,13 @@
       "when": 1791935975095,
       "tag": "0022_zonas_risco_cidade_bairro",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792425954059,
+      "tag": "0023_sos_monitoramento_encerrar",
+      "breakpoints": true
     }
   ]
 }
