@@ -78,6 +78,7 @@ const financeiro: NavItem[] = [
 const operacional: NavItem[] = [
   { label: "Monitoramento", to: "/app/monitoramento", icon: Radar },
   { label: "Zonas de risco", to: "/app/zonas-risco", icon: AlertTriangle },
+  { label: "WhatsApp", to: "/app/whatsapp", icon: MessageCircle },
   { label: "Veículos", to: "/app/veiculos", icon: Truck },
   { label: "Frota por veículo", to: "/app/frota", icon: Gauge },
   { label: "Motoristas", to: "/app/motoristas", icon: Users },

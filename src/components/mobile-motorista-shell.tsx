@@ -1,5 +1,5 @@
 import { Link, useLocation, Outlet } from "@tanstack/react-router";
-import { LayoutDashboard, MapPin, Wallet, User, Bell } from "lucide-react";
+import { LayoutDashboard, MapPin, Wallet, User, Bell, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,6 +18,7 @@ const tabs = [
   { to: "/app", label: "Início", icon: LayoutDashboard },
   { to: "/app/viagens", label: "Viagens", icon: MapPin },
   { to: "/app/custos", label: "Custos", icon: Wallet },
+  { to: "/app/chat", label: "Chat", icon: MessageCircle },
   { to: "/app/alertas", label: "Alertas", icon: Bell },
   { to: "/app/perfil", label: "Perfil", icon: User },
 ];
@@ -52,7 +53,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-safe backdrop-blur-md">
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-6">
           {tabs.map((t) => {
             const custosPaths = ["/app/custos", "/app/abastecimentos", "/app/manutencoes", "/app/despesas"];
             const active =

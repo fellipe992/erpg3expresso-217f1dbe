@@ -18,6 +18,7 @@ import {
 import { useZonasRisco, zonaNoPonto, NIVEIS, TIPOS_RISCO } from "@/lib/zonas-risco";
 import { buscarSugestoesEndereco, detalhesEndereco, localizarCoordenadas, novoSessionToken, type SugestaoLocal } from "@/lib/places";
 import { cn } from "@/lib/utils";
+import { avisarWhatsApp } from "@/lib/whatsapp.functions";
 
 const INTERVALO_MS = 2 * 60_000;
 const AVISO_A_M = 2000;
@@ -43,6 +44,9 @@ export function useAlertaZonaRisco() {
           if (Date.now() - ultimo < 60 * 60_000) return;
           avisadas.current.set(z.id, Date.now());
           navigator.vibrate?.([300, 150, 300]);
+          void avisarWhatsApp({
+            data: { evento: "zona_risco", detalhe: ` ${z.nome} (${NIVEIS[z.nivel].label}). Posição: https://www.google.com/maps?q=${p.lat},${p.lng}` },
+          }).catch(() => {});
           toast.warning(`Zona de risco ${NIVEIS[z.nivel].label.toLowerCase()} próxima`, {
             description: `${z.nome}. ${z.recomendacao ?? "Evite paradas."}`,
             duration: 20000,
