@@ -5,6 +5,7 @@
  * A fila é alimentada por gatilho em `notificacoes`; aqui só drenamos.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { destinoRecebeAlerta } from "./alertas-clientes";
 
 const TG = "https://connector-gateway.lovable.dev/telegram";
 const FCM = "https://connector-gateway.lovable.dev/firebase_messaging";
@@ -72,6 +73,8 @@ type Notif = {
   origem: string | null;
   origem_id: string | null;
   prioridade: string;
+  viagem_id: string | null;
+  cliente_id: string | null;
 };
 
 const EMOJI: Record<string, string> = {
@@ -184,6 +187,8 @@ export async function processarFilaAlertas(admin: SupabaseClient) {
       let fotos: string[] | null = null;
       const chave = `${n.tipo}|${n.origem_id ?? ""}|${n.titulo}|${n.mensagem ?? ""}`.slice(0, 500);
       for (const d of telegram ? destinos ?? [] : []) {
+        // Check before dedupe, text and attachments: never disclose another client's trip.
+        if (!destinoRecebeAlerta(d, n)) continue;
         if (!d.categorias.includes(n.categoria)) continue;
         if (d.somente_alta && !alta) continue;
         const { error: dup } = await admin.from("telegram_enviados").insert({ chave, chat_id: d.chat_id });
