@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { criarPedidoPosicao, POSICAO_OBSOLETA_MS } from "@/lib/pedido-posicao";
 import { CompartilharRastreio } from "@/components/monitoramento/compartilhar-rastreio";
-import { useZonasRisco, desenharZonas, zonaNoPonto, NIVEIS } from "@/lib/zonas-risco";
+import { useZonasRisco, desenharZonas, zonaNoPonto, NIVEIS, grupoFonte } from "@/lib/zonas-risco";
 
 /** Acima disso a viagem entra em alerta na central. */
 const SEM_POSICAO_ALERTA_MS = 20 * 60_000;
@@ -122,6 +122,7 @@ function MonitoramentoPage() {
   const infoRef = useRef<google.maps.InfoWindow | null>(null);
   const [mapPronto, setMapPronto] = useState(false);
   const [mostrarZonas, setMostrarZonas] = useState(true);
+  const [fontesZonas, setFontesZonas] = useState({ oficial: true, g3: true, motorista: true });
   const { data: zonas = [] } = useZonasRisco();
   const circlesRef = useRef<google.maps.Circle[]>([]);
   const alertadosRef = useRef<Set<string>>(new Set());
@@ -352,8 +353,9 @@ function MonitoramentoPage() {
     circlesRef.current = [];
     const map = mapRef.current;
     if (!mapPronto || !map || !mostrarZonas) return;
-    circlesRef.current = desenharZonas(map, zonas, infoRef.current ?? undefined);
-  }, [mapPronto, mostrarZonas, zonas]);
+    const visiveis = zonas.filter((z) => fontesZonas[grupoFonte(z.origem)]);
+    circlesRef.current = desenharZonas(map, visiveis, infoRef.current ?? undefined);
+  }, [mapPronto, mostrarZonas, zonas, fontesZonas]);
 
   // Alerta para a operação quando um veículo entra em zona laranja/vermelha.
   useEffect(() => {
