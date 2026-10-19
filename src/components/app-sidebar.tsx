@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  MessageCircle,
   AlertTriangle,
   LayoutDashboard,
   Truck,
