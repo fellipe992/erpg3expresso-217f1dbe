@@ -60,7 +60,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { UploadFotos } from "@/components/viagem/upload-fotos";
 import { DemonstrativoViagem, calcularProvisao, brl } from "@/components/viagem/demonstrativo-viagem";
 import { apurarViagem, listarAjustes } from "@/lib/frete";
-import { avisarWhatsApp } from "@/lib/whatsapp.functions";
 
 export const Route = createFileRoute("/_authenticated/app/viagens/$id")({
   head: () => ({ meta: [{ title: "Viagem — G3 Expresso" }] }),
@@ -900,7 +899,6 @@ function ChecklistSaidaDialog({ viagemId, kmSugerido, onDone, autoOpen }: { viag
         .eq("id", viagemId);
       if (vErr) throw vErr;
 
-      void avisarWhatsApp({ data: { viagemId, evento: "inicio_viagem" } }).catch(() => {});
       toast.success("Viagem iniciada!");
       setOpen(false);
       onDone();
@@ -1246,7 +1244,6 @@ function FinalizarViagemDialog({
         .eq("id", viagemId);
       if (error) throw error;
 
-      void avisarWhatsApp({ data: { viagemId, evento: "fim_viagem" } }).catch(() => {});
       toast.success("Viagem finalizada!");
       setOpen(false);
       onDone();
