@@ -3824,6 +3824,7 @@ export type Database = {
         Returns: undefined
       }
       quinzena_fim: { Args: { _d: string }; Returns: string }
+      sos_encerrar: { Args: { _aviso_id?: string }; Returns: number }
       viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
       viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
       viagem_restaurar: { Args: { _arquivo_id: string }; Returns: string }
