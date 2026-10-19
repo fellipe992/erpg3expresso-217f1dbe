@@ -134,7 +134,7 @@ export const Route = createFileRoute("/api/places")({
           const bairro =
             comp("sublocality_level_1")?.long_name ?? comp("sublocality")?.long_name ?? comp("neighborhood")?.long_name ?? null;
           const cidade = comp("administrative_area_level_2")?.long_name ?? comp("locality")?.long_name ?? null;
-          const uf = comp("administrative_area_level_1", true)?.shortText ?? null;
+          const uf = comp("administrative_area_level_1")?.short_name ?? null;
           return Response.json(
             {
               endereco: primeiro?.formatted_address ?? "",

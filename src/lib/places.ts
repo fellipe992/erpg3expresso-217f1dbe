@@ -41,3 +41,12 @@ export async function detalhesEndereco(placeId: string, sessionToken?: string) {
     sessionToken,
   });
 }
+
+/** Converte coordenadas (GPS) em endereço — Geocoding API pelo gateway. */
+export async function localizarCoordenadas(lat: number, lng: number) {
+  return chamar<{ endereco: string; lat: number; lng: number; bairro?: string | null; cidade?: string | null; uf?: string | null }>({
+    acao: "geocode-reverso",
+    lat,
+    lng,
+  });
+}
