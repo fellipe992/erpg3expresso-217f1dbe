@@ -132,7 +132,7 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
         </div>
       ) : (
         <Button className="h-14 w-full text-base font-bold" onClick={() => setEscolher(true)}>
-          <Truck className="mr-2 size-5" /> IR PARA A PRÓXIMA ENTREGA
+          <Truck className="mr-2 size-5" /> {feitas === 0 ? "INICIANDO TRAJETO — ESCOLHER DESTINO" : "IR PARA A PRÓXIMA ENTREGA"}
         </Button>
       )}
 
@@ -149,9 +149,11 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
       <Dialog open={escolher} onOpenChange={setEscolher}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Para qual cliente você está indo?</DialogTitle>
+            <DialogTitle>{feitas === 0 ? "Iniciando trajeto — qual é o primeiro cliente?" : "Para qual cliente você está indo?"}</DialogTitle>
             <DialogDescription>
-              Confirme o próximo destino. Se não for o próximo do roteiro, escolha o cliente certo.
+              {feitas === 0
+                ? "Confirme o primeiro destino da viagem. Se não for o primeiro do roteiro, escolha o cliente certo."
+                : "Confirme o próximo destino. Se não for o próximo do roteiro, escolha o cliente certo."}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">
@@ -166,7 +168,7 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
                   onClick={() => irPara(p)}
                 >
                   <span className="font-semibold">
-                    {p.ordem}. {nome(p)} {p.id === sugerido?.id && "· próximo do roteiro"}
+                    {p.ordem}. {nome(p)} {p.id === sugerido?.id && (feitas === 0 ? "· primeiro do roteiro" : "· próximo do roteiro")}
                   </span>
                   {p.cliente && <span className="text-xs opacity-80">{p.endereco}</span>}
                 </Button>
