@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ShieldAlert, Loader2 } from "lucide-react";
+import { ShieldAlert, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useZonasRisco, zonaNoPonto, NIVEIS, TIPOS_RISCO } from "@/lib/zonas-risco";
+import { buscarSugestoesEndereco, detalhesEndereco, localizarCoordenadas, novoSessionToken, type SugestaoLocal } from "@/lib/places";
 import { cn } from "@/lib/utils";
 
 const INTERVALO_MS = 2 * 60_000;
