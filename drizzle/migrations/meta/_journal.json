@@ -197,6 +197,13 @@
       "when": 1792429680598,
       "tag": "0027_zonas_oficiais_periodo_real",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792431926832,
+      "tag": "0028_zonas_oficiais_sp_delegacias",
+      "breakpoints": true
     }
   ]
 }
