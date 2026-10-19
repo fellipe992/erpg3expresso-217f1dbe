@@ -204,6 +204,13 @@
       "when": 1792431926832,
       "tag": "0028_zonas_oficiais_sp_delegacias",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792436035592,
+      "tag": "0029_whatsapp_integracao",
+      "breakpoints": true
     }
   ]
 }

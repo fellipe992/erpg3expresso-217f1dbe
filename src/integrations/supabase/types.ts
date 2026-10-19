@@ -302,6 +302,47 @@ export type Database = {
           },
         ]
       }
+      cliente_contatos_whatsapp: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          cliente_id: string
+          created_at: string
+          eventos: string[]
+          id: string
+          nome: string
+          telefone: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          cliente_id: string
+          created_at?: string
+          eventos?: string[]
+          id?: string
+          nome: string
+          telefone: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          cliente_id?: string
+          created_at?: string
+          eventos?: string[]
+          id?: string
+          nome?: string
+          telefone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_contatos_whatsapp_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clientes: {
         Row: {
           ativo: boolean
@@ -2121,6 +2162,54 @@ export type Database = {
           },
         ]
       }
+      motorista_chat_mensagens: {
+        Row: {
+          autor: string
+          autor_user_id: string | null
+          contato_id: string | null
+          contato_nome: string | null
+          created_at: string
+          destino: string
+          envio_erro: string | null
+          id: string
+          motorista_id: string
+          telefone: string | null
+          texto: string
+          viagem_id: string | null
+          wamid: string | null
+        }
+        Insert: {
+          autor: string
+          autor_user_id?: string | null
+          contato_id?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          destino?: string
+          envio_erro?: string | null
+          id?: string
+          motorista_id: string
+          telefone?: string | null
+          texto: string
+          viagem_id?: string | null
+          wamid?: string | null
+        }
+        Update: {
+          autor?: string
+          autor_user_id?: string | null
+          contato_id?: string | null
+          contato_nome?: string | null
+          created_at?: string
+          destino?: string
+          envio_erro?: string | null
+          id?: string
+          motorista_id?: string
+          telefone?: string | null
+          texto?: string
+          viagem_id?: string | null
+          wamid?: string | null
+        }
+        Relationships: []
+      }
       motorista_contratos: {
         Row: {
           assinado_em: string
@@ -3663,6 +3752,141 @@ export type Database = {
           paradas?: Json
           veiculo_placa?: string | null
           viagem_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_contatos_internos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          telefone: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          telefone: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          telefone?: string
+        }
+        Relationships: []
+      }
+      whatsapp_mensagens: {
+        Row: {
+          cliente_id: string | null
+          contexto_wamid: string | null
+          created_at: string
+          direcao: string
+          erro: string | null
+          evento: string | null
+          id: string
+          motorista_id: string | null
+          status: string
+          status_em: Json
+          telefone: string
+          texto: string | null
+          tipo: string
+          viagem_id: string | null
+          wamid: string | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          contexto_wamid?: string | null
+          created_at?: string
+          direcao: string
+          erro?: string | null
+          evento?: string | null
+          id?: string
+          motorista_id?: string | null
+          status?: string
+          status_em?: Json
+          telefone: string
+          texto?: string | null
+          tipo?: string
+          viagem_id?: string | null
+          wamid?: string | null
+        }
+        Update: {
+          cliente_id?: string | null
+          contexto_wamid?: string | null
+          created_at?: string
+          direcao?: string
+          erro?: string | null
+          evento?: string | null
+          id?: string
+          motorista_id?: string | null
+          status?: string
+          status_em?: Json
+          telefone?: string
+          texto?: string | null
+          tipo?: string
+          viagem_id?: string | null
+          wamid?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_status_eventos: {
+        Row: {
+          erros: Json | null
+          ocorrido_em: string
+          status: string
+          wamid: string
+        }
+        Insert: {
+          erros?: Json | null
+          ocorrido_em: string
+          status: string
+          wamid: string
+        }
+        Update: {
+          erros?: Json | null
+          ocorrido_em?: string
+          status?: string
+          wamid?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          attempts: number
+          delivery_id: string
+          event: string
+          id: string
+          next_attempt_at: string
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+        }
+        Insert: {
+          attempts?: number
+          delivery_id: string
+          event: string
+          id?: string
+          next_attempt_at?: string
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Update: {
+          attempts?: number
+          delivery_id?: string
+          event?: string
+          id?: string
+          next_attempt_at?: string
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
         }
         Relationships: []
       }
