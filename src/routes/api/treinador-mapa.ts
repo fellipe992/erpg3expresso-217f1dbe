@@ -26,6 +26,25 @@ Título central grande: "${livro}". Ramificações coloridas e organizadas, cada
 Inclua quando houver termo em inglês a tradução entre parênteses. Fundo claro, tipografia legível, hierarquia clara, setas conectando ideias, um quadro "No transporte de cargas" com aplicações práticas.
 Conteúdo a representar:
 ${pontos}`;
+        // 1º: Gemini gratuito (chave própria, modelo leve — nunca o Pro)
+        const gkey = process.env.GEMINI_API_KEY;
+        if (gkey) {
+          try {
+            const g = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-goog-api-key": gkey },
+              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "3:2" } } }),
+            });
+            if (g.ok) {
+              const j = (await g.json()) as { candidates?: { content?: { parts?: { inlineData?: { data?: string } }[] } }[] };
+              const b64 = j.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+              if (b64) {
+                const ev = `event: image_generation.completed\ndata: ${JSON.stringify({ type: "image_generation.completed", b64_json: b64 })}\n\n`;
+                return new Response(ev, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
+              }
+            } else console.warn("Gemini imagem", g.status);
+          } catch (e) { console.warn("Gemini imagem falhou", e); }
+        }
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
           method: "POST",
           headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
