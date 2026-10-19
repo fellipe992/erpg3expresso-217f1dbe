@@ -3732,6 +3732,74 @@ export type Database = {
         }
         Relationships: []
       }
+      zonas_oficiais_ssp_dp: {
+        Row: {
+          bairro: string
+          id_distrito: number
+          lat: number
+          lng: number
+          nome: string
+          raio_m: number
+        }
+        Insert: {
+          bairro: string
+          id_distrito: number
+          lat: number
+          lng: number
+          nome: string
+          raio_m?: number
+        }
+        Update: {
+          bairro?: string
+          id_distrito?: number
+          lat?: number
+          lng?: number
+          nome?: string
+          raio_m?: number
+        }
+        Relationships: []
+      }
+      zonas_oficiais_ssp_dp_anos: {
+        Row: {
+          ano: number
+          id_distrito: number
+          latrocinio: number
+          roubo_carga: number
+          roubo_outros: number
+          roubo_veiculo: number
+          transito_feridos: number
+          transito_mortes: number
+        }
+        Insert: {
+          ano: number
+          id_distrito: number
+          latrocinio?: number
+          roubo_carga?: number
+          roubo_outros?: number
+          roubo_veiculo?: number
+          transito_feridos?: number
+          transito_mortes?: number
+        }
+        Update: {
+          ano?: number
+          id_distrito?: number
+          latrocinio?: number
+          roubo_carga?: number
+          roubo_outros?: number
+          roubo_veiculo?: number
+          transito_feridos?: number
+          transito_mortes?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zonas_oficiais_ssp_dp_anos_id_distrito_fkey"
+            columns: ["id_distrito"]
+            isOneToOne: false
+            referencedRelation: "zonas_oficiais_ssp_dp"
+            referencedColumns: ["id_distrito"]
+          },
+        ]
+      }
       zonas_oficiais_ssp_regioes: {
         Row: {
           gid: number
@@ -3966,6 +4034,7 @@ export type Database = {
       }
       quinzena_fim: { Args: { _d: string }; Returns: string }
       recalcular_zonas_oficiais: { Args: never; Returns: Json }
+      recalcular_zonas_oficiais_base: { Args: never; Returns: Json }
       sos_encerrar: { Args: { _aviso_id?: string }; Returns: number }
       viagem_dia_operacao: { Args: { _viagem_id: string }; Returns: string }
       viagem_excluir: { Args: { _viagem_id: string }; Returns: string }
