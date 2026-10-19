@@ -3739,6 +3739,7 @@ export type Database = {
           lng: number
           nome: string
           raio_m: number
+          uf: string
         }
         Insert: {
           gid: number
@@ -3746,6 +3747,7 @@ export type Database = {
           lng: number
           nome: string
           raio_m: number
+          uf?: string
         }
         Update: {
           gid?: number
@@ -3753,6 +3755,7 @@ export type Database = {
           lng?: number
           nome?: string
           raio_m?: number
+          uf?: string
         }
         Relationships: []
       }

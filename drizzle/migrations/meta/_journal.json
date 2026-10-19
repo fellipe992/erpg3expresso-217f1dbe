@@ -183,6 +183,13 @@
       "when": 1792428313821,
       "tag": "0025_zonas_risco_dados_oficiais",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792429581812,
+      "tag": "0026_zonas_oficiais_multi_uf",
+      "breakpoints": true
     }
   ]
 }
