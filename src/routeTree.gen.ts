@@ -71,6 +71,7 @@ import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 import { Route as ApiPublicHooksZonasOficiaisRouteImport } from './routes/api/public/hooks/zonas-oficiais'
 import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -419,6 +420,12 @@ const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
   path: '/api/public/rastreio/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -487,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -551,6 +559,7 @@ export interface FileRoutesByTo {
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -617,6 +626,7 @@ export interface FileRoutesById {
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -683,6 +693,7 @@ export interface FileRouteTypes {
     | '/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -747,6 +758,7 @@ export interface FileRouteTypes {
     | '/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
@@ -812,6 +824,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -833,6 +846,7 @@ export interface RootRouteChildren {
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
   ApiPublicHooksZonasOficiaisRoute: typeof ApiPublicHooksZonasOficiaisRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -1272,6 +1286,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRastreioTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -1404,6 +1425,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
   ApiPublicHooksZonasOficiaisRoute: ApiPublicHooksZonasOficiaisRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
