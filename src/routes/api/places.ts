@@ -18,6 +18,11 @@ const bodySchema = z.discriminatedUnion("acao", [
     placeId: z.string().min(3).max(300),
     sessionToken: z.string().max(80).optional(),
   }),
+  z.object({
+    acao: z.literal("geocode-reverso"),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
 ]);
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
@@ -109,6 +114,38 @@ export const Route = createFileRoute("/api/places")({
             .filter((s) => s.placeId && s.texto)
             .slice(0, 6);
           return Response.json({ sugestoes }, { headers: { "Cache-Control": "no-store" } });
+        }
+
+        if (parsed.acao === "geocode-reverso") {
+          const res = await fetch(
+            `${GATEWAY}/maps/api/geocode/json?latlng=${parsed.lat},${parsed.lng}&language=pt-BR&region=br`,
+            { headers: baseHeaders },
+          );
+          if (!res.ok) return falha(res);
+          const json = (await res.json()) as {
+            results?: Array<{
+              formatted_address?: string;
+              address_components?: Array<{ long_name?: string; short_name?: string; types?: string[] }>;
+            }>;
+          };
+          const primeiro = json.results?.[0];
+          const comp = (t: string, curto = false) =>
+            primeiro?.address_components?.find((a) => a.types?.includes(t));
+          const bairro =
+            comp("sublocality_level_1")?.long_name ?? comp("sublocality")?.long_name ?? comp("neighborhood")?.long_name ?? null;
+          const cidade = comp("administrative_area_level_2")?.long_name ?? comp("locality")?.long_name ?? null;
+          const uf = comp("administrative_area_level_1", true)?.shortText ?? null;
+          return Response.json(
+            {
+              endereco: primeiro?.formatted_address ?? "",
+              lat: parsed.lat,
+              lng: parsed.lng,
+              bairro,
+              cidade,
+              uf,
+            },
+            { headers: { "Cache-Control": "no-store" } },
+          );
         }
 
         const params = new URLSearchParams({ languageCode: "pt-BR", regionCode: "BR" });
