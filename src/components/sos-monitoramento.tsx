@@ -16,7 +16,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { avisarWhatsApp } from "@/lib/whatsapp.functions";
 
 const MOTIVOS = [
   "VEÍCULO ME SEGUINDO",
@@ -178,10 +177,6 @@ export function SolicitarMonitoramentoButton() {
       } catch {
         /* aviso na Central já registrado */
       }
-
-      void avisarWhatsApp({
-        data: { viagemId: viagem.id, evento: "alerta_motorista", detalhe: ` ${motivo}${comentario.trim() ? ` — ${comentario.trim().toUpperCase()}` : ""}${mapaLink ? ` Posição: ${mapaLink}` : ""}` },
-      }).catch(() => {});
       navigator.vibrate?.([200, 100, 200]);
       toast.success("Monitoramento acionado", {
         description: "A operação foi avisada e vai acompanhar seu trajeto de perto.",
