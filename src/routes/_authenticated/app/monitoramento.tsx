@@ -857,6 +857,26 @@ function MonitoramentoPage() {
                 {NIVEIS[n].label}
               </div>
             ))}
+          {mostrarZonas && (
+            <div className="space-y-1 border-t pt-1.5">
+              {(
+                [
+                  ["oficial", "Oficial (PRF/SSP)"],
+                  ["g3", "G3"],
+                  ["motorista", "Motoristas"],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={fontesZonas[k]}
+                    onChange={(e) => setFontesZonas((f) => ({ ...f, [k]: e.target.checked }))}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          )}
         </Card>
         {viagens.length === 0 && (
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
