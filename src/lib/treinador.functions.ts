@@ -13,7 +13,33 @@ ${BASE_CONHECIMENTO}`;
 
 type Schema = Record<string, unknown>;
 
+/** Gemini (chave própria, franquia gratuita do Google). Retorna null se indisponível, para cair no fallback. */
+async function chamarGemini(sistema: string, entrada: string, schema: Schema) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: sistema }] },
+          contents: [{ role: "user", parts: [{ text: entrada }] }],
+          generationConfig: { responseMimeType: "application/json", responseJsonSchema: schema, temperature: 0.6 },
+        }),
+      });
+      if (!res.ok) { console.warn(`Gemini ${modelo} ${res.status}`); continue; }
+      const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+      const t = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      if (t.trim()) return JSON.parse(t);
+    } catch (e) { console.warn(`Gemini ${modelo} falhou`, e); }
+  }
+  return null;
+}
+
 async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema) {
+  const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema);
+  if (viaGemini) return viaGemini;
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("IA não configurada.");
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
@@ -73,9 +99,9 @@ async function memoria(ctx: Ctx) {
   try {
     const [h, a] = await Promise.all([
       ctx.supabase.from("treinador_historico").select("tipo, titulo, resultado").eq("user_id", ctx.userId)
-        .in("tipo", ["resposta", "aula"]).order("created_at", { ascending: false }).limit(8),
+        .in("tipo", ["resposta", "aula"]).order("created_at", { ascending: false }).limit(15),
       ctx.supabase.from("hunter_abordagens").select("empresa, cargo, status, resposta_cliente, mensagens")
-        .eq("user_id", ctx.userId).not("resposta_cliente", "is", null).order("respondido_em", { ascending: false }).limit(8),
+        .eq("user_id", ctx.userId).not("resposta_cliente", "is", null).order("respondido_em", { ascending: false }).limit(12),
     ]);
     const linhas: string[] = [];
     for (const i of h.data ?? []) {
