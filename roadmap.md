@@ -1,5 +1,10 @@
 # Roadmap
 
+## Alertas externos por cliente
+- [ ] Vincular cada chat Telegram a um cliente ou à equipe interna.
+- [ ] Bloquear envios de outros clientes ou de alertas sem viagem identificada.
+- [ ] Testar o filtro e verificar a seleção na tela autenticada.
+
 ## Concluído (relatórios e filtros por período de operação)
 - Competência operacional no banco (migration 0008): `viagem_dia_operacao`, `viagem_total_motorista`, gatilhos de abastecimento/manutenção/despesa com a data do fato.
 - Conta a pagar avulsa do motorista gerada pela viagem apurada; fechamento consolida (cancela avulsos) e o cancelamento devolve os avulsos.
