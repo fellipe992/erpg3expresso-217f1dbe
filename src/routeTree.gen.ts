@@ -25,6 +25,7 @@ import { Route as RastreioTokenRouteImport } from './routes/rastreio.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app/index'
 import { Route as AuthenticatedAppAbastecimentosRouteImport } from './routes/_authenticated/app/abastecimentos'
 import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authenticated/app/alertas'
+import { Route as AuthenticatedAppAlertasExternosRouteImport } from './routes/_authenticated/app/alertas-externos'
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
@@ -69,8 +70,10 @@ import { Route as AuthenticatedAppCrmMetricasConversaoRouteImport } from './rout
 import { Route as AuthenticatedAppCrmTreinadorRouteImport } from './routes/_authenticated/app/crm/treinador'
 import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_authenticated/app/viagens.index'
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
+import { Route as ApiPublicHooksAlertasExternosRouteImport } from './routes/api/public/hooks/alertas-externos'
 import { Route as ApiPublicHooksZonasOficiaisRouteImport } from './routes/api/public/hooks/zonas-oficiais'
 import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -153,6 +156,12 @@ const AuthenticatedAppAlertasRoute = AuthenticatedAppAlertasRouteImport.update({
   path: '/app/alertas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppAlertasExternosRoute =
+  AuthenticatedAppAlertasExternosRouteImport.update({
+    id: '/app/alertas-externos',
+    path: '/app/alertas-externos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppAssistenteRoute =
   AuthenticatedAppAssistenteRouteImport.update({
     id: '/app/assistente',
@@ -408,6 +417,12 @@ const AuthenticatedAppViagensIdRoute =
     path: '/app/viagens/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicHooksAlertasExternosRoute =
+  ApiPublicHooksAlertasExternosRouteImport.update({
+    id: '/api/public/hooks/alertas-externos',
+    path: '/api/public/hooks/alertas-externos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksZonasOficiaisRoute =
   ApiPublicHooksZonasOficiaisRouteImport.update({
     id: '/api/public/hooks/zonas-oficiais',
@@ -419,6 +434,12 @@ const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
   path: '/api/public/rastreio/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -441,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -485,8 +507,10 @@ export interface FileRoutesByFullPath {
   '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/alertas-externos': typeof ApiPublicHooksAlertasExternosRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -505,6 +529,7 @@ export interface FileRoutesByTo {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -549,8 +574,10 @@ export interface FileRoutesByTo {
   '/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/alertas-externos': typeof ApiPublicHooksAlertasExternosRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -571,6 +598,7 @@ export interface FileRoutesById {
   '/rastreio/$token': typeof RastreioTokenRoute
   '/_authenticated/app/abastecimentos': typeof AuthenticatedAppAbastecimentosRoute
   '/_authenticated/app/alertas': typeof AuthenticatedAppAlertasRoute
+  '/_authenticated/app/alertas-externos': typeof AuthenticatedAppAlertasExternosRoute
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
@@ -615,8 +643,10 @@ export interface FileRoutesById {
   '/_authenticated/app/crm/metricas-conversao': typeof AuthenticatedAppCrmMetricasConversaoRoute
   '/_authenticated/app/crm/treinador': typeof AuthenticatedAppCrmTreinadorRoute
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
+  '/api/public/hooks/alertas-externos': typeof ApiPublicHooksAlertasExternosRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -637,6 +667,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
+    | '/app/alertas-externos'
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
@@ -681,8 +712,10 @@ export interface FileRouteTypes {
     | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
+    | '/api/public/hooks/alertas-externos'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -701,6 +734,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/app/abastecimentos'
     | '/app/alertas'
+    | '/app/alertas-externos'
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
@@ -745,8 +779,10 @@ export interface FileRouteTypes {
     | '/app/crm/metricas-conversao'
     | '/app/crm/treinador'
     | '/app/viagens/$id'
+    | '/api/public/hooks/alertas-externos'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
@@ -766,6 +802,7 @@ export interface FileRouteTypes {
     | '/rastreio/$token'
     | '/_authenticated/app/abastecimentos'
     | '/_authenticated/app/alertas'
+    | '/_authenticated/app/alertas-externos'
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/auditoria'
     | '/_authenticated/app/avisos'
@@ -810,8 +847,10 @@ export interface FileRouteTypes {
     | '/_authenticated/app/crm/metricas-conversao'
     | '/_authenticated/app/crm/treinador'
     | '/_authenticated/app/viagens/$id'
+    | '/api/public/hooks/alertas-externos'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/telegram/webhook'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -831,8 +870,10 @@ export interface RootRouteChildren {
   ApiTreinadorMapaRoute: typeof ApiTreinadorMapaRoute
   RastreioTokenRoute: typeof RastreioTokenRoute
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
+  ApiPublicHooksAlertasExternosRoute: typeof ApiPublicHooksAlertasExternosRoute
   ApiPublicHooksZonasOficiaisRoute: typeof ApiPublicHooksZonasOficiaisRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -948,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/app/alertas'
       fullPath: '/app/alertas'
       preLoaderRoute: typeof AuthenticatedAppAlertasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/alertas-externos': {
+      id: '/_authenticated/app/alertas-externos'
+      path: '/app/alertas-externos'
+      fullPath: '/app/alertas-externos'
+      preLoaderRoute: typeof AuthenticatedAppAlertasExternosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/assistente': {
@@ -1258,6 +1306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppViagensIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/alertas-externos': {
+      id: '/api/public/hooks/alertas-externos'
+      path: '/api/public/hooks/alertas-externos'
+      fullPath: '/api/public/hooks/alertas-externos'
+      preLoaderRoute: typeof ApiPublicHooksAlertasExternosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/zonas-oficiais': {
       id: '/api/public/hooks/zonas-oficiais'
       path: '/api/public/hooks/zonas-oficiais'
@@ -1270,6 +1325,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/rastreio/$token'
       fullPath: '/api/public/rastreio/$token'
       preLoaderRoute: typeof ApiPublicRastreioTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/transactional/preview': {
@@ -1285,6 +1347,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAbastecimentosRoute: typeof AuthenticatedAppAbastecimentosRoute
   AuthenticatedAppAlertasRoute: typeof AuthenticatedAppAlertasRoute
+  AuthenticatedAppAlertasExternosRoute: typeof AuthenticatedAppAlertasExternosRoute
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
   AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
@@ -1334,6 +1397,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAbastecimentosRoute: AuthenticatedAppAbastecimentosRoute,
   AuthenticatedAppAlertasRoute: AuthenticatedAppAlertasRoute,
+  AuthenticatedAppAlertasExternosRoute: AuthenticatedAppAlertasExternosRoute,
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
   AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
@@ -1402,8 +1466,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTreinadorMapaRoute: ApiTreinadorMapaRoute,
   RastreioTokenRoute: RastreioTokenRoute,
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
+  ApiPublicHooksAlertasExternosRoute: ApiPublicHooksAlertasExternosRoute,
   ApiPublicHooksZonasOficiaisRoute: ApiPublicHooksZonasOficiaisRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport

@@ -111,6 +111,33 @@ export type Database = {
           },
         ]
       }
+      alertas_externos_fila: {
+        Row: {
+          criado_em: string
+          erro: string | null
+          id: number
+          notificacao_id: string
+          processado_em: string | null
+          tentativas: number
+        }
+        Insert: {
+          criado_em?: string
+          erro?: string | null
+          id?: number
+          notificacao_id: string
+          processado_em?: string | null
+          tentativas?: number
+        }
+        Update: {
+          criado_em?: string
+          erro?: string | null
+          id?: number
+          notificacao_id?: string
+          processado_em?: string | null
+          tentativas?: number
+        }
+        Relationships: []
+      }
       avisos: {
         Row: {
           assunto: string
@@ -2758,6 +2785,33 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          id: string
+          plataforma: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          plataforma?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          id?: string
+          plataforma?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       roteirizacao_projetos: {
         Row: {
           created_at: string
@@ -2977,6 +3031,78 @@ export type Database = {
           timezone?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      telegram_chats_detectados: {
+        Row: {
+          chat_id: number
+          tipo: string | null
+          titulo: string | null
+          ultimo_texto: string | null
+          visto_em: string
+        }
+        Insert: {
+          chat_id: number
+          tipo?: string | null
+          titulo?: string | null
+          ultimo_texto?: string | null
+          visto_em?: string
+        }
+        Update: {
+          chat_id?: number
+          tipo?: string | null
+          titulo?: string | null
+          ultimo_texto?: string | null
+          visto_em?: string
+        }
+        Relationships: []
+      }
+      telegram_destinos: {
+        Row: {
+          ativo: boolean
+          categorias: string[]
+          chat_id: number
+          criado_em: string
+          id: string
+          nome: string
+          somente_alta: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          categorias?: string[]
+          chat_id: number
+          criado_em?: string
+          id?: string
+          nome: string
+          somente_alta?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          categorias?: string[]
+          chat_id?: number
+          criado_em?: string
+          id?: string
+          nome?: string
+          somente_alta?: boolean
+        }
+        Relationships: []
+      }
+      telegram_enviados: {
+        Row: {
+          chat_id: number
+          chave: string
+          enviado_em: string
+        }
+        Insert: {
+          chat_id: number
+          chave: string
+          enviado_em?: string
+        }
+        Update: {
+          chat_id?: number
+          chave?: string
+          enviado_em?: string
         }
         Relationships: []
       }
