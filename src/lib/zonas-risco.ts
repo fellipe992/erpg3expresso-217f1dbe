@@ -50,10 +50,11 @@ export const FONTES: Record<string, string> = {
   motorista: "Motoristas",
   prf: "Oficial · PRF",
   ssp: "Oficial · SSP-SP",
+  ssp_dp: "Oficial · SSP-SP (delegacia)",
 };
 
 export const grupoFonte = (origem: string) =>
-  origem === "prf" || origem === "ssp" ? "oficial" : origem === "motorista" ? "motorista" : "g3";
+  origem === "prf" || origem === "ssp" || origem === "ssp_dp" ? "oficial" : origem === "motorista" ? "motorista" : "g3";
 
 export function useZonasRisco() {
   return useQuery({
