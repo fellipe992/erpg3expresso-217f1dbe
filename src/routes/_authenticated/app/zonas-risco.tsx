@@ -308,7 +308,7 @@ function DadosOficiais({ zonas, isAdmin }: { zonas: ZonaRisco[]; isAdmin: boolea
       qc.invalidateQueries({ queryKey: ["zonas-importacoes"] });
     },
   });
-  const oficiais = zonas.filter((z) => z.origem === "prf" || z.origem === "ssp");
+  const oficiais = zonas.filter((z) => z.origem === "prf" || z.origem === "ssp" || z.origem === "ssp_dp");
   const conta = (origem: string, n: number) => oficiais.filter((z) => z.origem === origem && z.nivel === n).length;
   const ok = ultima?.find((u) => u.fonte === "recalculo" && u.status === "ok");
   const erro = ultima?.[0]?.status === "erro" ? ultima[0] : null;
@@ -335,6 +335,12 @@ function DadosOficiais({ zonas, isAdmin }: { zonas: ZonaRisco[]; isAdmin: boolea
           <p className="font-medium">Roubo de carga SSP-SP · {periodo("ssp")}</p>
           <p className="text-muted-foreground">
             {[4, 3, 2, 1].map((n) => `${conta("ssp", n)} ${NIVEIS[n].label.toLowerCase()}`).join(" · ")} (16 regiões do estado)
+          </p>
+        </div>
+        <div>
+          <p className="font-medium">Capital SP por delegacia (SSP-SP) · {periodo("ssp_dp")}</p>
+          <p className="text-muted-foreground">
+            {[4, 3, 2, 1].map((n) => `${conta("ssp_dp", n)} ${NIVEIS[n].label.toLowerCase()}`).join(" · ")} (bairros de cada distrito policial: roubo de carga, veículo, latrocínio e trânsito)
           </p>
         </div>
       </div>
