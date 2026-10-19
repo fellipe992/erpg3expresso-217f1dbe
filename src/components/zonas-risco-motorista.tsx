@@ -170,6 +170,10 @@ export function ReportarRiscoButton() {
       setOpen(false);
       setBairro("");
       setComentario("");
+      setLocal(null);
+      setSugs([]);
+      setAberto(false);
+      tokenRef.current = null;
     } catch (e) {
       toast.error("Não foi possível enviar", { description: (e as Error).message });
     } finally {
@@ -199,7 +203,44 @@ export function ReportarRiscoButton() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Bairro ou trecho (opcional)</Label>
-              <Input value={bairro} onChange={(e) => setBairro(e.target.value.toUpperCase())} placeholder="EX.: BR-116 KM 230" />
+              <div className="relative">
+                <Input
+                  value={bairro}
+                  role="combobox"
+                  aria-expanded={aberto}
+                  onChange={(e) => mudarBairro(e.target.value)}
+                  onFocus={() => sugs.length > 0 && setAberto(true)}
+                  onBlur={() => setTimeout(() => setAberto(false), 160)}
+                  placeholder="EX.: BR-116 KM 230"
+                />
+                {aberto && sugs.length > 0 && (
+                  <ul className="absolute z-50 mt-1 max-h-56 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-lg">
+                    {sugs.map((s) => (
+                      <li key={s.placeId}>
+                        <button
+                          type="button"
+                          className="w-full rounded px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => escolher(s)}
+                        >
+                          {s.texto}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={usarMinhaLocalizacao}
+                disabled={localizando}
+              >
+                {localizando ? <Loader2 className="mr-2 size-4 animate-spin" /> : <MapPin className="mr-2 size-4" />}
+                USAR MINHA LOCALIZAÇÃO
+              </Button>
             </div>
             <div className="space-y-1">
               <Label>Tipo</Label>
