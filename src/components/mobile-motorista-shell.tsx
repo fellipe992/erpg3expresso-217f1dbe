@@ -35,17 +35,21 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
       <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/60 bg-background/80 px-3 pt-safe backdrop-blur-md sm:px-4">
         <Logo size="sm" />
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          <SolicitarMonitoramentoButton />
-          <ReportarRiscoButton />
           <ThemeToggle />
           <NotificationsBell />
           <UserMenu />
         </div>
       </header>
 
-      <main className="min-w-0 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main className="min-w-0 flex-1 pb-[calc(10rem+env(safe-area-inset-bottom))]">
         {children ?? <Outlet />}
       </main>
+
+      {/* Botões de segurança grandes, sempre à mão, logo acima do menu inferior. */}
+      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 flex gap-2 px-3 pb-2">
+        <SolicitarMonitoramentoButton />
+        <ReportarRiscoButton />
+      </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-safe backdrop-blur-md">
         <ul className="grid grid-cols-5">

@@ -219,13 +219,15 @@ export function SolicitarMonitoramentoButton() {
   return (
     <>
       <Button
-        variant="ghost"
-        size="icon"
         aria-label="Solicitar monitoramento"
         onClick={() => setOpen(true)}
-        className={cn(acionado && "animate-pulse")}
+        className={cn(
+          "h-14 flex-1 gap-2 bg-amber-500 text-sm font-bold text-black shadow-lg hover:bg-amber-500/90",
+          acionado && "animate-pulse",
+        )}
       >
-        <Siren className={cn("size-5", acionado ? "text-amber-500" : "text-amber-500/70")} />
+        <Siren className="size-6" />
+        {acionado ? "MONITORAMENTO ATIVO" : "ALERTA / MONITORAR"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">
