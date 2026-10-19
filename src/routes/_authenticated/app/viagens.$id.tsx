@@ -1361,8 +1361,14 @@ function ProvisionamentosSection({
   const combustivel = bucket((m) => cat(m).includes("combust"));
   const pedagioLancado = bucket((m) => cat(m).includes("pedágio") || cat(m).includes("pedagio"));
   const comissaoLancada = bucket((m) => cat(m).includes("comiss"));
+  // A conta a pagar do frete do motorista (gerada pela viagem) já está em
+  // "Pagamento ao motorista": não pode entrar de novo em "Outros custos".
+  const ehPagamentoMotorista = (m: any) =>
+    pagamentoMotorista > 0 && (m.origem === "viagem" || cat(m).includes("frete motorista"));
   const outrosLancados = bucket(
-    (m) => !cat(m).includes("combust") && !cat(m).includes("pedágio") && !cat(m).includes("pedagio") && !cat(m).includes("comiss"),
+    (m) =>
+      !ehPagamentoMotorista(m) &&
+      !cat(m).includes("combust") && !cat(m).includes("pedágio") && !cat(m).includes("pedagio") && !cat(m).includes("comiss"),
   );
 
   // Lançamento real prevalece; sem lançamento, mantemos o valor planejado.
