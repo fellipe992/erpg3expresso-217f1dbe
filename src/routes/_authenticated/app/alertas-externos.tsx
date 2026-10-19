@@ -95,7 +95,7 @@ function TelegramCard() {
     void qc.invalidateQueries({ queryKey: ["telegram_destinos"] });
     void qc.invalidateQueries({ queryKey: ["telegram_chats_detectados"] });
   };
-  const salvar = async (id: string, patch: Record<string, unknown>) => {
+  const salvar = async (id: string, patch: { ativo?: boolean; categorias?: string[]; somente_alta?: boolean }) => {
     const { error } = await supabase.from("telegram_destinos").update(patch).eq("id", id);
     if (error) toast.error(error.message);
     recarregar();
