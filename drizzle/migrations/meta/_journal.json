@@ -211,6 +211,13 @@
       "when": 1792436035592,
       "tag": "0029_whatsapp_integracao",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792442713679,
+      "tag": "0030_alertas_telegram_push",
+      "breakpoints": true
     }
   ]
 }
