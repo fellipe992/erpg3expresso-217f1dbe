@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORIAS, registerPushToken } from "@/lib/notifications";
 import { testarPush, testarTelegram } from "@/lib/alertas-externos.functions";
 
@@ -80,10 +82,24 @@ function PushCard() {
 
 function TelegramCard() {
   const qc = useQueryClient();
+  const [selecoes, setSelecoes] = useState<Record<string, string>>({});
+  const [salvando, setSalvando] = useState<string | null>(null);
   const testar = useServerFn(testarTelegram);
+  const clientes = useQuery({
+    queryKey: ["clientes-alertas-externos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clientes").select("id, razao_social, nome_fantasia").order("razao_social");
+      if (error) throw error;
+      return data;
+    },
+  });
   const destinos = useQuery({
     queryKey: ["telegram_destinos"],
-    queryFn: async () => (await supabase.from("telegram_destinos").select("*").order("criado_em")).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("telegram_destinos").select("*").order("criado_em");
+      if (error) throw error;
+      return data;
+    },
   });
   const detectados = useQuery({
     queryKey: ["telegram_chats_detectados"],
@@ -95,19 +111,30 @@ function TelegramCard() {
     void qc.invalidateQueries({ queryKey: ["telegram_destinos"] });
     void qc.invalidateQueries({ queryKey: ["telegram_chats_detectados"] });
   };
-  const salvar = async (id: string, patch: { ativo?: boolean; categorias?: string[]; somente_alta?: boolean }) => {
+  const salvar = async (id: string, patch: { ativo?: boolean; categorias?: string[]; somente_alta?: boolean; cliente_id?: string | null }) => {
     const { error } = await supabase.from("telegram_destinos").update(patch).eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
+    if ("cliente_id" in patch) toast.success("Destinatário atualizado.");
     recarregar();
   };
   const adicionar = async (chatId: number, nome: string) => {
-    const { error } = await supabase.from("telegram_destinos").insert({ chat_id: chatId, nome: (nome || String(chatId)).toUpperCase() });
+    const selecao = selecoes[String(chatId)];
+    if (!selecao) return;
+    setSalvando(String(chatId));
+    const { error } = await supabase.from("telegram_destinos").insert({
+      chat_id: chatId, nome: (nome || String(chatId)).toUpperCase(),
+      cliente_id: selecao === "interno" ? null : selecao,
+    });
+    setSalvando(null);
     if (error) toast.error(error.message);
     else toast.success("Chat liberado para receber alertas.");
     recarregar();
   };
   const jaCadastrados = new Set((destinos.data ?? []).map((d) => d.chat_id));
   const novos = (detectados.data ?? []).filter((c) => !jaCadastrados.has(c.chat_id));
+  const opcoesClientes = (clientes.data ?? []).map((c) => (
+    <SelectItem key={c.id} value={c.id} className="break-words">{c.nome_fantasia || c.razao_social}</SelectItem>
+  ));
 
   return (
     <Card>
@@ -118,6 +145,8 @@ function TelegramCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {clientes.isError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar os clientes.</p>}
+        {destinos.isError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar os destinatários.</p>}
         {novos.length > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Chats detectados aguardando liberação</p>
@@ -127,7 +156,13 @@ function TelegramCard() {
                   <p className="font-medium">{c.titulo || c.chat_id}</p>
                   <p className="text-xs text-muted-foreground">{c.tipo}</p>
                 </div>
-                <Button size="sm" onClick={() => adicionar(c.chat_id, c.titulo ?? "")}><Plus className="mr-1 h-4 w-4" /> Liberar</Button>
+                <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+                  <Select value={selecoes[String(c.chat_id)] ?? ""} onValueChange={(v) => setSelecoes((prev) => ({ ...prev, [String(c.chat_id)]: v }))}>
+                    <SelectTrigger aria-label={`Destinatário de ${c.titulo || c.chat_id}`} className="w-full sm:w-64"><SelectValue placeholder="Selecionar cliente ou equipe" /></SelectTrigger>
+                    <SelectContent><SelectItem value="interno">Equipe interna — todos os clientes</SelectItem>{opcoesClientes}</SelectContent>
+                  </Select>
+                  <Button size="sm" disabled={!selecoes[String(c.chat_id)] || salvando === String(c.chat_id)} onClick={() => adicionar(c.chat_id, c.titulo ?? "")}><Plus className="mr-1 h-4 w-4" /> Liberar</Button>
+                </div>
               </div>
             ))}
           </div>
@@ -151,6 +186,13 @@ function TelegramCard() {
                     recarregar();
                   }}><Trash2 className="h-4 w-4" /></Button>
                 </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Cliente destinatário</p>
+                <Select value={d.cliente_id ?? "interno"} onValueChange={(v) => salvar(d.id, { cliente_id: v === "interno" ? null : v })}>
+                  <SelectTrigger aria-label={`Cliente destinatário de ${d.nome}`} className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="interno">Equipe interna — todos os clientes</SelectItem>{opcoesClientes}</SelectContent>
+                </Select>
               </div>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIAS.map((c) => {

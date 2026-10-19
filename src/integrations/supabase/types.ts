@@ -2430,6 +2430,7 @@ export type Database = {
       notificacoes: {
         Row: {
           categoria: string
+          cliente_id: string | null
           created_at: string
           id: string
           lida_em: string | null
@@ -2441,9 +2442,11 @@ export type Database = {
           tipo: string
           titulo: string
           user_id: string
+          viagem_id: string | null
         }
         Insert: {
           categoria?: string
+          cliente_id?: string | null
           created_at?: string
           id?: string
           lida_em?: string | null
@@ -2455,9 +2458,11 @@ export type Database = {
           tipo?: string
           titulo: string
           user_id: string
+          viagem_id?: string | null
         }
         Update: {
           categoria?: string
+          cliente_id?: string | null
           created_at?: string
           id?: string
           lida_em?: string | null
@@ -2469,6 +2474,7 @@ export type Database = {
           tipo?: string
           titulo?: string
           user_id?: string
+          viagem_id?: string | null
         }
         Relationships: []
       }
@@ -3063,6 +3069,7 @@ export type Database = {
           ativo: boolean
           categorias: string[]
           chat_id: number
+          cliente_id: string | null
           criado_em: string
           id: string
           nome: string
@@ -3072,6 +3079,7 @@ export type Database = {
           ativo?: boolean
           categorias?: string[]
           chat_id: number
+          cliente_id?: string | null
           criado_em?: string
           id?: string
           nome: string
@@ -3081,12 +3089,21 @@ export type Database = {
           ativo?: boolean
           categorias?: string[]
           chat_id?: number
+          cliente_id?: string | null
           criado_em?: string
           id?: string
           nome?: string
           somente_alta?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "telegram_destinos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       telegram_enviados: {
         Row: {

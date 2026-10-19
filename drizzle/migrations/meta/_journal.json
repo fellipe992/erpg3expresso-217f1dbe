@@ -225,6 +225,13 @@
       "when": 1792448283169,
       "tag": "0031_alertas_operacionais_gestao",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792452253285,
+      "tag": "0032_telegram_destinatarios_por_cliente",
+      "breakpoints": true
     }
   ]
 }
