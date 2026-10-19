@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { avisarWhatsApp } from "@/lib/whatsapp.functions";
 
 type Parada = {
   id: string;
@@ -76,6 +77,7 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
   const concluirDescarga = async () => {
     if (!atual) return;
     const ok = await atualizar(atual.id, { entregue_em: agora(), chegou_doca_em: atual.chegou_doca_em ?? agora() }, "Entrega finalizada");
+    if (ok) void avisarWhatsApp({ data: { viagemId, evento: "entrega_concluida", detalhe: ` ${nome(atual)}` } }).catch(() => {});
     if (ok && pendentes.length > 1) setEscolher(true);
   };
 
@@ -84,6 +86,7 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
     const outros = pendentes.filter((x) => x.id !== p.id && x.a_caminho_em && !x.chegou_doca_em);
     for (const o of outros) await supabase.from("viagem_paradas").update({ a_caminho_em: null }).eq("id", o.id);
     const ok = await atualizar(p.id, { a_caminho_em: agora() }, `Indo para ${nome(p)}`);
+    if (ok) void avisarWhatsApp({ data: { viagemId, evento: "a_caminho", detalhe: ` ${nome(p)}` } }).catch(() => {});
     if (ok) setEscolher(false);
   };
 

@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ContatosWhatsAppCliente } from "@/components/whatsapp/contatos-cliente";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -300,6 +301,11 @@ function ClientesPage() {
             )}
             <div className="md:col-span-2"><F label="Observações"><Textarea rows={2} value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></F></div>
           </div>
+          {form.id && !duplicando ? (
+            <ContatosWhatsAppCliente clienteId={form.id} />
+          ) : (
+            <p className="text-xs text-muted-foreground">Salve o cliente para cadastrar os monitores de WhatsApp.</p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={() => save.mutate()} disabled={save.isPending}>

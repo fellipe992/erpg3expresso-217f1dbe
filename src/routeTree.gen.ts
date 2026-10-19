@@ -28,6 +28,7 @@ import { Route as AuthenticatedAppAlertasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
+import { Route as AuthenticatedAppChatRouteImport } from './routes/_authenticated/app/chat'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppCustosRouteImport } from './routes/_authenticated/app/custos'
@@ -55,6 +56,7 @@ import { Route as AuthenticatedAppRoteirizadorRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppSimuladorRouteImport } from './routes/_authenticated/app/simulador'
 import { Route as AuthenticatedAppUsuariosRouteImport } from './routes/_authenticated/app/usuarios'
 import { Route as AuthenticatedAppVeiculosRouteImport } from './routes/_authenticated/app/veiculos'
+import { Route as AuthenticatedAppWhatsappRouteImport } from './routes/_authenticated/app/whatsapp'
 import { Route as AuthenticatedAppZonasRiscoRouteImport } from './routes/_authenticated/app/zonas-risco'
 import { Route as ApiPublicParceirosRouteImport } from './routes/api/public/parceiros'
 import { Route as AuthenticatedAppCrmAbordagensRouteImport } from './routes/_authenticated/app/crm/abordagens'
@@ -71,6 +73,7 @@ import { Route as AuthenticatedAppViagensIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppViagensIdRouteImport } from './routes/_authenticated/app/viagens.$id'
 import { Route as ApiPublicHooksZonasOficiaisRouteImport } from './routes/api/public/hooks/zonas-oficiais'
 import { Route as ApiPublicRastreioTokenRouteImport } from './routes/api/public/rastreio.$token'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -168,6 +171,11 @@ const AuthenticatedAppAuditoriaRoute =
 const AuthenticatedAppAvisosRoute = AuthenticatedAppAvisosRouteImport.update({
   id: '/app/avisos',
   path: '/app/avisos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppChatRoute = AuthenticatedAppChatRouteImport.update({
+  id: '/app/chat',
+  path: '/app/chat',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppClientesRoute =
@@ -325,6 +333,12 @@ const AuthenticatedAppVeiculosRoute =
     path: '/app/veiculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppWhatsappRoute =
+  AuthenticatedAppWhatsappRouteImport.update({
+    id: '/app/whatsapp',
+    path: '/app/whatsapp',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppZonasRiscoRoute =
   AuthenticatedAppZonasRiscoRouteImport.update({
     id: '/app/zonas-risco',
@@ -419,6 +433,12 @@ const ApiPublicRastreioTokenRoute = ApiPublicRastreioTokenRouteImport.update({
   path: '/api/public/rastreio/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -444,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/app/chat': typeof AuthenticatedAppChatRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
@@ -471,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -487,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -508,6 +531,7 @@ export interface FileRoutesByTo {
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/app/chat': typeof AuthenticatedAppChatRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
@@ -535,6 +559,7 @@ export interface FileRoutesByTo {
   '/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -551,6 +576,7 @@ export interface FileRoutesByTo {
   '/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/app/viagens': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -574,6 +600,7 @@ export interface FileRoutesById {
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/_authenticated/app/chat': typeof AuthenticatedAppChatRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/custos': typeof AuthenticatedAppCustosRoute
@@ -601,6 +628,7 @@ export interface FileRoutesById {
   '/_authenticated/app/simulador': typeof AuthenticatedAppSimuladorRoute
   '/_authenticated/app/usuarios': typeof AuthenticatedAppUsuariosRoute
   '/_authenticated/app/veiculos': typeof AuthenticatedAppVeiculosRoute
+  '/_authenticated/app/whatsapp': typeof AuthenticatedAppWhatsappRoute
   '/_authenticated/app/zonas-risco': typeof AuthenticatedAppZonasRiscoRoute
   '/api/public/parceiros': typeof ApiPublicParceirosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -617,6 +645,7 @@ export interface FileRoutesById {
   '/_authenticated/app/viagens/$id': typeof AuthenticatedAppViagensIdRoute
   '/api/public/hooks/zonas-oficiais': typeof ApiPublicHooksZonasOficiaisRoute
   '/api/public/rastreio/$token': typeof ApiPublicRastreioTokenRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/app/viagens/': typeof AuthenticatedAppViagensIndexRoute
 }
@@ -640,6 +669,7 @@ export interface FileRouteTypes {
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
+    | '/app/chat'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
@@ -667,6 +697,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/app/whatsapp'
     | '/app/zonas-risco'
     | '/api/public/parceiros'
     | '/app/'
@@ -683,6 +714,7 @@ export interface FileRouteTypes {
     | '/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens/'
   fileRoutesByTo: FileRoutesByTo
@@ -704,6 +736,7 @@ export interface FileRouteTypes {
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
+    | '/app/chat'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
@@ -731,6 +764,7 @@ export interface FileRouteTypes {
     | '/app/simulador'
     | '/app/usuarios'
     | '/app/veiculos'
+    | '/app/whatsapp'
     | '/app/zonas-risco'
     | '/api/public/parceiros'
     | '/app'
@@ -747,6 +781,7 @@ export interface FileRouteTypes {
     | '/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/app/viagens'
   id:
@@ -769,6 +804,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/auditoria'
     | '/_authenticated/app/avisos'
+    | '/_authenticated/app/chat'
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/custos'
@@ -796,6 +832,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/simulador'
     | '/_authenticated/app/usuarios'
     | '/_authenticated/app/veiculos'
+    | '/_authenticated/app/whatsapp'
     | '/_authenticated/app/zonas-risco'
     | '/api/public/parceiros'
     | '/_authenticated/app/'
@@ -812,6 +849,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/viagens/$id'
     | '/api/public/hooks/zonas-oficiais'
     | '/api/public/rastreio/$token'
+    | '/api/public/whatsapp/webhook'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/app/viagens/'
   fileRoutesById: FileRoutesById
@@ -833,6 +871,7 @@ export interface RootRouteChildren {
   ApiPublicParceirosRoute: typeof ApiPublicParceirosRoute
   ApiPublicHooksZonasOficiaisRoute: typeof ApiPublicHooksZonasOficiaisRoute
   ApiPublicRastreioTokenRoute: typeof ApiPublicRastreioTokenRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -969,6 +1008,13 @@ declare module '@tanstack/react-router' {
       path: '/app/avisos'
       fullPath: '/app/avisos'
       preLoaderRoute: typeof AuthenticatedAppAvisosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/chat': {
+      id: '/_authenticated/app/chat'
+      path: '/app/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AuthenticatedAppChatRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/clientes': {
@@ -1160,6 +1206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppVeiculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/whatsapp': {
+      id: '/_authenticated/app/whatsapp'
+      path: '/app/whatsapp'
+      fullPath: '/app/whatsapp'
+      preLoaderRoute: typeof AuthenticatedAppWhatsappRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/zonas-risco': {
       id: '/_authenticated/app/zonas-risco'
       path: '/app/zonas-risco'
@@ -1272,6 +1325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRastreioTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -1288,6 +1348,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
   AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
+  AuthenticatedAppChatRoute: typeof AuthenticatedAppChatRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppCustosRoute: typeof AuthenticatedAppCustosRoute
@@ -1315,6 +1376,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppSimuladorRoute: typeof AuthenticatedAppSimuladorRoute
   AuthenticatedAppUsuariosRoute: typeof AuthenticatedAppUsuariosRoute
   AuthenticatedAppVeiculosRoute: typeof AuthenticatedAppVeiculosRoute
+  AuthenticatedAppWhatsappRoute: typeof AuthenticatedAppWhatsappRoute
   AuthenticatedAppZonasRiscoRoute: typeof AuthenticatedAppZonasRiscoRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppCrmAbordagensRoute: typeof AuthenticatedAppCrmAbordagensRoute
@@ -1337,6 +1399,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
   AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
+  AuthenticatedAppChatRoute: AuthenticatedAppChatRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppCustosRoute: AuthenticatedAppCustosRoute,
@@ -1365,6 +1428,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppSimuladorRoute: AuthenticatedAppSimuladorRoute,
   AuthenticatedAppUsuariosRoute: AuthenticatedAppUsuariosRoute,
   AuthenticatedAppVeiculosRoute: AuthenticatedAppVeiculosRoute,
+  AuthenticatedAppWhatsappRoute: AuthenticatedAppWhatsappRoute,
   AuthenticatedAppZonasRiscoRoute: AuthenticatedAppZonasRiscoRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppCrmAbordagensRoute: AuthenticatedAppCrmAbordagensRoute,
@@ -1404,6 +1468,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicParceirosRoute: ApiPublicParceirosRoute,
   ApiPublicHooksZonasOficiaisRoute: ApiPublicHooksZonasOficiaisRoute,
   ApiPublicRastreioTokenRoute: ApiPublicRastreioTokenRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
