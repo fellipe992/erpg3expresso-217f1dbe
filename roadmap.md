@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Alertas externos por cliente
-- [ ] Vincular cada chat Telegram a um cliente ou à equipe interna.
-- [ ] Bloquear envios de outros clientes ou de alertas sem viagem identificada.
-- [ ] Testar o filtro e verificar a seleção na tela autenticada.
+- [x] Vincular cada chat Telegram a um cliente ou à equipe interna.
+- [x] Bloquear envios de outros clientes ou de alertas sem viagem identificada antes de enviar texto ou fotos.
+- [x] Cinco testes do filtro passaram; seleção salva e relida na tela autenticada, sem rolagem horizontal no celular, usando chat de teste inativo removido ao final.
 
 ## Concluído (relatórios e filtros por período de operação)
 - Competência operacional no banco (migration 0008): `viagem_dia_operacao`, `viagem_total_motorista`, gatilhos de abastecimento/manutenção/despesa com a data do fato.
