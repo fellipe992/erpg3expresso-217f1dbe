@@ -90,14 +90,41 @@ class G3TrackingService : Service() {
     fun reviveIntent(ctx: Context): Intent =
       Intent(ctx, G3TrackingService::class.java).setAction(ACTION_REVIVE)
 
+    /**
+     * Religa o serviço só quando ele NÃO está no ar e existe viagem salva.
+     * Chamar startForegroundService com o serviço já ativo faz o Android
+     * repostar a notificação (barra "piscando"); por isso o guard de isRunning.
+     */
     fun startIfActive(ctx: Context) {
-      if (!hasActiveTrip(ctx)) return
+      if (isRunning || !hasActiveTrip(ctx)) return
       val intent = reviveIntent(ctx)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        ctx.startForegroundService(intent)
-      } else {
-        ctx.startService(intent)
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          ctx.startForegroundService(intent)
+        } else {
+          ctx.startService(intent)
+        }
+      } catch (e: Exception) {
+        // Android 12+ pode bloquear início em segundo plano; o alarme tenta de novo.
+        Log.w(TAG, "não foi possível religar o serviço agora", e)
       }
+    }
+
+    /** Encerra sem precisar subir o serviço (usado quando ele já não está rodando). */
+    fun clearState(ctx: Context) {
+      prefs(ctx).edit().clear().commit()
+      val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      val pi = PendingIntent.getBroadcast(
+        ctx,
+        991,
+        Intent(ctx, G3BootReceiver::class.java).setAction(ACTION_REVIVE),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+      try {
+        am.cancel(pi)
+      } catch (_: Exception) {
+      }
+      ctx.getSystemService(NotificationManager::class.java)?.cancel(NOTIF_ID)
     }
   }
 
@@ -160,12 +187,15 @@ class G3TrackingService : Service() {
           // Reinício pelo sistema / alarme / boot: recupera o estado salvo.
           restore()
           if (supabaseUrl.isEmpty() || viagens.length() == 0) {
-            stopSelf()
+            // startForegroundService exige startForeground; sem isso o app crasha
+            // e o sistema fica religando em loop.
+            startForegroundNotification()
+            stopTracking(clearState = true)
             return START_NOT_STICKY
           }
         }
         startForegroundNotification()
-        startTracking()
+        if (!isRunning) startTracking()
         return START_STICKY
       }
     }
