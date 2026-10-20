@@ -346,9 +346,13 @@ class G3TrackingService : Service() {
     netCallback = null
   }
 
-  /** App fechado pelo motorista: o rastreamento continua e o serviço é religado. */
+  /**
+   * App fechado pelo motorista: o serviço continua vivo (stopWithTask=false).
+   * Não chamamos startForegroundService aqui — isso repostava a notificação.
+   * Só garantimos o alarme de recuperação.
+   */
   override fun onTaskRemoved(rootIntent: Intent?) {
-    if (isRunning || hasActiveTrip(this)) startIfActive(this)
+    if (isRunning) scheduleRevive()
     super.onTaskRemoved(rootIntent)
   }
 
@@ -357,11 +361,13 @@ class G3TrackingService : Service() {
     callback = null
     main.removeCallbacks(watchdog)
     unregisterNetworkCallback()
-    // Só encerra de vez quando não há mais viagem salva (ACTION_STOP limpa o estado).
-    if (isRunning && hasActiveTrip(this)) startIfActive(this)
+    // Só religa quando o sistema matou o serviço com viagem ativa (ACTION_STOP limpa o estado).
+    val revive = isRunning && hasActiveTrip(this)
     isRunning = false
+    foregroundStarted = false
     releaseWakeLock()
     super.onDestroy()
+    if (revive) startIfActive(this)
   }
 
   override fun onBind(intent: Intent?): IBinder? = null
