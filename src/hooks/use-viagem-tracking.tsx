@@ -108,8 +108,12 @@ export function useMotoristaAutoTracking() {
       if (cancelled) return;
 
       if (viagensKey === "") {
+        // Só manda parar quando o serviço está de fato no ar: chamar stop() a
+        // cada 2 min sem viagem fazia o Android subir/derrubar o serviço e a
+        // barra de notificações piscar.
         try {
-          await G3Tracking.stop();
+          const { running } = await G3Tracking.isRunning();
+          if (running) await G3Tracking.stop();
         } catch {
           /* noop */
         }
