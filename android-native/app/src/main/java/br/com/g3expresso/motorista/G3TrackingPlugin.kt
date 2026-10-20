@@ -94,10 +94,16 @@ class G3TrackingPlugin : Plugin() {
 
   @PluginMethod
   fun stop(call: PluginCall) {
-    val intent = Intent(context, G3TrackingService::class.java).apply {
-      action = G3TrackingService.ACTION_STOP
+    if (G3TrackingService.isRunning) {
+      val intent = Intent(context, G3TrackingService::class.java).apply {
+        action = G3TrackingService.ACTION_STOP
+      }
+      context.startService(intent)
+    } else {
+      // Serviço já parado: limpa estado/alarme sem subir o serviço de novo
+      // (subir só para parar fazia a notificação aparecer e sumir).
+      G3TrackingService.clearState(context)
     }
-    context.startService(intent)
     call.resolve(JSObject().put("running", false))
   }
 

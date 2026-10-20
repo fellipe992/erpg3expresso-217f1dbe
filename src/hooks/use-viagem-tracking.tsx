@@ -89,6 +89,7 @@ export function useMotoristaAutoTracking() {
   const insertWarnedRef = useRef(false);
   const pausedUntilRef = useRef(0);
   const flushingRef = useRef(false);
+  const stopSentRef = useRef(false);
 
 
   // ------------------------------------------------ Android: serviço nativo
@@ -108,13 +109,19 @@ export function useMotoristaAutoTracking() {
       if (cancelled) return;
 
       if (viagensKey === "") {
+        // Para uma vez ao ficar sem viagem (limpa estado e alarme) e depois só
+        // se o serviço ainda estiver no ar. Chamar stop() a cada 2 min fazia o
+        // Android subir/derrubar o serviço e a barra de notificações piscar.
         try {
-          await G3Tracking.stop();
+          const { running } = await G3Tracking.isRunning();
+          if (running || !stopSentRef.current) await G3Tracking.stop();
+          stopSentRef.current = true;
         } catch {
           /* noop */
         }
         return;
       }
+      stopSentRef.current = false;
 
       const { data } = await supabase.auth.getSession();
       const session = data.session;

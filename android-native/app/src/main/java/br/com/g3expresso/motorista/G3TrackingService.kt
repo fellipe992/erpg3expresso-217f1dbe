@@ -90,14 +90,41 @@ class G3TrackingService : Service() {
     fun reviveIntent(ctx: Context): Intent =
       Intent(ctx, G3TrackingService::class.java).setAction(ACTION_REVIVE)
 
+    /**
+     * Religa o serviço só quando ele NÃO está no ar e existe viagem salva.
+     * Chamar startForegroundService com o serviço já ativo faz o Android
+     * repostar a notificação (barra "piscando"); por isso o guard de isRunning.
+     */
     fun startIfActive(ctx: Context) {
-      if (!hasActiveTrip(ctx)) return
+      if (isRunning || !hasActiveTrip(ctx)) return
       val intent = reviveIntent(ctx)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        ctx.startForegroundService(intent)
-      } else {
-        ctx.startService(intent)
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          ctx.startForegroundService(intent)
+        } else {
+          ctx.startService(intent)
+        }
+      } catch (e: Exception) {
+        // Android 12+ pode bloquear início em segundo plano; o alarme tenta de novo.
+        Log.w(TAG, "não foi possível religar o serviço agora", e)
       }
+    }
+
+    /** Encerra sem precisar subir o serviço (usado quando ele já não está rodando). */
+    fun clearState(ctx: Context) {
+      prefs(ctx).edit().clear().commit()
+      val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      val pi = PendingIntent.getBroadcast(
+        ctx,
+        991,
+        Intent(ctx, G3BootReceiver::class.java).setAction(ACTION_REVIVE),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      )
+      try {
+        am.cancel(pi)
+      } catch (_: Exception) {
+      }
+      ctx.getSystemService(NotificationManager::class.java)?.cancel(NOTIF_ID)
     }
   }
 
@@ -124,6 +151,8 @@ class G3TrackingService : Service() {
   private var viagens = JSONArray() // [{id, motorista_id, veiculo_id}]
   private var intervalMs = 20_000L
   private var minDistanceM = 0f
+  /** A notificação fixa já foi postada nesta instância do serviço? */
+  private var foregroundStarted = false
 
   override fun onCreate() {
     super.onCreate()
@@ -160,12 +189,15 @@ class G3TrackingService : Service() {
           // Reinício pelo sistema / alarme / boot: recupera o estado salvo.
           restore()
           if (supabaseUrl.isEmpty() || viagens.length() == 0) {
-            stopSelf()
+            // startForegroundService exige startForeground; sem isso o app crasha
+            // e o sistema fica religando em loop.
+            startForegroundNotification()
+            stopTracking(clearState = true)
             return START_NOT_STICKY
           }
         }
         startForegroundNotification()
-        startTracking()
+        if (!isRunning) startTracking()
         return START_STICKY
       }
     }
@@ -285,9 +317,11 @@ class G3TrackingService : Service() {
     releaseWakeLock()
     if (clearState) {
       cancelRevive()
-      prefs(this).edit().clear().apply()
+      prefs(this).edit().clear().commit()
     }
     stopForeground(true)
+    foregroundStarted = false
+    getSystemService(NotificationManager::class.java)?.cancel(NOTIF_ID)
     stopSelf()
   }
 
@@ -316,9 +350,13 @@ class G3TrackingService : Service() {
     netCallback = null
   }
 
-  /** App fechado pelo motorista: o rastreamento continua e o serviço é religado. */
+  /**
+   * App fechado pelo motorista: o serviço continua vivo (stopWithTask=false).
+   * Não chamamos startForegroundService aqui — isso repostava a notificação.
+   * Só garantimos o alarme de recuperação.
+   */
   override fun onTaskRemoved(rootIntent: Intent?) {
-    if (isRunning || hasActiveTrip(this)) startIfActive(this)
+    if (isRunning) scheduleRevive()
     super.onTaskRemoved(rootIntent)
   }
 
@@ -327,11 +365,13 @@ class G3TrackingService : Service() {
     callback = null
     main.removeCallbacks(watchdog)
     unregisterNetworkCallback()
-    // Só encerra de vez quando não há mais viagem salva (ACTION_STOP limpa o estado).
-    if (isRunning && hasActiveTrip(this)) startIfActive(this)
+    // Só religa quando o sistema matou o serviço com viagem ativa (ACTION_STOP limpa o estado).
+    val revive = isRunning && hasActiveTrip(this)
     isRunning = false
+    foregroundStarted = false
     releaseWakeLock()
     super.onDestroy()
+    if (revive) startIfActive(this)
   }
 
   override fun onBind(intent: Intent?): IBinder? = null
@@ -539,11 +579,17 @@ class G3TrackingService : Service() {
     mgr.createNotificationChannel(ch)
   }
 
+  /**
+   * Posta a notificação fixa UMA vez por vida do serviço. Repostar a cada
+   * start/revive é o que fazia a barra de notificações "piscar".
+   */
   private fun startForegroundNotification() {
+    if (foregroundStarted) return
     val open = PendingIntent.getActivity(
       this,
       0,
-      Intent(this, MainActivity::class.java),
+      Intent(this, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
     val notif: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -552,11 +598,20 @@ class G3TrackingService : Service() {
       .setSmallIcon(R.drawable.ic_stat_notify)
       .setOngoing(true)
       .setSilent(true)
+      .setOnlyAlertOnce(true)
+      .setShowWhen(false)
+      .setCategory(NotificationCompat.CATEGORY_SERVICE)
+      .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
       .setContentIntent(open)
       .setPriority(NotificationCompat.PRIORITY_LOW)
       .build()
 
-    startForeground(NOTIF_ID, notif)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      startForeground(NOTIF_ID, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+    } else {
+      startForeground(NOTIF_ID, notif)
+    }
+    foregroundStarted = true
   }
 
   private fun acquireWakeLock() {
