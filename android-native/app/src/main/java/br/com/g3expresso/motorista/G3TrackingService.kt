@@ -151,6 +151,8 @@ class G3TrackingService : Service() {
   private var viagens = JSONArray() // [{id, motorista_id, veiculo_id}]
   private var intervalMs = 20_000L
   private var minDistanceM = 0f
+  /** A notificação fixa já foi postada nesta instância do serviço? */
+  private var foregroundStarted = false
 
   override fun onCreate() {
     super.onCreate()
@@ -577,11 +579,17 @@ class G3TrackingService : Service() {
     mgr.createNotificationChannel(ch)
   }
 
+  /**
+   * Posta a notificação fixa UMA vez por vida do serviço. Repostar a cada
+   * start/revive é o que fazia a barra de notificações "piscar".
+   */
   private fun startForegroundNotification() {
+    if (foregroundStarted) return
     val open = PendingIntent.getActivity(
       this,
       0,
-      Intent(this, MainActivity::class.java),
+      Intent(this, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
     val notif: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
@@ -590,11 +598,20 @@ class G3TrackingService : Service() {
       .setSmallIcon(R.drawable.ic_stat_notify)
       .setOngoing(true)
       .setSilent(true)
+      .setOnlyAlertOnce(true)
+      .setShowWhen(false)
+      .setCategory(NotificationCompat.CATEGORY_SERVICE)
+      .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
       .setContentIntent(open)
       .setPriority(NotificationCompat.PRIORITY_LOW)
       .build()
 
-    startForeground(NOTIF_ID, notif)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      startForeground(NOTIF_ID, notif, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+    } else {
+      startForeground(NOTIF_ID, notif)
+    }
+    foregroundStarted = true
   }
 
   private fun acquireWakeLock() {
