@@ -315,9 +315,11 @@ class G3TrackingService : Service() {
     releaseWakeLock()
     if (clearState) {
       cancelRevive()
-      prefs(this).edit().clear().apply()
+      prefs(this).edit().clear().commit()
     }
     stopForeground(true)
+    foregroundStarted = false
+    getSystemService(NotificationManager::class.java)?.cancel(NOTIF_ID)
     stopSelf()
   }
 
