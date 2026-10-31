@@ -142,18 +142,28 @@ function RespondendoCliente() {
   const [mensagem, setMensagem] = useState("");
   const [contexto, setContexto] = useState("");
   const [canal, setCanal] = useState<"email" | "whatsapp">("whatsapp");
+  const [respostas, setRespostas] = useState<Record<number, string>>({});
+  const [esclarecimentos, setEsclarecimentos] = useState("");
   const m = useMutation({
-    mutationFn: () => fn({ data: { mensagem, contexto, canal } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["treinador-historico"] }),
+    mutationFn: (esc: string) => fn({ data: { mensagem, contexto, canal, esclarecimentos: esc } }),
+    onSuccess: () => { setRespostas({}); qc.invalidateQueries({ queryKey: ["treinador-historico"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const r = m.data;
+  const perguntas = r?.perguntas_para_vendedor ?? [];
+  const refinar = () => {
+    const novo = perguntas.map((p, i) => (respostas[i]?.trim() ? `P: ${p}\nR: ${respostas[i]!.trim()}` : "")).filter(Boolean).join("\n\n");
+    if (!novo) return toast.error("Responda pelo menos uma pergunta.");
+    const total = esclarecimentos ? `${esclarecimentos}\n\n${novo}` : novo;
+    setEsclarecimentos(total);
+    m.mutate(total);
+  };
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2"><Reply className="size-5" /> Respondendo o cliente</CardTitle>
-          <CardDescription>Cole a mensagem do cliente, explique o contexto (escrevendo ou falando) e receba uma resposta humana.</CardDescription>
+          <CardDescription>Descreva a situação (escrevendo ou falando). Se o cliente já respondeu, cole a mensagem dele — é opcional.</CardDescription>
         </CardHeader>
         <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           <div className="flex gap-2">
@@ -165,19 +175,19 @@ function RespondendoCliente() {
             </Button>
           </div>
           <div className="space-y-1.5">
-            <Label>Mensagem do cliente</Label>
-            <Textarea rows={6} value={mensagem} onChange={(e) => setMensagem(e.target.value)} placeholder="Ex.: Achei o valor alto, a transportadora atual cobra 12% menos..." />
-          </div>
-          <div className="space-y-1.5">
             <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <Label className="min-w-0">Contexto (quem é, histórico, o que você quer)</Label>
               <BotaoVoz onTexto={(t) => setContexto((c) => (c ? `${c} ${t}` : t))} />
             </div>
-            <Textarea rows={5} value={contexto} onChange={(e) => setContexto(e.target.value)} placeholder="Ex.: Comprador de indústria de alimentos, já fizemos 2 cotações, quero fechar um teste de 1 carga..." />
+            <Textarea rows={6} value={contexto} onChange={(e) => { setContexto(e.target.value); setEsclarecimentos(""); }} placeholder="Ex.: Comprador de indústria de alimentos, já fizemos 2 cotações, quero fechar um teste de 1 carga..." />
           </div>
-          <Button onClick={() => m.mutate()} disabled={m.isPending || !mensagem.trim()} className="w-full">
+          <div className="space-y-1.5">
+            <Label>Mensagem do cliente (opcional)</Label>
+            <Textarea rows={4} value={mensagem} onChange={(e) => { setMensagem(e.target.value); setEsclarecimentos(""); }} placeholder="Deixe em branco se ainda não há resposta do cliente." />
+          </div>
+          <Button onClick={() => m.mutate(esclarecimentos)} disabled={m.isPending || (!mensagem.trim() && !contexto.trim())} className="w-full">
             {m.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
-            Me ajude a responder
+            {mensagem.trim() ? "Me ajude a responder" : "Montar mensagem para o cliente"}
           </Button>
         </CardContent>
       </Card>
@@ -186,6 +196,21 @@ function RespondendoCliente() {
         <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           {!r && <p className="text-sm text-muted-foreground">A resposta aparece aqui.</p>}
           {r && <RespostaView r={r} canal={canal} />}
+          {r && perguntas.length > 0 && (
+            <div className="space-y-3 rounded-lg border border-primary/40 p-3">
+              <p className="text-sm font-semibold">Para deixar a mensagem mais certeira, me responda:</p>
+              {perguntas.map((p, i) => (
+                <div key={i} className="space-y-1.5">
+                  <Label className="text-sm font-normal">{p}</Label>
+                  <Textarea rows={2} value={respostas[i] ?? ""} onChange={(e) => setRespostas((s) => ({ ...s, [i]: e.target.value }))} />
+                </div>
+              ))}
+              <Button onClick={refinar} disabled={m.isPending} variant="secondary" className="w-full">
+                {m.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
+                Refazer com minhas respostas
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -308,11 +333,18 @@ type AulaR = Awaited<ReturnType<typeof aulaLivro>>;
 function RespostaView({ r, canal }: { r: RespostaR; canal: "email" | "whatsapp" }) {
   return (
     <>
-              {r.objecao && <Badge>Objeção: {r.objecao}</Badge>}
+              {r.objecao && <Badge className="h-auto max-w-full whitespace-normal">Objeção: {r.objecao}</Badge>}
+              {r.analise && (
+                <div className="rounded-md border p-3 text-sm">
+                  <p className="font-semibold">Leitura da situação</p>
+                  <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{r.analise}</p>
+                  {r.estrategia && <p className="mt-2"><b>Estratégia:</b> {r.estrategia}</p>}
+                </div>
+              )}
               {canal === "email" && r.assunto && <BlocoTexto titulo="Assunto" texto={r.assunto} />}
-              <BlocoTexto titulo="Resposta" texto={r.resposta} whatsapp={canal === "whatsapp"} />
+              <BlocoTexto titulo="Mensagem para enviar" texto={r.resposta} whatsapp={canal === "whatsapp"} />
               <BlocoTexto titulo="Versão curta" texto={r.versao_curta} whatsapp={canal === "whatsapp"} />
-              <Porques itens={r.porques} />
+              <Porques itens={r.porques ?? []} />
               <div className="rounded-md bg-primary/10 p-3 text-sm"><b>Próximo passo:</b> {r.proximo_passo}</div>
             </>
   );
