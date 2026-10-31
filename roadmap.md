@@ -1,5 +1,11 @@
 # Roadmap
 
+## Microfone no app (Treinador)
+- [x] Plugin nativo `G3Permissions` (pedir microfone ao Android e abrir os ajustes do app) + registro na `MainActivity`.
+- [x] Tela do Treinador pede a permissão nativa antes de gravar e explica o motivo quando falha, com botão "Ajustes".
+- [x] Seis testes das mensagens de erro do microfone passaram; typecheck limpo.
+- [ ] APK nova instalada no celular: confirmar que "Falar contexto" abre a janela do Android e transcreve.
+
 ## Alertas externos por cliente
 - [x] Vincular cada chat Telegram a um cliente ou à equipe interna.
 - [x] Bloquear envios de outros clientes ou de alertas sem viagem identificada antes de enviar texto ou fotos.
