@@ -62,16 +62,39 @@ function useDitado(onTexto: (t: string) => void) {
   const ref = useRef<any>(null);
   const rec = useRef<MediaRecorder | null>(null);
 
+  const avisar = (m: { texto: string; abrirAjustes: boolean }) => {
+    if (m.abrirAjustes) {
+      toast.error(m.texto, {
+        action: { label: "Ajustes", onClick: () => void abrirConfiguracoesApp() },
+        duration: 12000,
+      });
+    } else {
+      toast.error(m.texto);
+    }
+  };
+
   const gravar = async () => {
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       toast.error("Este aparelho não permite gravar áudio aqui.");
       return;
     }
+    // No app o Android precisa conceder antes: o WebView só entrega o
+    // microfone quando a permissão do sistema já está liberada.
+    if (estaNoApp()) {
+      const estado = await garantirMicrofone();
+      if (estado === "negada") {
+        avisar({
+          texto: "O microfone está bloqueado para o app. Toque em Ajustes e permita o uso.",
+          abrirAjustes: true,
+        });
+        return;
+      }
+    }
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      toast.error("Permita o uso do microfone para falar o contexto.");
+    } catch (e) {
+      avisar(classificarErroMicrofone(e));
       return;
     }
     const tipos = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
