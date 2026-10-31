@@ -53,18 +53,72 @@ function waLink(texto: string, numero?: string) {
   return `https://wa.me/${full}?text=${encodeURIComponent(texto)}`;
 }
 
-/** Ditado por voz (navegador). Acrescenta o texto falado ao campo. */
+/** Ditado por voz. No computador usa o ditado do navegador; no celular/app (onde ele não existe ou falha)
+ *  grava o áudio e transcreve no servidor. Acrescenta o texto falado ao campo. */
 function useDitado(onTexto: (t: string) => void) {
+  const transcrever = useServerFn(transcreverContexto);
   const [ouvindo, setOuvindo] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
   const ref = useRef<any>(null);
+  const rec = useRef<MediaRecorder | null>(null);
+
+  const gravar = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      toast.error("Este aparelho não permite gravar áudio aqui.");
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      toast.error("Permita o uso do microfone para falar o contexto.");
+      return;
+    }
+    const tipos = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+    const mime = tipos.find((t) => MediaRecorder.isTypeSupported?.(t)) ?? "";
+    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    const partes: Blob[] = [];
+    mr.ondataavailable = (e) => e.data.size && partes.push(e.data);
+    mr.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      setOuvindo(false);
+      const blob = new Blob(partes, { type: (mr.mimeType || mime || "audio/webm").split(";")[0] });
+      if (!blob.size) return;
+      if (blob.size > 10_000_000) return toast.error("Áudio muito longo. Fale em partes menores.");
+      setTranscrevendo(true);
+      try {
+        const b64 = await new Promise<string>((ok, erro) => {
+          const fr = new FileReader();
+          fr.onload = () => ok(String(fr.result).split(",")[1] ?? "");
+          fr.onerror = erro;
+          fr.readAsDataURL(blob);
+        });
+        const { texto } = await transcrever({ data: { audio: b64, mime: blob.type || "audio/webm" } });
+        if (texto) onTexto(texto);
+        else toast.error("Não entendi o áudio. Tente de novo.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao transcrever.");
+      } finally {
+        setTranscrevendo(false);
+      }
+    };
+    rec.current = mr;
+    mr.start();
+    setOuvindo(true);
+  };
+
   const alternar = () => {
+    if (transcrevendo) return;
     if (ouvindo) {
       ref.current?.stop();
+      rec.current?.state === "recording" && rec.current.stop();
       return;
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      toast.error("Ditado por voz não suportado neste navegador. Use o Chrome.");
+    const nativo = !!(window as any).Capacitor?.isNativePlatform?.();
+    const celular = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (!SR || nativo || celular) {
+      void gravar();
       return;
     }
     const r = new SR();
@@ -77,20 +131,20 @@ function useDitado(onTexto: (t: string) => void) {
       if (t) onTexto(t.trim());
     };
     r.onend = () => setOuvindo(false);
-    r.onerror = () => setOuvindo(false);
+    r.onerror = () => { setOuvindo(false); ref.current = null; void gravar(); };
     ref.current = r;
     r.start();
     setOuvindo(true);
   };
-  return { ouvindo, alternar };
+  return { ouvindo, transcrevendo, alternar };
 }
 
 function BotaoVoz({ onTexto }: { onTexto: (t: string) => void }) {
-  const { ouvindo, alternar } = useDitado(onTexto);
+  const { ouvindo, transcrevendo, alternar } = useDitado(onTexto);
   return (
-    <Button type="button" size="sm" variant={ouvindo ? "destructive" : "outline"} onClick={alternar}>
-      {ouvindo ? <MicOff className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
-      {ouvindo ? "Parar áudio" : "Falar contexto"}
+    <Button type="button" size="sm" variant={ouvindo ? "destructive" : "outline"} onClick={alternar} disabled={transcrevendo}>
+      {transcrevendo ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : ouvindo ? <MicOff className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
+      {transcrevendo ? "Transcrevendo..." : ouvindo ? "Parar e transcrever" : "Falar contexto"}
     </Button>
   );
 }
