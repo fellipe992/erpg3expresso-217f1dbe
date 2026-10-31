@@ -18,6 +18,7 @@ Depois copie, sobrescrevendo:
 | --- | --- |
 | `app/src/main/java/br/com/g3expresso/motorista/G3TrackingService.kt` | mesmo caminho em `android/` |
 | `app/src/main/java/br/com/g3expresso/motorista/G3TrackingPlugin.kt` | mesmo caminho em `android/` |
+| `app/src/main/java/br/com/g3expresso/motorista/G3PermissionsPlugin.kt` | mesmo caminho em `android/` (permissão do microfone) |
 | `app/src/main/java/br/com/g3expresso/motorista/MainActivity.kt` | mesmo caminho em `android/` (apague o `MainActivity.java` se existir) |
 | `app/src/main/AndroidManifest.xml` | `android/app/src/main/AndroidManifest.xml` |
 
