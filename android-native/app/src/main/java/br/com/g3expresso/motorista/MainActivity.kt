@@ -5,8 +5,9 @@ import com.getcapacitor.BridgeActivity
 
 class MainActivity : BridgeActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
-    // Registra o plugin nativo de rastreamento ANTES do bridge subir.
+    // Registra os plugins nativos ANTES do bridge subir.
     registerPlugin(G3TrackingPlugin::class.java)
+    registerPlugin(G3PermissionsPlugin::class.java)
     super.onCreate(savedInstanceState)
   }
 }
