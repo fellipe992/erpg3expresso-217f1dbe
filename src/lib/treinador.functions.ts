@@ -13,28 +13,101 @@ ${BASE_CONHECIMENTO}`;
 
 type Schema = Record<string, unknown>;
 
-/** Gemini (chave própria, franquia gratuita do Google). Retorna null se indisponível, para cair no fallback. */
-async function chamarGemini(sistema: string, entrada: string, schema: Schema) {
+/** Gemini (chave própria, franquia gratuita do Google). Retorna null se indisponível, para cair no fallback.
+ *  `validar` rejeita respostas rasas para que o fallback assuma em vez de entregar algo genérico. */
+async function chamarGemini(sistema: string, entrada: string, schema: Schema, validar?: (r: any) => boolean) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
   for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: sistema }] },
-          contents: [{ role: "user", parts: [{ text: entrada }] }],
-          generationConfig: { responseMimeType: "application/json", responseJsonSchema: schema, temperature: 0.6 },
-        }),
-      });
-      if (!res.ok) { console.warn(`Gemini ${modelo} ${res.status}`); continue; }
-      const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      const t = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-      if (t.trim()) return JSON.parse(t);
-    } catch (e) { console.warn(`Gemini ${modelo} falhou`, e); }
+    // Primeiro com raciocínio profundo; se o modelo não aceitar o parâmetro (400), tenta sem.
+    for (const pensar of [true, false]) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sistema }] },
+            contents: [{ role: "user", parts: [{ text: entrada }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseJsonSchema: schema,
+              maxOutputTokens: 8192,
+              ...(pensar ? { thinkingConfig: { thinkingLevel: "high" } } : {}),
+            },
+          }),
+        });
+        if (res.status === 400 && pensar) continue;
+        if (!res.ok) { console.warn(`Gemini ${modelo} ${res.status}`); break; }
+        const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+        const t = j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("") ?? "";
+        if (!t.trim()) break;
+        const r = JSON.parse(t);
+        if (validar && !validar(r)) { console.warn(`Gemini ${modelo}: resposta rasa, descartada`); break; }
+        return r;
+      } catch (e) { console.warn(`Gemini ${modelo} falhou`, e); break; }
+    }
   }
   return null;
+}
+
+/** Transcreve áudio gravado no celular: Gemini (chave própria) primeiro, depois o gateway. */
+export async function transcreverAudio(base64: string, mime: string): Promise<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (key) {
+    for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [
+              { inline_data: { mime_type: mime, data: base64 } },
+              { text: "Transcreva fielmente este áudio em português do Brasil. Retorne só o texto falado, com pontuação, sem comentários." },
+            ] }],
+          }),
+        });
+        if (!res.ok) { console.warn(`Gemini transcrição ${modelo} ${res.status}`); continue; }
+        const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+        const t = j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("").trim();
+        if (t) return t;
+      } catch (e) { console.warn(`Gemini transcrição ${modelo} falhou`, e); }
+    }
+  }
+  const lk = process.env.LOVABLE_API_KEY;
+  if (!lk) throw new Error("Transcrição não configurada.");
+  const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const ext = mime.includes("mp4") ? "m4a" : mime.includes("ogg") ? "ogg" : mime.includes("wav") ? "wav" : "webm";
+  const form = new FormData();
+  form.append("model", "openai/gpt-transcribe");
+  form.append("file", new File([bin], `audio.${ext}`, { type: mime.split(";")[0] }));
+  form.append("response_format", "json");
+  form.append("language", "pt");
+  form.append("stream", "true");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${lk}` },
+    body: form,
+  });
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("Muitas solicitações agora. Tente em instantes.");
+    if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
+    throw new Error(`Falha ao transcrever [${res.status}]`);
+  }
+  const corpo = await res.text();
+  if (!corpo.includes("data:")) return String((JSON.parse(corpo) as { text?: string }).text ?? "").trim();
+  let texto = "";
+  let final = "";
+  for (const l of corpo.split("\n")) {
+    if (!l.startsWith("data:")) continue;
+    const d = l.slice(5).trim();
+    if (!d || d === "[DONE]") continue;
+    try {
+      const ev = JSON.parse(d) as { type?: string; delta?: string; text?: string };
+      if (ev.type?.endsWith(".delta") && ev.delta) texto += ev.delta;
+      if (ev.type?.endsWith(".done") && ev.text) final = ev.text;
+    } catch { /* ignora */ }
+  }
+  return (final || texto).trim();
 }
 
 async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema) {
