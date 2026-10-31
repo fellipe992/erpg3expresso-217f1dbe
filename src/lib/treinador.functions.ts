@@ -110,8 +110,8 @@ export async function transcreverAudio(base64: string, mime: string): Promise<st
   return (final || texto).trim();
 }
 
-async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema) {
-  const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema);
+async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema, validar?: (r: any) => boolean) {
+  const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema, validar);
   if (viaGemini) return viaGemini;
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("IA não configurada.");
