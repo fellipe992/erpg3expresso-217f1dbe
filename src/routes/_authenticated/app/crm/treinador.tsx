@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { aulaLivro, gerarAbordagem, responderCliente, transcreverContexto } from "@/lib/treinador.functions";
 import { CartoesTreino, MapaVisual } from "@/components/crm/treinador-extras";
+import { abrirConfiguracoesApp, classificarErroMicrofone, estaNoApp, garantirMicrofone } from "@/lib/permissions-native";
 
 export const Route = createFileRoute("/_authenticated/app/crm/treinador")({
   head: () => ({
