@@ -13,32 +13,105 @@ ${BASE_CONHECIMENTO}`;
 
 type Schema = Record<string, unknown>;
 
-/** Gemini (chave própria, franquia gratuita do Google). Retorna null se indisponível, para cair no fallback. */
-async function chamarGemini(sistema: string, entrada: string, schema: Schema) {
+/** Gemini (chave própria, franquia gratuita do Google). Retorna null se indisponível, para cair no fallback.
+ *  `validar` rejeita respostas rasas para que o fallback assuma em vez de entregar algo genérico. */
+async function chamarGemini(sistema: string, entrada: string, schema: Schema, validar?: (r: any) => boolean) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
   for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: sistema }] },
-          contents: [{ role: "user", parts: [{ text: entrada }] }],
-          generationConfig: { responseMimeType: "application/json", responseJsonSchema: schema, temperature: 0.6 },
-        }),
-      });
-      if (!res.ok) { console.warn(`Gemini ${modelo} ${res.status}`); continue; }
-      const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-      const t = j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-      if (t.trim()) return JSON.parse(t);
-    } catch (e) { console.warn(`Gemini ${modelo} falhou`, e); }
+    // Primeiro com raciocínio profundo; se o modelo não aceitar o parâmetro (400), tenta sem.
+    for (const pensar of [true, false]) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: sistema }] },
+            contents: [{ role: "user", parts: [{ text: entrada }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseJsonSchema: schema,
+              maxOutputTokens: 8192,
+              ...(pensar ? { thinkingConfig: { thinkingLevel: "high" } } : {}),
+            },
+          }),
+        });
+        if (res.status === 400 && pensar) continue;
+        if (!res.ok) { console.warn(`Gemini ${modelo} ${res.status}`); break; }
+        const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+        const t = j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("") ?? "";
+        if (!t.trim()) break;
+        const r = JSON.parse(t);
+        if (validar && !validar(r)) { console.warn(`Gemini ${modelo}: resposta rasa, descartada`); break; }
+        return r;
+      } catch (e) { console.warn(`Gemini ${modelo} falhou`, e); break; }
+    }
   }
   return null;
 }
 
-async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema) {
-  const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema);
+/** Transcreve áudio gravado no celular: Gemini (chave própria) primeiro, depois o gateway. */
+export async function transcreverAudio(base64: string, mime: string): Promise<string> {
+  const key = process.env.GEMINI_API_KEY;
+  if (key) {
+    for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [
+              { inline_data: { mime_type: mime, data: base64 } },
+              { text: "Transcreva fielmente este áudio em português do Brasil. Retorne só o texto falado, com pontuação, sem comentários." },
+            ] }],
+          }),
+        });
+        if (!res.ok) { console.warn(`Gemini transcrição ${modelo} ${res.status}`); continue; }
+        const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+        const t = j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("").trim();
+        if (t) return t;
+      } catch (e) { console.warn(`Gemini transcrição ${modelo} falhou`, e); }
+    }
+  }
+  const lk = process.env.LOVABLE_API_KEY;
+  if (!lk) throw new Error("Transcrição não configurada.");
+  const bin = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const ext = mime.includes("mp4") ? "m4a" : mime.includes("ogg") ? "ogg" : mime.includes("wav") ? "wav" : "webm";
+  const form = new FormData();
+  form.append("model", "openai/gpt-transcribe");
+  form.append("file", new File([bin], `audio.${ext}`, { type: mime.split(";")[0] }));
+  form.append("response_format", "json");
+  form.append("language", "pt");
+  form.append("stream", "true");
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${lk}` },
+    body: form,
+  });
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("Muitas solicitações agora. Tente em instantes.");
+    if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
+    throw new Error(`Falha ao transcrever [${res.status}]`);
+  }
+  const corpo = await res.text();
+  if (!corpo.includes("data:")) return String((JSON.parse(corpo) as { text?: string }).text ?? "").trim();
+  let texto = "";
+  let final = "";
+  for (const l of corpo.split("\n")) {
+    if (!l.startsWith("data:")) continue;
+    const d = l.slice(5).trim();
+    if (!d || d === "[DONE]") continue;
+    try {
+      const ev = JSON.parse(d) as { type?: string; delta?: string; text?: string };
+      if (ev.type?.endsWith(".delta") && ev.delta) texto += ev.delta;
+      if (ev.type?.endsWith(".done") && ev.text) final = ev.text;
+    } catch { /* ignora */ }
+  }
+  return (final || texto).trim();
+}
+
+async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema, validar?: (r: any) => boolean) {
+  const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema, validar);
   if (viaGemini) return viaGemini;
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("IA não configurada.");
@@ -131,46 +204,82 @@ const obj = (properties: Record<string, Schema>) => ({
 /* ---------- Respondendo o cliente ---------- */
 export const responderCliente = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { mensagem: string; contexto: string; canal: "email" | "whatsapp" }) => ({
+  .inputValidator((d: { mensagem: string; contexto: string; canal: "email" | "whatsapp"; esclarecimentos?: string }) => ({
     mensagem: String(d.mensagem ?? "").slice(0, 6000),
     contexto: String(d.contexto ?? "").slice(0, 6000),
     canal: d.canal === "email" ? ("email" as const) : ("whatsapp" as const),
+    esclarecimentos: String(d.esclarecimentos ?? "").slice(0, 6000),
   }))
   .handler(async ({ data, context }) => {
-    if (!data.mensagem.trim()) throw new Error("Cole a mensagem do cliente.");
+    if (!data.mensagem.trim() && !data.contexto.trim()) throw new Error("Escreva o contexto da situação ou cole a mensagem do cliente.");
+    const temMsg = !!data.mensagem.trim();
+    const modo = temMsg
+      ? `MODO: RESPONDER. O cliente ESCREVEU a mensagem abaixo. Você NÃO é o cliente e NÃO está respondendo ao vendedor:
+você escreve a mensagem que o VENDEDOR vai enviar AO CLIENTE, reagindo ponto a ponto ao que o cliente disse.`
+      : `MODO: INICIAR/CONDUZIR. Ainda NÃO há resposta do cliente. O vendedor descreveu uma situação e precisa da mensagem
+que ele vai ENVIAR ao cliente agora (abrir, retomar, propor, cobrar retorno, contornar silêncio etc.).`;
     const r = (await chamarIA(
       await memoria(context),
-      `Tarefa: ajudar o vendedor a responder um cliente/prospect pelo canal ${data.canal === "email" ? "E-MAIL (inclua assunto)" : "WHATSAPP (curto, sem assunto, até ~6 linhas)"}.
-Escreva a resposta como se fosse o próprio vendedor (Fellipe) falando, em primeira pessoa, humana e empática.
-Identifique se há objeção e o tipo. Depois explique, em tópicos didáticos, POR QUE essa resposta funciona, citando a técnica e o livro de origem,
-para que o vendedor aprenda. Dê também uma versão alternativa mais curta e o próximo passo recomendado.`,
-      `MENSAGEM DO CLIENTE:\n${data.mensagem}\n\nCONTEXTO DO VENDEDOR:\n${data.contexto || "(sem contexto)"}`,
+      `Tarefa: você é o coach do vendedor Fellipe (G3 Expresso) e redige a próxima mensagem dele ao cliente pelo canal ${data.canal === "email" ? "E-MAIL (com assunto, 2 a 4 parágrafos bem construídos)" : "WHATSAPP (sem assunto, natural, de 4 a 10 linhas, pode quebrar em 2 balões)"}.
+${modo}
+
+Antes de escrever, RACIOCINE como um consultor sênior (não mostre o rascunho do raciocínio, só o resultado nos campos):
+1. Leia TODO o contexto e a mensagem; identifique quem é o cliente, estágio da venda, o que ele realmente quer/teme, e o que está implícito.
+2. Diagnostique a situação (objeção? tipo: preço, timing, confiança, concorrente, autoridade, silêncio, nenhuma).
+3. Escolha UMA estratégia principal da base de conhecimento (SPIN, Voss, Challenger, Gap, Cialdini...) e justifique.
+4. Escreva a mensagem usando detalhes CONCRETOS do contexto (nomes, rotas, cargas, números que o vendedor deu). Proibido texto genérico que serviria para qualquer cliente.
+   Em primeira pessoa, humana, empática, terminando com uma pergunta ou próximo passo claro.
+5. Se faltar informação importante para uma resposta precisa, ainda assim entregue a melhor versão possível e liste em "perguntas_para_vendedor"
+   de 2 a 4 perguntas objetivas que, se respondidas, deixariam a mensagem mais certeira. Se nada faltar, deixe a lista vazia.
+6. Explique em tópicos didáticos POR QUE funciona (técnica + livro), dê uma versão curta alternativa e o próximo passo após o envio.
+Se houver ESCLARECIMENTOS DO VENDEDOR, eles são respostas às suas perguntas anteriores: incorpore-os e não repita essas perguntas.`,
+      `${temMsg ? `MENSAGEM DO CLIENTE:\n${data.mensagem}\n\n` : "MENSAGEM DO CLIENTE: (ainda não há — o vendedor vai iniciar/conduzir)\n\n"}CONTEXTO DO VENDEDOR:\n${data.contexto || "(sem contexto)"}${data.esclarecimentos ? `\n\nESCLARECIMENTOS DO VENDEDOR:\n${data.esclarecimentos}` : ""}`,
       "resposta_cliente",
       obj({
+        analise: str,
+        estrategia: str,
         assunto: str,
         resposta: str,
         versao_curta: str,
         objecao: str,
         porques: arr(obj({ topico: str, explicacao: str, tecnica: str, livro: str })),
         proximo_passo: str,
+        perguntas_para_vendedor: arr(str),
       }),
+      (x) => String(x?.resposta ?? "").length >= (data.canal === "email" ? 450 : 220)
+        && String(x?.analise ?? "").length >= 120 && Array.isArray(x?.porques) && x.porques.length >= 2,
     )) as {
+      analise: string;
+      estrategia: string;
       assunto: string;
       resposta: string;
       versao_curta: string;
       objecao: string;
       porques: { topico: string; explicacao: string; tecnica: string; livro: string }[];
       proximo_passo: string;
+      perguntas_para_vendedor: string[];
     };
     await context.supabase.from("treinador_historico").insert({
       user_id: context.userId,
       tipo: "resposta",
-      titulo: (r.objecao || data.mensagem).slice(0, 120),
+      titulo: (r.objecao || data.mensagem || data.contexto).slice(0, 120),
       entrada: data,
       resultado: r,
     });
     return r;
   });
+
+/* ---------- Transcrição de áudio (celular/app, onde o ditado do navegador não existe) ---------- */
+export const transcreverContexto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { audio: string; mime: string }) => {
+    const audio = String(d.audio ?? "");
+    if (!audio || audio.length > 14_000_000) throw new Error("Áudio vazio ou muito longo (máx. ~10 MB).");
+    const mime = String(d.mime ?? "audio/webm");
+    if (!mime.startsWith("audio/")) throw new Error("Formato de áudio inválido.");
+    return { audio, mime };
+  })
+  .handler(async ({ data }) => ({ texto: await transcreverAudio(data.audio, data.mime) }));
 
 /* ---------- Abordagem para o Hunter (e-mail + WhatsApp) ---------- */
 export const gerarAbordagem = createServerFn({ method: "POST" })

@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { aulaLivro, gerarAbordagem, responderCliente } from "@/lib/treinador.functions";
+import { aulaLivro, gerarAbordagem, responderCliente, transcreverContexto } from "@/lib/treinador.functions";
 import { CartoesTreino, MapaVisual } from "@/components/crm/treinador-extras";
 
 export const Route = createFileRoute("/_authenticated/app/crm/treinador")({
@@ -53,18 +53,72 @@ function waLink(texto: string, numero?: string) {
   return `https://wa.me/${full}?text=${encodeURIComponent(texto)}`;
 }
 
-/** Ditado por voz (navegador). Acrescenta o texto falado ao campo. */
+/** Ditado por voz. No computador usa o ditado do navegador; no celular/app (onde ele não existe ou falha)
+ *  grava o áudio e transcreve no servidor. Acrescenta o texto falado ao campo. */
 function useDitado(onTexto: (t: string) => void) {
+  const transcrever = useServerFn(transcreverContexto);
   const [ouvindo, setOuvindo] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
   const ref = useRef<any>(null);
+  const rec = useRef<MediaRecorder | null>(null);
+
+  const gravar = async () => {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      toast.error("Este aparelho não permite gravar áudio aqui.");
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      toast.error("Permita o uso do microfone para falar o contexto.");
+      return;
+    }
+    const tipos = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+    const mime = tipos.find((t) => MediaRecorder.isTypeSupported?.(t)) ?? "";
+    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    const partes: Blob[] = [];
+    mr.ondataavailable = (e) => e.data.size && partes.push(e.data);
+    mr.onstop = async () => {
+      stream.getTracks().forEach((t) => t.stop());
+      setOuvindo(false);
+      const blob = new Blob(partes, { type: (mr.mimeType || mime || "audio/webm").split(";")[0] });
+      if (!blob.size) return;
+      if (blob.size > 10_000_000) return toast.error("Áudio muito longo. Fale em partes menores.");
+      setTranscrevendo(true);
+      try {
+        const b64 = await new Promise<string>((ok, erro) => {
+          const fr = new FileReader();
+          fr.onload = () => ok(String(fr.result).split(",")[1] ?? "");
+          fr.onerror = erro;
+          fr.readAsDataURL(blob);
+        });
+        const { texto } = await transcrever({ data: { audio: b64, mime: blob.type || "audio/webm" } });
+        if (texto) onTexto(texto);
+        else toast.error("Não entendi o áudio. Tente de novo.");
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Falha ao transcrever.");
+      } finally {
+        setTranscrevendo(false);
+      }
+    };
+    rec.current = mr;
+    mr.start();
+    setOuvindo(true);
+  };
+
   const alternar = () => {
+    if (transcrevendo) return;
     if (ouvindo) {
       ref.current?.stop();
+      rec.current?.state === "recording" && rec.current.stop();
       return;
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SR) {
-      toast.error("Ditado por voz não suportado neste navegador. Use o Chrome.");
+    const nativo = !!(window as any).Capacitor?.isNativePlatform?.();
+    const celular = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (!SR || nativo || celular) {
+      void gravar();
       return;
     }
     const r = new SR();
@@ -77,20 +131,20 @@ function useDitado(onTexto: (t: string) => void) {
       if (t) onTexto(t.trim());
     };
     r.onend = () => setOuvindo(false);
-    r.onerror = () => setOuvindo(false);
+    r.onerror = () => { setOuvindo(false); ref.current = null; void gravar(); };
     ref.current = r;
     r.start();
     setOuvindo(true);
   };
-  return { ouvindo, alternar };
+  return { ouvindo, transcrevendo, alternar };
 }
 
 function BotaoVoz({ onTexto }: { onTexto: (t: string) => void }) {
-  const { ouvindo, alternar } = useDitado(onTexto);
+  const { ouvindo, transcrevendo, alternar } = useDitado(onTexto);
   return (
-    <Button type="button" size="sm" variant={ouvindo ? "destructive" : "outline"} onClick={alternar}>
-      {ouvindo ? <MicOff className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
-      {ouvindo ? "Parar áudio" : "Falar contexto"}
+    <Button type="button" size="sm" variant={ouvindo ? "destructive" : "outline"} onClick={alternar} disabled={transcrevendo}>
+      {transcrevendo ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : ouvindo ? <MicOff className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
+      {transcrevendo ? "Transcrevendo..." : ouvindo ? "Parar e transcrever" : "Falar contexto"}
     </Button>
   );
 }
@@ -142,18 +196,28 @@ function RespondendoCliente() {
   const [mensagem, setMensagem] = useState("");
   const [contexto, setContexto] = useState("");
   const [canal, setCanal] = useState<"email" | "whatsapp">("whatsapp");
+  const [respostas, setRespostas] = useState<Record<number, string>>({});
+  const [esclarecimentos, setEsclarecimentos] = useState("");
   const m = useMutation({
-    mutationFn: () => fn({ data: { mensagem, contexto, canal } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["treinador-historico"] }),
+    mutationFn: (esc: string) => fn({ data: { mensagem, contexto, canal, esclarecimentos: esc } }),
+    onSuccess: () => { setRespostas({}); qc.invalidateQueries({ queryKey: ["treinador-historico"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const r = m.data;
+  const perguntas = r?.perguntas_para_vendedor ?? [];
+  const refinar = () => {
+    const novo = perguntas.map((p, i) => (respostas[i]?.trim() ? `P: ${p}\nR: ${respostas[i]!.trim()}` : "")).filter(Boolean).join("\n\n");
+    if (!novo) return toast.error("Responda pelo menos uma pergunta.");
+    const total = esclarecimentos ? `${esclarecimentos}\n\n${novo}` : novo;
+    setEsclarecimentos(total);
+    m.mutate(total);
+  };
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="flex items-center gap-2"><Reply className="size-5" /> Respondendo o cliente</CardTitle>
-          <CardDescription>Cole a mensagem do cliente, explique o contexto (escrevendo ou falando) e receba uma resposta humana.</CardDescription>
+          <CardDescription>Descreva a situação (escrevendo ou falando). Se o cliente já respondeu, cole a mensagem dele — é opcional.</CardDescription>
         </CardHeader>
         <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           <div className="flex gap-2">
@@ -165,19 +229,19 @@ function RespondendoCliente() {
             </Button>
           </div>
           <div className="space-y-1.5">
-            <Label>Mensagem do cliente</Label>
-            <Textarea rows={6} value={mensagem} onChange={(e) => setMensagem(e.target.value)} placeholder="Ex.: Achei o valor alto, a transportadora atual cobra 12% menos..." />
-          </div>
-          <div className="space-y-1.5">
             <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <Label className="min-w-0">Contexto (quem é, histórico, o que você quer)</Label>
               <BotaoVoz onTexto={(t) => setContexto((c) => (c ? `${c} ${t}` : t))} />
             </div>
-            <Textarea rows={5} value={contexto} onChange={(e) => setContexto(e.target.value)} placeholder="Ex.: Comprador de indústria de alimentos, já fizemos 2 cotações, quero fechar um teste de 1 carga..." />
+            <Textarea rows={6} value={contexto} onChange={(e) => { setContexto(e.target.value); setEsclarecimentos(""); }} placeholder="Ex.: Comprador de indústria de alimentos, já fizemos 2 cotações, quero fechar um teste de 1 carga..." />
           </div>
-          <Button onClick={() => m.mutate()} disabled={m.isPending || !mensagem.trim()} className="w-full">
+          <div className="space-y-1.5">
+            <Label>Mensagem do cliente (opcional)</Label>
+            <Textarea rows={4} value={mensagem} onChange={(e) => { setMensagem(e.target.value); setEsclarecimentos(""); }} placeholder="Deixe em branco se ainda não há resposta do cliente." />
+          </div>
+          <Button onClick={() => m.mutate(esclarecimentos)} disabled={m.isPending || (!mensagem.trim() && !contexto.trim())} className="w-full">
             {m.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
-            Me ajude a responder
+            {mensagem.trim() ? "Me ajude a responder" : "Montar mensagem para o cliente"}
           </Button>
         </CardContent>
       </Card>
@@ -186,6 +250,21 @@ function RespondendoCliente() {
         <CardContent className="min-w-0 space-y-4 px-4 sm:px-6">
           {!r && <p className="text-sm text-muted-foreground">A resposta aparece aqui.</p>}
           {r && <RespostaView r={r} canal={canal} />}
+          {r && perguntas.length > 0 && (
+            <div className="space-y-3 rounded-lg border border-primary/40 p-3">
+              <p className="text-sm font-semibold">Para deixar a mensagem mais certeira, me responda:</p>
+              {perguntas.map((p, i) => (
+                <div key={i} className="space-y-1.5">
+                  <Label className="text-sm font-normal">{p}</Label>
+                  <Textarea rows={2} value={respostas[i] ?? ""} onChange={(e) => setRespostas((s) => ({ ...s, [i]: e.target.value }))} />
+                </div>
+              ))}
+              <Button onClick={refinar} disabled={m.isPending} variant="secondary" className="w-full">
+                {m.isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}
+                Refazer com minhas respostas
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -308,11 +387,18 @@ type AulaR = Awaited<ReturnType<typeof aulaLivro>>;
 function RespostaView({ r, canal }: { r: RespostaR; canal: "email" | "whatsapp" }) {
   return (
     <>
-              {r.objecao && <Badge>Objeção: {r.objecao}</Badge>}
+              {r.objecao && <Badge className="h-auto max-w-full whitespace-normal">Objeção: {r.objecao}</Badge>}
+              {r.analise && (
+                <div className="rounded-md border p-3 text-sm">
+                  <p className="font-semibold">Leitura da situação</p>
+                  <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{r.analise}</p>
+                  {r.estrategia && <p className="mt-2"><b>Estratégia:</b> {r.estrategia}</p>}
+                </div>
+              )}
               {canal === "email" && r.assunto && <BlocoTexto titulo="Assunto" texto={r.assunto} />}
-              <BlocoTexto titulo="Resposta" texto={r.resposta} whatsapp={canal === "whatsapp"} />
+              <BlocoTexto titulo="Mensagem para enviar" texto={r.resposta} whatsapp={canal === "whatsapp"} />
               <BlocoTexto titulo="Versão curta" texto={r.versao_curta} whatsapp={canal === "whatsapp"} />
-              <Porques itens={r.porques} />
+              <Porques itens={r.porques ?? []} />
               <div className="rounded-md bg-primary/10 p-3 text-sm"><b>Próximo passo:</b> {r.proximo_passo}</div>
             </>
   );
