@@ -163,7 +163,7 @@ export function PerfilUsuarioDialog({
 
             {alvo.motorista_id && <ContratoCard motoristaId={alvo.motorista_id} podeAssinar={false} />}
             {alvo.motorista_id ? (
-              <DocsOneDrive motoristaId={alvo.motorista_id} />
+              <DocsOneDrive motoristaId={alvo.motorista_id} compartilhar />
             ) : (
               <p className="text-xs text-muted-foreground">
                 Usuário sem motorista vinculado — sem pasta de documentos.

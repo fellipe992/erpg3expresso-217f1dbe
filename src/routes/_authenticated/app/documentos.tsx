@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { SincronizarOneDrive } from "@/components/perfil/sincronizar-onedrive";
+import { LinkPastaOneDrive } from "@/components/perfil/link-pasta-onedrive";
 
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -167,7 +168,12 @@ function DocumentosPage() {
             </p>
           </div>
         </div>
-        {isStaff && <SincronizarOneDrive />}
+        {isStaff && (
+          <div className="flex flex-wrap items-center gap-2">
+            <LinkPastaOneDrive />
+            <SincronizarOneDrive />
+          </div>
+        )}
       </div>
 
 
