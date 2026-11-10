@@ -50,26 +50,32 @@ async function chamarGemini(sistema: string, entrada: string, schema: Schema, va
   return null;
 }
 
-/** Transcreve áudio gravado no celular: Gemini (chave própria) primeiro, depois o gateway. */
+/** Transcreve áudio gravado no celular: Gemini (chave própria) primeiro, depois o gateway.
+ *  O celular manda trechos curtos enquanto a pessoa fala, então cada chamada tem prazo curto:
+ *  modelo travado ou sobrecarregado (503) não pode segurar o texto por minutos. */
 export async function transcreverAudio(base64: string, mime: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY;
   if (key) {
-    for (const modelo of ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"]) {
+    // Flash-Lite primeiro: responde em ~1 s e quase nunca está sobrecarregado; o Flash é reserva.
+    for (const modelo of ["gemini-flash-lite-latest", "gemini-3.1-flash-lite", "gemini-flash-latest"]) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          signal: AbortSignal.timeout(12_000),
           body: JSON.stringify({
             contents: [{ role: "user", parts: [
-              { inline_data: { mime_type: mime, data: base64 } },
-              { text: "Transcreva fielmente este áudio em português do Brasil. Retorne só o texto falado, com pontuação, sem comentários." },
+              { inline_data: { mime_type: mime.split(";")[0], data: base64 } },
+              { text: "Transcreva fielmente este trecho de áudio em português do Brasil. Retorne só o texto falado, com pontuação, sem comentários. Se não houver fala, retorne vazio." },
             ] }],
+            generationConfig: { temperature: 0, maxOutputTokens: 2048 },
           }),
         });
         if (!res.ok) { console.warn(`Gemini transcrição ${modelo} ${res.status}`); continue; }
         const j = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
-        const t = j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("").trim();
-        if (t) return t;
+        const t = limparTranscricao(j.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? "").join("") ?? "");
+        // Resposta vazia com 200 = trecho só de silêncio; não vale a pena tentar outro modelo.
+        return t;
       } catch (e) { console.warn(`Gemini transcrição ${modelo} falhou`, e); }
     }
   }
@@ -86,6 +92,7 @@ export async function transcreverAudio(base64: string, mime: string): Promise<st
   const res = await fetch("https://ai.gateway.lovable.dev/v1/audio/transcriptions", {
     method: "POST",
     headers: { Authorization: `Bearer ${lk}` },
+    signal: AbortSignal.timeout(25_000),
     body: form,
   });
   if (!res.ok) {
@@ -94,7 +101,7 @@ export async function transcreverAudio(base64: string, mime: string): Promise<st
     throw new Error(`Falha ao transcrever [${res.status}]`);
   }
   const corpo = await res.text();
-  if (!corpo.includes("data:")) return String((JSON.parse(corpo) as { text?: string }).text ?? "").trim();
+  if (!corpo.includes("data:")) return limparTranscricao(String((JSON.parse(corpo) as { text?: string }).text ?? ""));
   let texto = "";
   let final = "";
   for (const l of corpo.split("\n")) {
@@ -107,7 +114,16 @@ export async function transcreverAudio(base64: string, mime: string): Promise<st
       if (ev.type?.endsWith(".done") && ev.text) final = ev.text;
     } catch { /* ignora */ }
   }
-  return (final || texto).trim();
+  return limparTranscricao(final || texto);
+}
+
+/** Remove marcações que os modelos devolvem para silêncio/ruído (ex.: "<noise>", "[silêncio]"). */
+export function limparTranscricao(t: string): string {
+  return t
+    .replace(/<[^>]{1,20}>/g, " ")
+    .replace(/\[(?:sil[eê]ncio|ru[ií]do|noise|silence|m[uú]sica|music|inaud[ií]vel)[^\]]{0,20}\]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema, validar?: (r: any) => boolean) {
