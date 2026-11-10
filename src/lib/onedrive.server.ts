@@ -101,3 +101,39 @@ export async function uploadFile(path: string, fileName: string, bytes: Uint8Arr
   });
   return safe;
 }
+
+const ITEM_ID = /^[A-Za-z0-9!._-]{1,200}$/;
+
+/** Baixa o conteúdo de um arquivo, garantindo que ele está dentro da pasta informada. */
+export async function downloadFileInFolder(folderPath: string, itemId: string, maxBytes: number) {
+  if (!ITEM_ID.test(itemId)) throw new Error("Arquivo inválido");
+  const meta = (await (
+    await graph(`/me/drive/items/${encodeURIComponent(itemId)}?$select=id,name,size,file,parentReference`)
+  ).json()) as { name: string; size?: number; file?: { mimeType?: string }; parentReference?: { path?: string } };
+  const parent = decodeURIComponent(meta.parentReference?.path ?? "");
+  if (!meta.file || parent !== `/drive/root:/${folderPath}`) throw new Error("Arquivo fora da pasta do motorista");
+  if ((meta.size ?? 0) > maxBytes) throw new Error(`Arquivo grande demais para baixar por aqui (${Math.round(maxBytes / 1048576)} MB). Use o link da pasta.`);
+  const res = await graph(`/me/drive/items/${encodeURIComponent(itemId)}/content`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  return { nome: meta.name, mime: meta.file.mimeType ?? "application/octet-stream", bytes };
+}
+
+/** Link da pasta: endereço normal (precisa entrar na conta) + link compartilhado de visualização. */
+export async function folderLinks(folderPath: string) {
+  const item = (await (await graph(`/me/drive/root:/${enc(folderPath)}?$select=id,webUrl`)).json()) as {
+    id: string;
+    webUrl: string;
+  };
+  let compartilhado: string | null = null;
+  try {
+    const r = await graph(`/me/drive/items/${encodeURIComponent(item.id)}/createLink`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "view", scope: "anonymous" }),
+    });
+    compartilhado = ((await r.json()) as { link?: { webUrl?: string } }).link?.webUrl ?? null;
+  } catch (e) {
+    console.error("OneDrive createLink falhou", e);
+  }
+  return { webUrl: item.webUrl, compartilhado };
+}

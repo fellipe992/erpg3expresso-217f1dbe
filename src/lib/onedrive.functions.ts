@@ -46,3 +46,36 @@ export const uploadDocMotorista = createServerFn({ method: "POST" })
     const nome = await uploadFile(pasta, data.nome, bytes, data.mime ?? "application/octet-stream");
     return { nome };
   });
+
+const MAX_DOWNLOAD = 25 * 1024 * 1024;
+
+export const baixarDocMotorista = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { motoristaId?: string; itemId: string }) => {
+    if (!data?.itemId || typeof data.itemId !== "string") throw new Error("Arquivo inválido");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const { resolverPastaMotorista } = await import("@/lib/onedrive-acl.server");
+    const { downloadFileInFolder } = await import("@/lib/onedrive.server");
+    const pasta = await resolverPastaMotorista(context as Ctx, data.motoristaId);
+    const f = await downloadFileInFolder(pasta, data.itemId, MAX_DOWNLOAD);
+    let bin = "";
+    for (let i = 0; i < f.bytes.length; i += 8192) bin += String.fromCharCode(...f.bytes.subarray(i, i + 8192));
+    return { nome: f.nome, mime: f.mime, base64: btoa(bin) };
+  });
+
+/** Somente equipe interna: link da pasta geral (sem motoristaId) ou da pasta do motorista. */
+export const linkPastaOneDrive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { motoristaId?: string }) => data ?? {})
+  .handler(async ({ data, context }) => {
+    const { assertStaffOneDrive, resolverPastaMotorista } = await import("@/lib/onedrive-acl.server");
+    const { folderLinks, ensureFolder, ROOT_FOLDER } = await import("@/lib/onedrive.server");
+    const ctx = context as Ctx;
+    await assertStaffOneDrive(ctx);
+    let pasta = ROOT_FOLDER;
+    if (data.motoristaId) pasta = await resolverPastaMotorista(ctx, data.motoristaId);
+    else await ensureFolder("", ROOT_FOLDER);
+    return { pasta, ...(await folderLinks(pasta)) };
+  });
