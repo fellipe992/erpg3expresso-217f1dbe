@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { BASE_CONHECIMENTO } from "@/lib/treinador-conhecimento";
+import { limparTranscricao } from "@/lib/transcricao";
 
 const PERSONA = `Você é o Treinador de Vendas da G3 Expresso, transportadora rodoviária brasileira (carga seca, fracionada, dedicada).
 Você domina: Alcançando a Excelência em Vendas (SPIN Selling, Neil Rackham), Receita Previsível (Aaron Ross), As Armas da Persuasão (Cialdini),
@@ -117,14 +118,6 @@ export async function transcreverAudio(base64: string, mime: string): Promise<st
   return limparTranscricao(final || texto);
 }
 
-/** Remove marcações que os modelos devolvem para silêncio/ruído (ex.: "<noise>", "[silêncio]"). */
-export function limparTranscricao(t: string): string {
-  return t
-    .replace(/<[^>]{1,20}>/g, " ")
-    .replace(/\[(?:sil[eê]ncio|ru[ií]do|noise|silence|m[uú]sica|music|inaud[ií]vel)[^\]]{0,20}\]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 async function chamarIA(memoria: string, instrucoes: string, entrada: string, nome: string, schema: Schema, validar?: (r: any) => boolean) {
   const viaGemini = await chamarGemini(`${PERSONA}\n${memoria}\n\n${instrucoes}`, entrada, schema, validar);
