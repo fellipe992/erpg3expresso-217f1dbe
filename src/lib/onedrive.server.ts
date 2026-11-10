@@ -111,7 +111,7 @@ export async function downloadFileInFolder(folderPath: string, itemId: string, m
     await graph(`/me/drive/items/${encodeURIComponent(itemId)}?$select=id,name,size,file,parentReference`)
   ).json()) as { name: string; size?: number; file?: { mimeType?: string }; parentReference?: { path?: string } };
   const parent = decodeURIComponent(meta.parentReference?.path ?? "");
-  if (!meta.file || parent !== `/drive/root:/${folderPath}`) throw new Error("Arquivo fora da pasta do motorista");
+  if (!meta.file || parent.toLowerCase() !== `/drive/root:/${folderPath}`.toLowerCase()) throw new Error("Arquivo fora da pasta do motorista");
   if ((meta.size ?? 0) > maxBytes) throw new Error(`Arquivo grande demais para baixar por aqui (${Math.round(maxBytes / 1048576)} MB). Use o link da pasta.`);
   const res = await graph(`/me/drive/items/${encodeURIComponent(itemId)}/content`);
   const bytes = new Uint8Array(await res.arrayBuffer());
