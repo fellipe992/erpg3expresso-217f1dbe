@@ -55,13 +55,21 @@ function waLink(texto: string, numero?: string) {
 }
 
 /** Ditado por voz. No computador usa o ditado do navegador; no celular/app (onde ele não existe ou falha)
- *  grava o áudio e transcreve no servidor. Acrescenta o texto falado ao campo. */
+ *  grava em trechos curtos, cortados nas pausas da fala, e transcreve cada trecho enquanto a pessoa
+ *  continua falando — o texto vai aparecendo no campo e, ao parar, só falta o último trecho. */
+const TRECHO_MIN_MS = 2500;   // não corta antes disso (evita trechos picados)
+const TRECHO_MAX_MS = 12000;  // corta mesmo sem pausa, para o texto não demorar
+const PAUSA_MS = 650;         // silêncio que conta como fim de frase
+const LIMIAR_FALA = 0.012;    // volume (RMS) acima do qual consideramos fala
+
 function useDitado(onTexto: (t: string) => void) {
   const transcrever = useServerFn(transcreverContexto);
+  const onTextoRef = useRef(onTexto);
+  onTextoRef.current = onTexto;
   const [ouvindo, setOuvindo] = useState(false);
-  const [transcrevendo, setTranscrevendo] = useState(false);
+  const [pendentes, setPendentes] = useState(0);
   const ref = useRef<any>(null);
-  const rec = useRef<MediaRecorder | null>(null);
+  const sessao = useRef<{ parar: () => void } | null>(null);
 
   const avisar = (m: { texto: string; abrirAjustes: boolean }) => {
     if (m.abrirAjustes) {
@@ -93,23 +101,33 @@ function useDitado(onTexto: (t: string) => void) {
     }
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
     } catch (e) {
       avisar(classificarErroMicrofone(e));
       return;
     }
     const tipos = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
     const mime = tipos.find((t) => MediaRecorder.isTypeSupported?.(t)) ?? "";
-    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-    const partes: Blob[] = [];
-    mr.ondataavailable = (e) => e.data.size && partes.push(e.data);
-    mr.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      setOuvindo(false);
-      const blob = new Blob(partes, { type: (mr.mimeType || mime || "audio/webm").split(";")[0] });
-      if (!blob.size) return;
-      if (blob.size > 10_000_000) return toast.error("Áudio muito longo. Fale em partes menores.");
-      setTranscrevendo(true);
+
+    // Entrega os textos na ordem em que foram falados, mesmo que cheguem fora de ordem.
+    const prontos = new Map<number, string>();
+    let proximo = 0;
+    let seq = 0;
+    let avisouErro = false;
+    let abertos = 0;
+    const entregar = () => {
+      while (prontos.has(proximo)) {
+        const t = prontos.get(proximo)!;
+        prontos.delete(proximo);
+        proximo++;
+        if (t) onTextoRef.current(t);
+      }
+    };
+    const enviar = async (blob: Blob, n: number) => {
+      if (blob.size < 1500) { prontos.set(n, ""); entregar(); return; }
+      setPendentes((p) => p + 1);
       try {
         const b64 = await new Promise<string>((ok, erro) => {
           const fr = new FileReader();
@@ -118,24 +136,98 @@ function useDitado(onTexto: (t: string) => void) {
           fr.readAsDataURL(blob);
         });
         const { texto } = await transcrever({ data: { audio: b64, mime: blob.type || "audio/webm" } });
-        if (texto) onTexto(texto);
-        else toast.error("Não entendi o áudio. Tente de novo.");
+        prontos.set(n, texto?.trim() ?? "");
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Falha ao transcrever.");
+        prontos.set(n, "");
+        if (!avisouErro) {
+          avisouErro = true;
+          toast.error(e instanceof Error ? e.message : "Falha ao transcrever um trecho.");
+        }
       } finally {
-        setTranscrevendo(false);
+        setPendentes((p) => p - 1);
+        entregar();
       }
     };
-    rec.current = mr;
-    mr.start();
+
+    let ativo = true;
+    let atual: MediaRecorder | null = null;
+    let inicio = 0;
+    let ultimaFala = 0;
+    let teveFala = false;
+    const encerrarStream = () => {
+      if (abertos > 0 || ativo) return;
+      stream.getTracks().forEach((t) => t.stop());
+    };
+    const novoTrecho = () => {
+      const r = mime ? new MediaRecorder(stream, { mimeType: mime, audioBitsPerSecond: 32000 }) : new MediaRecorder(stream);
+      const partes: Blob[] = [];
+      const n = seq++;
+      abertos++;
+      r.ondataavailable = (e) => { if (e.data.size) partes.push(e.data); };
+      r.onstop = () => {
+        abertos--;
+        void enviar(new Blob(partes, { type: (r.mimeType || mime || "audio/webm").split(";")[0] }), n);
+        encerrarStream();
+      };
+      r.start();
+      atual = r;
+      inicio = Date.now();
+      ultimaFala = inicio;
+      teveFala = false;
+    };
+
+    // Medidor de volume para cortar nas pausas. Sem ele (ou suspenso), corta pelo tempo máximo.
+    let ctx: AudioContext | null = null;
+    let analisador: AnalyserNode | null = null;
+    try {
+      const AC = window.AudioContext || (window as any).webkitAudioContext;
+      ctx = new AC();
+      void ctx.resume?.();
+      analisador = ctx.createAnalyser();
+      analisador.fftSize = 1024;
+      ctx.createMediaStreamSource(stream).connect(analisador);
+    } catch { ctx = null; analisador = null; }
+    const amostra = new Float32Array(1024);
+
+    const relogio = window.setInterval(() => {
+      if (!ativo || !atual) return;
+      const agora = Date.now();
+      if (analisador) {
+        analisador.getFloatTimeDomainData(amostra);
+        let soma = 0;
+        for (let i = 0; i < amostra.length; i++) soma += amostra[i] * amostra[i];
+        if (Math.sqrt(soma / amostra.length) > LIMIAR_FALA) { teveFala = true; ultimaFala = agora; }
+      }
+      const duracao = agora - inicio;
+      const pausou = teveFala && duracao > TRECHO_MIN_MS && agora - ultimaFala > PAUSA_MS;
+      if (pausou || duracao > TRECHO_MAX_MS) {
+        const anterior = atual;
+        novoTrecho();
+        if (anterior.state === "recording") anterior.stop();
+      }
+    }, 100);
+
+    sessao.current = {
+      parar: () => {
+        ativo = false;
+        window.clearInterval(relogio);
+        void ctx?.close().catch(() => {});
+        sessao.current = null;
+        setOuvindo(false);
+        if (atual?.state === "recording") atual.stop();
+        else encerrarStream();
+      },
+    };
+    novoTrecho();
     setOuvindo(true);
   };
 
+  const transcrevendo = !ouvindo && pendentes > 0;
   const alternar = () => {
     if (transcrevendo) return;
     if (ouvindo) {
       ref.current?.stop();
-      rec.current?.state === "recording" && rec.current.stop();
+      sessao.current?.parar();
       return;
     }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -152,7 +244,7 @@ function useDitado(onTexto: (t: string) => void) {
     r.onresult = (e: any) => {
       let t = "";
       for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) t += e.results[i][0].transcript;
-      if (t) onTexto(t.trim());
+      if (t) onTextoRef.current(t.trim());
     };
     r.onend = () => setOuvindo(false);
     r.onerror = () => { setOuvindo(false); ref.current = null; void gravar(); };
@@ -160,15 +252,21 @@ function useDitado(onTexto: (t: string) => void) {
     r.start();
     setOuvindo(true);
   };
-  return { ouvindo, transcrevendo, alternar };
+  return { ouvindo, transcrevendo, pendentes, alternar };
 }
 
 function BotaoVoz({ onTexto }: { onTexto: (t: string) => void }) {
-  const { ouvindo, transcrevendo, alternar } = useDitado(onTexto);
+  const { ouvindo, transcrevendo, pendentes, alternar } = useDitado(onTexto);
   return (
     <Button type="button" size="sm" variant={ouvindo ? "destructive" : "outline"} onClick={alternar} disabled={transcrevendo}>
-      {transcrevendo ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : ouvindo ? <MicOff className="mr-1.5 size-3.5" /> : <Mic className="mr-1.5 size-3.5" />}
-      {transcrevendo ? "Transcrevendo..." : ouvindo ? "Parar e transcrever" : "Falar contexto"}
+      {transcrevendo || (ouvindo && pendentes > 0) ? (
+        <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+      ) : ouvindo ? (
+        <MicOff className="mr-1.5 size-3.5" />
+      ) : (
+        <Mic className="mr-1.5 size-3.5" />
+      )}
+      {transcrevendo ? "Finalizando..." : ouvindo ? "Parar" : "Falar contexto"}
     </Button>
   );
 }
