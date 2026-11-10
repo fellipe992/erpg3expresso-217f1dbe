@@ -28,6 +28,12 @@ export async function baixarArquivo(url: string, nome: string) {
     return;
   }
 
+  await salvarBlob(blob, nomeSeguro);
+}
+
+/** Salva um arquivo já carregado: no app vai para Documentos; no navegador, download direto. */
+export async function salvarBlob(blob: Blob, nome: string) {
+  const nomeSeguro = nome.replace(/[\\/:*?"<>|]+/g, "_") || "arquivo";
   if (isNative()) {
     try {
       const { Filesystem, Directory } = await import("@capacitor/filesystem");

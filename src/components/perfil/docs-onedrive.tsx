@@ -5,7 +5,8 @@ import { CloudUpload, Download, FolderOpen, Loader2, RefreshCw } from "lucide-re
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { listarDocsMotorista, uploadDocMotorista } from "@/lib/onedrive.functions";
+import { baixarDocMotorista, listarDocsMotorista, uploadDocMotorista } from "@/lib/onedrive.functions";
+import { LinkPastaOneDrive } from "@/components/perfil/link-pasta-onedrive";
 
 const fmt = (b: number) => (b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB` : `${(b / 1048576).toFixed(1)} MB`);
 
@@ -17,8 +18,26 @@ async function toBase64(file: File) {
 }
 
 /** Documentos do motorista guardados no OneDrive da empresa (pasta própria). */
-export function DocsOneDrive({ motoristaId }: { motoristaId?: string }) {
+export function DocsOneDrive({ motoristaId, compartilhar }: { motoristaId?: string; compartilhar?: boolean }) {
   const listar = useServerFn(listarDocsMotorista);
+  const baixar = useServerFn(baixarDocMotorista);
+  const [baixando, setBaixando] = useState<string | null>(null);
+
+  const baixarDoc = async (id: string, nome: string) => {
+    setBaixando(id);
+    try {
+      const r = await baixar({ data: { motoristaId, itemId: id } });
+      const bin = atob(r.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const { salvarBlob } = await import("@/lib/baixar-arquivo");
+      await salvarBlob(new Blob([bytes], { type: r.mime }), r.nome || nome);
+    } catch (e) {
+      toast.error("Falha ao baixar", { description: (e as Error).message });
+    } finally {
+      setBaixando(null);
+    }
+  };
   const upload = useServerFn(uploadDocMotorista);
   const qc = useQueryClient();
   const [enviando, setEnviando] = useState(false);
@@ -55,6 +74,7 @@ export function DocsOneDrive({ motoristaId }: { motoristaId?: string }) {
       </CardHeader>
       <CardContent className="space-y-3 p-4 pt-0">
         {data?.pasta && <p className="truncate text-[11px] text-muted-foreground">Pasta: {data.pasta}</p>}
+        {compartilhar && motoristaId && <LinkPastaOneDrive motoristaId={motoristaId} compacto />}
 
         <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border p-3 text-sm">
           {enviando ? <Loader2 className="size-4 animate-spin" /> : <CloudUpload className="size-4" />}
@@ -93,18 +113,16 @@ export function DocsOneDrive({ motoristaId }: { motoristaId?: string }) {
                     {f.updated ? ` · ${new Date(f.updated).toLocaleDateString("pt-BR")}` : ""}
                   </div>
                 </div>
-                {f.url && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      const { baixarArquivo } = await import("@/lib/baixar-arquivo");
-                      await baixarArquivo(f.url!, f.name);
-                    }}
-                  >
-                    <Download className="size-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={`Baixar ${f.name}`}
+                  disabled={baixando === f.id}
+                  onClick={() => void baixarDoc(f.id, f.name)}
+                >
+                  {baixando === f.id ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+                  <span className="ml-1 hidden sm:inline">Baixar</span>
+                </Button>
               </li>
             ))}
           </ul>
