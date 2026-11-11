@@ -40,7 +40,6 @@ export function useSyncMotorista() {
         }
         atualizar();
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "viagem_paradas" }, atualizar)
       .subscribe();
 
     const onVisivel = () => {
