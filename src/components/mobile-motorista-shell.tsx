@@ -9,6 +9,7 @@ import { useMotoristaAutoTracking } from "@/hooks/use-viagem-tracking";
 import { usePedidoPosicaoMotorista } from "@/hooks/use-pedido-posicao";
 import { useAlertaLocalizacaoMotorista } from "@/hooks/use-alerta-localizacao";
 import { useHeartbeatGpsMotorista } from "@/hooks/use-heartbeat-gps";
+import { useSyncMotorista } from "@/hooks/use-sync-motorista";
 import type { ReactNode } from "react";
 import { useAlertaZonaRisco, ReportarRiscoButton } from "@/components/zonas-risco-motorista";
 import { SolicitarMonitoramentoButton } from "@/components/sos-monitoramento";
@@ -29,6 +30,7 @@ export function MobileMotoristaShell({ children }: { children?: ReactNode }) {
   useAlertaLocalizacaoMotorista();
   useHeartbeatGpsMotorista();
   useAlertaZonaRisco();
+  useSyncMotorista();
   return (
     <div className="flex min-h-dvh w-full max-w-full flex-col overflow-x-hidden bg-background">
       <ConsentimentoLocalizacaoDialog />
