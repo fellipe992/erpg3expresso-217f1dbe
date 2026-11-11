@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw } from "lucide-react";
+import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -748,12 +748,29 @@ function MotoristaViagensView({
     concluida: viagens.filter((v) => v.status === "concluida"),
   };
   const lista = grouped[tab];
+  const qc = useQueryClient();
+  const isFetching = useIsFetching({ queryKey: ["viagens"] }) > 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
-      <div>
-        <h1 className="font-display text-xl font-bold">Minhas viagens</h1>
-        <p className="text-xs text-muted-foreground">Toque em uma viagem para ver detalhes, iniciar ou finalizar.</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display text-xl font-bold">Minhas viagens</h1>
+          <p className="text-xs text-muted-foreground">Toque em uma viagem para ver detalhes, iniciar ou finalizar.</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          disabled={isFetching}
+          onClick={() => {
+            qc.invalidateQueries({ queryKey: ["viagens"] });
+            qc.invalidateQueries({ queryKey: ["motorista-dashboard"] });
+          }}
+        >
+          <RefreshCw className={`mr-1 size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          Atualizar
+        </Button>
       </div>
       <Input placeholder="Buscar por cidade, cliente..." value={search} onChange={(e) => setSearch(e.target.value)} />
 
