@@ -11,6 +11,7 @@ import { PageShell } from "@/components/crud/page-shell";
 import {
   cancelarFechamento,
   carregarViagensFechamento,
+  buscarDescontosPendentes,
   confirmarFechamento,
   listarFechamentos,
   type DescontoExtra,
@@ -357,6 +358,19 @@ function DialogConfirmar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, regra, periodo.ate]);
   const [novoExtra, setNovoExtra] = useState({ descricao: "", valor: "" });
+  // Motorista: puxa abastecimentos, peças e antecipações do período como descontos
+  const { data: pendentes } = useQuery({
+    queryKey: ["descontos-pendentes", motoristaId, periodo.de, periodo.ate],
+    enabled: open && tipo === "motorista" && !!motoristaId && !!periodo.de && !!periodo.ate,
+    queryFn: () => buscarDescontosPendentes(motoristaId!, periodo.de, periodo.ate),
+  });
+  useEffect(() => {
+    if (!pendentes) return;
+    setExtras((atuais) => [
+      ...atuais.filter((e) => !e.origem),
+      ...pendentes,
+    ]);
+  }, [pendentes]);
 
   const valorViagens = linhas.reduce((s, l) => s + l.total, 0);
   const totalExtras = extras.reduce((s, e) => s + e.valor, 0);
@@ -475,7 +489,10 @@ function DialogConfirmar({
             </div>
             {extras.map((e, i) => (
               <div key={i} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate">{e.descricao}</span>
+                <span className="truncate">
+                  {e.origem && <span className="mr-1 text-[10px] font-semibold uppercase text-muted-foreground">auto</span>}
+                  {e.descricao}
+                </span>
                 <span className="flex items-center gap-2">
                   <span className="font-mono tabular-nums text-destructive">{brl(e.valor)}</span>
                   <Button

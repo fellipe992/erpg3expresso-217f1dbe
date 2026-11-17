@@ -23,6 +23,7 @@ export type Database = {
           created_by: string | null
           custo_por_km: number | null
           data: string
+          fechamento_id: string | null
           forma_pagamento_operacional: string | null
           grupo_id: string | null
           hora: string | null
@@ -47,6 +48,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data: string
+          fechamento_id?: string | null
           forma_pagamento_operacional?: string | null
           grupo_id?: string | null
           hora?: string | null
@@ -71,6 +73,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data?: string
+          fechamento_id?: string | null
           forma_pagamento_operacional?: string | null
           grupo_id?: string | null
           hora?: string | null
@@ -88,6 +91,13 @@ export type Database = {
           viagem_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "abastecimentos_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "abastecimentos_motorista_id_fkey"
             columns: ["motorista_id"]
@@ -1084,25 +1094,34 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          data: string | null
           descricao: string
           fechamento_id: string
           id: string
+          origem: string | null
+          origem_id: string | null
           valor: number
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          data?: string | null
           descricao: string
           fechamento_id: string
           id?: string
+          origem?: string | null
+          origem_id?: string | null
           valor?: number
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          data?: string | null
           descricao?: string
           fechamento_id?: string
           id?: string
+          origem?: string | null
+          origem_id?: string | null
           valor?: number
         }
         Relationships: [
@@ -2189,6 +2208,70 @@ export type Database = {
           },
         ]
       }
+      motorista_antecipacoes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          fechamento_id: string | null
+          id: string
+          motorista_id: string
+          observacoes: string | null
+          updated_at: string
+          valor: number
+          veiculo_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao: string
+          fechamento_id?: string | null
+          id?: string
+          motorista_id: string
+          observacoes?: string | null
+          updated_at?: string
+          valor: number
+          veiculo_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          fechamento_id?: string | null
+          id?: string
+          motorista_id?: string
+          observacoes?: string | null
+          updated_at?: string
+          valor?: number
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "motorista_antecipacoes_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motorista_antecipacoes_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "motorista_antecipacoes_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       motorista_chat_mensagens: {
         Row: {
           autor: string
@@ -2585,6 +2668,79 @@ export type Database = {
           },
           {
             foreignKeyName: "parceiros_candidaturas_veiculo_id_fkey"
+            columns: ["veiculo_id"]
+            isOneToOne: false
+            referencedRelation: "veiculos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pecas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string
+          fechamento_id: string | null
+          fornecedor: string | null
+          id: string
+          motorista_id: string | null
+          nota_fiscal: string | null
+          observacoes: string | null
+          quantidade: number
+          updated_at: string
+          valor_total: number
+          veiculo_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao: string
+          fechamento_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          motorista_id?: string | null
+          nota_fiscal?: string | null
+          observacoes?: string | null
+          quantidade?: number
+          updated_at?: string
+          valor_total?: number
+          veiculo_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string
+          fechamento_id?: string | null
+          fornecedor?: string | null
+          id?: string
+          motorista_id?: string | null
+          nota_fiscal?: string | null
+          observacoes?: string | null
+          quantidade?: number
+          updated_at?: string
+          valor_total?: number
+          veiculo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pecas_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pecas_motorista_id_fkey"
+            columns: ["motorista_id"]
+            isOneToOne: false
+            referencedRelation: "motoristas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pecas_veiculo_id_fkey"
             columns: ["veiculo_id"]
             isOneToOne: false
             referencedRelation: "veiculos"

@@ -125,8 +125,8 @@ export function baixarPdfFechamento(d: DetalheFechamento, imprimir = false) {
         ? [
             {
               titulo: "Descontos / acertos do fechamento",
-              colunas: ["Descrição", "Valor"],
-              linhas: d.extras.map((e) => [e.descricao, brl(e.valor)] as Celula[]),
+              colunas: ["Data", "Tipo", "Descrição", "Valor"],
+              linhas: extrasDe(d),
             },
           ]
         : []),
@@ -165,12 +165,21 @@ export function baixarExcelFechamento(d: DetalheFechamento) {
       ? [
           {
             nome: "Descontos",
-            colunas: ["Descrição", "Valor"],
-            linhas: d.extras.map((e) => [e.descricao, brl(e.valor)] as Celula[]),
+            colunas: ["Data", "Tipo", "Descrição", "Valor"],
+            linhas: extrasDe(d),
           },
         ]
       : []),
   ]);
+}
+
+const TIPO_EXTRA: Record<string, string> = { abastecimento: "Abastecimento", peca: "Peça", antecipacao: "Antecipação" };
+function extrasDe(d: DetalheFechamento): Celula[][] {
+  const linhas = d.extras.map(
+    (e) => [e.data ? dt(e.data) : "—", TIPO_EXTRA[e.origem ?? ""] ?? "Manual", e.descricao, brl(e.valor)] as Celula[],
+  );
+  linhas.push(["", "", "TOTAL DESCONTADO", brl(d.extras.reduce((s, e) => s + e.valor, 0))] as Celula[]);
+  return linhas;
 }
 
 /** Modal de detalhe do fechamento com exportação em PDF e Excel. */

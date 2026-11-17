@@ -1,5 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  Package,
+  HandCoins,
   AlertTriangle,
   LayoutDashboard,
   Truck,
@@ -88,6 +90,8 @@ const operacional: NavItem[] = [
   { label: "Roteirizador inteligente", to: "/app/roteirizador", icon: Radar },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
+  { label: "Peças", to: "/app/pecas", icon: Package },
+  { label: "Descontos", to: "/app/descontos", icon: HandCoins },
 ];
 
 const comercial: NavItem[] = [

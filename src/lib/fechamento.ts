@@ -166,7 +166,85 @@ export async function carregarViagensFechamento(
   });
 }
 
-export type DescontoExtra = { descricao: string; valor: number };
+export type OrigemDesconto = "abastecimento" | "peca" | "antecipacao";
+export type DescontoExtra = {
+  descricao: string;
+  valor: number;
+  origem?: OrigemDesconto | null;
+  origemId?: string | null;
+  data?: string | null;
+};
+
+const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+const tabelaOrigem = { abastecimento: "abastecimentos", peca: "pecas", antecipacao: "motorista_antecipacoes" } as const;
+
+export type ItemPendente = {
+  origem: OrigemDesconto;
+  id: string;
+  data: string;
+  valor: number;
+  fechamentoId: string | null;
+  combustivel?: string | null;
+  litros?: number | null;
+  posto?: string | null;
+  placa?: string | null;
+  descricao?: string | null;
+  quantidade?: number | null;
+};
+
+/** Regra do desconto automático: só itens do período e ainda não descontados. Antecipação sai rotulada "ANTECIPAÇÃO". */
+export function montarDescontosPendentes(itens: ItemPendente[], de: string, ate: string): DescontoExtra[] {
+  return itens
+    .filter((i) => !i.fechamentoId && i.data >= de && i.data <= ate && i.valor > 0)
+    .sort((a, b) => a.data.localeCompare(b.data))
+    .map((i) => {
+      let descricao: string;
+      if (i.origem === "abastecimento") {
+        const litros = i.litros ? ` ${String(i.litros).replace(".", ",")} L` : "";
+        descricao = `ABASTECIMENTO ${(i.combustivel ?? "").toUpperCase()}${litros}${i.placa ? ` · ${i.placa}` : ""}${i.posto ? ` (${i.posto.toUpperCase()})` : ""}`;
+      } else if (i.origem === "peca") {
+        const qtd = i.quantidade && i.quantidade !== 1 ? ` ${String(i.quantidade).replace(".", ",")}X` : "";
+        descricao = `PEÇA: ${(i.descricao ?? "").toUpperCase()}${qtd}${i.placa ? ` · ${i.placa}` : ""}`;
+      } else {
+        descricao = `ANTECIPAÇÃO: ${(i.descricao ?? "").toUpperCase()}`;
+      }
+      return { descricao: `${descricao} – ${ddmm(i.data)}`, valor: i.valor, origem: i.origem, origemId: i.id, data: i.data };
+    });
+}
+
+/** Abastecimentos, peças e antecipações do motorista agregado no período, ainda não descontados. */
+export async function buscarDescontosPendentes(motoristaId: string, de: string, ate: string): Promise<DescontoExtra[]> {
+  const { data: mot } = await supabase.from("motoristas").select("veiculo_id").eq("id", motoristaId).maybeSingle();
+  const { data: veics } = await supabase.from("veiculos").select("id, placa, agregado").eq("agregado", true);
+  const agregados = new Map((veics ?? []).map((v) => [v.id, v.placa]));
+  const veicMot = mot?.veiculo_id && agregados.has(mot.veiculo_id) ? mot.veiculo_id : null;
+  const doMotorista = (q: any) =>
+    veicMot ? q.or(`motorista_id.eq.${motoristaId},and(motorista_id.is.null,veiculo_id.eq.${veicMot})`) : q.eq("motorista_id", motoristaId);
+  const [ab, pc, an] = await Promise.all([
+    doMotorista(supabase.from("abastecimentos").select("id, data, valor_total, combustivel, litros, posto, veiculo_id, fechamento_id"))
+      .gte("data", de).lte("data", ate).is("fechamento_id", null),
+    doMotorista(supabase.from("pecas").select("id, data, valor_total, descricao, quantidade, veiculo_id, fechamento_id"))
+      .gte("data", de).lte("data", ate).is("fechamento_id", null),
+    supabase.from("motorista_antecipacoes").select("id, data, valor, descricao, fechamento_id")
+      .eq("motorista_id", motoristaId).gte("data", de).lte("data", ate).is("fechamento_id", null),
+  ]);
+  for (const r of [ab, pc, an]) if (r.error) throw r.error;
+  const itens: ItemPendente[] = [
+    // abastecimento e peça só viram desconto quando o veículo é agregado
+    ...((ab.data ?? []) as any[]).filter((a) => agregados.has(a.veiculo_id)).map((a) => ({
+      origem: "abastecimento" as const, id: a.id, data: a.data, valor: Number(a.valor_total), fechamentoId: a.fechamento_id,
+      combustivel: a.combustivel, litros: a.litros, posto: a.posto, placa: agregados.get(a.veiculo_id) ?? null,
+    })),
+    ...((pc.data ?? []) as any[]).filter((a) => agregados.has(a.veiculo_id)).map((a) => ({
+      origem: "peca" as const, id: a.id, data: a.data, valor: Number(a.valor_total), fechamentoId: a.fechamento_id,
+      descricao: a.descricao, quantidade: Number(a.quantidade), placa: agregados.get(a.veiculo_id) ?? null,
+    })),
+    ...((an.data ?? []) as any[]).map((a) => ({
+      origem: "antecipacao" as const, id: a.id, data: a.data, valor: Number(a.valor), fechamentoId: a.fechamento_id, descricao: a.descricao,
+    })),
+  ];
+  return montarDescontosPendentes(itens, de, ate);
+}
 
 export type ConfirmarFechamento = {
   tipo: TipoFechamento;
@@ -281,9 +359,20 @@ export async function confirmarFechamento(p: ConfirmarFechamento) {
         fechamento_id: fech.id,
         descricao: d.descricao,
         valor: nnum(d.valor),
+        origem: d.origem ?? null,
+        origem_id: d.origemId ?? null,
+        data: d.data ?? null,
         created_by: uid,
       })),
     );
+    // marca os itens de origem como já descontados neste fechamento
+    for (const origem of Object.keys(tabelaOrigem) as OrigemDesconto[]) {
+      const ids = p.descontosExtras.filter((d) => d.origem === origem && d.origemId).map((d) => d.origemId!);
+      if (ids.length) {
+        const r = await supabase.from(tabelaOrigem[origem]).update({ fechamento_id: fech.id }).in("id", ids);
+        if (r.error) throw r.error;
+      }
+    }
   }
 
   // Lançamento financeiro consolidado
@@ -372,6 +461,9 @@ export async function cancelarFechamento(fechamentoId: string) {
       .is("fechamento_id", null)
       .eq("observacoes", `Consolidado na fatura do fechamento #${fech.numero}`);
   }
+  // devolve abastecimentos, peças e antecipações para o próximo fechamento
+  for (const tabela of Object.values(tabelaOrigem))
+    await supabase.from(tabela).update({ fechamento_id: null }).eq("fechamento_id", fechamentoId);
   const upd = await supabase
     .from("fechamentos")
     .update({ status: "cancelado", cancelado_em: new Date().toISOString(), cancelado_por: user.user?.id ?? null })
@@ -434,7 +526,7 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
         "viagem_id, frete, pedagio, adicionais, descontos, total, viagem:viagens(codigo, created_at, data_saida, data_prevista_saida, origem_cidade, origem_uf, destino_cidade, destino_uf, frete_faixa_id, cliente_id, motorista_id, veiculo_id, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, tipo, tipologia_id))",
       )
       .eq("fechamento_id", fechamentoId),
-    supabase.from("fechamento_descontos").select("descricao, valor").eq("fechamento_id", fechamentoId),
+    supabase.from("fechamento_descontos").select("descricao, valor, origem, data").eq("fechamento_id", fechamentoId).order("data", { ascending: true, nullsFirst: false }),
   ]);
   if (itensRes.error) throw itensRes.error;
 
@@ -507,6 +599,6 @@ export async function carregarDetalheFechamento(fechamentoId: string): Promise<D
   return {
     fechamento: registro,
     linhas: linhas.sort((a, b) => a.data.localeCompare(b.data)),
-    extras: ((extrasRes.data ?? []) as any[]).map((e) => ({ descricao: e.descricao, valor: Number(e.valor) })),
+    extras: ((extrasRes.data ?? []) as any[]).map((e) => ({ descricao: e.descricao, valor: Number(e.valor), origem: e.origem, data: e.data })),
   };
 }

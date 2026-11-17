@@ -32,6 +32,7 @@ import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppCustosRouteImport } from './routes/_authenticated/app/custos'
+import { Route as AuthenticatedAppDescontosRouteImport } from './routes/_authenticated/app/descontos'
 import { Route as AuthenticatedAppDespesasRouteImport } from './routes/_authenticated/app/despesas'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app/documentos'
 import { Route as AuthenticatedAppEmpresaRouteImport } from './routes/_authenticated/app/empresa'
@@ -47,6 +48,7 @@ import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAppPagamentosClientesRouteImport } from './routes/_authenticated/app/pagamentos-clientes'
 import { Route as AuthenticatedAppPagarRouteImport } from './routes/_authenticated/app/pagar'
 import { Route as AuthenticatedAppParceirosRouteImport } from './routes/_authenticated/app/parceiros'
+import { Route as AuthenticatedAppPecasRouteImport } from './routes/_authenticated/app/pecas'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app/perfil'
 import { Route as AuthenticatedAppPlanoContasRouteImport } from './routes/_authenticated/app/plano-contas'
 import { Route as AuthenticatedAppReceberRouteImport } from './routes/_authenticated/app/receber'
@@ -196,6 +198,12 @@ const AuthenticatedAppCustosRoute = AuthenticatedAppCustosRouteImport.update({
   path: '/app/custos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppDescontosRoute =
+  AuthenticatedAppDescontosRouteImport.update({
+    id: '/app/descontos',
+    path: '/app/descontos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppDespesasRoute =
   AuthenticatedAppDespesasRouteImport.update({
     id: '/app/despesas',
@@ -282,6 +290,11 @@ const AuthenticatedAppParceirosRoute =
     path: '/app/parceiros',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppPecasRoute = AuthenticatedAppPecasRouteImport.update({
+  id: '/app/pecas',
+  path: '/app/pecas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   id: '/app/perfil',
   path: '/app/perfil',
@@ -469,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
+  '/app/descontos': typeof AuthenticatedAppDescontosRoute
   '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -484,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/app/pagamentos-clientes': typeof AuthenticatedAppPagamentosClientesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/parceiros': typeof AuthenticatedAppParceirosRoute
+  '/app/pecas': typeof AuthenticatedAppPecasRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
@@ -536,6 +551,7 @@ export interface FileRoutesByTo {
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
+  '/app/descontos': typeof AuthenticatedAppDescontosRoute
   '/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -551,6 +567,7 @@ export interface FileRoutesByTo {
   '/app/pagamentos-clientes': typeof AuthenticatedAppPagamentosClientesRoute
   '/app/pagar': typeof AuthenticatedAppPagarRoute
   '/app/parceiros': typeof AuthenticatedAppParceirosRoute
+  '/app/pecas': typeof AuthenticatedAppPecasRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/app/receber': typeof AuthenticatedAppReceberRoute
@@ -605,6 +622,7 @@ export interface FileRoutesById {
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/custos': typeof AuthenticatedAppCustosRoute
+  '/_authenticated/app/descontos': typeof AuthenticatedAppDescontosRoute
   '/_authenticated/app/despesas': typeof AuthenticatedAppDespesasRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/empresa': typeof AuthenticatedAppEmpresaRoute
@@ -620,6 +638,7 @@ export interface FileRoutesById {
   '/_authenticated/app/pagamentos-clientes': typeof AuthenticatedAppPagamentosClientesRoute
   '/_authenticated/app/pagar': typeof AuthenticatedAppPagarRoute
   '/_authenticated/app/parceiros': typeof AuthenticatedAppParceirosRoute
+  '/_authenticated/app/pecas': typeof AuthenticatedAppPecasRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/plano-contas': typeof AuthenticatedAppPlanoContasRoute
   '/_authenticated/app/receber': typeof AuthenticatedAppReceberRoute
@@ -674,6 +693,7 @@ export interface FileRouteTypes {
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
+    | '/app/descontos'
     | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
@@ -689,6 +709,7 @@ export interface FileRouteTypes {
     | '/app/pagamentos-clientes'
     | '/app/pagar'
     | '/app/parceiros'
+    | '/app/pecas'
     | '/app/perfil'
     | '/app/plano-contas'
     | '/app/receber'
@@ -741,6 +762,7 @@ export interface FileRouteTypes {
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
+    | '/app/descontos'
     | '/app/despesas'
     | '/app/documentos'
     | '/app/empresa'
@@ -756,6 +778,7 @@ export interface FileRouteTypes {
     | '/app/pagamentos-clientes'
     | '/app/pagar'
     | '/app/parceiros'
+    | '/app/pecas'
     | '/app/perfil'
     | '/app/plano-contas'
     | '/app/receber'
@@ -809,6 +832,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/custos'
+    | '/_authenticated/app/descontos'
     | '/_authenticated/app/despesas'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/empresa'
@@ -824,6 +848,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/pagamentos-clientes'
     | '/_authenticated/app/pagar'
     | '/_authenticated/app/parceiros'
+    | '/_authenticated/app/pecas'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/plano-contas'
     | '/_authenticated/app/receber'
@@ -1040,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppCustosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/descontos': {
+      id: '/_authenticated/app/descontos'
+      path: '/app/descontos'
+      fullPath: '/app/descontos'
+      preLoaderRoute: typeof AuthenticatedAppDescontosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/despesas': {
       id: '/_authenticated/app/despesas'
       path: '/app/despesas'
@@ -1143,6 +1175,13 @@ declare module '@tanstack/react-router' {
       path: '/app/parceiros'
       fullPath: '/app/parceiros'
       preLoaderRoute: typeof AuthenticatedAppParceirosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/pecas': {
+      id: '/_authenticated/app/pecas'
+      path: '/app/pecas'
+      fullPath: '/app/pecas'
+      preLoaderRoute: typeof AuthenticatedAppPecasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/perfil': {
@@ -1354,6 +1393,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppCustosRoute: typeof AuthenticatedAppCustosRoute
+  AuthenticatedAppDescontosRoute: typeof AuthenticatedAppDescontosRoute
   AuthenticatedAppDespesasRoute: typeof AuthenticatedAppDespesasRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppEmpresaRoute: typeof AuthenticatedAppEmpresaRoute
@@ -1369,6 +1409,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppPagamentosClientesRoute: typeof AuthenticatedAppPagamentosClientesRoute
   AuthenticatedAppPagarRoute: typeof AuthenticatedAppPagarRoute
   AuthenticatedAppParceirosRoute: typeof AuthenticatedAppParceirosRoute
+  AuthenticatedAppPecasRoute: typeof AuthenticatedAppPecasRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppPlanoContasRoute: typeof AuthenticatedAppPlanoContasRoute
   AuthenticatedAppReceberRoute: typeof AuthenticatedAppReceberRoute
@@ -1404,6 +1445,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppCustosRoute: AuthenticatedAppCustosRoute,
+  AuthenticatedAppDescontosRoute: AuthenticatedAppDescontosRoute,
   AuthenticatedAppDespesasRoute: AuthenticatedAppDespesasRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppEmpresaRoute: AuthenticatedAppEmpresaRoute,
@@ -1420,6 +1462,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedAppPagamentosClientesRoute,
   AuthenticatedAppPagarRoute: AuthenticatedAppPagarRoute,
   AuthenticatedAppParceirosRoute: AuthenticatedAppParceirosRoute,
+  AuthenticatedAppPecasRoute: AuthenticatedAppPecasRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppPlanoContasRoute: AuthenticatedAppPlanoContasRoute,
   AuthenticatedAppReceberRoute: AuthenticatedAppReceberRoute,

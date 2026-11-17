@@ -232,6 +232,20 @@
       "when": 1792452253285,
       "tag": "0032_telegram_destinatarios_por_cliente",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794940519274,
+      "tag": "0033_pecas_antecipacoes_descontos_fechamento",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794940533263,
+      "tag": "0034_fix_tg_peca_financeiro",
+      "breakpoints": true
     }
   ]
 }
