@@ -217,7 +217,7 @@ export function FrotaPanel({
           <div>
             <Label className="text-xs">Modo cotação (frota ilimitada)</Label>
             <p className="text-[11px] text-muted-foreground">
-              Usa quantos veículos forem necessários dos tipos com disponibilidade acima de zero (ou de todos, se nenhum estiver marcado), para mostrar a frota total da operação.
+              Usa quantos veículos forem necessários dos tipos com disponibilidade acima de zero. Se nenhum tiver disponibilidade, usa só os tipos com máximo de notas preenchido; se também não houver, usa todos.
             </p>
           </div>
           <Switch

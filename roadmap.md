@@ -22,6 +22,8 @@
 - [x] Novo motor: rotas montadas por economia de km e depois ajustadas para não misturar regiões.
 - [x] Jornada diária respeitada na montagem (hora extra só para encaixar sobras quando a frota acaba).
 - [x] Testes com os pontos da roteirização salva: Santos e Campinas separados, Alphaville com Campinas, Zona Norte sem o extremo sul, Fiorino até 4 notas.
+- [x] Modo cotação sem disponibilidade usa só os tipos com máximo de notas (ex.: só Fiorino).
+- [x] Rotas distantes (Santos/Campinas) levam só as entregas do caminho; reorganização de bairros inteiros entre rotas cheias.
 - [ ] Usuário clicar em "Roteirizar" na roteirização salva e conferir no mapa.
 
 ## Em aberto

@@ -69,6 +69,27 @@ describe("roteirização agrupa entregas próximas", () => {
         expect(rotaDe(norte)).not.toBe(rotaDe(sul));
   });
 
+  it("Santos não sobe para a Zona Norte nem para o centro", () => {
+    for (const c of resultado.cenarios) {
+      const santos = c.rotas.find((r) => r.paradas.some((p) => p.entrega.id === "Santos"))!;
+      const nomes = santos.paradas.map((p) => p.entrega.id);
+      for (const longe of ["Santana", "Casa Verde", "Higienópolis", "Pompeia", "Lapa", "Mooca"])
+        expect(nomes).not.toContain(longe);
+    }
+  });
+
+  it("Santos leva as entregas que ficam no caminho (Vila Mascote / Chácara Flora)", () => {
+    const santos = recomendado.rotas.find((r) => r.paradas.some((p) => p.entrega.id === "Santos"))!;
+    const nomes = santos.paradas.map((p) => p.entrega.id);
+    expect(nomes).toContain("Vila Alexandria");
+    expect(nomes).toContain("Chácara Flora");
+  });
+
+  it("sem disponibilidade marcada, o modo cotação usa só o tipo com limite de notas (Fiorino)", () => {
+    for (const c of resultado.cenarios)
+      for (const r of c.rotas) expect(r.veiculo.categoria).toBe("fiorino");
+  });
+
   it("Fiorino nunca passa de 4 notas", () => {
     for (const c of resultado.cenarios)
       for (const r of c.rotas)

@@ -321,11 +321,17 @@ export function montarRotaComSequencia(
   return rota;
 }
 
-/** No modo cotação, os tipos escolhidos passam a ter quantidade ilimitada. */
+/**
+ * No modo cotação, os tipos escolhidos passam a ter quantidade ilimitada.
+ * Escolhidos = com disponibilidade acima de zero; se nenhum, os que têm limite
+ * de notas definido (o usuário configurou só aquele tipo); se nenhum, todos.
+ */
 export function frotaEfetiva(frota: PerfilVeiculo[], modoCotacao: boolean): PerfilVeiculo[] {
   const ativos = frota.filter((v) => v.disponiveis > 0);
   if (!modoCotacao) return ativos;
-  return (ativos.length ? ativos : frota).map((v) => ({ ...v, disponiveis: 9999 }));
+  const comLimite = frota.filter((v) => (v.maxEntregas ?? 0) > 0);
+  const escolhidos = ativos.length ? ativos : comLimite.length ? comLimite : frota;
+  return escolhidos.map((v) => ({ ...v, disponiveis: 9999 }));
 }
 
 function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenario {
@@ -353,7 +359,8 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
     ocupacaoMinima: opcoes.consolidarRotas ? opcoes.ocupacaoMinima : 0,
     raioProximidadeKm: opcoes.raioProximidadeKm,
     custo: (v, km, min) => calcularCusto(v, km, min).total,
-    pesoMistura: 20,
+    pesoMistura: 8,
+    pesoCorredor: 2,
   });
 
   const rotas: Rota[] = brutas.map((r, i) => {
@@ -429,7 +436,24 @@ function pontuar(cenarios: Cenario[]) {
 }
 
 export function simularCenarios(entrada: EntradaSimulacao): ResultadoSimulacao {
-  const cenarios = ESTRATEGIAS.map((e) => gerarCenario(entrada, e));
+  // estratégias com a mesma configuração do motor dão o mesmo resultado: calcula uma vez só
+  const cache = new Map<string, Cenario>();
+  const cenarios = ESTRATEGIAS.map((e) => {
+    const chave = `${e.preferencia}|${e.id === "tempo" ? e.ocupacaoAlvo : 1}|${e.id === "km" ? "km" : "custo"}`;
+    const pronto = cache.get(chave);
+    if (pronto) {
+      return {
+        ...pronto,
+        id: e.id,
+        nome: e.nome,
+        objetivo: e.objetivo,
+        rotas: pronto.rotas.map((r, i) => ({ ...r, id: `${e.id}-${i + 1}` })),
+      };
+    }
+    const c = gerarCenario(entrada, e);
+    cache.set(chave, c);
+    return c;
+  });
   pontuar(cenarios);
   const melhor = [...cenarios].sort((a, b) => b.score - a.score)[0];
   cenarios.forEach((c) => {

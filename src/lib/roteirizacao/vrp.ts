@@ -39,6 +39,8 @@ export type ConfigVrp = {
   custo: (v: PerfilVeiculo, km: number, minutos: number) => number;
   /** custo (R$ ou km) por vizinha próxima alocada em outro veículo */
   pesoMistura?: number;
+  /** custo por km de desvio fora do corredor CD → entrega mais distante */
+  pesoCorredor?: number;
   orcamentoMs?: number;
 };
 
@@ -151,10 +153,28 @@ export function resolverVrp(
     km: kmSeq(seq),
     tipo,
   });
-  /** Objetivo da busca local: custo do veículo (ou só km). */
+  /*
+   * Penalidade de corredor: a entrega mais distante do CD define o sentido da
+   * rota; as demais devem ficar no caminho até ela. Cada km de desvio além da
+   * tolerância custa caro, o que impede, por exemplo, a rota de Santos de subir
+   * até a Zona Norte antes de descer a serra.
+   */
+  const pesoCorredor = cfg.pesoCorredor ?? 0;
+  const corredorKm = (seq: number[]) => {
+    if (!pesoCorredor || seq.length < 2) return 0;
+    let longe = seq[0];
+    for (const k of seq) if (d(0, k) > d(0, longe)) longe = k;
+    const eixo = d(0, longe);
+    const tolerancia = 1 + 0.05 * eixo;
+    let desvio = 0;
+    for (const k of seq) if (k !== longe) desvio += Math.max(0, d(0, k) + d(k, longe) - eixo - tolerancia);
+    return desvio;
+  };
+  /** Objetivo da busca local: custo do veículo (ou só km) + desvio do corredor. */
   const valorRota = (r: R) => {
     if (!r.seq.length) return 0;
-    return cfg.objetivo === "km" || !r.tipo ? r.km : custoRota(r.tipo, r.km, r.desc);
+    const base = cfg.objetivo === "km" || !r.tipo ? r.km : custoRota(r.tipo, r.km, r.desc);
+    return base + pesoCorredor * corredorKm(r.seq);
   };
 
   /*
@@ -267,7 +287,11 @@ export function resolverVrp(
       const rotas = economias(nos, tipos, l);
       const valor = rotas.reduce((s, r) => {
         const t = melhorTipo(tipos, r.seq.length, r.peso, r.vol, r.km, r.desc);
-        return s + (t && cfg.objetivo === "custo" ? custoRota(t, r.km, r.desc) : r.km);
+        return (
+          s +
+          (t && cfg.objetivo === "custo" ? custoRota(t, r.km, r.desc) : r.km) +
+          pesoCorredor * corredorKm(r.seq)
+        );
       }, 0) + misturaDe(rotas);
       if (valor < melhorValor) {
         melhorValor = valor;
@@ -631,6 +655,185 @@ export function resolverVrp(
     reatribuirVeiculos(rotas);
   };
 
+  /*
+   * Ruína e reconstrução: remove um bairro inteiro de entregas (a entrega
+   * sorteada e suas vizinhas) e reinsere uma a uma, começando pelas mais
+   * distantes do CD, no veículo onde o desvio é menor. É o que permite trocar
+   * várias entregas de uma vez entre rotas cheias (ex.: tirar a Zona Norte da
+   * rota de Santos e colocar no lugar as entregas que ficam no caminho).
+   */
+  function ruinaReconstrucao(inicial: R[]): R[] {
+    let semente = (N * 2654435761) >>> 0 || 1;
+    const aleatorio = () => {
+      semente = (semente + 0x6d2b79f5) >>> 0;
+      let t = semente;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const copiar = (lista: R[]) => lista.map((r) => ({ ...r, seq: [...r.seq] }));
+    const total = (lista: R[]) => lista.reduce((s, r) => s + valorRota(r), 0) + misturaDe(lista);
+    const usados = (lista: R[]) => {
+      const m = new Map<string, number>();
+      for (const r of lista) if (r.tipo) m.set(r.tipo.id, (m.get(r.tipo.id) ?? 0) + 1);
+      return m;
+    };
+    const inicio = Date.now();
+    const limiteMs = N <= 60 ? 300 : N <= 150 ? 250 : 200;
+    const iteracoes = N <= 60 ? 3000 : N <= 150 ? 1200 : 400;
+    const maxRemover = Math.max(2, Math.min(20, Math.ceil(N * 0.35)));
+
+    let atual = copiar(inicial);
+    let valorAtual = total(atual);
+    let melhor = copiar(atual);
+    let valorMelhor = valorAtual;
+    const temperaturaInicial = valorAtual * 0.004;
+
+    for (let it = 0; it < iteracoes && Date.now() - inicio < limiteMs; it++) {
+      const tentativa = copiar(atual);
+      const rotaDe = new Map<number, R>();
+      tentativa.forEach((r) => r.seq.forEach((k) => rotaDe.set(k, r)));
+      const atribuidas = [...rotaDe.keys()];
+      if (!atribuidas.length) break;
+
+      // --- ruína: em volta de uma entrega sorteada ---
+      const centro = atribuidas[Math.floor(aleatorio() * atribuidas.length)];
+      const removidas: number[] = [];
+      const fora = new Set<number>();
+      if (aleatorio() < 0.5) {
+        // bairro: a entrega e as vizinhas mais próximas
+        const qtd = 2 + Math.floor(aleatorio() * (maxRemover - 1));
+        for (const v of [centro, ...vizinhos[centro]]) {
+          if (removidas.length >= qtd) break;
+          if (rotaDe.has(v) && !fora.has(v)) {
+            removidas.push(v);
+            fora.add(v);
+          }
+        }
+      } else {
+        // trechos: pedaços contíguos das rotas que passam perto da entrega
+        const qtdRotas = 1 + Math.floor(aleatorio() * Math.min(4, tentativa.length));
+        const mediaRota = atribuidas.length / tentativa.length;
+        const maxTrecho = Math.max(1, Math.min(10, Math.ceil(mediaRota)));
+        const tocadas = new Set<R>();
+        for (const v of [centro, ...vizinhos[centro]]) {
+          if (tocadas.size >= qtdRotas) break;
+          const r = rotaDe.get(v);
+          if (!r || tocadas.has(r)) continue;
+          tocadas.add(r);
+          const tam = Math.min(r.seq.length, 1 + Math.floor(aleatorio() * maxTrecho));
+          const pos = r.seq.indexOf(v);
+          const ini = Math.max(0, Math.min(r.seq.length - tam, pos - Math.floor(aleatorio() * tam)));
+          for (const k of r.seq.slice(ini, ini + tam))
+            if (!fora.has(k)) {
+              removidas.push(k);
+              fora.add(k);
+            }
+        }
+      }
+      const mexidas = new Set<R>();
+      for (const k of removidas) {
+        const r = rotaDe.get(k)!;
+        r.seq = r.seq.filter((x) => x !== k);
+        mexidas.add(r);
+      }
+      for (let i = tentativa.length - 1; i >= 0; i--) {
+        const r = tentativa[i];
+        if (!mexidas.has(r)) continue;
+        if (!r.seq.length) {
+          tentativa.splice(i, 1);
+          continue;
+        }
+        Object.assign(r, { ...novaRota(r.seq, r.tipo), id: r.id });
+      }
+      sincronizarDonos(tentativa);
+
+      // --- reconstrução: mais distantes do CD primeiro (ou ordem sorteada) ---
+      const sorteio = aleatorio();
+      if (sorteio < 0.6) removidas.sort((a, b) => d(0, b) - d(0, a));
+      else if (sorteio < 0.8) removidas.sort((a, b) => peso(b) - peso(a));
+      else removidas.sort(() => aleatorio() - 0.5);
+
+      const livres = new Map(frota.map((t) => [t.id, t.disponiveis]));
+      for (const [id, n] of usados(tentativa)) livres.set(id, (livres.get(id) ?? 0) - n);
+      let falhou = false;
+      for (const k of removidas) {
+        let melhorCusto = Infinity;
+        let alvo: R | null = null;
+        let alvoPos = 0;
+        let alvoTipo: PerfilVeiculo | null = null;
+        for (const r of tentativa) {
+          if (!r.tipo) continue;
+          const { pos, delta } = melhorPosicao(r.seq, k);
+          if (aleatorio() < 0.02) continue;
+          const n = r.seq.length + 1;
+          const p = r.peso + peso(k);
+          const v = r.vol + vol(k);
+          const km = r.km + delta;
+          const ds = r.desc + desc(k);
+          let tipo: PerfilVeiculo | null = cabe(r.tipo, n, p, v, km, ds) ? r.tipo : null;
+          if (!tipo) {
+            const opcoes = frota.filter((t) => t.id !== r.tipo!.id && (livres.get(t.id) ?? 0) > 0);
+            tipo = melhorTipo(opcoes, n, p, v, km, ds);
+          }
+          if (!tipo) continue;
+          const custo =
+            valorRota({ ...r, tipo, km, desc: ds, seq: [...r.seq, k] }) -
+            valorRota(r) +
+            deltaMistura(new Map([[k, r.id]]));
+          if (custo < melhorCusto) {
+            melhorCusto = custo;
+            alvo = r;
+            alvoPos = pos;
+            alvoTipo = tipo;
+          }
+        }
+        const tiposNovos = frota.filter((t) => (livres.get(t.id) ?? 0) > 0);
+        const tipoNovo = melhorTipo(tiposNovos, 1, peso(k), vol(k), 2 * d(0, k), desc(k));
+        if (tipoNovo) {
+          const nova = novaRota([k], tipoNovo);
+          const custo = valorRota(nova) + deltaMistura(new Map([[k, nova.id]]));
+          if (custo < melhorCusto) {
+            tentativa.push(nova);
+            mexidas.add(nova);
+            livres.set(tipoNovo.id, (livres.get(tipoNovo.id) ?? 0) - 1);
+            dono[k] = nova.id;
+            continue;
+          }
+          proximoId--;
+        }
+        if (!alvo || !alvoTipo) {
+          falhou = true;
+          break;
+        }
+        if (alvoTipo.id !== alvo.tipo!.id) {
+          livres.set(alvo.tipo!.id, (livres.get(alvo.tipo!.id) ?? 0) + 1);
+          livres.set(alvoTipo.id, (livres.get(alvoTipo.id) ?? 0) - 1);
+        }
+        const seq = [...alvo.seq.slice(0, alvoPos), k, ...alvo.seq.slice(alvoPos)];
+        Object.assign(alvo, { ...novaRota(seq, alvoTipo), id: alvo.id });
+        mexidas.add(alvo);
+        dono[k] = alvo.id;
+      }
+      if (falhou) continue;
+      for (const r of mexidas) if (r.seq.length) refinarInterno(r);
+      const valor = total(tentativa);
+      const temperatura = temperaturaInicial * (1 - it / iteracoes);
+      if (valor < valorAtual + temperatura * -Math.log(Math.max(1e-9, aleatorio())) * 0.5) {
+        atual = tentativa;
+        valorAtual = valor;
+        if (valor < valorMelhor - EPS) {
+          melhor = copiar(tentativa);
+          valorMelhor = valor;
+        }
+      }
+    }
+    sincronizarDonos(melhor);
+    melhor.forEach(refinarInterno);
+    reatribuirVeiculos(melhor);
+    return melhor;
+  }
+
   buscaLocal(finais);
 
   // ---------- 4. consolidação de rotas ociosas ----------
@@ -672,7 +875,8 @@ export function resolverVrp(
         if (!coube) continue;
         outras.forEach(refinarInterno);
         const custoTotal = (lista: R[]) =>
-          lista.reduce((s, r) => s + (r.tipo ? custoRota(r.tipo, r.km, r.desc) : 0), 0);
+          lista.reduce((s, r) => s + (r.tipo ? custoRota(r.tipo, r.km, r.desc) : 0) + pesoCorredor * corredorKm(r.seq), 0) +
+          misturaDe(lista);
         if (custoTotal(outras) > custoTotal(finais) + EPS) continue;
         for (const k of ociosa.seq) origem.set(k, "consolidacao");
         finais.splice(0, finais.length, ...outras);
@@ -681,6 +885,16 @@ export function resolverVrp(
       }
     }
     if (mexeu || finais.length) buscaLocal(finais);
+  }
+
+  // ---------- 5. ruína e reconstrução ----------
+  if (N >= 3 && finais.length) {
+    const antes = new Int32Array(dono);
+    const melhorada = ruinaReconstrucao(finais);
+    finais.splice(0, finais.length, ...melhorada);
+    sincronizarDonos(finais);
+    for (let k = 1; k <= N; k++)
+      if (antes[k] >= 0 && dono[k] !== antes[k] && origem.get(k) === "zona") origem.set(k, "proximidade");
   }
 
   return {
