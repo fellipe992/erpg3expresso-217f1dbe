@@ -23,6 +23,7 @@ export type Database = {
           created_by: string | null
           custo_por_km: number | null
           data: string
+          fatura_id: string | null
           fechamento_id: string | null
           forma_pagamento_operacional: string | null
           grupo_id: string | null
@@ -48,6 +49,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data: string
+          fatura_id?: string | null
           fechamento_id?: string | null
           forma_pagamento_operacional?: string | null
           grupo_id?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           created_by?: string | null
           custo_por_km?: number | null
           data?: string
+          fatura_id?: string | null
           fechamento_id?: string | null
           forma_pagamento_operacional?: string | null
           grupo_id?: string | null
@@ -91,6 +94,13 @@ export type Database = {
           viagem_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "abastecimentos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas_fornecedor"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "abastecimentos_fechamento_id_fkey"
             columns: ["fechamento_id"]
@@ -1086,6 +1096,71 @@ export type Database = {
             columns: ["viagem_id"]
             isOneToOne: false
             referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faturas_fornecedor: {
+        Row: {
+          cancelado_em: string | null
+          cancelado_por: string | null
+          created_at: string
+          created_by: string | null
+          descricao: string
+          fornecedor: string | null
+          id: string
+          lancamento_id: string | null
+          numero: number
+          periodo_fim: string
+          periodo_inicio: string
+          quantidade_itens: number
+          status: string
+          tipo: string
+          valor: number
+          vencimento: string | null
+        }
+        Insert: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          lancamento_id?: string | null
+          numero?: number
+          periodo_fim: string
+          periodo_inicio: string
+          quantidade_itens?: number
+          status?: string
+          tipo: string
+          valor?: number
+          vencimento?: string | null
+        }
+        Update: {
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          created_at?: string
+          created_by?: string | null
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          lancamento_id?: string | null
+          numero?: number
+          periodo_fim?: string
+          periodo_inicio?: string
+          quantidade_itens?: number
+          status?: string
+          tipo?: string
+          valor?: number
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturas_fornecedor_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_lancamentos"
             referencedColumns: ["id"]
           },
         ]
@@ -2681,6 +2756,7 @@ export type Database = {
           created_by: string | null
           data: string
           descricao: string
+          fatura_id: string | null
           fechamento_id: string | null
           fornecedor: string | null
           id: string
@@ -2697,6 +2773,7 @@ export type Database = {
           created_by?: string | null
           data?: string
           descricao: string
+          fatura_id?: string | null
           fechamento_id?: string | null
           fornecedor?: string | null
           id?: string
@@ -2713,6 +2790,7 @@ export type Database = {
           created_by?: string | null
           data?: string
           descricao?: string
+          fatura_id?: string | null
           fechamento_id?: string | null
           fornecedor?: string | null
           id?: string
@@ -2725,6 +2803,13 @@ export type Database = {
           veiculo_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pecas_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas_fornecedor"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pecas_fechamento_id_fkey"
             columns: ["fechamento_id"]

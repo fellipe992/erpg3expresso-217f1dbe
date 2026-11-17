@@ -246,6 +246,13 @@
       "when": 1794940533263,
       "tag": "0034_fix_tg_peca_financeiro",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794941079216,
+      "tag": "0035_faturas_fornecedor",
+      "breakpoints": true
     }
   ]
 }

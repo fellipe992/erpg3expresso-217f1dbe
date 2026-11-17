@@ -15,6 +15,7 @@ import { DecimalInput } from "@/components/ui/decimal-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FaturaFornecedorPanel } from "@/components/faturas/fatura-fornecedor";
 
 type Modo = "peca" | "antecipacao";
 const hoje = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -30,6 +31,8 @@ type Registro = {
   fornecedor?: string | null;
   nota_fiscal?: string | null;
   fechamento_id: string | null;
+  fatura_id?: string | null;
+  fatura?: { numero: number; status: string } | null;
   veiculo?: { placa: string; agregado: boolean | null } | null;
   motorista?: { nome: string } | null;
 };
@@ -59,7 +62,7 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
     queryKey: [tabela],
     queryFn: async () => {
       const sel = peca
-        ? "id, data, descricao, valor:valor_total, quantidade, fornecedor, nota_fiscal, fechamento_id, veiculo:veiculos(placa, agregado), motorista:motoristas(nome)"
+        ? "id, data, descricao, valor:valor_total, quantidade, fornecedor, nota_fiscal, fechamento_id, fatura_id, fatura:faturas_fornecedor(numero, status), veiculo:veiculos(placa, agregado), motorista:motoristas(nome)"
         : "id, data, descricao, valor, fechamento_id, veiculo:veiculos(placa, agregado), motorista:motoristas(nome)";
       const { data, error } = await supabase.from(tabela).select(sel).order("data", { ascending: false }).limit(500);
       if (error) throw error;
@@ -125,7 +128,7 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
       title={peca ? "Peças" : "Descontos"}
       subtitle={
         peca
-          ? "Peças compradas. Em placa de agregado, viram desconto no fechamento do motorista."
+          ? "Peças compradas: entram no Contas a Pagar e, em placa de agregado, também viram desconto no fechamento do motorista."
           : "Antecipações e descontos do motorista — saem como \"Antecipação\" no fechamento."
       }
       search={search}
@@ -134,6 +137,7 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
       addLabel={peca ? "Nova peça" : "Novo desconto"}
       onAdd={() => { setForm(vazio); setOpen(true); }}
     >
+      {peca && staff && <FaturaFornecedorPanel tipo="peca" />}
       <Card className="divide-y divide-border/60">
         {isLoading ? (
           <div className="grid place-items-center p-12"><Loader2 className="size-6 animate-spin text-brand" /></div>
@@ -151,6 +155,9 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
                   ) : (peca ? r.veiculo?.agregado : true) ? (
                     <Badge variant="secondary" className="text-[10px]">Desconto pendente</Badge>
                   ) : null}
+                  {r.fatura && r.fatura.status !== "cancelada" && (
+                    <Badge variant="outline" className="text-[10px]">Fatura #{r.fatura.numero}</Badge>
+                  )}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
                   {r.data.split("-").reverse().join("/")}
@@ -162,7 +169,7 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
                 </div>
               </div>
               <span className="font-mono text-sm tabular-nums">{brl(r.valor)}</span>
-              {staff && !r.fechamento_id && (
+              {staff && !r.fechamento_id && !r.fatura_id && (
                 <Button variant="ghost" size="icon" aria-label="Excluir"
                   onClick={() => confirm("Excluir este lançamento?") && excluir.mutate(r.id)}>
                   <Trash2 className="size-4" />
@@ -241,7 +248,7 @@ export function LancamentosMotoristaPage({ modo }: { modo: Modo }) {
             {peca && veicSel && (
               <p className="text-xs text-muted-foreground sm:col-span-2">
                 {veicSel.agregado
-                  ? "Placa de agregado: o valor será descontado no fechamento do motorista do período desta data."
+                  ? "Placa de agregado: entra no Contas a Pagar (a empresa paga o fornecedor) e é descontado no fechamento do motorista do período desta data."
                   : "Carro próprio: o valor entra no Contas a Pagar da empresa."}
               </p>
             )}

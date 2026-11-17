@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { FaturaFornecedorPanel } from "@/components/faturas/fatura-fornecedor";
 
 export const Route = createFileRoute("/_authenticated/app/abastecimentos")({
   head: () => ({ meta: [{ title: "Abastecimentos — G3 Expresso" }] }),
@@ -114,11 +115,11 @@ function AbastecimentosPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("abastecimentos")
-        .select("*, veiculo:veiculos(placa, modelo), motorista:motoristas(nome)")
+        .select("*, veiculo:veiculos(placa, modelo), motorista:motoristas(nome), fatura:faturas_fornecedor(numero, status)")
         .order("data", { ascending: false })
         .order("hora", { ascending: false, nullsFirst: false });
       if (error) throw error;
-      return data as (Abast & { veiculo: { placa: string; modelo: string } | null; motorista: { nome: string } | null })[];
+      return data as unknown as (Abast & { fatura_id?: string | null; fatura?: { numero: number; status: string } | null; veiculo: { placa: string; modelo: string } | null; motorista: { nome: string } | null })[];
     },
   });
 
@@ -251,6 +252,7 @@ function AbastecimentosPage() {
       addLabel="Novo abastecimento"
       onAdd={openNew}
     >
+      {!isMotorista && <FaturaFornecedorPanel tipo="abastecimento" />}
       <Card className="p-3">
         <div className="grid gap-2 md:grid-cols-4">
           <div className="space-y-1">
@@ -299,7 +301,12 @@ function AbastecimentosPage() {
                   <TableCell className="text-xs">{a.motorista?.nome ?? "—"}</TableCell>
                   <TableCell className="text-xs">{Number(a.litros).toFixed(2)}</TableCell>
                   <TableCell className="text-xs">R$ {Number(a.valor_litro).toFixed(3)}</TableCell>
-                  <TableCell className="text-xs font-medium">R$ {Number(a.valor_total).toFixed(2)}</TableCell>
+                  <TableCell className="text-xs font-medium">
+                    R$ {Number(a.valor_total).toFixed(2)}
+                    {a.fatura && a.fatura.status !== "cancelada" && (
+                      <Badge variant="outline" className="ml-1 text-[10px]">Fatura #{a.fatura.numero}</Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs">{Number(a.km_atual).toFixed(0)}</TableCell>
                   <TableCell className="text-xs">
                     {a.consumo_medio ? (
@@ -312,7 +319,7 @@ function AbastecimentosPage() {
                     {!isMotorista && (
                       <>
                         <Button variant="ghost" size="icon" onClick={() => { setForm(a); setOpen(true); }}><Pencil className="size-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => confirm("Excluir abastecimento?") && del.mutate(a.id)}><Trash2 className="size-4" /></Button>
+                        {!a.fatura_id && <Button variant="ghost" size="icon" onClick={() => confirm("Excluir abastecimento?") && del.mutate(a.id)}><Trash2 className="size-4" /></Button>}
                       </>
                     )}
                   </TableCell>
