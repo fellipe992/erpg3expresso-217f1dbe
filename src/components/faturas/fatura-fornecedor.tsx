@@ -18,12 +18,15 @@ import {
   itemElegivel,
   listarFaturas,
   resumirFatura,
+  type ItemFatura,
   type TipoFatura,
 } from "@/lib/fatura-fornecedor";
 
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dt = (iso?: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
 const TODOS = "__todos__";
+// Lista vazia estável: um `= []` novo a cada render disparava o efeito de seleção em loop e derrubava a tela.
+const SEM_ITENS: ItemFatura[] = [];
 
 /** Botões "Fechar fatura" e "Faturas geradas" das telas de Abastecimentos e Peças. */
 export function FaturaFornecedorPanel({ tipo }: { tipo: TipoFatura }) {
@@ -59,11 +62,12 @@ function FecharFaturaDialog({ tipo, open, onOpenChange }: { tipo: TipoFatura; op
   const [descricao, setDescricao] = useState("");
   const [sel, setSel] = useState<Set<string>>(new Set());
 
-  const { data: itens = [], isFetching } = useQuery({
+  const { data: itensData, isFetching } = useQuery({
     queryKey: ["fatura-itens", tipo, busca?.de, busca?.ate],
     enabled: open && !!busca,
     queryFn: () => carregarItensFatura(tipo, busca!.de, busca!.ate),
   });
+  const itens = itensData ?? SEM_ITENS;
   const fornecedores = useMemo(
     () => Array.from(new Set(itens.map((i) => i.fornecedor).filter((f): f is string => !!f))).sort(),
     [itens],
