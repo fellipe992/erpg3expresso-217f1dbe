@@ -26,6 +26,8 @@ export type ConfigVrp = {
   ignorarCubagem: boolean;
   /** duração máxima (min) de uma rota com mais de uma entrega */
   limiteMin: number;
+  /** duração aceita só para encaixar sobras quando a frota acabou (hora extra) */
+  limiteSobraMin?: number;
   modo: "insercao" | "setor";
   /** "custo" escolhe o veículo mais barato; "menor" o de menor capacidade */
   preferencia: "custo" | "menor";
@@ -63,7 +65,7 @@ export function resolverVrp(
   const N = entregas.length;
   if (!N || !frota.length) return { rotas: [], pendentes: [...entregas] };
   const inicio = Date.now();
-  const orcamento = cfg.orcamentoMs ?? 1200;
+  const orcamento = cfg.orcamentoMs ?? (N <= 150 ? 900 : 500);
   const tempoEsgotado = () => Date.now() - inicio > orcamento;
 
   // ---------- malha de distâncias (0 = depósito) ----------
@@ -101,13 +103,14 @@ export function resolverVrp(
     const direcao = (km / Math.max(5, tipo.velocidadeMediaKmh)) * 60;
     return direcao + descarga + pausasObrigatoriasMin(direcao, cfg.jornada);
   };
+  let limiteAtual = cfg.limiteMin;
   const cabe = (tipo: PerfilVeiculo, n: number, p: number, v: number, km: number, ds: number) => {
     if (n === 0) return true;
     const tetoKg = n === 1 ? tipo.capacidadeKg : tipo.capacidadeKg * cfg.fatorCapacidade;
     if (p > tetoKg + EPS) return false;
     if (!cfg.ignorarCubagem && tipo.capacidadeM3 > 0 && v > tipo.capacidadeM3 + EPS) return false;
     if (tipo.maxEntregas && n > tipo.maxEntregas) return false;
-    if (n > 1 && minutosDe(km, ds, tipo) > cfg.limiteMin) return false;
+    if (n > 1 && minutosDe(km, ds, tipo) > limiteAtual) return false;
     return true;
   };
   const custoRota = (tipo: PerfilVeiculo, km: number, ds: number) =>
@@ -164,8 +167,15 @@ export function resolverVrp(
   const proximos = vizinhos.map((v) => v.slice(0, KV));
   const entram: number[][] = Array.from({ length: N + 1 }, () => []);
   for (let i = 1; i <= N; i++) for (const j of proximos[i]) entram[j].push(i);
+  // a penalidade some com a distância: só vizinhas realmente próximas contam
+  const nnOrdenado = vizinhos
+    .slice(1)
+    .map((v, i) => (v.length ? d(i + 1, v[0]) : 0))
+    .sort((x, y) => x - y);
+  const raioMistura = Math.max(1.5, 3 * (nnOrdenado[Math.floor(nnOrdenado.length / 2)] ?? 0));
+  const pesoAresta = (i: number, j: number) => Math.max(0, 1 - d(i, j) / raioMistura);
   const dono = new Int32Array(N + 1).fill(-1);
-  const pesoMistura = cfg.pesoMistura ?? 12;
+  const pesoMistura = cfg.pesoMistura ?? 20;
   const deltaMistura = (mudancas: Map<number, number>) => {
     if (!pesoMistura || !mudancas.size) return 0;
     const novo = (k: number) => mudancas.get(k) ?? dono[k];
@@ -175,7 +185,7 @@ export function resolverVrp(
       const chave = i * (N + 1) + j;
       if (visto.has(chave)) return;
       visto.add(chave);
-      delta += (novo(i) !== novo(j) ? 1 : 0) - (dono[i] !== dono[j] ? 1 : 0);
+      delta += ((novo(i) !== novo(j) ? 1 : 0) - (dono[i] !== dono[j] ? 1 : 0)) * pesoAresta(i, j);
     };
     for (const x of mudancas.keys()) {
       for (const j of proximos[x]) aresta(x, j);
@@ -194,7 +204,8 @@ export function resolverVrp(
     const local = new Int32Array(N + 1).fill(-1);
     rotas.forEach((r) => r.seq.forEach((k) => (local[k] = r.id)));
     let n = 0;
-    for (let i = 1; i <= N; i++) for (const j of proximos[i]) if (local[i] !== local[j]) n++;
+    for (let i = 1; i <= N; i++)
+      for (const j of proximos[i]) if (local[i] !== local[j]) n += pesoAresta(i, j);
     return n * pesoMistura;
   };
 
@@ -249,7 +260,7 @@ export function resolverVrp(
 
   const construir = (nos: number[], tipos: PerfilVeiculo[]): R[] => {
     if (cfg.modo === "setor") return setores(nos, tipos);
-    const lambdas = nos.length <= 400 ? [1, 1.2, 1.5, 0.8] : [1];
+    const lambdas = nos.length <= 150 ? [1, 1.2, 1.5, 0.8] : nos.length <= 400 ? [1, 1.3] : [1];
     let melhor: R[] = [];
     let melhorValor = Infinity;
     for (const l of lambdas) {
@@ -309,8 +320,9 @@ export function resolverVrp(
     return { pos, delta };
   };
 
-  // reaproveitamento: encaixa sobras nas rotas que ainda comportam
+  // reaproveitamento: encaixa sobras nas rotas que ainda comportam (pode usar hora extra)
   const naoAtendidos: number[] = [];
+  limiteAtual = Math.max(cfg.limiteMin, cfg.limiteSobraMin ?? cfg.limiteMin);
   for (const k of pendentes) {
     let alvo: R | null = null;
     let alvoPos = 0;
@@ -335,6 +347,8 @@ export function resolverVrp(
     alvo.desc += desc(k);
     origem.set(k, "sobra");
   }
+
+  limiteAtual = cfg.limiteMin;
 
   // ---------- 3. busca local ----------
   const doisOpt = (r: R) => {
@@ -531,7 +545,15 @@ export function resolverVrp(
         const b = rotas[ib];
         if (!a.tipo || !b.tipo) continue;
         const antes = valorRota(a) + valorRota(b);
-        let melhor: { sa: number[]; sb: number[]; ganho: number } | null = null;
+        let melhor: {
+          sa: number[];
+          sb: number[];
+          ta: PerfilVeiculo;
+          tb: PerfilVeiculo;
+          ganho: number;
+        } | null = null;
+        const pares: [PerfilVeiculo, PerfilVeiculo][] =
+          a.tipo.id === b.tipo.id ? [[a.tipo, b.tipo]] : [[a.tipo, b.tipo], [b.tipo, a.tipo]];
         for (let i = 0; i <= a.seq.length; i++)
           for (let j = 0; j <= b.seq.length; j++) {
             const opcoes = [
@@ -552,14 +574,18 @@ export function resolverVrp(
               const pB = soma(sb, peso);
               const vA = soma(sa, vol);
               const vB = soma(sb, vol);
-              if (!cabeEm(a, sa.length, pA, vA, kmA, dA) || !cabeEm(b, sb.length, pB, vB, kmB, dB)) continue;
-              const depois =
-                valorRota({ ...a, seq: sa, km: kmA, desc: dA }) + valorRota({ ...b, seq: sb, km: kmB, desc: dB });
               const mud = new Map<number, number>();
               for (const k of sa) if (dono[k] !== a.id) mud.set(k, a.id);
               for (const k of sb) if (dono[k] !== b.id) mud.set(k, b.id);
-              const ganho = antes - depois - deltaMistura(mud);
-              if (ganho > 1e-3 && (!melhor || ganho > melhor.ganho)) melhor = { sa, sb, ganho };
+              const mistura = deltaMistura(mud);
+              for (const [ta, tb] of pares) {
+                if (!cabe(ta, sa.length, pA, vA, kmA, dA) || !cabe(tb, sb.length, pB, vB, kmB, dB)) continue;
+                const depois =
+                  valorRota({ ...a, tipo: ta, seq: sa, km: kmA, desc: dA }) +
+                  valorRota({ ...b, tipo: tb, seq: sb, km: kmB, desc: dB });
+                const ganho = antes - depois - mistura;
+                if (ganho > 1e-3 && (!melhor || ganho > melhor.ganho)) melhor = { sa, sb, ta, tb, ganho };
+              }
             }
           }
         if (!melhor) continue;
@@ -570,8 +596,8 @@ export function resolverVrp(
         for (const k of melhor.sa) mud.set(k, a.id);
         for (const k of melhor.sb) mud.set(k, b.id);
         aplicarDonos(mud);
-        Object.assign(a, { ...novaRota(melhor.sa, a.tipo), id: a.id });
-        Object.assign(b, { ...novaRota(melhor.sb, b.tipo), id: b.id });
+        Object.assign(a, { ...novaRota(melhor.sa, melhor.ta), id: a.id });
+        Object.assign(b, { ...novaRota(melhor.sb, melhor.tb), id: b.id });
         mexeu = true;
       }
     return mexeu;

@@ -346,13 +346,14 @@ function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenari
     fatorCapacidade: espalhar ? estrategia.ocupacaoAlvo : 1,
     ignorarCubagem: opcoes.ignorarCubagem,
     limiteMin: espalhar ? jornada.maxDiarioMin * 0.85 : jornada.maxDiarioMin,
+    limiteSobraMin: jornada.maxDiarioMin + jornada.toleranciaHoraExtraMin,
     modo: opcoes.modo,
     preferencia: estrategia.preferencia === "menor" ? "menor" : "custo",
     objetivo: estrategia.id === "km" ? "km" : "custo",
     ocupacaoMinima: opcoes.consolidarRotas ? opcoes.ocupacaoMinima : 0,
     raioProximidadeKm: opcoes.raioProximidadeKm,
     custo: (v, km, min) => calcularCusto(v, km, min).total,
-    pesoMistura: Number(process.env.PC ?? 12),
+    pesoMistura: 20,
   });
 
   const rotas: Rota[] = brutas.map((r, i) => {

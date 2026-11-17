@@ -18,6 +18,12 @@
 - Campo "Quinzena de referência" no lançamento (preenche a competência).
 - Rentabilidade/relatórios: competência = viagem > fechamento > competência digitada > emissão; caixa apenas com pagamento realizado.
 
+## Roteirizador: rotas agrupadas por região
+- [x] Novo motor: rotas montadas por economia de km e depois ajustadas para não misturar regiões.
+- [x] Jornada diária respeitada na montagem (hora extra só para encaixar sobras quando a frota acaba).
+- [x] Testes com os pontos da roteirização salva: Santos e Campinas separados, Alphaville com Campinas, Zona Norte sem o extremo sul, Fiorino até 4 notas.
+- [ ] Usuário clicar em "Roteirizar" na roteirização salva e conferir no mapa.
+
 ## Em aberto
 - Validar na tela as quinzenas 16–31/08 e 01–15/09 do cliente principal (receita/custo/margem iguais em relatórios, rentabilidade e dashboard).
 
