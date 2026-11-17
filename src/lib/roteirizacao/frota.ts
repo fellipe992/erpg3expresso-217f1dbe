@@ -94,6 +94,7 @@ export const OPCOES_OTIMIZACAO_PADRAO: OpcoesOtimizacao = {
   consolidarRotas: true,
   ocupacaoMinima: 0.55,
   raioProximidadeKm: null,
+  modoCotacao: false,
 };
 
 export const ROTULO_ORIGEM: Record<OrigemAlocacao, string> = {

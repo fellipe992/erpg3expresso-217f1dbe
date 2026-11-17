@@ -322,12 +322,19 @@ export function montarRotaComSequencia(
   return rota;
 }
 
+/** No modo cotação, os tipos escolhidos passam a ter quantidade ilimitada. */
+export function frotaEfetiva(frota: PerfilVeiculo[], modoCotacao: boolean): PerfilVeiculo[] {
+  const ativos = frota.filter((v) => v.disponiveis > 0);
+  if (!modoCotacao) return ativos;
+  return (ativos.length ? ativos : frota).map((v) => ({ ...v, disponiveis: 9999 }));
+}
+
 function gerarCenario(entrada: EntradaSimulacao, estrategia: Estrategia): Cenario {
   const { deposito, jornada } = entrada;
   const opcoes: OpcoesOtimizacao = { ...OPCOES_OTIMIZACAO_PADRAO, ...entrada.opcoes };
   const entregas = somenteGeocodificadas(entrada.entregas) as (Entrega & Coordenada)[];
   const frota = ordenarFrota(
-    entrada.frota.filter((v) => v.disponiveis > 0),
+    frotaEfetiva(entrada.frota, !!opcoes.modoCotacao),
     estrategia.preferencia,
   );
 

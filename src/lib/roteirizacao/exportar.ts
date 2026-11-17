@@ -4,6 +4,7 @@ import { brl, duracao } from "./format";
 import { kg, minutosParaHora } from "./parse";
 import type { Plano } from "./plano";
 import { totaisPlano } from "./plano";
+import { dimensionarFrota } from "./dimensionamento";
 
 function baixar(wb: XLSX.WorkBook, nome: string) {
   XLSX.writeFile(wb, `${nome}.xlsx`);
@@ -91,6 +92,19 @@ export function exportarResumo(plano: Plano, nomeProjeto: string) {
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(linhas), "Resumo");
+  const dim = dimensionarFrota(plano.rotas).map((l) => ({
+    Veículo: l.nome,
+    Quantidade: l.veiculos,
+    Notas: l.notas,
+    "Notas por veículo (média)": Number(l.notasMedia.toFixed(1)),
+    "Notas por veículo (máx.)": l.notasMax,
+    "Peso médio (kg)": Number(l.pesoMedioKg.toFixed(1)),
+    "Ocupação média (%)": Number((l.ocupacaoMedia * 100).toFixed(1)),
+    "Custo (R$)": Number(l.custo.toFixed(2)),
+    "Limitados por peso": l.limitadoPorPeso,
+    "Limitados por notas": l.limitadoPorNotas,
+  }));
+  if (dim.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dim), "Dimensionamento");
   baixar(wb, arquivo(`${nomeProjeto}-resumo`));
 }
 

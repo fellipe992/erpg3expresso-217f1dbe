@@ -43,6 +43,7 @@ import { FrotaPanel } from "@/components/roteirizador/frota-panel";
 import { ImportarEntregasDialog } from "@/components/roteirizador/importar-entregas-dialog";
 import { MapaRoteirizador } from "@/components/roteirizador/mapa-roteirizador";
 import { RotasPanel } from "@/components/roteirizador/rotas-panel";
+import { DimensionamentoFrota } from "@/components/roteirizador/dimensionamento-frota";
 import { DashboardExecutivo } from "@/components/roteirizador/dashboard-executivo";
 import { PainelIa } from "@/components/roteirizador/painel-ia";
 import { RastreamentoPanel } from "@/components/roteirizador/rastreamento-panel";
@@ -466,7 +467,8 @@ function RoteirizadorPage() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="rotas" className="mt-3">
+            <TabsContent value="rotas" className="mt-3 space-y-3">
+              <DimensionamentoFrota rotas={plano.rotas} naoAtendidas={plano.naoAtendidas.length} />
               <RotasPanel
                 plano={plano}
                 projeto={nomeProjeto}

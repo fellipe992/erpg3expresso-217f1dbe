@@ -63,6 +63,8 @@ export type OpcoesOtimizacao = {
    * rotas próximas. `null`/0 = calculado automaticamente pela dispersão da malha.
    */
   raioProximidadeKm: number | null;
+  /** cotação: tipos com disponibilidade > 0 (ou todos, se nenhum) sem limite de quantidade */
+  modoCotacao?: boolean;
 };
 
 export type CategoriaVeiculo =

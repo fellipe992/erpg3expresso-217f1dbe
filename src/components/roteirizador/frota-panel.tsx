@@ -79,6 +79,7 @@ export function FrotaPanel({
                   <span className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Badge variant="outline">{num(v.capacidadeKg)} kg</Badge>
                     <Badge variant="outline">{v.disponiveis} disp.</Badge>
+                    {!!v.maxEntregas && <Badge variant="outline">até {v.maxEntregas} notas</Badge>}
                     <span>{brl(custoPorKm(v))}/km</span>
                   </span>
                 </div>
@@ -107,6 +108,18 @@ export function FrotaPanel({
                       inputMode="numeric"
                       value={v.disponiveis}
                       onChange={(e) => atualizar(v.id, { disponiveis: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Máx. de notas por veículo</Label>
+                    <Input
+                      inputMode="numeric"
+                      placeholder="Sem limite"
+                      value={v.maxEntregas ?? ""}
+                      onChange={(e) => {
+                        const n = Math.floor(Number(e.target.value) || 0);
+                        atualizar(v.id, { maxEntregas: n > 0 ? n : undefined });
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
@@ -197,6 +210,20 @@ export function FrotaPanel({
             checked={opcoes.consolidarRotas}
             onCheckedChange={(v) => onOpcoes({ ...opcoes, consolidarRotas: v })}
             aria-label="Consolidar rotas ociosas"
+          />
+        </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-md border border-border p-2">
+          <div>
+            <Label className="text-xs">Modo cotação (frota ilimitada)</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Usa quantos veículos forem necessários dos tipos com disponibilidade acima de zero (ou de todos, se nenhum estiver marcado), para mostrar a frota total da operação.
+            </p>
+          </div>
+          <Switch
+            checked={!!opcoes.modoCotacao}
+            onCheckedChange={(v) => onOpcoes({ ...opcoes, modoCotacao: v })}
+            aria-label="Modo cotação"
           />
         </div>
 
