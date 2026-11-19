@@ -29,6 +29,7 @@ import { Route as AuthenticatedAppAlertasExternosRouteImport } from './routes/_a
 import { Route as AuthenticatedAppAssistenteRouteImport } from './routes/_authenticated/app/assistente'
 import { Route as AuthenticatedAppAuditoriaRouteImport } from './routes/_authenticated/app/auditoria'
 import { Route as AuthenticatedAppAvisosRouteImport } from './routes/_authenticated/app/avisos'
+import { Route as AuthenticatedAppCalculadoraFreteRouteImport } from './routes/_authenticated/app/calculadora-frete'
 import { Route as AuthenticatedAppClientesRouteImport } from './routes/_authenticated/app/clientes'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app/configuracoes'
 import { Route as AuthenticatedAppCustosRouteImport } from './routes/_authenticated/app/custos'
@@ -181,6 +182,12 @@ const AuthenticatedAppAvisosRoute = AuthenticatedAppAvisosRouteImport.update({
   path: '/app/avisos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppCalculadoraFreteRoute =
+  AuthenticatedAppCalculadoraFreteRouteImport.update({
+    id: '/app/calculadora-frete',
+    path: '/app/calculadora-frete',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppClientesRoute =
   AuthenticatedAppClientesRouteImport.update({
     id: '/app/clientes',
@@ -479,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/app/calculadora-frete': typeof AuthenticatedAppCalculadoraFreteRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
@@ -548,6 +556,7 @@ export interface FileRoutesByTo {
   '/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/app/calculadora-frete': typeof AuthenticatedAppCalculadoraFreteRoute
   '/app/clientes': typeof AuthenticatedAppClientesRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/custos': typeof AuthenticatedAppCustosRoute
@@ -619,6 +628,7 @@ export interface FileRoutesById {
   '/_authenticated/app/assistente': typeof AuthenticatedAppAssistenteRoute
   '/_authenticated/app/auditoria': typeof AuthenticatedAppAuditoriaRoute
   '/_authenticated/app/avisos': typeof AuthenticatedAppAvisosRoute
+  '/_authenticated/app/calculadora-frete': typeof AuthenticatedAppCalculadoraFreteRoute
   '/_authenticated/app/clientes': typeof AuthenticatedAppClientesRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/custos': typeof AuthenticatedAppCustosRoute
@@ -690,6 +700,7 @@ export interface FileRouteTypes {
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
+    | '/app/calculadora-frete'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/app/assistente'
     | '/app/auditoria'
     | '/app/avisos'
+    | '/app/calculadora-frete'
     | '/app/clientes'
     | '/app/configuracoes'
     | '/app/custos'
@@ -829,6 +841,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/assistente'
     | '/_authenticated/app/auditoria'
     | '/_authenticated/app/avisos'
+    | '/_authenticated/app/calculadora-frete'
     | '/_authenticated/app/clientes'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/custos'
@@ -1042,6 +1055,13 @@ declare module '@tanstack/react-router' {
       path: '/app/avisos'
       fullPath: '/app/avisos'
       preLoaderRoute: typeof AuthenticatedAppAvisosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/calculadora-frete': {
+      id: '/_authenticated/app/calculadora-frete'
+      path: '/app/calculadora-frete'
+      fullPath: '/app/calculadora-frete'
+      preLoaderRoute: typeof AuthenticatedAppCalculadoraFreteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/clientes': {
@@ -1390,6 +1410,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAssistenteRoute: typeof AuthenticatedAppAssistenteRoute
   AuthenticatedAppAuditoriaRoute: typeof AuthenticatedAppAuditoriaRoute
   AuthenticatedAppAvisosRoute: typeof AuthenticatedAppAvisosRoute
+  AuthenticatedAppCalculadoraFreteRoute: typeof AuthenticatedAppCalculadoraFreteRoute
   AuthenticatedAppClientesRoute: typeof AuthenticatedAppClientesRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppCustosRoute: typeof AuthenticatedAppCustosRoute
@@ -1442,6 +1463,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAssistenteRoute: AuthenticatedAppAssistenteRoute,
   AuthenticatedAppAuditoriaRoute: AuthenticatedAppAuditoriaRoute,
   AuthenticatedAppAvisosRoute: AuthenticatedAppAvisosRoute,
+  AuthenticatedAppCalculadoraFreteRoute: AuthenticatedAppCalculadoraFreteRoute,
   AuthenticatedAppClientesRoute: AuthenticatedAppClientesRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppCustosRoute: AuthenticatedAppCustosRoute,
