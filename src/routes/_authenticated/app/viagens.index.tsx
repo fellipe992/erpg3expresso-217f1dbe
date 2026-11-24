@@ -53,6 +53,7 @@ type Viagem = {
   frete_faixa_id?: string | null;
   status: "planejada" | "em_andamento" | "concluida" | "cancelada";
   observacoes: string | null;
+  created_at?: string | null;
   cliente?: { razao_social: string } | null;
   motorista?: { nome: string } | null;
   veiculo?: { placa: string; modelo: string } | null;
@@ -153,7 +154,8 @@ function ViagensPage() {
       const { data, error } = await supabase
         .from("viagens")
         .select("*, cliente:clientes(razao_social), motorista:motoristas(nome), veiculo:veiculos(placa, modelo)")
-        .order("data_prevista_saida", { ascending: false, nullsFirst: false });
+        .order("data_prevista_saida", { ascending: false, nullsFirst: true })
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Viagem[];
     },
@@ -230,7 +232,7 @@ function ViagensPage() {
         origem_uf: form.origem_uf?.trim().toUpperCase() || null,
         destino_cidade: form.destino_cidade?.trim() || null,
         destino_uf: form.destino_uf?.trim().toUpperCase() || null,
-        data_prevista_saida: form.data_prevista_saida || null,
+        data_prevista_saida: form.data_prevista_saida || (!form.id ? new Date().toISOString() : null),
         data_prevista_chegada: form.data_prevista_chegada || null,
         valor_frete: form.valor_frete ? Number(form.valor_frete) : null,
         status: (form.status ?? "planejada") as Viagem["status"],
@@ -332,8 +334,11 @@ function ViagensPage() {
       } else if (v.motorista_id !== motoristaFiltro) return false;
     }
     // Período pela data da viagem escolhida (saída real ou prevista), não pelo lançamento.
-    if (dataDe || dataAte) {
-      const bruto = dataBase === "prevista" ? v.data_prevista_saida : v.data_saida ?? v.data_prevista_saida;
+    if (!isMotorista && (dataDe || dataAte)) {
+      const bruto =
+        dataBase === "prevista"
+          ? (v.data_prevista_saida ?? v.created_at)
+          : (v.data_saida ?? v.data_prevista_saida ?? v.created_at);
       // Dia-calendário no fuso da operação: cortar a string ISO usaria UTC e jogaria
       // uma viagem do dia 27 às 21h para o dia 28.
       const ref = diaLocal(bruto);
