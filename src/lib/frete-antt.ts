@@ -114,6 +114,7 @@ export function versaoVigente(data: string = new Date().toISOString().slice(0, 1
 export function eixosSugeridos(tipoVeiculo: string | null | undefined): Eixos {
   switch ((tipoVeiculo ?? "").toLowerCase()) {
     case "truck": return 3;
+    case "bitruck": return 4;
     case "carreta": case "cavalo": return 5;
     case "bitrem": return 7;
     case "rodotrem": return 9;
