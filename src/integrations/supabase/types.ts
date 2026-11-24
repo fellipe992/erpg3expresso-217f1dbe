@@ -2639,6 +2639,54 @@ export type Database = {
         }
         Relationships: []
       }
+      paginas_monitoradas: {
+        Row: {
+          alterado_em: string | null
+          ativo: boolean
+          categoria: string
+          created_at: string
+          id: string
+          nome: string
+          teve_alteracao: boolean
+          ultima_verificacao_em: string | null
+          ultimo_conteudo: string | null
+          ultimo_diff: string | null
+          ultimo_erro: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          alterado_em?: string | null
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome: string
+          teve_alteracao?: boolean
+          ultima_verificacao_em?: string | null
+          ultimo_conteudo?: string | null
+          ultimo_diff?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          alterado_em?: string | null
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          teve_alteracao?: boolean
+          ultima_verificacao_em?: string | null
+          ultimo_conteudo?: string | null
+          ultimo_diff?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       parceiros_candidaturas: {
         Row: {
           ano: number | null

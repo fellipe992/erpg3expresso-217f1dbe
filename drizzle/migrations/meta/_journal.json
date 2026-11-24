@@ -260,6 +260,13 @@
       "when": 1795545751981,
       "tag": "0036_add_contrato_modelo_to_company_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795545916291,
+      "tag": "0037_create_paginas_monitoradas",
+      "breakpoints": true
     }
   ]
 }

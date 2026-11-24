@@ -1,14 +1,26 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Info, Scale, XCircle } from "lucide-react";
+import { Calculator, CheckCircle2, Info, Scale, Sparkles, TrendingUp, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { calcularPisoAntt, EIXOS, eixosSugeridos, TABELAS, TIPOS_CARGA, versaoVigente, type Eixos, type TabelaAntt, type TipoCargaAntt } from "@/lib/frete-antt";
+import {
+  calcularPisoAntt,
+  calcularReferenciaMercado,
+  EIXOS,
+  eixosSugeridos,
+  TABELAS,
+  TIPOS_CARGA,
+  versaoVigente,
+  type Eixos,
+  type TabelaAntt,
+  type TipoCargaAntt,
+} from "@/lib/frete-antt";
 
 export const Route = createFileRoute("/_authenticated/app/calculadora-frete")({
   head: () => ({ meta: [{ title: "Calculadora de frete mínimo ANTT — G3 Expresso" }, { name: "description", content: "Calcule o piso mínimo de frete da ANTT por categoria de veículo antes de emitir documentos." }] }),
@@ -41,6 +53,7 @@ function CalculadoraFrete() {
   const [retornoVazio, setRetornoVazio] = useState(false);
   const [kmRetorno, setKmRetorno] = useState("");
   const [frete, setFrete] = useState("");
+  const [calculado, setCalculado] = useState(false);
 
   const tabela: TabelaAntt = somenteAutomotor ? (altoDesempenho ? "D" : "B") : altoDesempenho ? "C" : "A";
   const escolherCategoria = (c: string) => { setCategoria(c); setEixos(eixosSugeridos(c)); };
@@ -54,6 +67,7 @@ function CalculadoraFrete() {
     lotacao, tabela, tipoCarga, eixos, km: num(km), retornoVazio,
     kmRetorno: kmRetorno ? num(kmRetorno) : undefined, freteCombinado: frete ? num(frete) : null,
   });
+  const mercado = r.aplica ? calcularReferenciaMercado(r.piso, num(km)) : null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-4">
@@ -114,15 +128,54 @@ function CalculadoraFrete() {
           <Pergunta n={6} titulo="Frete combinado (opcional)" ajuda="Valor do frete sem pedágio e sem impostos, para comparar com o piso.">
             <Input inputMode="decimal" value={frete} onChange={(e) => setFrete(e.target.value)} placeholder="R$" className="max-w-xs" />
           </Pergunta>
+
+          <div className="pt-2">
+            <Button type="button" onClick={() => setCalculado(true)} className="w-full sm:w-auto">
+              <Calculator className="mr-2 size-4" /> Calcular piso e sugestão de frete
+            </Button>
+          </div>
         </Card>
 
         <div className="space-y-4">
           <Card className="space-y-3 p-4">
             <h2 className="font-semibold">Resultado</h2>
-            {!r.aplica ? (
+            {!calculado && !km ? (
+              <div className="flex gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+                <Info className="size-4 shrink-0" /> Preencha a distância e clique em <strong>Calcular piso e sugestão de frete</strong> para ver o piso mínimo, a faixa de mercado e o valor sugerido ao motorista.
+              </div>
+            ) : !r.aplica ? (
               <div className="flex gap-2 rounded-lg bg-muted/50 p-3 text-sm"><Info className="size-4 shrink-0" />{r.motivo}</div>
             ) : (
               <>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Piso mínimo (não aplicar abaixo)</p>
+                    <p className="mt-1 text-lg font-bold tabular-nums">{brl(r.piso)}</p>
+                  </div>
+                  {mercado && (
+                    <div className="rounded-lg border p-3">
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <TrendingUp className="size-3.5" /> Praticado no mercado
+                      </p>
+                      <p className="mt-1 text-sm font-bold tabular-nums">
+                        {brl(mercado.mercadoMin)} a {brl(mercado.mercadoMax)}
+                      </p>
+                    </div>
+                  )}
+                  {mercado && (
+                    <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                      <p className="flex items-center gap-1 text-xs font-medium text-primary">
+                        <Sparkles className="size-3.5" /> Sugestão p/ motorista (+{mercado.percentualSugerido}%)
+                      </p>
+                      <p className="mt-1 text-lg font-bold tabular-nums text-primary">{brl(mercado.sugeridoMotorista)}</p>
+                    </div>
+                  )}
+                </div>
+                {mercado && (
+                  <p className="text-xs text-muted-foreground">
+                    {mercado.faixaDescricao} Oferecer <strong>{brl(mercado.sugeridoMotorista)}</strong> aumenta a assertividade de aceite mantendo conformidade legal.
+                  </p>
+                )}
                 <Linha k={`Deslocamento: ${r.ccd.toLocaleString("pt-BR", { minimumFractionDigits: 4 })} R$/km × ${num(km).toLocaleString("pt-BR")} km`} v={brl(r.valorDeslocamento)} />
                 <Linha k="Carga e descarga (CC)" v={brl(r.cc)} />
                 {r.valorRetorno > 0 && <Linha k="Retorno vazio (0,92 × CCD × km)" v={brl(r.valorRetorno)} />}

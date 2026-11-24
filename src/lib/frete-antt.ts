@@ -161,3 +161,27 @@ export function calcularPisoAntt(e: EntradaPiso): ResultadoPiso {
     freteCombinado: fc, diferenca: fc == null ? null : r2(fc - piso), dentroDoPiso: fc == null ? null : fc >= piso,
   };
 }
+
+export type ReferenciaMercado = {
+  mercadoMin: number;
+  mercadoMax: number;
+  sugeridoMotorista: number;
+  percentualSugerido: number;
+  faixaDescricao: string;
+};
+
+export function calcularReferenciaMercado(piso: number, km: number): ReferenciaMercado {
+  const [minPct, sugPct, maxPct, faixaDescricao] =
+    km <= 150
+      ? [0.12, 0.16, 0.25, "Rota curta (até 150 km): mercado costuma pagar 12% a 25% acima do piso."]
+      : km <= 500
+        ? [0.08, 0.12, 0.18, "Rota média (151 a 500 km): mercado costuma pagar 8% a 18% acima do piso."]
+        : [0.05, 0.1, 0.15, "Rota longa (acima de 500 km): mercado costuma pagar 5% a 15% acima do piso."];
+  return {
+    mercadoMin: r2(piso * (1 + minPct)),
+    mercadoMax: r2(piso * (1 + maxPct)),
+    sugeridoMotorista: r2(piso * (1 + sugPct)),
+    percentualSugerido: Math.round(sugPct * 100),
+    faixaDescricao,
+  };
+}

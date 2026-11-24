@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calcularPisoAntt, eixosSugeridos } from "./frete-antt";
+import { calcularPisoAntt, calcularReferenciaMercado, eixosSugeridos } from "./frete-antt";
 
 const base = { lotacao: true, tabela: "A" as const, tipoCarga: "carga_geral" as const, eixos: 2 as const, km: 100 };
 
@@ -29,5 +29,14 @@ describe("eixos sugeridos por categoria", () => {
   it("truck sugere 3 eixos e vuc sugere 2", () => {
     expect(eixosSugeridos("truck")).toBe(3);
     expect(eixosSugeridos("vuc")).toBe(2);
+  });
+});
+
+describe("referência de mercado e sugestão", () => {
+  it("calcula faixa de mercado e sugestão ao motorista sempre acima do piso", () => {
+    const ref = calcularReferenciaMercado(1000, 100);
+    expect(ref.mercadoMin).toBe(1120);
+    expect(ref.sugeridoMotorista).toBe(1160);
+    expect(ref.mercadoMax).toBe(1250);
   });
 });

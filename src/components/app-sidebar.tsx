@@ -33,6 +33,7 @@ import {
 
   MailPlus,
   CalendarDays,
+  Globe,
   Scale,
 } from "lucide-react";
 
@@ -89,6 +90,7 @@ const operacional: NavItem[] = [
   { label: "Viagens", to: "/app/viagens", icon: MapPin },
   { label: "Planejador de viagens", to: "/app/simulador", icon: Calculator },
   { label: "Calculadora de frete", to: "/app/calculadora-frete", icon: Scale },
+  { label: "Monitor de páginas", to: "/app/monitor-paginas", icon: Globe },
   { label: "Roteirizador inteligente", to: "/app/roteirizador", icon: Radar },
   { label: "Abastecimentos", to: "/app/abastecimentos", icon: Fuel },
   { label: "Manutenções", to: "/app/manutencoes", icon: Wrench },
