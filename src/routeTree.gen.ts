@@ -43,6 +43,7 @@ import { Route as AuthenticatedAppFiscalRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAppFornecedoresRouteImport } from './routes/_authenticated/app/fornecedores'
 import { Route as AuthenticatedAppFrotaRouteImport } from './routes/_authenticated/app/frota'
 import { Route as AuthenticatedAppManutencoesRouteImport } from './routes/_authenticated/app/manutencoes'
+import { Route as AuthenticatedAppMonitorPaginasRouteImport } from './routes/_authenticated/app/monitor-paginas'
 import { Route as AuthenticatedAppMonitoramentoRouteImport } from './routes/_authenticated/app/monitoramento'
 import { Route as AuthenticatedAppMotoristasRouteImport } from './routes/_authenticated/app/motoristas'
 import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_authenticated/app/notificacoes'
@@ -260,6 +261,12 @@ const AuthenticatedAppManutencoesRoute =
   AuthenticatedAppManutencoesRouteImport.update({
     id: '/app/manutencoes',
     path: '/app/manutencoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppMonitorPaginasRoute =
+  AuthenticatedAppMonitorPaginasRouteImport.update({
+    id: '/app/monitor-paginas',
+    path: '/app/monitor-paginas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppMonitoramentoRoute =
@@ -500,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/frota': typeof AuthenticatedAppFrotaRoute
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
+  '/app/monitor-paginas': typeof AuthenticatedAppMonitorPaginasRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
@@ -570,6 +578,7 @@ export interface FileRoutesByTo {
   '/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/app/frota': typeof AuthenticatedAppFrotaRoute
   '/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
+  '/app/monitor-paginas': typeof AuthenticatedAppMonitorPaginasRoute
   '/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
@@ -642,6 +651,7 @@ export interface FileRoutesById {
   '/_authenticated/app/fornecedores': typeof AuthenticatedAppFornecedoresRoute
   '/_authenticated/app/frota': typeof AuthenticatedAppFrotaRoute
   '/_authenticated/app/manutencoes': typeof AuthenticatedAppManutencoesRoute
+  '/_authenticated/app/monitor-paginas': typeof AuthenticatedAppMonitorPaginasRoute
   '/_authenticated/app/monitoramento': typeof AuthenticatedAppMonitoramentoRoute
   '/_authenticated/app/motoristas': typeof AuthenticatedAppMotoristasRoute
   '/_authenticated/app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
@@ -714,6 +724,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/frota'
     | '/app/manutencoes'
+    | '/app/monitor-paginas'
     | '/app/monitoramento'
     | '/app/motoristas'
     | '/app/notificacoes'
@@ -784,6 +795,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/frota'
     | '/app/manutencoes'
+    | '/app/monitor-paginas'
     | '/app/monitoramento'
     | '/app/motoristas'
     | '/app/notificacoes'
@@ -855,6 +867,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/fornecedores'
     | '/_authenticated/app/frota'
     | '/_authenticated/app/manutencoes'
+    | '/_authenticated/app/monitor-paginas'
     | '/_authenticated/app/monitoramento'
     | '/_authenticated/app/motoristas'
     | '/_authenticated/app/notificacoes'
@@ -1155,6 +1168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppManutencoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/monitor-paginas': {
+      id: '/_authenticated/app/monitor-paginas'
+      path: '/app/monitor-paginas'
+      fullPath: '/app/monitor-paginas'
+      preLoaderRoute: typeof AuthenticatedAppMonitorPaginasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/monitoramento': {
       id: '/_authenticated/app/monitoramento'
       path: '/app/monitoramento'
@@ -1424,6 +1444,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppFornecedoresRoute: typeof AuthenticatedAppFornecedoresRoute
   AuthenticatedAppFrotaRoute: typeof AuthenticatedAppFrotaRoute
   AuthenticatedAppManutencoesRoute: typeof AuthenticatedAppManutencoesRoute
+  AuthenticatedAppMonitorPaginasRoute: typeof AuthenticatedAppMonitorPaginasRoute
   AuthenticatedAppMonitoramentoRoute: typeof AuthenticatedAppMonitoramentoRoute
   AuthenticatedAppMotoristasRoute: typeof AuthenticatedAppMotoristasRoute
   AuthenticatedAppNotificacoesRoute: typeof AuthenticatedAppNotificacoesRoute
@@ -1477,6 +1498,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppFornecedoresRoute: AuthenticatedAppFornecedoresRoute,
   AuthenticatedAppFrotaRoute: AuthenticatedAppFrotaRoute,
   AuthenticatedAppManutencoesRoute: AuthenticatedAppManutencoesRoute,
+  AuthenticatedAppMonitorPaginasRoute: AuthenticatedAppMonitorPaginasRoute,
   AuthenticatedAppMonitoramentoRoute: AuthenticatedAppMonitoramentoRoute,
   AuthenticatedAppMotoristasRoute: AuthenticatedAppMotoristasRoute,
   AuthenticatedAppNotificacoesRoute: AuthenticatedAppNotificacoesRoute,
