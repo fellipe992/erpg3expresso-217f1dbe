@@ -13,7 +13,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { supabase } from "@/integrations/supabase/client";
 import { consultarCnpj } from "@/lib/cnpj.functions";
 import { prazoLabel } from "@/lib/prazo-pagamento";
-import { CONTRATO_VERSAO, clausulas, gerarPdfContrato, type DadosContrato } from "@/lib/contrato-motorista";
+import { useCompany } from "@/hooks/use-company";
+import {
+  CONTRATO_VERSAO,
+  clausulas,
+  gerarPdfContrato,
+  parseModeloContrato,
+  type DadosContrato,
+} from "@/lib/contrato-motorista";
 
 type Contrato = { id: string; assinado_em: string; pdf_path: string; razao_social: string; versao: string };
 
@@ -85,6 +92,8 @@ export function ContratoCard({ motoristaId, podeAssinar }: { motoristaId: string
 function AssinarDialog({ open, onOpenChange, motoristaId }: { open: boolean; onOpenChange: (v: boolean) => void; motoristaId: string }) {
   const qc = useQueryClient();
   const buscar = useServerFn(consultarCnpj);
+  const { data: company } = useCompany();
+  const modelo = parseModeloContrato((company as { contrato_modelo?: unknown } | null)?.contrato_modelo);
   const [cnpj, setCnpj] = useState("");
   const [razao, setRazao] = useState("");
   const [rntrc, setRntrc] = useState("");
@@ -197,7 +206,7 @@ function AssinarDialog({ open, onOpenChange, motoristaId }: { open: boolean; onO
       const uid = u.user!.id;
       const agora = new Date();
       const png = canvas.current.toDataURL("image/png");
-      const pdf = await gerarPdfContrato(dados, png, agora);
+      const pdf = await gerarPdfContrato(dados, png, agora, modelo);
       const base = `${uid}/${agora.getTime()}`;
       const assBlob = await (await fetch(png)).blob();
       const up1 = await supabase.storage.from("contratos").upload(`${base}-assinatura.png`, assBlob, { contentType: "image/png" });
@@ -263,7 +272,7 @@ function AssinarDialog({ open, onOpenChange, motoristaId }: { open: boolean; onO
           <div className="space-y-4">
             <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-md border bg-muted/30 p-3 text-xs leading-relaxed">
               <div className="text-center font-display text-sm font-bold">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE TRANSPORTE DE CARGAS</div>
-              {clausulas(dados).map((c) => (
+              {clausulas(dados, modelo).map((c) => (
                 <div key={c.titulo}>
                   <div className="font-semibold">{c.titulo}</div>
                   {c.itens.map((t) => <p key={t} className="mt-1 text-justify">{t}</p>)}

@@ -2,7 +2,8 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Key, Loader2, Save, Settings, ShieldCheck, Upload, Building2 } from "lucide-react";
+import { FileText, Key, Loader2, Save, Settings, ShieldCheck, Upload, Building2 } from "lucide-react";
+import { ContratoConfigTab } from "@/components/configuracoes/contrato-config-tab";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -48,6 +49,9 @@ function ConfiguracoesPage() {
           <TabsTrigger value="preferencias">Preferências</TabsTrigger>
           <TabsTrigger value="financeiro">Regras financeiras</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="contrato">
+            <FileText className="mr-1.5 size-4" /> Contrato
+          </TabsTrigger>
           <TabsTrigger value="fiscal">
             <Key className="mr-1.5 size-4" /> Integrações fiscais
           </TabsTrigger>
@@ -56,6 +60,7 @@ function ConfiguracoesPage() {
         <TabsContent value="preferencias" className="mt-4"><PreferenciasTab /></TabsContent>
         <TabsContent value="financeiro" className="mt-4"><FinanceiroTab /></TabsContent>
         <TabsContent value="notificacoes" className="mt-4"><NotificacoesTab /></TabsContent>
+        <TabsContent value="contrato" className="mt-4"><ContratoConfigTab /></TabsContent>
         <TabsContent value="fiscal" className="mt-4"><IntegracaoFiscalTab /></TabsContent>
       </Tabs>
     </div>

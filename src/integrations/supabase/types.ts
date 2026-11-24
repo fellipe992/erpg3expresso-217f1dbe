@@ -526,6 +526,7 @@ export type Database = {
           cep: string | null
           cidade: string | null
           cnpj: string | null
+          contrato_modelo: Json | null
           created_at: string
           email: string | null
           emitente_fiscal: boolean
@@ -548,6 +549,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          contrato_modelo?: Json | null
           created_at?: string
           email?: string | null
           emitente_fiscal?: boolean
@@ -570,6 +572,7 @@ export type Database = {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
+          contrato_modelo?: Json | null
           created_at?: string
           email?: string | null
           emitente_fiscal?: boolean

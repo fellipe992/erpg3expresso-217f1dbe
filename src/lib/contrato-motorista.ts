@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import logoAsset from "@/assets/g3-expresso-logo.png.asset.json";
 
-export const CONTRATO_VERSAO = "v2";
+export const CONTRATO_VERSAO = "v3";
 
 export type DadosContrato = {
   razao_social: string;
@@ -14,45 +14,45 @@ export type DadosContrato = {
   prazo_texto: string;
 };
 
+export type ClausulaContrato = {
+  titulo: string;
+  itens: string[];
+};
+
 const CONTRATANTE =
   "G3 TRANSPORTES E SERVIÇOS LOGÍSTICOS LTDA, inscrita no CNPJ nº 50.468.812/0001-34, com sede em Cotia/SP, doravante denominada CONTRATANTE";
 
-export function clausulas(d: DadosContrato): { titulo: string; itens: string[] }[] {
+export function clausulasPadrao(): ClausulaContrato[] {
   return [
     {
-      titulo: "PARTES",
+      titulo: "1. OBJETO, DISTRIBUIÇÃO FRACIONADA E NATUREZA JURÍDICA",
       itens: [
-        `CONTRATANTE: ${CONTRATANTE}.`,
-        `CONTRATADO: ${d.razao_social}, inscrito no CNPJ/CPF nº ${d.cnpj}, RNTRC nº ${d.rntrc}, neste ato representado por ${d.motorista_nome}${d.motorista_cpf ? `, CPF nº ${d.motorista_cpf}` : ""}${d.motorista_cnh ? `, CNH nº ${d.motorista_cnh}` : ""}${d.placa ? `, operando o veículo de placa ${d.placa}` : ""}, doravante denominado CONTRATADO.`,
-      ],
-    },
-    {
-      titulo: "1. OBJETO E NATUREZA JURÍDICA",
-      itens: [
-        "1.1. O presente contrato tem por objeto a prestação de serviços de transporte rodoviário de cargas, na forma agregada, pelo CONTRATADO à CONTRATANTE.",
-        "1.2. As partes declaram que se trata de relação estritamente comercial, sem qualquer vínculo empregatício, subordinação ou exclusividade trabalhista, nos termos da Lei nº 11.442/2007.",
+        "1.1. O presente contrato tem por objeto a prestação de serviços de transporte rodoviário de cargas na modalidade de distribuição urbana e regional fracionada (coleta e distribuição capilar), caracterizada por múltiplas entregas, múltiplos destinatários e notas fiscais distintas em cada rota, pelo CONTRATADO à CONTRATANTE.",
+        "1.2. Por se tratar de operação de distribuição urbana fracionada com múltiplos destinatários e documentos fiscais distintos, as partes reconhecem expressamente que a operação se enquadra na exceção legal prevista no Art. 1º, § 2º da Lei Federal nº 13.703/2018, não se caracterizando como transporte de carga lotação fechada e não estando sujeita às tabelas de piso mínimo de frete da ANTT.",
+        "1.3. As partes declaram que se trata de relação estritamente comercial, sem qualquer vínculo empregatício, subordinação ou exclusividade trabalhista, nos termos da Lei nº 11.442/2007.",
       ],
     },
     {
       titulo: "2. MODALIDADE DE OPERAÇÃO E CIOT",
       itens: [
-        "2.1. A operação será realizada na modalidade de Agregação por Período.",
+        "2.1. A operação será realizada na modalidade de Agregação por Período para distribuição fracionada urbana e regional.",
         "2.2. A CONTRATANTE emitirá o CIOT (Código Identificador da Operação de Transporte) por período, em ciclos quinzenais: do dia 01 ao dia 15 e do dia 16 ao último dia de cada mês.",
         "2.3. O CONTRATADO compromete-se a manter o veículo e o registro RNTRC ativos, regulares e vinculados à frota da CONTRATANTE durante toda a vigência deste contrato.",
       ],
     },
     {
-      titulo: "3. TABELA DE FRETE",
+      titulo: "3. TABELA DE FRETE, RAIOS URBANOS E ACEITE",
       itens: [
-        "3.1. O CONTRATADO declara que conhece, recebeu e ACEITA a Tabela de Frete da G3 Expresso vigente, que será a única base de remuneração dos serviços prestados.",
-        "3.2. Eventuais alterações na tabela serão comunicadas previamente ao CONTRATADO e passarão a valer para as viagens realizadas a partir da data informada.",
+        "3.1. A remuneração dos serviços será apurada com base na Tabela de Frete da G3 Expresso vigente, estruturada por faixas de raios de quilometragem pré-definidos para entregas urbanas e eventuais adicionais de entregas/paradas acordados, sendo esta a única base de remuneração dos serviços prestados.",
+        "3.2. O CONTRATADO declara que recebeu, analisou, conhece e ACEITA expressamente a Tabela de Frete por raios pré-definidos vigente antes do início das operações, reconhecendo que os valores ajustados são compatíveis com o porte do seu veículo e suficientes para remunerar os serviços prestados e cobrir seus custos operacionais.",
+        "3.3. Eventuais alterações na tabela serão comunicadas previamente ao CONTRATADO e passarão a valer para as viagens realizadas a partir da data informada.",
       ],
     },
     {
       titulo: "4. CONDIÇÃO DE PAGAMENTO",
       itens: [
         "4.1. As viagens serão apuradas e fechadas por quinzena (01 a 15 e 16 ao fim do mês).",
-        `4.2. O pagamento do fechamento será realizado conforme a condição acordada: ${d.prazo_texto}, após a conferência dos serviços e a entrega dos canhotos e comprovantes de entrega.`,
+        "4.2. O pagamento do fechamento será realizado conforme a condição acordada: {{PRAZO_TEXTO}}, após a conferência dos serviços e a entrega dos canhotos e comprovantes de entrega.",
         "4.3. O CONTRATADO declara aceitar esta condição de pagamento, que se aplica a todas as viagens realizadas na vigência do contrato.",
         "4.4. Valores adicionais ao frete previamente autorizados pela CONTRATANTE, tais como serviços extras, espera e despesas extraordinárias que não constituam Vale-Pedágio obrigatório, serão apurados mediante comprovantes e pagos juntamente com o frete da quinzena correspondente, na data de pagamento prevista na cláusula 4.2. Quando comprovados após o fechamento, serão incluídos no fechamento seguinte, com identificação no demonstrativo.",
         "4.5. O acerto posterior de diferenças de pedágio limita-se às hipóteses admitidas pela regulamentação, inclusive diferença decorrente de alteração de rota por caso fortuito ou força maior, a ser acertada entre as partes ao fim da viagem e discriminada no demonstrativo. Esta regra não autoriza substituir por reembolso posterior a antecipação do Vale-Pedágio obrigatório da rota originalmente contratada.",
@@ -123,6 +123,37 @@ export function clausulas(d: DadosContrato): { titulo: string; itens: string[] }
   ];
 }
 
+export function parseModeloContrato(raw: unknown): ClausulaContrato[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const ok = raw.every(
+    (c) =>
+      c &&
+      typeof c === "object" &&
+      typeof (c as ClausulaContrato).titulo === "string" &&
+      Array.isArray((c as ClausulaContrato).itens) &&
+      (c as ClausulaContrato).itens.every((i) => typeof i === "string"),
+  );
+  return ok ? (raw as ClausulaContrato[]) : null;
+}
+
+export function clausulas(d: DadosContrato, modelo?: ClausulaContrato[] | null): ClausulaContrato[] {
+  const base = modelo && modelo.length > 0 ? modelo : clausulasPadrao();
+  const partes: ClausulaContrato = {
+    titulo: "PARTES",
+    itens: [
+      `CONTRATANTE: ${CONTRATANTE}.`,
+      `CONTRATADO: ${d.razao_social}, inscrito no CNPJ/CPF nº ${d.cnpj}, RNTRC nº ${d.rntrc}, neste ato representado por ${d.motorista_nome}${d.motorista_cpf ? `, CPF nº ${d.motorista_cpf}` : ""}${d.motorista_cnh ? `, CNH nº ${d.motorista_cnh}` : ""}${d.placa ? `, operando o veículo de placa ${d.placa}` : ""}, doravante denominado CONTRATADO.`,
+    ],
+  };
+  return [
+    partes,
+    ...base.map((c) => ({
+      titulo: c.titulo,
+      itens: c.itens.map((t) => t.replaceAll("{{PRAZO_TEXTO}}", d.prazo_texto)),
+    })),
+  ];
+}
+
 async function toDataUrl(url: string): Promise<string | null> {
   try {
     const blob = await (await fetch(url)).blob();
@@ -136,7 +167,12 @@ async function toDataUrl(url: string): Promise<string | null> {
   }
 }
 
-export async function gerarPdfContrato(d: DadosContrato, assinaturaPng: string, assinadoEm: Date): Promise<Blob> {
+export async function gerarPdfContrato(
+  d: DadosContrato,
+  assinaturaPng: string | null,
+  assinadoEm: Date | null,
+  modelo?: ClausulaContrato[] | null,
+): Promise<Blob> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210, M = 18, L = W - M * 2;
   let y = 16;
@@ -149,7 +185,7 @@ export async function gerarPdfContrato(d: DadosContrato, assinaturaPng: string, 
   doc.text("DE TRANSPORTE DE CARGAS", W / 2 + 12, y + 11, { align: "center" });
   y += 24;
   const nova = (h: number) => { if (y + h > 282) { doc.addPage(); y = 18; } };
-  for (const c of clausulas(d)) {
+  for (const c of clausulas(d, modelo)) {
     nova(10);
     doc.setFont("helvetica", "bold").setFontSize(10);
     doc.text(c.titulo, M, y); y += 5;
@@ -164,9 +200,12 @@ export async function gerarPdfContrato(d: DadosContrato, assinaturaPng: string, 
   }
   nova(70);
   y += 4;
-  doc.setFontSize(9.5).text(`Cotia/SP, ${assinadoEm.toLocaleDateString("pt-BR")}.`, M, y);
+  const dataTexto = assinadoEm ? assinadoEm.toLocaleDateString("pt-BR") : "____/____/________";
+  doc.setFontSize(9.5).text(`Cotia/SP, ${dataTexto}.`, M, y);
   y += 8;
-  doc.addImage(assinaturaPng, "PNG", M, y, 70, 28);
+  if (assinaturaPng) {
+    doc.addImage(assinaturaPng, "PNG", M, y, 70, 28);
+  }
   y += 30;
   doc.line(M, y, M + 80, y);
   doc.setFont("helvetica", "bold").text(d.razao_social, M, y + 5);
@@ -175,9 +214,9 @@ export async function gerarPdfContrato(d: DadosContrato, assinaturaPng: string, 
   doc.setFont("helvetica", "bold").text("G3 TRANSPORTES E SERVIÇOS LOGÍSTICOS LTDA", W - M - 80, y + 5);
   doc.setFont("helvetica", "normal").text("CONTRATANTE", W - M - 80, y + 10);
   doc.setFontSize(7.5).setTextColor(110);
-  doc.text(
-    `Assinado eletronicamente em ${assinadoEm.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} (horário de Brasília) · Versão ${CONTRATO_VERSAO} · Dispositivo: ${navigator.userAgent.slice(0, 110)}`,
-    M, y + 18, { maxWidth: L },
-  );
+  const rodape = assinadoEm
+    ? `Assinado eletronicamente em ${assinadoEm.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })} (horário de Brasília) · Versão ${CONTRATO_VERSAO} · Dispositivo: ${navigator.userAgent.slice(0, 110)}`
+    : `Modelo de Contrato · Versão ${CONTRATO_VERSAO} · Documento para conferência`;
+  doc.text(rodape, M, y + 18, { maxWidth: L });
   return doc.output("blob");
 }
