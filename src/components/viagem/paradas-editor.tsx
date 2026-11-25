@@ -9,6 +9,7 @@ import { LocalInput } from "@/components/planejador/local-input";
 import { aplicarOrdem, otimizarParadas } from "@/lib/otimizar-paradas";
 
 export type ParadaForm = {
+  id?: string;
   cliente: string;
   endereco: string;
   nf: string;

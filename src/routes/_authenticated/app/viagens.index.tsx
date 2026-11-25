@@ -133,11 +133,12 @@ function ViagensPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("viagem_paradas")
-        .select("ordem, cliente, endereco, nf")
+        .select("id, ordem, cliente, endereco, nf")
         .eq("viagem_id", form.id!)
         .order("ordem");
       if (error) throw error;
       return (data ?? []).map((p) => ({
+        id: p.id,
         cliente: p.cliente ?? "",
         endereco: p.endereco,
         nf: p.nf ?? "",
