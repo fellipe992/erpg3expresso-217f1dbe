@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reoteirizarDevolucoes } from "./devolucoes";
+import { reoteirizarDevolucoes, rotasEnviadasDoProjeto, type StatusParadaProjeto } from "./devolucoes";
 import { gerarPlano } from "./roteirizacao/plano";
 import { JORNADA_PADRAO } from "./roteirizacao/frota";
 import type { Deposito, Entrega, OpcoesOtimizacao, PerfilVeiculo } from "./roteirizacao/tipos";
@@ -124,5 +124,74 @@ describe("reoteirizarDevolucoes", () => {
     expect(rotaPreservada?.paradas.map((p) => p.entrega.id)).toEqual(
       primeiraRota.paradas.map((p) => p.entrega.id),
     );
+  });
+
+  it("remove a entrega devolvida da rota já despachada para não duplicar paradas", () => {
+    const e1 = entrega("N1", -23.48, -46.63);
+    const e2 = entrega("N2", -23.49, -46.62);
+    const e3 = entrega("N3", -23.50, -46.62);
+    const e4 = entrega("S1", -23.62, -46.63);
+
+    const planoInicial = gerarPlano({
+      entregas: [e1, e2, e3, e4],
+      depositos: [DEP],
+      frota: [VAN],
+      jornada: JORNADA_PADRAO,
+      opcoes: OPCOES_PADRAO,
+    });
+
+    const rotaDespachada = planoInicial.rotas.find((r) => r.paradas.length >= 2)!;
+    const devolvida = rotaDespachada.paradas[0]!.entrega;
+
+    const res = reoteirizarDevolucoes({
+      plano: planoInicial,
+      devolvidas: [devolvida],
+      rotasDespachadasIds: new Set([rotaDespachada.id]),
+      depositos: [DEP],
+      jornada: JORNADA_PADRAO,
+      opcoes: OPCOES_PADRAO,
+    });
+
+    const todosIds = res.plano.rotas.flatMap((r) => r.paradas.map((p) => p.entrega.id));
+    const ocorrenciasDevolvida = todosIds.filter((id) => id === devolvida.id).length;
+    expect(ocorrenciasDevolvida).toBe(1);
+
+    const rotaFixaAtualizada = res.plano.rotas.find((r) => r.id === rotaDespachada.id)!;
+    expect(rotaFixaAtualizada.paradas.some((p) => p.entrega.id === devolvida.id)).toBe(false);
+  });
+
+  it("reconhece rotas já despachadas a partir de paradasProjeto ao reabrir um projeto salvo", () => {
+    const e1 = entrega("N1", -23.48, -46.63);
+    const e2 = entrega("N2", -23.49, -46.62);
+    const e3 = entrega("N3", -23.50, -46.62);
+    const e4 = entrega("S1", -23.62, -46.63);
+
+    const planoInicial = gerarPlano({
+      entregas: [e1, e2, e3, e4],
+      depositos: [DEP],
+      frota: [VAN],
+      jornada: JORNADA_PADRAO,
+      opcoes: OPCOES_PADRAO,
+    });
+
+    const rotaEnviada = planoInicial.rotas[0]!;
+    const rotaAberta = planoInicial.rotas[1]!;
+
+    const paradasProjeto: StatusParadaProjeto[] = rotaEnviada.paradas.map((p, idx) => ({
+      paradaId: `p-${idx}`,
+      viagemId: "viagem-123",
+      entregaOrigemId: p.entrega.id,
+      cliente: p.entrega.cliente ?? null,
+      endereco: p.entrega.endereco,
+      nf: null,
+      statusEntrega: idx === 0 ? "devolucao_total" : "entregue",
+      motivoDevolucao: idx === 0 ? "CLIENTE AUSENTE" : null,
+      entregueEm: idx === 0 ? null : "2026-11-23T12:00:00Z",
+      devolucaoEm: idx === 0 ? "2026-11-23T12:30:00Z" : null,
+    }));
+
+    const enviadas = rotasEnviadasDoProjeto(planoInicial.rotas, {}, paradasProjeto);
+    expect(enviadas[rotaEnviada.id]).toBe("viagem-123");
+    expect(enviadas[rotaAberta.id]).toBeUndefined();
   });
 });

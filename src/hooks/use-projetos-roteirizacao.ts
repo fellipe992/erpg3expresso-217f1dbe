@@ -12,6 +12,7 @@ export type DadosProjeto = {
   jornada: RegrasJornada;
   opcoes?: OpcoesOtimizacao;
   plano: Plano;
+  enviadas?: Record<string, string>;
 };
 
 export type ProjetoResumo = {

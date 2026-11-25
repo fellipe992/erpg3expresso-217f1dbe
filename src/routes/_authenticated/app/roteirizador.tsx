@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   reoteirizarDevolucoes,
+  rotasEnviadasDoProjeto,
   type StatusEntrega,
   type StatusParadaProjeto,
 } from "@/lib/devolucoes";
@@ -137,10 +138,43 @@ function RoteirizadorPage() {
 
   const { data: motoristas = [] } = useMotoristasComVeiculo(podeDespachar);
 
+  const { projetos, projetoId, criar, salvar, autoSalvar, carregar, excluir, salvando, salvoEm } =
+    useProjetosRoteirizacao();
+
+  const { data: paradasProjeto = [] } = useQuery({
+    enabled: Boolean(projetoId),
+    queryKey: ["roteirizador-paradas", projetoId],
+    queryFn: async (): Promise<StatusParadaProjeto[]> => {
+      const { data, error } = await supabase
+        .from("viagem_paradas")
+        .select("id, viagem_id, entrega_origem_id, cliente, endereco, nf, status_entrega, motivo_devolucao, entregue_em, devolucao_em")
+        .eq("projeto_roteirizacao_id", projetoId!)
+        .order("ordem");
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        paradaId: row.id,
+        viagemId: row.viagem_id,
+        entregaOrigemId: row.entrega_origem_id,
+        cliente: row.cliente,
+        endereco: row.endereco,
+        nf: row.nf,
+        statusEntrega: (row.status_entrega ?? "pendente") as StatusEntrega,
+        motivoDevolucao: row.motivo_devolucao,
+        entregueEm: row.entregue_em,
+        devolucaoEm: row.devolucao_em,
+      }));
+    },
+  });
+
+  const enviadasEfetivas = useMemo(
+    () => rotasEnviadasDoProjeto(plano.rotas, enviadas, paradasProjeto),
+    [plano.rotas, enviadas, paradasProjeto],
+  );
+
   const pendentes = useMemo(
     () =>
-      plano.rotas.filter((r) => atribuicoes[r.id]?.motoristaId && !enviadas[r.id]),
-    [plano.rotas, atribuicoes, enviadas],
+      plano.rotas.filter((r) => atribuicoes[r.id]?.motoristaId && !enviadasEfetivas[r.id]),
+    [plano.rotas, atribuicoes, enviadasEfetivas],
   );
 
   const dispararRotas = async () => {
@@ -189,34 +223,6 @@ function RoteirizadorPage() {
   };
 
 
-  const { projetos, projetoId, criar, salvar, autoSalvar, carregar, excluir, salvando, salvoEm } =
-    useProjetosRoteirizacao();
-
-  const { data: paradasProjeto = [] } = useQuery({
-    enabled: Boolean(projetoId),
-    queryKey: ["roteirizador-paradas", projetoId],
-    queryFn: async (): Promise<StatusParadaProjeto[]> => {
-      const { data, error } = await supabase
-        .from("viagem_paradas")
-        .select("id, viagem_id, entrega_origem_id, cliente, endereco, nf, status_entrega, motivo_devolucao, entregue_em, devolucao_em")
-        .eq("projeto_roteirizacao_id", projetoId!)
-        .order("ordem");
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        paradaId: row.id,
-        viagemId: row.viagem_id,
-        entregaOrigemId: row.entrega_origem_id,
-        cliente: row.cliente,
-        endereco: row.endereco,
-        nf: row.nf,
-        statusEntrega: (row.status_entrega ?? "pendente") as StatusEntrega,
-        motivoDevolucao: row.motivo_devolucao,
-        entregueEm: row.entregue_em,
-        devolucaoEm: row.devolucao_em,
-      }));
-    },
-  });
-
   const statusPorEntrega = useMemo(() => {
     const mapa: Record<string, StatusEntrega> = {};
     for (const p of paradasProjeto) {
@@ -233,7 +239,7 @@ function RoteirizadorPage() {
         toast.info("Nenhuma entrega devolvida encontrada na lista atual.");
         return;
       }
-      const rotasDespachadasIds = new Set(Object.keys(enviadas));
+      const rotasDespachadasIds = new Set(Object.keys(enviadasEfetivas));
       const res = reoteirizarDevolucoes({
         plano,
         devolvidas,
@@ -251,7 +257,7 @@ function RoteirizadorPage() {
           : undefined,
       );
     },
-    [entregas, enviadas, plano, depositos, jornada, opcoes],
+    [entregas, enviadasEfetivas, plano, depositos, jornada, opcoes],
   );
 
   const definirEntregas = useCallback((lista: Entrega[]) => {
@@ -259,8 +265,8 @@ function RoteirizadorPage() {
   }, []);
 
   const dados: DadosProjeto = useMemo(
-    () => ({ depositos, entregas, frota, jornada, opcoes, plano }),
-    [depositos, entregas, frota, jornada, opcoes, plano],
+    () => ({ depositos, entregas, frota, jornada, opcoes, plano, enviadas }),
+    [depositos, entregas, frota, jornada, opcoes, plano, enviadas],
   );
 
   useEffect(() => {
@@ -287,6 +293,7 @@ function RoteirizadorPage() {
       try {
         const novo = gerarPlano({ entregas, depositos, frota, jornada, opcoes });
         setPlano(novo);
+        setEnviadas({});
         setOcultas(new Set());
         setAba("rotas");
         toast.success("Malha roteirizada", {
@@ -321,6 +328,7 @@ function RoteirizadorPage() {
     setJornada(d.jornada ?? JORNADA_PADRAO);
     setOpcoes(d.opcoes ?? { ...OPCOES_OTIMIZACAO_PADRAO });
     setPlano(d.plano ?? planoVazio());
+    setEnviadas(d.enviadas ?? {});
     setAba("rotas");
     toast.success(`Projeto “${nome}” carregado`);
   };
@@ -557,7 +565,7 @@ function RoteirizadorPage() {
                 podeDespachar={podeDespachar}
                 atribuicoes={atribuicoes}
                 onAtribuir={(rotaId, a) => setAtribuicoes((prev) => ({ ...prev, [rotaId]: a }))}
-                enviadas={enviadas}
+                enviadas={enviadasEfetivas}
                 statusPorEntrega={statusPorEntrega}
               />
             </TabsContent>

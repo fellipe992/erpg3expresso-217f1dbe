@@ -1,5 +1,5 @@
 import { gerarPlano, type Plano } from "@/lib/roteirizacao/plano";
-import type { Deposito, Entrega, OpcoesOtimizacao, PerfilVeiculo, RegrasJornada } from "@/lib/roteirizacao/tipos";
+import type { Deposito, Entrega, OpcoesOtimizacao, PerfilVeiculo, RegrasJornada, Rota } from "@/lib/roteirizacao/tipos";
 
 export type StatusEntrega = "pendente" | "entregue" | "devolucao_parcial" | "devolucao_total";
 
@@ -61,7 +61,13 @@ export function reoteirizarDevolucoes(params: {
     return { plano, realocadas: 0, naoAlocadas: 0 };
   }
 
-  const rotasFixas = plano.rotas.filter((r) => rotasDespachadasIds.has(r.id));
+  const devolvidasIds = new Set(devolvidas.map((d) => d.id));
+  const rotasFixas = plano.rotas
+    .filter((r) => rotasDespachadasIds.has(r.id))
+    .map((r) => {
+      const paradasRestantes = r.paradas.filter((p) => !devolvidasIds.has(p.entrega.id));
+      return paradasRestantes.length === r.paradas.length ? r : { ...r, paradas: paradasRestantes };
+    });
   const rotasAbertas = plano.rotas.filter((r) => !rotasDespachadasIds.has(r.id));
 
   if (!rotasAbertas.length) {
@@ -70,6 +76,7 @@ export function reoteirizarDevolucoes(params: {
     return {
       plano: {
         ...plano,
+        rotas: rotasFixas,
         naoAtendidas: [...plano.naoAtendidas, ...novasPendentes],
       },
       realocadas: 0,
@@ -131,4 +138,38 @@ export function reoteirizarDevolucoes(params: {
     realocadas,
     naoAlocadas,
   };
+}
+
+/**
+ * Combina o mapa de rotas enviadas em memória/salvo no projeto com as paradas
+ * já persistidas em `viagem_paradas`, garantindo que rotas despachadas antes de
+ * reabrir o projeto continuem reconhecidas como enviadas.
+ */
+export function rotasEnviadasDoProjeto(
+  rotas: Rota[],
+  enviadasSalvas: Record<string, string>,
+  paradasProjeto: StatusParadaProjeto[],
+): Record<string, string> {
+  const resultado: Record<string, string> = { ...enviadasSalvas };
+  if (!paradasProjeto.length) return resultado;
+
+  const porEntrega = new Map<string, StatusParadaProjeto>();
+  for (const p of paradasProjeto) {
+    if (p.entregaOrigemId) porEntrega.set(p.entregaOrigemId, p);
+  }
+
+  for (const r of rotas) {
+    if (resultado[r.id] || !r.paradas.length) continue;
+    const correspondencias = r.paradas
+      .map((p) => porEntrega.get(p.entrega.id))
+      .filter((p): p is StatusParadaProjeto => Boolean(p));
+    if (!correspondencias.length) continue;
+    const temParadaNaoDevolvida = correspondencias.some((p) => p.statusEntrega !== "devolucao_total");
+    const todasNoBanco = correspondencias.length === r.paradas.length;
+    if (temParadaNaoDevolvida || todasNoBanco) {
+      resultado[r.id] = correspondencias[0]!.viagemId;
+    }
+  }
+
+  return resultado;
 }
