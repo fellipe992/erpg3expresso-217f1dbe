@@ -31,6 +31,7 @@ type ParadaAlvo = {
   endereco: string;
   nf?: string | null;
   chegou_doca_em?: string | null;
+  entregue_em?: string | null;
   projeto_roteirizacao_id?: string | null;
 };
 
@@ -97,7 +98,8 @@ export function DevolucaoDialog({
         .from("viagem_paradas")
         .update({
           status_entrega: tipo === "total" ? "devolucao_total" : "devolucao_parcial",
-          entregue_em: tipo === "parcial" ? agora : null,
+          // Preserva a data original da entrega quando a devolução é registrada depois da conclusão.
+          entregue_em: parada.entregue_em ?? (tipo === "parcial" ? agora : null),
           chegou_doca_em: parada.chegou_doca_em ?? agora,
           devolucao_em: agora,
           motivo_devolucao: resumoMotivo,

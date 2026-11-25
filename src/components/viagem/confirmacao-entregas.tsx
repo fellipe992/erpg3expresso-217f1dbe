@@ -190,9 +190,20 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
                 )}
               </div>
               {concluida && (
-                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-600">
-                  Entregue {p.entregue_em ? hora(p.entregue_em) : ""}
-                </Badge>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-600">
+                    Entregue {p.entregue_em ? hora(p.entregue_em) : ""}
+                  </Badge>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-orange-600 hover:bg-orange-500/10"
+                    disabled={salvando}
+                    onClick={() => setParadaDevolucao(p)}
+                  >
+                    Devolução
+                  </Button>
+                </div>
               )}
               {parcial && (
                 <Badge variant="outline" className="border-orange-500/40 bg-orange-500/10 text-[10px] text-orange-600">
