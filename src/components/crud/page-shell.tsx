@@ -12,6 +12,7 @@ export function PageShell({
   onAdd,
   addLabel = "Novo",
   canAdd = true,
+  extraActions,
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
@@ -22,6 +23,7 @@ export function PageShell({
   onAdd?: () => void;
   addLabel?: string;
   canAdd?: boolean;
+  extraActions?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -48,6 +50,7 @@ export function PageShell({
               />
             </div>
           )}
+          {extraActions}
           {canAdd && onAdd && (
             <Button onClick={onAdd} className="shrink-0">
               <Plus className="mr-2 size-4" />

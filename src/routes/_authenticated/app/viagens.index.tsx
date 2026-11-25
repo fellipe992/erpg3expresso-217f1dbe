@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw, RefreshCw } from "lucide-react";
+import { MapPin, Pencil, Trash2, Loader2, ChevronRight, ArrowRight, Play, CheckCircle2, RotateCcw, RefreshCw, ImageUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { ParadasEditor, novaParada, type ParadaForm } from "@/components/viagem/paradas-editor";
 import { sincronizarParadas } from "@/lib/paradas-viagem";
+import { ImportarViagensDialog } from "@/components/viagem/importar-viagens-dialog";
 import { apurarViagem, brl } from "@/lib/frete";
 import { diaLocal } from "@/hooks/use-bi-dados";
 
@@ -106,6 +107,7 @@ function ViagensPage() {
   const inicial = lerFiltros();
   const [search, setSearch] = useState(inicial.search);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState<Partial<Viagem>>(emptyForm);
   const [paradasForm, setParadasForm] = useState<ParadaForm[]>([]);
   const [dataBase, setDataBase] = useState<"saida" | "prevista">(inicial.dataBase);
@@ -382,6 +384,14 @@ function ViagensPage() {
       onSearch={setSearch}
       canAdd={canWrite}
       addLabel="Nova viagem"
+      extraActions={
+        canWrite ? (
+          <Button variant="outline" onClick={() => setImportOpen(true)} className="shrink-0">
+            <ImageUp className="mr-2 size-4" />
+            <span className="hidden sm:inline">Importar viagens</span>
+          </Button>
+        ) : null
+      }
       onAdd={() => {
         setForm(emptyForm);
         setParadasForm([]);
@@ -732,6 +742,7 @@ function ViagensPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ImportarViagensDialog open={importOpen} onOpenChange={setImportOpen} onImported={invalidarViagens} />
     </PageShell>
   );
 }
