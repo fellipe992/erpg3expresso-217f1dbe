@@ -3934,6 +3934,85 @@ export type Database = {
           },
         ]
       }
+      viagem_parada_devolucoes: {
+        Row: {
+          conferido_em: string | null
+          conferido_estoque: boolean
+          conferido_por: string | null
+          created_at: string
+          id: string
+          item_descricao: string
+          motivo: string
+          observacoes: string | null
+          parada_id: string
+          projeto_roteirizacao_id: string | null
+          quantidade: number
+          registrado_por: string | null
+          tipo: string
+          unidade: string | null
+          updated_at: string
+          viagem_id: string
+        }
+        Insert: {
+          conferido_em?: string | null
+          conferido_estoque?: boolean
+          conferido_por?: string | null
+          created_at?: string
+          id?: string
+          item_descricao: string
+          motivo: string
+          observacoes?: string | null
+          parada_id: string
+          projeto_roteirizacao_id?: string | null
+          quantidade?: number
+          registrado_por?: string | null
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string
+          viagem_id: string
+        }
+        Update: {
+          conferido_em?: string | null
+          conferido_estoque?: boolean
+          conferido_por?: string | null
+          created_at?: string
+          id?: string
+          item_descricao?: string
+          motivo?: string
+          observacoes?: string | null
+          parada_id?: string
+          projeto_roteirizacao_id?: string | null
+          quantidade?: number
+          registrado_por?: string | null
+          tipo?: string
+          unidade?: string | null
+          updated_at?: string
+          viagem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viagem_parada_devolucoes_parada_id_fkey"
+            columns: ["parada_id"]
+            isOneToOne: false
+            referencedRelation: "viagem_paradas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_parada_devolucoes_projeto_roteirizacao_id_fkey"
+            columns: ["projeto_roteirizacao_id"]
+            isOneToOne: false
+            referencedRelation: "roteirizacao_projetos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viagem_parada_devolucoes_viagem_id_fkey"
+            columns: ["viagem_id"]
+            isOneToOne: false
+            referencedRelation: "viagens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       viagem_paradas: {
         Row: {
           a_caminho_em: string | null
@@ -3941,15 +4020,20 @@ export type Database = {
           chegou_doca_em: string | null
           cliente: string | null
           created_at: string
+          devolucao_em: string | null
           endereco: string
+          entrega_origem_id: string | null
           entregue_em: string | null
           id: string
           latitude: number | null
           longitude: number | null
+          motivo_devolucao: string | null
           nf: string | null
           observacoes: string | null
           ordem: number
           peso_kg: number | null
+          projeto_roteirizacao_id: string | null
+          status_entrega: string
           tempo_descarga_min: number | null
           updated_at: string
           viagem_id: string
@@ -3960,15 +4044,20 @@ export type Database = {
           chegou_doca_em?: string | null
           cliente?: string | null
           created_at?: string
+          devolucao_em?: string | null
           endereco: string
+          entrega_origem_id?: string | null
           entregue_em?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
+          motivo_devolucao?: string | null
           nf?: string | null
           observacoes?: string | null
           ordem: number
           peso_kg?: number | null
+          projeto_roteirizacao_id?: string | null
+          status_entrega?: string
           tempo_descarga_min?: number | null
           updated_at?: string
           viagem_id: string
@@ -3979,20 +4068,32 @@ export type Database = {
           chegou_doca_em?: string | null
           cliente?: string | null
           created_at?: string
+          devolucao_em?: string | null
           endereco?: string
+          entrega_origem_id?: string | null
           entregue_em?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
+          motivo_devolucao?: string | null
           nf?: string | null
           observacoes?: string | null
           ordem?: number
           peso_kg?: number | null
+          projeto_roteirizacao_id?: string | null
+          status_entrega?: string
           tempo_descarga_min?: number | null
           updated_at?: string
           viagem_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "viagem_paradas_projeto_roteirizacao_id_fkey"
+            columns: ["projeto_roteirizacao_id"]
+            isOneToOne: false
+            referencedRelation: "roteirizacao_projetos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "viagem_paradas_viagem_id_fkey"
             columns: ["viagem_id"]

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Loader2, MapPin, PackageCheck, Truck } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, PackageCheck, RotateCcw, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -12,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DevolucaoDialog } from "@/components/viagem/devolucao-dialog";
+import type { StatusEntrega } from "@/lib/devolucoes";
 import { cn } from "@/lib/utils";
 
 type Parada = {
@@ -19,9 +22,14 @@ type Parada = {
   ordem: number;
   cliente: string | null;
   endereco: string;
+  nf: string | null;
   chegou_doca_em: string | null;
   entregue_em: string | null;
   a_caminho_em: string | null;
+  status_entrega: StatusEntrega;
+  motivo_devolucao: string | null;
+  devolucao_em: string | null;
+  projeto_roteirizacao_id: string | null;
 };
 
 const nome = (p: Parada) => p.cliente || p.endereco;
@@ -36,6 +44,7 @@ const hora = (d: string) =>
 export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
   const qc = useQueryClient();
   const [escolher, setEscolher] = useState(false);
+  const [paradaDevolucao, setParadaDevolucao] = useState<Parada | null>(null);
   const [salvando, setSalvando] = useState(false);
   const key = ["confirmacao-entregas", viagemId];
 
@@ -44,17 +53,17 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
     queryFn: async (): Promise<Parada[]> => {
       const { data, error } = await supabase
         .from("viagem_paradas")
-        .select("id, ordem, cliente, endereco, chegou_doca_em, entregue_em, a_caminho_em")
+        .select("id, ordem, cliente, endereco, nf, chegou_doca_em, entregue_em, a_caminho_em, status_entrega, motivo_devolucao, devolucao_em, projeto_roteirizacao_id")
         .eq("viagem_id", viagemId)
         .order("ordem");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Parada[];
     },
   });
 
   if (!paradas.length) return null;
 
-  const pendentes = paradas.filter((p) => !p.entregue_em);
+  const pendentes = paradas.filter((p) => p.status_entrega === "pendente" && !p.entregue_em);
   const atual = pendentes.find((p) => p.a_caminho_em || p.chegou_doca_em) ?? null;
   const feitas = paradas.length - pendentes.length;
 
@@ -75,7 +84,11 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
 
   const concluirDescarga = async () => {
     if (!atual) return;
-    const ok = await atualizar(atual.id, { entregue_em: agora(), chegou_doca_em: atual.chegou_doca_em ?? agora() }, "Entrega finalizada");
+    const ok = await atualizar(
+      atual.id,
+      { status_entrega: "entregue", entregue_em: agora(), chegou_doca_em: atual.chegou_doca_em ?? agora() },
+      "Entrega finalizada",
+    );
 
     if (ok && pendentes.length > 1) setEscolher(true);
   };
@@ -121,10 +134,21 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
               CHEGUEI NO CLIENTE
             </Button>
           ) : (
-            <Button className="h-14 w-full text-base font-bold" disabled={salvando} onClick={concluirDescarga}>
-              {salvando ? <Loader2 className="mr-2 size-5 animate-spin" /> : <PackageCheck className="mr-2 size-5" />}
-              DESCARGA CONCLUÍDA — PRÓXIMA ENTREGA
-            </Button>
+            <div className="space-y-2">
+              <Button className="h-14 w-full text-base font-bold" disabled={salvando} onClick={concluirDescarga}>
+                {salvando ? <Loader2 className="mr-2 size-5 animate-spin" /> : <PackageCheck className="mr-2 size-5" />}
+                DESCARGA CONCLUÍDA — PRÓXIMA ENTREGA
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 w-full border-orange-500/50 text-orange-600 hover:bg-orange-500/10 hover:text-orange-700"
+                disabled={salvando}
+                onClick={() => setParadaDevolucao(atual)}
+              >
+                <RotateCcw className="mr-2 size-4" />
+                INFORMAR DEVOLUÇÃO (PARCIAL OU TOTAL)
+              </Button>
+            </div>
           )}
           {!atual.chegou_doca_em && (
             <Button variant="ghost" size="sm" className="w-full" onClick={() => setEscolher(true)}>
@@ -138,14 +162,79 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
         </Button>
       )}
 
-      <ul className="space-y-1 text-sm">
-        {paradas.map((p) => (
-          <li key={p.id} className={cn("flex items-start gap-2", p.entregue_em && "text-muted-foreground line-through")}>
-            <span className="w-5 shrink-0 text-right font-mono text-xs">{p.ordem}</span>
-            <span className="min-w-0 break-words">{nome(p)}</span>
-            {p.entregue_em && <span className="ml-auto shrink-0 text-xs no-underline">{hora(p.entregue_em)}</span>}
-          </li>
-        ))}
+      <ul className="space-y-1.5 text-sm">
+        {paradas.map((p) => {
+          const st = p.status_entrega;
+          const concluida = st === "entregue" || (st === "pendente" && Boolean(p.entregue_em));
+          const parcial = st === "devolucao_parcial";
+          const total = st === "devolucao_total";
+          const pendente = !concluida && !parcial && !total;
+          return (
+            <li key={p.id} className="flex flex-wrap items-center gap-2 rounded-md border border-border/50 px-2 py-1.5">
+              <span
+                className={cn(
+                  "size-2.5 shrink-0 rounded-full",
+                  concluida && "bg-emerald-500",
+                  parcial && "bg-orange-500",
+                  total && "bg-red-500",
+                  pendente && "bg-muted-foreground/30",
+                )}
+              />
+              <span className="w-5 shrink-0 text-right font-mono text-xs text-muted-foreground">{p.ordem}</span>
+              <div className="min-w-0 flex-1">
+                <p className={cn("truncate font-medium", concluida && "text-muted-foreground line-through")}>
+                  {nome(p)}
+                </p>
+                {p.motivo_devolucao && (
+                  <p className="truncate text-[11px] text-muted-foreground">{p.motivo_devolucao}</p>
+                )}
+              </div>
+              {concluida && (
+                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-[10px] text-emerald-600">
+                  Entregue {p.entregue_em ? hora(p.entregue_em) : ""}
+                </Badge>
+              )}
+              {parcial && (
+                <Badge variant="outline" className="border-orange-500/40 bg-orange-500/10 text-[10px] text-orange-600">
+                  Dev. parcial
+                </Badge>
+              )}
+              {total && (
+                <Badge variant="outline" className="border-red-500/40 bg-red-500/10 text-[10px] text-red-600">
+                  Dev. total
+                </Badge>
+              )}
+              {pendente && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                    disabled={salvando}
+                    onClick={() =>
+                      atualizar(
+                        p.id,
+                        { status_entrega: "entregue", entregue_em: agora(), chegou_doca_em: p.chegou_doca_em ?? agora() },
+                        "Entrega concluída",
+                      )
+                    }
+                  >
+                    Concluir
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-xs text-orange-600 hover:bg-orange-500/10"
+                    disabled={salvando}
+                    onClick={() => setParadaDevolucao(p)}
+                  >
+                    Devolução
+                  </Button>
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       <Dialog open={escolher} onOpenChange={setEscolher}>
@@ -178,6 +267,19 @@ export function ConfirmacaoEntregasCard({ viagemId }: { viagemId: string }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DevolucaoDialog
+        open={Boolean(paradaDevolucao)}
+        onOpenChange={(v) => { if (!v) setParadaDevolucao(null); }}
+        viagemId={viagemId}
+        parada={paradaDevolucao}
+        onSalvo={() => {
+          qc.invalidateQueries({ queryKey: key });
+          qc.invalidateQueries({ queryKey: ["roteirizador-paradas"] });
+          qc.invalidateQueries({ queryKey: ["roteirizador-devolucoes"] });
+          if (pendentes.length > 1) setEscolher(true);
+        }}
+      />
     </Card>
   );
 }

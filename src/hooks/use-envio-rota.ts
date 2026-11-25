@@ -67,8 +67,9 @@ export async function enviarRotaParaMotorista(params: {
   motorista: MotoristaOpcao;
   dataPrevista?: string | null;
   projeto?: string;
+  projetoId?: string | null;
 }): Promise<ResultadoEnvio> {
-  const { rota, motorista, dataPrevista, projeto, rotuloRota } = params;
+  const { rota, motorista, dataPrevista, projeto, projetoId, rotuloRota } = params;
   if (!rota.paradas.length) throw new Error("A rota não possui paradas");
 
   const { data: sessao } = await supabase.auth.getUser();
@@ -106,6 +107,8 @@ export async function enviarRotaParaMotorista(params: {
     chegada_prevista: p.entrega.horarioEntrega ?? null,
     tempo_descarga_min: p.entrega.tempoDescargaMin ?? null,
     observacoes: p.entrega.observacoes ?? null,
+    projeto_roteirizacao_id: projetoId ?? null,
+    entrega_origem_id: p.entrega.id,
   }));
 
   const { error: erroParadas } = await supabase.from("viagem_paradas").insert(paradas);

@@ -18,6 +18,7 @@ import { brl, duracao } from "@/lib/roteirizacao/format";
 import { kg, minutosParaHora } from "@/lib/roteirizacao/parse";
 import type { Plano } from "@/lib/roteirizacao/plano";
 import type { Entrega } from "@/lib/roteirizacao/tipos";
+import type { StatusEntrega } from "@/lib/devolucoes";
 
 type Arrasto = { entregaId: string; rotaId: string; indice: number } | null;
 
@@ -37,6 +38,7 @@ export function RotasPanel({
   atribuicoes,
   onAtribuir,
   enviadas,
+  statusPorEntrega,
 }: {
   plano: Plano;
   ocultas: Set<string>;
@@ -53,6 +55,7 @@ export function RotasPanel({
   atribuicoes?: Record<string, Atribuicao | undefined>;
   onAtribuir?: (rotaId: string, a: Atribuicao | undefined) => void;
   enviadas?: Record<string, string>;
+  statusPorEntrega?: Record<string, StatusEntrega>;
 }) {
   const [arrasto, setArrasto] = useState<Arrasto>(null);
   const [alvo, setAlvo] = useState<string | null>(null);
@@ -190,6 +193,21 @@ export function RotasPanel({
                           title="Como esta entrega foi alocada nesta rota"
                         >
                           {ROTULO_ORIGEM[p.entrega.origemAlocacao]}
+                        </Badge>
+                      )}
+                      {statusPorEntrega?.[p.entrega.id] === "entregue" && (
+                        <Badge variant="outline" className="shrink-0 border-emerald-500/40 bg-emerald-500/10 text-[9px] text-emerald-600">
+                          Feita
+                        </Badge>
+                      )}
+                      {statusPorEntrega?.[p.entrega.id] === "devolucao_parcial" && (
+                        <Badge variant="outline" className="shrink-0 border-orange-500/40 bg-orange-500/10 text-[9px] text-orange-600">
+                          Dev. parcial
+                        </Badge>
+                      )}
+                      {statusPorEntrega?.[p.entrega.id] === "devolucao_total" && (
+                        <Badge variant="outline" className="shrink-0 border-red-500/40 bg-red-500/10 text-[9px] text-red-600">
+                          Dev. total
                         </Badge>
                       )}
                       <span className="shrink-0 text-right text-muted-foreground">

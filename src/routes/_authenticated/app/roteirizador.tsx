@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -16,6 +17,12 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  reoteirizarDevolucoes,
+  type StatusEntrega,
+  type StatusParadaProjeto,
+} from "@/lib/devolucoes";
 import { useProjetosRoteirizacao, type DadosProjeto } from "@/hooks/use-projetos-roteirizacao";
 import {
   enviarRotaParaMotorista,
@@ -45,6 +52,7 @@ import { MapaRoteirizador } from "@/components/roteirizador/mapa-roteirizador";
 import { RotasPanel } from "@/components/roteirizador/rotas-panel";
 import { DimensionamentoFrota } from "@/components/roteirizador/dimensionamento-frota";
 import { DashboardExecutivo } from "@/components/roteirizador/dashboard-executivo";
+import { DevolucoesEstoquePanel } from "@/components/roteirizador/devolucoes-estoque-panel";
 import { PainelIa } from "@/components/roteirizador/painel-ia";
 import { RastreamentoPanel } from "@/components/roteirizador/rastreamento-panel";
 
@@ -159,6 +167,7 @@ function RoteirizadorPage() {
           motorista,
           dataPrevista: a?.dataPrevista,
           projeto: nomeProjeto,
+          projetoId,
         });
         setEnviadas((prev) => ({ ...prev, [rota.id]: r.codigo ?? r.viagemId }));
         ok += 1;
@@ -182,6 +191,68 @@ function RoteirizadorPage() {
 
   const { projetos, projetoId, criar, salvar, autoSalvar, carregar, excluir, salvando, salvoEm } =
     useProjetosRoteirizacao();
+
+  const { data: paradasProjeto = [] } = useQuery({
+    enabled: Boolean(projetoId),
+    queryKey: ["roteirizador-paradas", projetoId],
+    queryFn: async (): Promise<StatusParadaProjeto[]> => {
+      const { data, error } = await supabase
+        .from("viagem_paradas")
+        .select("id, viagem_id, entrega_origem_id, cliente, endereco, nf, status_entrega, motivo_devolucao, entregue_em, devolucao_em")
+        .eq("projeto_roteirizacao_id", projetoId!)
+        .order("ordem");
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        paradaId: row.id,
+        viagemId: row.viagem_id,
+        entregaOrigemId: row.entrega_origem_id,
+        cliente: row.cliente,
+        endereco: row.endereco,
+        nf: row.nf,
+        statusEntrega: (row.status_entrega ?? "pendente") as StatusEntrega,
+        motivoDevolucao: row.motivo_devolucao,
+        entregueEm: row.entregue_em,
+        devolucaoEm: row.devolucao_em,
+      }));
+    },
+  });
+
+  const statusPorEntrega = useMemo(() => {
+    const mapa: Record<string, StatusEntrega> = {};
+    for (const p of paradasProjeto) {
+      if (p.entregaOrigemId) mapa[p.entregaOrigemId] = p.statusEntrega;
+    }
+    return mapa;
+  }, [paradasProjeto]);
+
+  const handleReoteirizarDevolucoes = useCallback(
+    (devolvidasOrigemIds: string[]) => {
+      const idsSet = new Set(devolvidasOrigemIds);
+      const devolvidas = entregas.filter((e) => idsSet.has(e.id));
+      if (!devolvidas.length) {
+        toast.info("Nenhuma entrega devolvida encontrada na lista atual.");
+        return;
+      }
+      const rotasDespachadasIds = new Set(Object.keys(enviadas));
+      const res = reoteirizarDevolucoes({
+        plano,
+        devolvidas,
+        rotasDespachadasIds,
+        depositos,
+        jornada,
+        opcoes,
+      });
+      setPlano(res.plano);
+      setAba("rotas");
+      toast.success(
+        `${res.realocadas} entrega(s) devolvida(s) realocada(s) nos roteiros abertos`,
+        res.naoAlocadas
+          ? { description: `${res.naoAlocadas} entrega(s) ficaram em não atendidas por limite de capacidade.` }
+          : undefined,
+      );
+    },
+    [entregas, enviadas, plano, depositos, jornada, opcoes],
+  );
 
   const definirEntregas = useCallback((lista: Entrega[]) => {
     setEntregas(identificarRegioes(lista));
@@ -487,6 +558,7 @@ function RoteirizadorPage() {
                 atribuicoes={atribuicoes}
                 onAtribuir={(rotaId, a) => setAtribuicoes((prev) => ({ ...prev, [rotaId]: a }))}
                 enviadas={enviadas}
+                statusPorEntrega={statusPorEntrega}
               />
             </TabsContent>
 
@@ -541,6 +613,7 @@ function RoteirizadorPage() {
               <Sparkles className="mr-2 size-4" /> Assistente
             </TabsTrigger>
             {podeDespachar && <TabsTrigger value="execucao">Execução</TabsTrigger>}
+            {podeDespachar && <TabsTrigger value="devolucoes">Devoluções & Estoque</TabsTrigger>}
           </TabsList>
           <TabsContent value="dashboard" className="mt-4">
             <DashboardExecutivo cenario={cenario} impostoPct={0} administrativoPct={0} />
@@ -551,6 +624,15 @@ function RoteirizadorPage() {
           {podeDespachar && (
             <TabsContent value="execucao" className="mt-4">
               <RastreamentoPanel cenario={cenario} progresso={{}} />
+            </TabsContent>
+          )}
+          {podeDespachar && (
+            <TabsContent value="devolucoes" className="mt-4">
+              <DevolucoesEstoquePanel
+                projetoId={projetoId}
+                paradasProjeto={paradasProjeto}
+                onReoteirizarDevolucoes={handleReoteirizarDevolucoes}
+              />
             </TabsContent>
           )}
         </Tabs>

@@ -450,7 +450,9 @@ function ViagemDetalheePage() {
         })()}
       </Card>
 
-      {viagem.status === "em_andamento" && <ConfirmacaoEntregasCard viagemId={id} />}
+      {(viagem.status === "em_andamento" || (isStaff && viagem.status !== "cancelada")) && (
+        <ConfirmacaoEntregasCard viagemId={id} />
+      )}
 
       {(viagem.status === "planejada" || viagem.status === "em_andamento") && (
         <ParadasRotaCard viagemId={id} />
