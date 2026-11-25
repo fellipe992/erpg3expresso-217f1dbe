@@ -231,8 +231,15 @@ export const lerAgendamentoPrint = createServerFn({ method: "POST" })
   .inputValidator((d) => inputSchema.parse(d))
   .handler(async ({ data, context }) => {
     // Somente equipe interna pode importar viagens
-    const { data: role } = await context.supabase.rpc("get_primary_role", { _user_id: context.userId });
-    if (!role || role === "motorista" || role === "monitor") {
+    const { data: roles, error: roleErr } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    if (roleErr) throw new Error(roleErr.message);
+    const temPermissao = (roles ?? []).some((r) =>
+      r.role === "administrador" || r.role === "gestor" || r.role === "financeiro",
+    );
+    if (!temPermissao) {
       throw new Error("Sem permissão para importar viagens.");
     }
 
